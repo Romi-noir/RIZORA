@@ -4,7 +4,14 @@ const path = require("path");
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
-const ROOT = __dirname;
+
+/*
+  IMPORTANT:
+  Use the current working directory first because Vercel can
+  execute the server from a different runtime directory.
+*/
+const ROOT = process.cwd();
+const SERVER_ROOT = __dirname;
 
 /* =========================================================
    RESPONSE HELPERS
@@ -51,10 +58,7 @@ function readBody(req) {
       body += chunk;
 
       if (body.length > 3 * 1024 * 1024) {
-        reject(
-          new Error("Request too large.")
-        );
-
+        reject(new Error("Request too large."));
         req.destroy();
       }
     });
@@ -67,9 +71,7 @@ function readBody(req) {
       try {
         resolve(JSON.parse(body));
       } catch {
-        reject(
-          new Error("Invalid JSON.")
-        );
+        reject(new Error("Invalid JSON."));
       }
     });
 
@@ -287,36 +289,25 @@ function analyzePost(data) {
     );
   }
 
-  hookScore =
-    clamp(hookScore, 0, 100);
+  hookScore = clamp(hookScore, 0, 100);
+  captionScore = clamp(captionScore, 0, 100);
+  hashtagScore = clamp(hashtagScore, 0, 100);
+  clarityScore = clamp(clarityScore, 0, 100);
+  engagementScore = clamp(engagementScore, 0, 100);
 
-  captionScore =
-    clamp(captionScore, 0, 100);
+  const score = clamp(
+    Math.round(
+      hookScore * 0.30 +
+      captionScore * 0.20 +
+      hashtagScore * 0.15 +
+      clarityScore * 0.15 +
+      engagementScore * 0.20
+    ),
+    0,
+    100
+  );
 
-  hashtagScore =
-    clamp(hashtagScore, 0, 100);
-
-  clarityScore =
-    clamp(clarityScore, 0, 100);
-
-  engagementScore =
-    clamp(engagementScore, 0, 100);
-
-  const score =
-    clamp(
-      Math.round(
-        hookScore * 0.30 +
-        captionScore * 0.20 +
-        hashtagScore * 0.15 +
-        clarityScore * 0.15 +
-        engagementScore * 0.20
-      ),
-      0,
-      100
-    );
-
-  let rating =
-    "Needs Work";
+  let rating = "Needs Work";
 
   if (score >= 90) {
     rating = "Elite";
@@ -332,11 +323,9 @@ function analyzePost(data) {
     score,
     rating,
 
-    strengths:
-      unique(strengths),
+    strengths: unique(strengths),
 
-    improvements:
-      unique(improvements),
+    improvements: unique(improvements),
 
     feedback:
       score >= 85
@@ -368,17 +357,15 @@ function analyzePost(data) {
    ========================================================= */
 
 function generateHooks(data) {
-  const topic =
-    clean(
-      data.topic,
-      "this topic"
-    );
+  const topic = clean(
+    data.topic,
+    "this topic"
+  );
 
-  const category =
-    clean(
-      data.category,
-      "General"
-    );
+  const category = clean(
+    data.category,
+    "General"
+  );
 
   const hooks = [
     `Nobody talks about this side of ${topic}.`,
@@ -406,11 +393,8 @@ function generateHooks(data) {
   }
 
   return {
-    hooks:
-      hooks.slice(0, 10),
-
-    items:
-      hooks.slice(0, 10)
+    hooks: hooks.slice(0, 10),
+    items: hooks.slice(0, 10)
   };
 }
 
@@ -419,17 +403,15 @@ function generateHooks(data) {
    ========================================================= */
 
 function generateHashtags(data) {
-  const topic =
-    clean(
-      data.topic,
-      "content"
-    );
+  const topic = clean(
+    data.topic,
+    "content"
+  );
 
-  const category =
-    clean(
-      data.category,
-      "general"
-    ).toLowerCase();
+  const category = clean(
+    data.category,
+    "general"
+  ).toLowerCase();
 
   const topicWords =
     keywords(topic)
@@ -486,11 +468,10 @@ function generateHashtags(data) {
     "#creator"
   ];
 
-  const hashtags =
-    unique([
-      ...topicWords,
-      ...(categoryTags[category] || fallback)
-    ]).slice(0, 8);
+  const hashtags = unique([
+    ...topicWords,
+    ...(categoryTags[category] || fallback)
+  ]).slice(0, 8);
 
   return {
     hashtags,
@@ -503,17 +484,15 @@ function generateHashtags(data) {
    ========================================================= */
 
 function generateCaptions(data) {
-  const topic =
-    clean(
-      data.topic,
-      "this"
-    );
+  const topic = clean(
+    data.topic,
+    "this"
+  );
 
-  const vibe =
-    clean(
-      data.vibe,
-      "confident"
-    ).toLowerCase();
+  const vibe = clean(
+    data.vibe,
+    "confident"
+  ).toLowerCase();
 
   let captions = [
     `${topic}. That's the post.`,
@@ -548,11 +527,8 @@ function generateCaptions(data) {
   }
 
   return {
-    captions:
-      captions.slice(0, 10),
-
-    items:
-      captions.slice(0, 10)
+    captions: captions.slice(0, 10),
+    items: captions.slice(0, 10)
   };
 }
 
@@ -561,11 +537,10 @@ function generateCaptions(data) {
    ========================================================= */
 
 function generateIdeas(data) {
-  const niche =
-    clean(
-      data.niche,
-      "content"
-    );
+  const niche = clean(
+    data.niche,
+    "content"
+  );
 
   const ideas = [
     `3 things I wish I knew about ${niche}.`,
@@ -591,51 +566,45 @@ function generateIdeas(data) {
    ========================================================= */
 
 function boostContent(data) {
-  const topic =
-    clean(
-      data.topic,
-      "your content"
-    );
+  const topic = clean(
+    data.topic,
+    "your content"
+  );
 
-  const category =
-    clean(
-      data.category,
-      "general"
-    );
+  const category = clean(
+    data.category,
+    "general"
+  );
 
-  const format =
-    clean(
-      data.format || data.length,
-      "Short video"
-    );
+  const format = clean(
+    data.format || data.length,
+    "Short video"
+  );
 
-  const goal =
-    clean(
-      data.goal,
-      "reach"
-    );
+  const goal = clean(
+    data.goal,
+    "reach"
+  );
 
-  const analysis =
-    analyzePost({
-      hook: data.hook,
-      caption: data.caption,
-      hashtags: data.hashtags
-    });
+  const analysis = analyzePost({
+    hook: data.hook,
+    caption: data.caption,
+    hashtags: data.hashtags
+  });
 
   const topicBonus =
     keywords(topic).length >= 2
       ? 5
       : 2;
 
-  const score =
-    clamp(
-      analysis.score +
-      topicBonus +
-      3 +
-      2,
-      0,
-      100
-    );
+  const score = clamp(
+    analysis.score +
+    topicBonus +
+    3 +
+    2,
+    0,
+    100
+  );
 
   const optimizedHook =
     clean(data.hook) ||
@@ -651,12 +620,11 @@ function boostContent(data) {
       category
     });
 
-  const topFixes =
-    unique([
-      ...analysis.improvements,
-      "Keep the strongest visual or statement first.",
-      "Give viewers a reason to stay until the payoff."
-    ]).slice(0, 4);
+  const topFixes = unique([
+    ...analysis.improvements,
+    "Keep the strongest visual or statement first.",
+    "Give viewers a reason to stay until the payoff."
+  ]).slice(0, 4);
 
   let verdict =
     "Needs stronger packaging";
@@ -686,69 +654,39 @@ function boostContent(data) {
     verdict,
 
     componentScores: {
-      hook:
-        analysis.componentScores.hook,
-
-      caption:
-        analysis.componentScores.caption,
-
-      hashtags:
-        analysis.componentScores.hashtags,
-
-      clarity:
-        analysis.componentScores.clarity,
-
-      engagement:
-        analysis.componentScores.engagement
+      hook: analysis.componentScores.hook,
+      caption: analysis.componentScores.caption,
+      hashtags: analysis.componentScores.hashtags,
+      clarity: analysis.componentScores.clarity,
+      engagement: analysis.componentScores.engagement
     },
 
     breakdown: {
-      hook:
-        analysis.componentScores.hook,
-
-      caption:
-        analysis.componentScores.caption,
-
-      hashtags:
-        analysis.componentScores.hashtags,
-
-      clarity:
-        analysis.componentScores.clarity,
-
-      engagement:
-        analysis.componentScores.engagement
+      hook: analysis.componentScores.hook,
+      caption: analysis.componentScores.caption,
+      hashtags: analysis.componentScores.hashtags,
+      clarity: analysis.componentScores.clarity,
+      engagement: analysis.componentScores.engagement
     },
 
-    strengths:
-      analysis.strengths,
-
-    improvements:
-      analysis.improvements,
-
+    strengths: analysis.strengths,
+    improvements: analysis.improvements,
     topFixes,
 
-    feedback:
-      analysis.feedback,
+    feedback: analysis.feedback,
 
     optimizedHook,
     optimizedCaption,
 
-    hashtags:
-      hashtagResult.hashtags,
-
-    optimizedHashtags:
-      hashtagResult.hashtags,
+    hashtags: hashtagResult.hashtags,
+    optimizedHashtags: hashtagResult.hashtags,
 
     cta:
-      goal
-        .toLowerCase()
-        .includes("engagement")
+      goal.toLowerCase().includes("engagement")
         ? "End with a specific question that invites an opinion."
         : "End with one natural question or action that gives viewers a reason to respond.",
 
-    strategy:
-      postingPlan,
-
+    strategy: postingPlan,
     postingPlan,
 
     nextSteps: [
@@ -769,41 +707,35 @@ function boostContent(data) {
    ========================================================= */
 
 function performanceAnalysis(data) {
-  const views =
-    Math.max(
-      0,
-      Number(data.views) || 0
-    );
+  const views = Math.max(
+    0,
+    Number(data.views) || 0
+  );
 
-  const likes =
-    Math.max(
-      0,
-      Number(data.likes) || 0
-    );
+  const likes = Math.max(
+    0,
+    Number(data.likes) || 0
+  );
 
-  const comments =
-    Math.max(
-      0,
-      Number(data.comments) || 0
-    );
+  const comments = Math.max(
+    0,
+    Number(data.comments) || 0
+  );
 
-  const shares =
-    Math.max(
-      0,
-      Number(data.shares) || 0
-    );
+  const shares = Math.max(
+    0,
+    Number(data.shares) || 0
+  );
 
-  const saves =
-    Math.max(
-      0,
-      Number(data.saves) || 0
-    );
+  const saves = Math.max(
+    0,
+    Number(data.saves) || 0
+  );
 
-  const followers =
-    Math.max(
-      0,
-      Number(data.followers) || 0
-    );
+  const followers = Math.max(
+    0,
+    Number(data.followers) || 0
+  );
 
   const engagements =
     likes +
@@ -811,50 +743,33 @@ function performanceAnalysis(data) {
     shares +
     saves;
 
-  const rate =
-    value =>
-      views > 0
-        ? Number(
-            (
-              (value / views) *
-              100
-            ).toFixed(2)
-          )
-        : 0;
+  const rate = value =>
+    views > 0
+      ? Number(
+          (
+            (value / views) *
+            100
+          ).toFixed(2)
+        )
+      : 0;
 
-  const likeRate =
-    rate(likes);
+  const likeRate = rate(likes);
+  const commentRate = rate(comments);
+  const shareRate = rate(shares);
+  const saveRate = rate(saves);
+  const followerRate = rate(followers);
+  const engagementRate = rate(engagements);
 
-  const commentRate =
-    rate(comments);
-
-  const shareRate =
-    rate(shares);
-
-  const saveRate =
-    rate(saves);
-
-  const followerRate =
-    rate(followers);
-
-  const engagementRate =
-    rate(engagements);
-
-  let rating =
-    "Weak";
+  let rating = "Weak";
 
   if (engagementRate >= 12) {
-    rating =
-      "Exceptional";
+    rating = "Exceptional";
   } else if (engagementRate >= 8) {
-    rating =
-      "Strong";
+    rating = "Strong";
   } else if (engagementRate >= 5) {
-    rating =
-      "Healthy";
+    rating = "Healthy";
   } else if (engagementRate >= 2) {
-    rating =
-      "Needs improvement";
+    rating = "Needs improvement";
   }
 
   const recommendations = [];
@@ -919,11 +834,9 @@ function performanceAnalysis(data) {
    ========================================================= */
 
 function scoreHook(hook) {
-  const text =
-    clean(hook);
+  const text = clean(hook);
 
-  let score =
-    45;
+  let score = 45;
 
   if (
     text.length >= 15 &&
@@ -995,9 +908,7 @@ function abTest(data) {
     scoreA,
     scoreB,
 
-    winner:
-      recommendation,
-
+    winner: recommendation,
     recommendation,
 
     reason
@@ -1075,16 +986,13 @@ function creatorIntelligence(data) {
       ? Math.min(...scores)
       : 0;
 
-  let trend =
-    "Stable";
+  let trend = "Stable";
 
   if (scores.length >= 2) {
     if (scores[0] > scores[1]) {
-      trend =
-        "Improving ↑";
+      trend = "Improving ↑";
     } else if (scores[0] < scores[1]) {
-      trend =
-        "Declining ↓";
+      trend = "Declining ↓";
     }
   }
 
@@ -1144,8 +1052,7 @@ function creatorIntelligence(data) {
     engagement: 0
   };
 
-  let componentSamples =
-    0;
+  let componentSamples = 0;
 
   validBoosts.forEach(item => {
     const c =
@@ -1226,9 +1133,7 @@ function creatorIntelligence(data) {
     }
 
     weakestArea =
-      weakestArea
-        .charAt(0)
-        .toUpperCase() +
+      weakestArea.charAt(0).toUpperCase() +
       weakestArea.slice(1);
   }
 
@@ -1352,16 +1257,16 @@ function getContentType(filePath) {
 
   const types = {
     ".html":
-      "text/html",
+      "text/html; charset=utf-8",
 
     ".js":
-      "application/javascript",
+      "application/javascript; charset=utf-8",
 
     ".css":
-      "text/css",
+      "text/css; charset=utf-8",
 
     ".json":
-      "application/json",
+      "application/json; charset=utf-8",
 
     ".png":
       "image/png",
@@ -1376,7 +1281,22 @@ function getContentType(filePath) {
       "image/svg+xml",
 
     ".webp":
-      "image/webp"
+      "image/webp",
+
+    ".ico":
+      "image/x-icon",
+
+    ".woff":
+      "font/woff",
+
+    ".woff2":
+      "font/woff2",
+
+    ".mp4":
+      "video/mp4",
+
+    ".webm":
+      "video/webm"
   };
 
   return (
@@ -1385,28 +1305,80 @@ function getContentType(filePath) {
   );
 }
 
+/*
+  Find the requested file in both possible roots.
+  This makes the static server more tolerant of Vercel's
+  runtime directory structure.
+*/
+
+function findStaticFile(requestedPath) {
+  const cleanPath =
+    requestedPath
+      .replace(/^[/\\]+/, "");
+
+  const candidates = [
+    path.resolve(
+      ROOT,
+      cleanPath
+    ),
+
+    path.resolve(
+      SERVER_ROOT,
+      cleanPath
+    )
+  ];
+
+  for (const filePath of candidates) {
+    try {
+      if (
+        fs.existsSync(filePath) &&
+        fs.statSync(filePath).isFile()
+      ) {
+        return filePath;
+      }
+    } catch {
+      // Continue checking the next location.
+    }
+  }
+
+  return null;
+}
+
 function serveStatic(
   res,
   pathname
 ) {
   const requested =
     pathname === "/"
-      ? "/index.html"
-      : pathname;
+      ? "index.html"
+      : pathname.replace(
+          /^[/\\]+/,
+          ""
+        );
 
   const filePath =
-    path.normalize(
-      path.join(
-        ROOT,
-        requested
-      )
+    findStaticFile(requested);
+
+  if (!filePath) {
+    console.error(
+      "RIZORA static file missing:",
+      requested
     );
 
-  if (!filePath.startsWith(ROOT)) {
+    console.error(
+      "ROOT:",
+      ROOT
+    );
+
+    console.error(
+      "SERVER_ROOT:",
+      SERVER_ROOT
+    );
+
     return sendText(
       res,
-      403,
-      "Forbidden"
+      404,
+      "RIZORA file not found."
     );
   }
 
@@ -1414,15 +1386,15 @@ function serveStatic(
     filePath,
     (error, data) => {
       if (error) {
+        console.error(
+          "Static file read error:",
+          error
+        );
+
         return sendText(
           res,
-          error.code === "ENOENT"
-            ? 404
-            : 500,
-
-          error.code === "ENOENT"
-            ? "RIZORA file not found."
-            : "Unable to load file."
+          500,
+          "Unable to load file."
         );
       }
 
@@ -1509,7 +1481,7 @@ const server =
         const url =
           new URL(
             req.url,
-            `http://${HOST}:${PORT}`
+            `http://${req.headers.host || "localhost"}`
           );
 
         const pathname =
@@ -1518,10 +1490,8 @@ const server =
         /* STATUS */
 
         if (
-          req.method ===
-            "GET" &&
-          pathname ===
-            "/api/status"
+          req.method === "GET" &&
+          pathname === "/api/status"
         ) {
           return sendJSON(
             res,
@@ -1580,8 +1550,7 @@ const server =
         /* API POST */
 
         if (
-          req.method ===
-            "POST" &&
+          req.method === "POST" &&
           routes[pathname]
         ) {
           const data =
@@ -1617,8 +1586,7 @@ const server =
         /* STATIC */
 
         if (
-          req.method ===
-          "GET"
+          req.method === "GET"
         ) {
           return serveStatic(
             res,
