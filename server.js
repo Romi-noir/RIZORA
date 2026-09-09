@@ -2,8 +2,8 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const PORT = 3000;
-const HOST = "127.0.0.1";
+const PORT = Number(process.env.PORT) || 3000;
+const HOST = process.env.HOST || "0.0.0.0";
 const ROOT = __dirname;
 
 /* =========================================================
@@ -161,14 +161,9 @@ function keywords(text) {
    ========================================================= */
 
 function analyzePost(data) {
-  const hook =
-    clean(data.hook);
-
-  const caption =
-    clean(data.caption);
-
-  const hashtags =
-    clean(data.hashtags);
+  const hook = clean(data.hook);
+  const caption = clean(data.caption);
+  const hashtags = clean(data.hashtags);
 
   const hashtagList =
     hashtags
@@ -733,9 +728,7 @@ function boostContent(data) {
     topFixes,
 
     feedback:
-      score >= 80
-        ? "The concept is positioned well. Focus on execution and retention."
-        : "Strengthen the hook and packaging before pushing the post harder.",
+      analysis.feedback,
 
     optimizedHook,
     optimizedCaption,
@@ -750,21 +743,18 @@ function boostContent(data) {
       goal
         .toLowerCase()
         .includes("engagement")
-        ? "End with a simple question viewers can answer."
+        ? "End with a specific question that invites an opinion."
         : "End with one natural question or action that gives viewers a reason to respond.",
 
     strategy:
-      score >= 80
-        ? "Lead with your strongest moment and keep everything else secondary."
-        : "Rework the hook first, then refine the caption and hashtag mix.",
+      postingPlan,
 
     postingPlan,
 
     nextSteps: [
-      "Use the strongest hook first.",
-      "Avoid unnecessary intro frames.",
-      "Post consistently enough to collect comparable data.",
-      "Review retention before changing the whole strategy."
+      "Test a stronger first-second hook.",
+      "Keep the message clear.",
+      "Review actual post performance after publishing."
     ],
 
     topic,
@@ -1098,8 +1088,6 @@ function creatorIntelligence(data) {
     }
   }
 
-  /* TOPIC ANALYSIS */
-
   const topicStats = {};
 
   validBoosts.forEach(item => {
@@ -1147,8 +1135,6 @@ function creatorIntelligence(data) {
         topic;
     }
   }
-
-  /* COMPONENT ANALYSIS */
 
   const totals = {
     hook: 0,
@@ -1245,8 +1231,6 @@ function creatorIntelligence(data) {
         .toUpperCase() +
       weakestArea.slice(1);
   }
-
-  /* NEXT ACTION */
 
   let nextAction =
     "Keep testing different creative approaches.";
@@ -1501,8 +1485,6 @@ const server =
   http.createServer(
     async (req, res) => {
       try {
-        /* CORS PREFLIGHT */
-
         if (
           req.method ===
           "OPTIONS"
@@ -1553,6 +1535,10 @@ const server =
 
               status: "online",
 
+              port: PORT,
+
+              host: HOST,
+
               engines: {
                 organicGrowth:
                   "READY",
@@ -1591,7 +1577,7 @@ const server =
           );
         }
 
-        /* API POST ROUTES */
+        /* API POST */
 
         if (
           req.method ===
@@ -1628,7 +1614,7 @@ const server =
           );
         }
 
-        /* STATIC FILES */
+        /* STATIC */
 
         if (
           req.method ===
@@ -1666,7 +1652,7 @@ const server =
   );
 
 /* =========================================================
-   SERVER ERROR HANDLING
+   ERROR HANDLING
    ========================================================= */
 
 server.on(
@@ -1677,11 +1663,7 @@ server.on(
       "EADDRINUSE"
     ) {
       console.log(
-        "RIZORA is already running on port 3000."
-      );
-
-      console.log(
-        "Open: http://127.0.0.1:3000"
+        `RIZORA is already running on port ${PORT}.`
       );
 
       return;
@@ -1695,7 +1677,7 @@ server.on(
 );
 
 /* =========================================================
-   STARTUP
+   START
    ========================================================= */
 
 server.listen(
@@ -1716,6 +1698,14 @@ server.listen(
 
     console.log(
       `Local: http://${HOST}:${PORT}`
+    );
+
+    console.log(
+      `PORT: ${PORT}`
+    );
+
+    console.log(
+      `HOST: ${HOST}`
     );
 
     console.log(
@@ -1776,20 +1766,18 @@ server.listen(
    CLEAN SHUTDOWN
    ========================================================= */
 
+function shutdown() {
+  server.close(
+    () => process.exit(0)
+  );
+}
+
 process.on(
   "SIGINT",
-  () => {
-    server.close(
-      () => process.exit(0)
-    );
-  }
+  shutdown
 );
 
 process.on(
   "SIGTERM",
-  () => {
-    server.close(
-      () => process.exit(0)
-    );
-  }
+  shutdown
 );

@@ -1,18 +1,13 @@
 {
-  "name": "vs-code",
-  "version": "1.0.0",
-  "description": "",
-  "main": "script.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "name": "rizora",
+  "version": "6.0.0",
+  "description": "RIZORA — Creator Growth Studio",
+  "main": "server.js",
   "type": "commonjs",
-  "dependencies": {
-    "dotenv": "^17.4.2",
-    "openai": "^7.12.1"
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "node server.js"
   }
 }
