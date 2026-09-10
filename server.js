@@ -1,4 +1,4 @@
-const http = require("http");
+﻿const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
@@ -10,8 +10,7 @@ const HOST = process.env.HOST || "0.0.0.0";
   Use the current working directory first because Vercel can
   execute the server from a different runtime directory.
 */
-const ROOT = process.cwd();
-const SERVER_ROOT = __dirname;
+const ROOT = process.cwd();`r`nconst SERVER_ROOT = __dirname;`r`nconst STATIC_ROOT = __dirname;
 
 /* =========================================================
    RESPONSE HELPERS
@@ -507,7 +506,7 @@ function generateCaptions(data) {
 
   if (vibe.includes("funny")) {
     captions.push(
-      "I had a plan. It clearly did not survive 😂.",
+      "I had a plan. It clearly did not survive ðŸ˜‚.",
       "Please pretend this was intentional."
     );
   }
@@ -612,7 +611,7 @@ function boostContent(data) {
 
   const optimizedCaption =
     clean(data.caption) ||
-    `${format} — what do you think?`;
+    `${format} â€” what do you think?`;
 
   const hashtagResult =
     generateHashtags({
@@ -637,7 +636,7 @@ function boostContent(data) {
       "Strong growth setup";
   } else if (score >= 70) {
     verdict =
-      "Promising — polish the packaging";
+      "Promising â€” polish the packaging";
   }
 
   const postingPlan = [
@@ -935,8 +934,8 @@ function creatorIntelligence(data) {
 
       trend: "No data",
 
-      strongestTopic: "—",
-      weakestArea: "—",
+      strongestTopic: "â€”",
+      weakestArea: "â€”",
 
       sampleSize: 0,
 
@@ -990,9 +989,9 @@ function creatorIntelligence(data) {
 
   if (scores.length >= 2) {
     if (scores[0] > scores[1]) {
-      trend = "Improving ↑";
+      trend = "Improving â†‘";
     } else if (scores[0] < scores[1]) {
-      trend = "Declining ↓";
+      trend = "Declining â†“";
     }
   }
 
@@ -1157,12 +1156,12 @@ function creatorIntelligence(data) {
       "Create a stronger reason for viewers to comment, share, or save.";
   }
 
-  if (trend === "Improving ↑") {
+  if (trend === "Improving â†‘") {
     nextAction +=
       " Your recent scores are moving upward, so keep testing variations.";
   }
 
-  if (trend === "Declining ↓") {
+  if (trend === "Declining â†“") {
     nextAction +=
       " Your recent score is down, so review your latest hook and packaging.";
   }
@@ -1316,17 +1315,7 @@ function findStaticFile(requestedPath) {
     requestedPath
       .replace(/^[/\\]+/, "");
 
-  const candidates = [
-    path.resolve(
-      ROOT,
-      cleanPath
-    ),
-
-    path.resolve(
-      SERVER_ROOT,
-      cleanPath
-    )
-  ];
+  const candidates = [`r`n    path.join(STATIC_ROOT, cleanPath),`r`n    path.resolve(ROOT, cleanPath)`r`n  ];
 
   for (const filePath of candidates) {
     try {
