@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   "use strict";
 
   if (document.getElementById("rizora-v8")) return;
@@ -607,7 +607,7 @@
           <div class="rz8-kicker">Personalized Intelligence</div>
           <h2 class="rz8-title" style="font-size:22px">RIZORA reads your signals</h2>
         </div>
-        <span class="rz8-mini-badge">LIVE</span>
+        
       </div>
 
       <div class="rz8-intel-list">
