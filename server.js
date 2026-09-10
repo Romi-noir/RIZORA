@@ -1317,7 +1317,10 @@ function findStaticFile(requestedPath) {
     requestedPath
       .replace(/^[/\\]+/, "");
 
-  const candidates = [`r`n    path.join(STATIC_ROOT, cleanPath),`r`n    path.resolve(ROOT, cleanPath)`r`n  ];
+  const candidates = [
+    path.join(STATIC_ROOT, cleanPath),
+    path.resolve(ROOT, cleanPath)
+  ];
 
   for (const filePath of candidates) {
     try {
@@ -1740,4 +1743,5 @@ process.on(
   "SIGTERM",
   shutdown
 );
+
 
