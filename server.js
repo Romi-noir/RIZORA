@@ -1313,26 +1313,26 @@ function getContentType(filePath) {
 */
 
 function findStaticFile(requestedPath) {
-  const cleanPath =
-    requestedPath
-      .replace(/^[/\\]+/, "");
+  const cleanPath = String(requestedPath || "")
+    .replace(/^[/\\]+/, "");
 
-  const candidates = [
-    path.join(STATIC_ROOT, cleanPath),
-    path.resolve(ROOT, cleanPath)
-  ];
+  const filePath = path.join(
+    __dirname,
+    cleanPath
+  );
 
-  for (const filePath of candidates) {
-    try {
-      if (
-        fs.existsSync(filePath) &&
-        fs.statSync(filePath).isFile()
-      ) {
-        return filePath;
-      }
-    } catch {
-      // Continue checking the next location.
+  try {
+    if (
+      fs.existsSync(filePath) &&
+      fs.statSync(filePath).isFile()
+    ) {
+      return filePath;
     }
+  } catch (error) {
+    console.error(
+      "RIZORA static lookup error:",
+      error
+    );
   }
 
   return null;
@@ -1743,5 +1743,6 @@ process.on(
   "SIGTERM",
   shutdown
 );
+
 
 
