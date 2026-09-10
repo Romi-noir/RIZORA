@@ -10,7 +10,9 @@ const HOST = process.env.HOST || "0.0.0.0";
   Use the current working directory first because Vercel can
   execute the server from a different runtime directory.
 */
-const ROOT = process.cwd();`r`nconst SERVER_ROOT = __dirname;`r`nconst STATIC_ROOT = __dirname;
+const ROOT = process.cwd();
+const SERVER_ROOT = __dirname;
+const STATIC_ROOT = __dirname;
 
 /* =========================================================
    RESPONSE HELPERS
@@ -1738,3 +1740,4 @@ process.on(
   "SIGTERM",
   shutdown
 );
+
