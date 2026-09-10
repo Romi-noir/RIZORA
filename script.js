@@ -2768,12 +2768,12 @@ async function checkBackend() {
     status.textContent =
       data.status ===
       "online"
-        ? "● Engine Online"
-        : "● Engine Offline";
+        ? ""
+        : "";
 
   } catch {
     status.textContent =
-      "● Backend Offline";
+      "";
   }
 }
 
