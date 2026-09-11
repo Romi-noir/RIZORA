@@ -1,0 +1,59 @@
+{
+  "users": [
+    {
+      "id": "usr_romi",
+      "username": "romi",
+      "displayName": "RoMi",
+      "passwordHash": "018b9794a4fb926fec67da3d011990fc:05ad2a1c30d94c5cad8800e0ce725c93b69e931a56f44a4194c2929fb74af11a373a47b9dd025d4e4b47c7433cf1f32bebbc4fd102ec6f217e58f39b9916938a",
+      "role": "super_admin",
+      "points": 0,
+      "status": "active",
+      "referralCode": "ROMI-5F3119",
+      "referredBy": null,
+      "createdAt": "2026-09-11T16:50:32.987Z",
+      "updatedAt": "2026-09-11T16:50:32.988Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task_follow",
+      "title": "Follow RIZORA",
+      "description": "Follow RIZORA and stay connected.",
+      "points": 50,
+      "type": "social",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.329Z"
+    },
+    {
+      "id": "task_create",
+      "title": "Create your first post",
+      "description": "Create and publish a piece of content.",
+      "points": 100,
+      "type": "creator",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.331Z"
+    },
+    {
+      "id": "task_profile",
+      "title": "Complete your profile",
+      "description": "Make your creator profile ready.",
+      "points": 75,
+      "type": "profile",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.331Z"
+    },
+    {
+      "id": "task_referral",
+      "title": "Invite a creator",
+      "description": "Invite another creator to RIZORA.",
+      "points": 100,
+      "type": "referral",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.331Z"
+    }
+  ],
+  "taskCompletions": [],
+  "auditLogs": [],
+  "referrals": [],
+  "sessions": []
+}

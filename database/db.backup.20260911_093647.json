@@ -1,0 +1,324 @@
+{
+  "users": [
+    {
+      "id": "usr_682e40a60a4279f1b16ca4b7",
+      "username": "romi",
+      "displayName": "Romi",
+      "passwordHash": "b93689fa72adcb875f875ae1f8ac628b:281d7ee4ef7b27158cb321c622ad7e3130e4e769bd113ead00b4c7d09001313cf3a4fb2fd4b1a4f952d43de863429e064ca1e9c85090655f95dd4271c5824f61",
+      "role": "super_admin",
+      "points": 0,
+      "status": "active",
+      "createdAt": "2026-09-10T21:04:34.251Z",
+      "updatedAt": "2026-09-10T22:20:05.347Z",
+      "referralCode": "ROMI-A53DB2",
+      "referralCount": 0,
+      "referralPoints": 0,
+      "lastLoginAt": "2026-09-11T15:42:16.547Z"
+    },
+    {
+      "id": "usr_49e223a6c09f71956cdc24b2",
+      "username": "superadmin2",
+      "displayName": "Super Admin 2",
+      "passwordHash": "1cc12da7d2925f217e80aa8fe600b047:c9e7dd708141671737e482bb9ed12bee7838548fbf5341114719abf84060c917363a924949fb5a05a48fa81983ff1a841ba4c6bd49d80e362a6f2490077b64cd",
+      "role": "super_admin",
+      "points": 0,
+      "status": "active",
+      "createdAt": "2026-09-10T21:04:34.290Z",
+      "updatedAt": "2026-09-10T22:20:05.419Z",
+      "referralCode": "SUPERADM-2C7F58",
+      "referralCount": 0,
+      "referralPoints": 0
+    },
+    {
+      "id": "usr_1badf401fa64fa41c67728df",
+      "username": "bjbjbj",
+      "displayName": "bjbjbj",
+      "passwordHash": "d6199da82fe8289dbeaa217d1616df86:387f7addc9d994a3f7d4fa074098f3ac87c6167e4a1127be4f1ed1d5a783428aea3dc68f0e0bee3418b53292d4f2a104a5bfc1958697d6fbffe33703ff0a08bc",
+      "role": "user",
+      "points": 0,
+      "status": "active",
+      "createdAt": "2026-09-10T21:22:24.017Z",
+      "updatedAt": "2026-09-10T21:22:24.017Z",
+      "referralCode": "BJBJBJ-FB87ED",
+      "referralCount": 0,
+      "referralPoints": 0
+    },
+    {
+      "id": "usr_8b1aa5b1bbadec2371afcef8",
+      "username": "rizora",
+      "displayName": "rizora",
+      "passwordHash": "3238bd852519b4df7d58625bd40989db:e48b914fb055537182be8a6317244bdec0bb2f9da351c4b554edb2cdcfe6c00277d0d128bd56673c3969d7af4426c26cb47f40b0aadc209c36dbb1b48e0e0da6",
+      "role": "super_admin",
+      "points": 0,
+      "status": "active",
+      "referralCode": "RIZORA-C5D96F",
+      "referredBy": null,
+      "createdAt": "2026-09-10T21:49:01.400Z",
+      "updatedAt": "2026-09-10T22:17:28.149Z",
+      "referralCount": 0,
+      "referralPoints": 0
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task_ae7e80c31cfa4bd88f1ec85d",
+      "title": "Follow @romi.noir on TikTok",
+      "description": "Visit the official RoMi TikTok account and follow @romi.noir.",
+      "reward": 50,
+      "type": "social_follow",
+      "url": "https://www.tiktok.com/@romi.noir",
+      "active": true,
+      "createdAt": "2026-09-10T21:04:34.294Z"
+    },
+    {
+      "id": "task_8be4414b392cf39343451f8a",
+      "key": "follow_romi",
+      "title": "Follow Romi on TikTok",
+      "description": "Follow the official Romi TikTok account.",
+      "points": 100,
+      "category": "social",
+      "link": "https://www.tiktok.com/@romi.noir",
+      "active": true,
+      "createdAt": "2026-09-10T21:49:01.405Z"
+    },
+    {
+      "id": "task_d34ccc2d3e2eb57c469cda80",
+      "key": "visit_rizora",
+      "title": "Explore RIZORA",
+      "description": "Explore the RIZORA creator tools.",
+      "points": 25,
+      "category": "platform",
+      "link": "/",
+      "active": true,
+      "createdAt": "2026-09-10T21:49:01.405Z"
+    },
+    {
+      "id": "task_4d8d3c2cd1ef507382e94b13",
+      "key": "share_rizora",
+      "title": "Share RIZORA",
+      "description": "Share RIZORA with another creator.",
+      "points": 50,
+      "category": "growth",
+      "link": "/",
+      "active": true,
+      "createdAt": "2026-09-10T21:49:01.405Z"
+    },
+    {
+      "id": "task_follow",
+      "title": "Follow RIZORA",
+      "description": "Follow RIZORA and stay connected.",
+      "points": 50,
+      "type": "social",
+      "active": true,
+      "createdAt": "2026-09-10T23:10:41.402Z"
+    },
+    {
+      "id": "task_create",
+      "title": "Create your first post",
+      "description": "Create and publish a piece of content.",
+      "points": 100,
+      "type": "creator",
+      "active": true,
+      "createdAt": "2026-09-10T23:10:41.404Z"
+    },
+    {
+      "id": "task_profile",
+      "title": "Complete your profile",
+      "description": "Make your creator profile ready.",
+      "points": 75,
+      "type": "profile",
+      "active": true,
+      "createdAt": "2026-09-10T23:10:41.404Z"
+    },
+    {
+      "id": "task_referral",
+      "title": "Invite a creator",
+      "description": "Invite another creator to RIZORA.",
+      "points": 100,
+      "type": "referral",
+      "active": true,
+      "createdAt": "2026-09-10T23:10:41.404Z"
+    }
+  ],
+  "taskCompletions": [],
+  "auditLogs": [
+    {
+      "id": "audit_062341542e054378a9705247mtx4k2jx",
+      "action": "user_login",
+      "actor": {
+        "id": "usr_682e40a60a4279f1b16ca4b7",
+        "username": "romi",
+        "role": "super_admin"
+      },
+      "details": {},
+      "createdAt": "2026-09-11T15:42:16.557Z"
+    },
+    {
+      "id": "audit_7271094a8cae55b3f78cc4f4mtw58njv",
+      "action": "user_login",
+      "actor": {
+        "id": "usr_682e40a60a4279f1b16ca4b7",
+        "username": "romi",
+        "role": "super_admin"
+      },
+      "details": {},
+      "createdAt": "2026-09-10T23:13:37.339Z"
+    },
+    {
+      "id": "audit_6feda2ae742ba3404dbdf594",
+      "actorId": "usr_682e40a60a4279f1b16ca4b7",
+      "actorUsername": "romi",
+      "action": "user_login",
+      "targetUserId": "usr_682e40a60a4279f1b16ca4b7",
+      "details": {},
+      "createdAt": "2026-09-10T22:53:06.753Z"
+    },
+    {
+      "id": "audit_38f8480767de052ff17dcd3c",
+      "actorId": "usr_682e40a60a4279f1b16ca4b7",
+      "actorUsername": "romi",
+      "action": "user_logout",
+      "targetUserId": "usr_682e40a60a4279f1b16ca4b7",
+      "details": {},
+      "createdAt": "2026-09-10T22:53:01.800Z"
+    },
+    {
+      "id": "audit_5c7528cae5778df46fc0ee29",
+      "actorId": "usr_682e40a60a4279f1b16ca4b7",
+      "actorUsername": "romi",
+      "action": "user_login",
+      "targetUserId": "usr_682e40a60a4279f1b16ca4b7",
+      "details": {},
+      "createdAt": "2026-09-10T22:48:53.125Z"
+    },
+    {
+      "id": "audit_3d89a5b4840c19d241f7b2eb",
+      "actorId": "usr_682e40a60a4279f1b16ca4b7",
+      "actorUsername": "romi",
+      "action": "user_login",
+      "targetUserId": "usr_682e40a60a4279f1b16ca4b7",
+      "details": {},
+      "createdAt": "2026-09-10T22:27:17.064Z"
+    },
+    {
+      "id": "audit_b7c4dc8690fca31b9725297c",
+      "actorId": "usr_682e40a60a4279f1b16ca4b7",
+      "actorUsername": "romi",
+      "action": "user_login",
+      "targetUserId": "usr_682e40a60a4279f1b16ca4b7",
+      "details": {},
+      "createdAt": "2026-09-10T22:27:14.843Z"
+    },
+    {
+      "id": "audit_dabfef2f4f14fe710e7636e7",
+      "actorId": "usr_682e40a60a4279f1b16ca4b7",
+      "actorUsername": "romi",
+      "action": "user_login",
+      "targetUserId": "usr_682e40a60a4279f1b16ca4b7",
+      "details": {},
+      "createdAt": "2026-09-10T22:21:25.909Z"
+    },
+    {
+      "id": "audit_5ec1568c1a6a7a544c1a5643",
+      "actorId": "usr_682e40a60a4279f1b16ca4b7",
+      "actorUsername": "romi",
+      "action": "user_login",
+      "targetUserId": "usr_682e40a60a4279f1b16ca4b7",
+      "details": {},
+      "createdAt": "2026-09-10T22:21:24.972Z"
+    },
+    {
+      "id": "audit_ea65a38f831b14eaabd35fd4",
+      "actorId": "usr_682e40a60a4279f1b16ca4b7",
+      "actorUsername": "romi",
+      "action": "user_login",
+      "targetUserId": "usr_682e40a60a4279f1b16ca4b7",
+      "details": {},
+      "createdAt": "2026-09-10T22:21:21.830Z"
+    },
+    {
+      "id": "audit_403261f94029b29f20449528",
+      "actorId": "usr_682e40a60a4279f1b16ca4b7",
+      "actorUsername": "romi",
+      "action": "user_login",
+      "targetUserId": "usr_682e40a60a4279f1b16ca4b7",
+      "details": {},
+      "createdAt": "2026-09-10T22:21:18.963Z"
+    },
+    {
+      "id": "log_37e6ac53adbde44d38291cd8",
+      "actorId": "usr_1badf401fa64fa41c67728df",
+      "action": "USER_SIGNUP",
+      "targetId": "usr_1badf401fa64fa41c67728df",
+      "details": "New user registration",
+      "createdAt": "2026-09-10T21:22:24.021Z"
+    },
+    {
+      "id": "log_f3518341725e9f1d1eda0b24",
+      "action": "super_admin_seeded",
+      "actorId": "usr_8b1aa5b1bbadec2371afcef8",
+      "actorUsername": "rizora",
+      "details": {},
+      "createdAt": "2026-09-10T21:49:01.401Z"
+    }
+  ],
+  "referrals": [],
+  "sessions": [
+    {
+      "userId": "usr_682e40a60a4279f1b16ca4b7",
+      "createdAt": 1789078878960,
+      "expiresAt": 1789683678960,
+      "token": "b7a6a5d81aa7f3882d5a2809c7e71b792d9edd9c3b2abedf572f6bff41419686"
+    },
+    {
+      "userId": "usr_682e40a60a4279f1b16ca4b7",
+      "createdAt": 1789078881827,
+      "expiresAt": 1789683681827,
+      "token": "86f90d81b96b6b65c084c9acc8b1c1f122f61f5452730ba75abbb26d32ed4ef1"
+    },
+    {
+      "userId": "usr_682e40a60a4279f1b16ca4b7",
+      "createdAt": 1789078884967,
+      "expiresAt": 1789683684967,
+      "token": "0d753f34fb57584c3ced36fc0253030b255bf5a7a31b5d38123257d981dfccfb"
+    },
+    {
+      "userId": "usr_682e40a60a4279f1b16ca4b7",
+      "createdAt": 1789078885906,
+      "expiresAt": 1789683685906,
+      "token": "8070143ffd85d958db1eccc3080e12a659b28e293d2d6c5b787e2e96371574c7"
+    },
+    {
+      "userId": "usr_682e40a60a4279f1b16ca4b7",
+      "createdAt": 1789079234839,
+      "expiresAt": 1789684034839,
+      "token": "ec4e02c6bc9079de165319fadc3cbfad953c3e1a2ec107274cd94c84708f5f84"
+    },
+    {
+      "userId": "usr_682e40a60a4279f1b16ca4b7",
+      "createdAt": 1789079237061,
+      "expiresAt": 1789684037061,
+      "token": "00b78741a48b9ac99e281d45680e920a8354b247ef67c55480a45889ddaf3f06"
+    },
+    {
+      "userId": "usr_682e40a60a4279f1b16ca4b7",
+      "createdAt": 1789080786748,
+      "expiresAt": 1789685586748,
+      "token": "b92e3f22cbca82047f7d99f7c73925c5f5f4ba7179cd72f257cd53419343abb0"
+    },
+    {
+      "id": "session_dd6e1ea555e5d50cc4e7fb7cmtw58nje",
+      "token": "272d47fd94d065dff82211b27dcabbb7bcf6da679f49c79324d9c6ac7a6ad477eb90de802e2d89f47c7ef0086e48f1fd",
+      "userId": "usr_682e40a60a4279f1b16ca4b7",
+      "createdAt": "2026-09-10T23:13:37.338Z",
+      "expiresAt": "2026-09-17T23:13:37.338Z"
+    },
+    {
+      "id": "session_1bb5e89d855a0d566fb1b590mtx4k2jw",
+      "token": "228df589759abc6e3ab538ad11e5e70c89a9623267d6d26c26723512e3be01a4c83ac0189b569e2cfe9939a5ca59c6e9",
+      "userId": "usr_682e40a60a4279f1b16ca4b7",
+      "createdAt": "2026-09-11T15:42:16.557Z",
+      "expiresAt": "2026-09-18T15:42:16.557Z"
+    }
+  ]
+}

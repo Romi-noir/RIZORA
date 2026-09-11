@@ -1,0 +1,2143 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#080712">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>RIZORA â€” Creator Growth Platform</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 20% 10%,rgba(112,55,255,.18),transparent 30%),
+    radial-gradient(circle at 90% 30%,rgba(80,50,255,.12),transparent 30%),
+    #080712;
+  color:#fff;
+  font-family:Arial,sans-serif;
+  overflow-x:hidden;
+}
+
+button,
+input,
+textarea{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+  border:0;
+}
+
+.hidden{
+  display:none!important;
+}
+
+/* ================= HEADER ================= */
+
+header{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  height:78px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 28px;
+  background:rgba(7,7,15,.92);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.logo-area{
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.logo{
+  width:58px;
+  height:58px;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#8c45ff,#5159ff);
+  font-size:34px;
+  font-weight:900;
+  box-shadow:0 10px 35px rgba(117,64,255,.35);
+}
+
+.logo-text{
+  font-size:29px;
+  font-weight:900;
+  letter-spacing:1px;
+}
+
+.nav{
+  display:flex;
+  gap:10px;
+}
+
+.nav button{
+  padding:11px 17px;
+  border-radius:12px;
+  background:transparent;
+  color:#bdb8d4;
+}
+
+.nav button:hover{
+  background:rgba(255,255,255,.07);
+  color:white;
+}
+
+.menu-btn{
+  display:none;
+  width:55px;
+  height:55px;
+  border-radius:17px;
+  background:#14131e;
+  color:white;
+  font-size:28px;
+}
+
+/* ================= GENERAL ================= */
+
+.container{
+  width:min(1120px,92%);
+  margin:auto;
+}
+
+.page{
+  min-height:calc(100vh - 78px);
+}
+
+.card{
+  background:rgba(20,19,32,.88);
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:28px;
+  box-shadow:0 25px 80px rgba(0,0,0,.25);
+}
+
+.primary{
+  background:linear-gradient(135deg,#9147ff,#515cff);
+  color:white;
+  box-shadow:0 15px 40px rgba(105,70,255,.28);
+}
+
+.secondary{
+  background:#171622;
+  color:white;
+  border:1px solid rgba(255,255,255,.1);
+}
+
+.btn{
+  min-height:54px;
+  padding:0 25px;
+  border-radius:17px;
+  font-weight:800;
+  transition:.2s;
+}
+
+.btn:active{
+  transform:scale(.97);
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+}
+
+/* ================= LANDING ================= */
+
+.hero{
+  padding:85px 0 70px;
+}
+
+.badge{
+  display:inline-flex;
+  padding:12px 18px;
+  border:1px solid rgba(144,75,255,.35);
+  border-radius:999px;
+  background:rgba(103,56,255,.09);
+  color:#c6a7ff;
+  font-weight:700;
+  margin-bottom:25px;
+}
+
+.hero h1{
+  max-width:850px;
+  font-size:clamp(48px,8vw,88px);
+  line-height:.98;
+  letter-spacing:-3px;
+  margin-bottom:25px;
+}
+
+.gradient{
+  background:linear-gradient(90deg,#fff,#ad82ff,#6973ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+.hero p{
+  max-width:700px;
+  color:#aaa5bd;
+  font-size:20px;
+  line-height:1.8;
+  margin-bottom:35px;
+}
+
+.hero-buttons{
+  display:flex;
+  gap:15px;
+  flex-wrap:wrap;
+}
+
+.hero-buttons .btn{
+  min-width:190px;
+}
+
+.stats{
+  margin-top:65px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+}
+
+.stat{
+  padding:27px;
+  min-height:150px;
+}
+
+.stat strong{
+  display:block;
+  font-size:38px;
+  margin-bottom:15px;
+}
+
+.stat span{
+  color:#9e99b4;
+}
+
+/* ================= AUTH ================= */
+
+.auth-page{
+  padding:55px 0 80px;
+}
+
+.auth-box{
+  width:min(590px,100%);
+  margin:auto;
+  padding:25px;
+}
+
+.auth-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  background:#171622;
+  padding:7px;
+  border-radius:18px;
+  margin-bottom:35px;
+}
+
+.auth-tab{
+  padding:16px;
+  border-radius:14px;
+  background:transparent;
+  color:#9994ad;
+  font-weight:800;
+}
+
+.auth-tab.active{
+  background:linear-gradient(135deg,#8745ff,#575dff);
+  color:white;
+}
+
+.auth-box h2{
+  font-size:48px;
+  margin-bottom:12px;
+}
+
+.auth-sub{
+  color:#9d98b2;
+  line-height:1.7;
+  margin-bottom:30px;
+}
+
+.field{
+  margin-bottom:19px;
+}
+
+.field label{
+  display:block;
+  margin-bottom:9px;
+  font-weight:700;
+}
+
+.field input,
+.field textarea{
+  width:100%;
+  background:#11101a;
+  color:white;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:17px;
+  padding:17px;
+  outline:none;
+}
+
+.field input:focus,
+.field textarea:focus{
+  border-color:#8151ff;
+  box-shadow:0 0 0 3px rgba(129,81,255,.1);
+}
+
+.auth-submit{
+  width:100%;
+  margin-top:5px;
+}
+
+.message{
+  margin-top:17px;
+  padding:14px;
+  border-radius:13px;
+  display:none;
+  line-height:1.5;
+}
+
+.message.show{
+  display:block;
+}
+
+.error{
+  background:rgba(255,75,105,.1);
+  border:1px solid rgba(255,75,105,.2);
+  color:#ff9aaa;
+}
+
+.success{
+  background:rgba(60,220,150,.1);
+  border:1px solid rgba(60,220,150,.2);
+  color:#72edb5;
+}
+
+/* ================= DASHBOARD ================= */
+
+.dashboard{
+  padding:35px 0 80px;
+}
+
+.welcome{
+  padding:28px;
+  margin-bottom:20px;
+}
+
+.welcome h1{
+  font-size:38px;
+  margin-bottom:8px;
+}
+
+.muted{
+  color:#9c97b0;
+}
+
+.dashboard-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+  margin-bottom:20px;
+}
+
+.metric{
+  padding:24px;
+}
+
+.metric .icon{
+  font-size:27px;
+  margin-bottom:17px;
+}
+
+.metric strong{
+  display:block;
+  font-size:34px;
+  margin-bottom:6px;
+}
+
+.metric span{
+  color:#9691a8;
+}
+
+.section{
+  padding:25px;
+  margin-bottom:20px;
+}
+
+.section-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  margin-bottom:20px;
+}
+
+.section-title h2{
+  font-size:25px;
+}
+
+.tasks{
+  display:grid;
+  gap:12px;
+}
+
+.task{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  padding:18px;
+  background:#11101a;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:17px;
+}
+
+.task-info strong{
+  display:block;
+  margin-bottom:6px;
+}
+
+.task-info span{
+  color:#89849c;
+  font-size:14px;
+}
+
+.task button{
+  flex-shrink:0;
+}
+
+/* ================= TOOLS ================= */
+
+.tools-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:15px;
+}
+
+.tool{
+  padding:23px;
+}
+
+.tool h3{
+  margin-bottom:9px;
+}
+
+.tool p{
+  color:#938ea7;
+  line-height:1.6;
+  margin-bottom:17px;
+}
+
+.output{
+  white-space:pre-wrap;
+  background:#0c0b13;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;
+  padding:17px;
+  color:#d8d2e7;
+  line-height:1.6;
+  margin-top:15px;
+  min-height:70px;
+}
+
+/* ================= REFERRALS ================= */
+
+.referral-box{
+  background:linear-gradient(135deg,rgba(117,63,255,.18),rgba(68,78,255,.08));
+  padding:25px;
+  border-radius:20px;
+  border:1px solid rgba(130,83,255,.2);
+}
+
+.referral-code{
+  margin-top:13px;
+  padding:17px;
+  background:#0c0b13;
+  border-radius:13px;
+  word-break:break-all;
+  font-weight:800;
+}
+
+/* ================= ADMIN ================= */
+
+.admin-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:15px;
+}
+
+.user-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  padding:15px;
+  background:#11101a;
+  border-radius:14px;
+  margin-bottom:10px;
+}
+
+.user-row small{
+  display:block;
+  color:#858095;
+  margin-top:5px;
+}
+
+.admin-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
+.admin-actions button{
+  padding:9px 12px;
+  border-radius:10px;
+  background:#22202e;
+  color:white;
+}
+
+/* ================= FOOTER ================= */
+
+footer{
+  border-top:1px solid rgba(255,255,255,.07);
+  padding:30px 0;
+  color:#777287;
+  text-align:center;
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:800px){
+
+  header{
+    height:70px;
+    padding:0 15px;
+  }
+
+  .logo{
+    width:52px;
+    height:52px;
+    border-radius:16px;
+    font-size:29px;
+  }
+
+  .logo-text{
+    font-size:24px;
+  }
+
+  .nav{
+    display:none;
+    position:absolute;
+    top:70px;
+    left:10px;
+    right:10px;
+    padding:12px;
+    background:#11101a;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:18px;
+    flex-direction:column;
+  }
+
+  .nav.open{
+    display:flex;
+  }
+
+  .nav button{
+    width:100%;
+    text-align:left;
+    padding:15px;
+  }
+
+  .menu-btn{
+    display:block;
+  }
+
+  .hero{
+    padding:55px 0 45px;
+  }
+
+  .hero h1{
+    font-size:53px;
+    letter-spacing:-2px;
+  }
+
+  .hero p{
+    font-size:17px;
+  }
+
+  .hero-buttons{
+    flex-direction:column;
+  }
+
+  .hero-buttons .btn{
+    width:100%;
+  }
+
+  .stats{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .dashboard-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .tools-grid,
+  .admin-grid{
+    grid-template-columns:1fr;
+  }
+
+  .auth-box{
+    padding:20px;
+  }
+
+  .auth-box h2{
+    font-size:40px;
+  }
+
+  .task{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .task button{
+    width:100%;
+  }
+}
+
+@media(max-width:480px){
+
+  .stats,
+  .dashboard-grid{
+    grid-template-columns:1fr;
+  }
+
+  .hero h1{
+    font-size:45px;
+  }
+
+  .badge{
+    font-size:13px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo-area">
+    <div class="logo">R</div>
+    <div class="logo-text">RIZORA</div>
+  </div>
+
+  <nav class="nav" id="nav">
+    <button onclick="showLanding()">Home</button>
+    <button onclick="showAuth('login')">Login</button>
+    <button onclick="showAuth('signup')">Sign Up</button>
+    <button onclick="showDashboard()">Dashboard</button>
+    <button onclick="logout()">Logout</button>
+  </nav>
+
+  <button class="menu-btn" onclick="toggleMenu()">â˜°</button>
+</header>
+
+
+<main>
+
+<!-- ================= LANDING ================= -->
+
+<section id="landing" class="page">
+  <div class="container hero">
+
+    <div class="badge">âœ¦ Creator Growth Platform</div>
+
+    <h1>
+      Create.
+      <span class="gradient">Grow.</span>
+      <br>
+      Dominate.
+    </h1>
+
+    <p>
+      RIZORA gives creators a place to grow, complete challenges,
+      earn points, build momentum and access practical creator tools.
+    </p>
+
+    <div class="hero-buttons">
+      <button class="btn primary" onclick="showAuth('signup')">
+        Start Creating
+      </button>
+
+      <button class="btn secondary" onclick="showAuth('login')">
+        Login
+      </button>
+    </div>
+
+    <div class="stats">
+
+      <div class="card stat">
+        <strong>+100</strong>
+        <span>Creator points</span>
+      </div>
+
+      <div class="card stat">
+        <strong>24/7</strong>
+        <span>Growth mindset</span>
+      </div>
+
+      <div class="card stat">
+        <strong>âˆž</strong>
+        <span>Ideas</span>
+      </div>
+
+      <div class="card stat">
+        <strong>RZ</strong>
+        <span>Creator energy</span>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ================= AUTH ================= -->
+
+<section id="auth" class="page auth-page hidden">
+  <div class="container">
+
+    <div class="card auth-box">
+
+      <div class="auth-tabs">
+        <button id="loginTab" class="auth-tab active"
+                onclick="switchAuth('login')">
+          Login
+        </button>
+
+        <button id="signupTab" class="auth-tab"
+                onclick="switchAuth('signup')">
+          Sign Up
+        </button>
+      </div>
+
+
+      <!-- LOGIN -->
+
+      <form id="loginForm" onsubmit="login(event)">
+
+        <h2>Welcome back.</h2>
+
+        <p class="auth-sub">
+          Log into your RIZORA creator account.
+        </p>
+
+        <div class="field">
+          <label>Username</label>
+          <input
+            id="loginUsername"
+            type="text"
+            autocomplete="username"
+            placeholder="Enter username"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <input
+            id="loginPassword"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Enter password"
+            required
+          >
+        </div>
+
+        <button
+          id="loginButton"
+          class="btn primary auth-submit"
+          type="submit">
+          Login
+        </button>
+
+      </form>
+
+
+      <!-- SIGNUP -->
+
+      <form id="signupForm" class="hidden" onsubmit="signup(event)">
+
+        <h2>Join RIZORA.</h2>
+
+        <p class="auth-sub">
+          Create your creator account and start building momentum.
+        </p>
+
+        <div class="field">
+          <label>Username</label>
+          <input
+            id="signupUsername"
+            type="text"
+            autocomplete="username"
+            placeholder="Choose username"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <input
+            id="signupPassword"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Choose password"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label>Referral code <span class="muted">(optional)</span></label>
+          <input
+            id="signupReferral"
+            type="text"
+            placeholder="Referral code"
+          >
+        </div>
+
+        <button
+          id="signupButton"
+          class="btn primary auth-submit"
+          type="submit">
+          Create Account
+        </button>
+
+      </form>
+
+      <div id="authMessage" class="message"></div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ================= DASHBOARD ================= -->
+
+<section id="dashboard" class="page dashboard hidden">
+
+  <div class="container">
+
+    <div class="card welcome">
+
+      <h1>
+        Welcome back, <span id="userName">Creator</span>.
+      </h1>
+
+      <p class="muted">
+        Keep creating. Keep growing.
+      </p>
+
+    </div>
+
+
+    <div class="dashboard-grid">
+
+      <div class="card metric">
+        <div class="icon">âš¡</div>
+        <strong id="pointsValue">0</strong>
+        <span>Points</span>
+      </div>
+
+      <div class="card metric">
+        <div class="icon">ðŸŽ¯</div>
+        <strong id="tasksValue">0</strong>
+        <span>Tasks completed</span>
+      </div>
+
+      <div class="card metric">
+        <div class="icon">ðŸ‘¥</div>
+        <strong id="referralsValue">0</strong>
+        <span>Referrals</span>
+      </div>
+
+      <div class="card metric">
+        <div class="icon">ðŸ”¥</div>
+        <strong id="statusValue">Active</strong>
+        <span>Account status</span>
+      </div>
+
+    </div>
+
+
+    <!-- TASKS -->
+
+    <div class="card section">
+
+      <div class="section-title">
+        <h2>Creator Tasks</h2>
+
+        <button class="btn secondary" onclick="loadTasks()">
+          Refresh
+        </button>
+      </div>
+
+      <div id="tasksList" class="tasks">
+        <p class="muted">Loading tasks...</p>
+      </div>
+
+    </div>
+
+
+    <!-- REFERRAL -->
+
+    <div class="card section">
+
+      <div class="section-title">
+        <h2>Referral System</h2>
+      </div>
+
+      <div class="referral-box">
+
+        <p class="muted">
+          Invite creators and build your RIZORA network.
+        </p>
+
+        <div id="referralCode" class="referral-code">
+          Loading...
+        </div>
+
+        <br>
+
+        <button class="btn primary" onclick="copyReferral()">
+          Copy Referral
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- TOOLS -->
+
+    <div class="card section">
+
+      <div class="section-title">
+        <h2>Creator Tools</h2>
+      </div>
+
+      <div class="tools-grid">
+
+        <div class="card tool">
+          <h3>ðŸŽ£ Hooks</h3>
+
+          <p>
+            Generate attention-grabbing content hooks.
+          </p>
+
+          <button class="btn primary" onclick="generateTool('hooks')">
+            Generate
+          </button>
+
+          <div id="hooksOutput" class="output hidden"></div>
+        </div>
+
+
+        <div class="card tool">
+          <h3># Hashtags</h3>
+
+          <p>
+            Generate hashtags for your content.
+          </p>
+
+          <button class="btn primary" onclick="generateTool('hashtags')">
+            Generate
+          </button>
+
+          <div id="hashtagsOutput" class="output hidden"></div>
+        </div>
+
+
+        <div class="card tool">
+          <h3>âœ Captions</h3>
+
+          <p>
+            Generate captions ready for your next post.
+          </p>
+
+          <button class="btn primary" onclick="generateTool('captions')">
+            Generate
+          </button>
+
+          <div id="captionsOutput" class="output hidden"></div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- ADMIN -->
+
+    <div id="adminSection" class="hidden">
+
+      <div class="card section">
+
+        <div class="section-title">
+          <h2>âš¡ Super Admin</h2>
+
+          <button class="btn secondary" onclick="loadAdmin()">
+            Refresh
+          </button>
+        </div>
+
+        <div class="admin-grid">
+
+          <div class="card metric">
+            <div class="icon">ðŸ‘¤</div>
+            <strong id="adminUsers">0</strong>
+            <span>Total users</span>
+          </div>
+
+          <div class="card metric">
+            <div class="icon">âš¡</div>
+            <strong id="adminPoints">0</strong>
+            <span>Total points</span>
+          </div>
+
+          <div class="card metric">
+            <div class="icon">ðŸŽ¯</div>
+            <strong id="adminTasks">0</strong>
+            <span>Tasks</span>
+          </div>
+
+        </div>
+
+        <br>
+
+        <h3>Users</h3>
+
+        <br>
+
+        <div id="adminUsersList">
+          Loading...
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+</main>
+
+
+<footer>
+  <div class="container">
+    RIZORA â€” Creator Growth Platform
+  </div>
+</footer>
+
+
+<script>
+
+/* =========================================================
+   RIZORA CONNECTION
+   ========================================================= */
+
+/*
+   PC:
+   Uses /api/... automatically.
+
+   Android:
+   Uses the PC's hotspot IP.
+
+   CURRENT PC IP:
+   192.168.43.169
+*/
+
+const ANDROID_API = "http://127.0.0.1:3000";
+
+const isAndroidApp =
+  window.location.protocol === "capacitor:" ||
+  window.location.protocol === "ionic:" ||
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+
+const API_BASE = isAndroidApp ? ANDROID_API : "";
+
+console.log("RIZORA API:", API_BASE || "same-origin");
+
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+let token = localStorage.getItem("rizoraToken") || "";
+
+let currentUser = null;
+
+try{
+  currentUser =
+    JSON.parse(localStorage.getItem("rizoraUser") || "null");
+}catch{
+  currentUser = null;
+}
+
+let referralCode = "";
+
+
+/* =========================================================
+   API
+   ========================================================= */
+
+async function api(endpoint, options = {}){
+
+  const url = API_BASE + endpoint;
+
+  const headers = {
+    "Content-Type":"application/json",
+    ...(options.headers || {})
+  };
+
+  if(token){
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  let response;
+
+  try{
+
+    response = await fetch(url,{
+      ...options,
+      headers
+    });
+
+  }catch(error){
+
+    console.error("RIZORA connection error:",error);
+
+    throw new Error(
+      "Cannot connect to the RIZORA server. " +
+      "Make sure node server.js is running and your phone and PC are on the same hotspot/Wi-Fi."
+    );
+
+  }
+
+  const data =
+    await response.json().catch(()=>({}));
+
+  if(!response.ok){
+
+    if(response.status === 401){
+
+      token = "";
+      currentUser = null;
+
+      localStorage.removeItem("rizoraToken");
+      localStorage.removeItem("rizoraUser");
+    }
+
+    throw new Error(
+      data.error ||
+      data.message ||
+      `Server error (${response.status})`
+    );
+  }
+
+  return data;
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+function hideAll(){
+
+  document
+    .querySelectorAll("main > section")
+    .forEach(section=>{
+      section.classList.add("hidden");
+    });
+}
+
+
+function showLanding(){
+
+  hideAll();
+
+  document
+    .getElementById("landing")
+    .classList.remove("hidden");
+
+  closeMenu();
+}
+
+
+function showAuth(type="login"){
+
+  hideAll();
+
+  document
+    .getElementById("auth")
+    .classList.remove("hidden");
+
+  switchAuth(type);
+
+  closeMenu();
+}
+
+
+function showDashboard(){
+
+  if(!token){
+
+    showAuth("login");
+    return;
+  }
+
+  hideAll();
+
+  document
+    .getElementById("dashboard")
+    .classList.remove("hidden");
+
+  closeMenu();
+
+  loadDashboard();
+}
+
+
+function toggleMenu(){
+
+  document
+    .getElementById("nav")
+    .classList.toggle("open");
+}
+
+
+function closeMenu(){
+
+  document
+    .getElementById("nav")
+    .classList.remove("open");
+}
+
+
+/* =========================================================
+   AUTH TABS
+   ========================================================= */
+
+function switchAuth(type){
+
+  const loginForm =
+    document.getElementById("loginForm");
+
+  const signupForm =
+    document.getElementById("signupForm");
+
+  const loginTab =
+    document.getElementById("loginTab");
+
+  const signupTab =
+    document.getElementById("signupTab");
+
+  const message =
+    document.getElementById("authMessage");
+
+  message.className = "message";
+  message.textContent = "";
+
+  if(type === "signup"){
+
+    loginForm.classList.add("hidden");
+    signupForm.classList.remove("hidden");
+
+    loginTab.classList.remove("active");
+    signupTab.classList.add("active");
+
+  }else{
+
+    signupForm.classList.add("hidden");
+    loginForm.classList.remove("hidden");
+
+    signupTab.classList.remove("active");
+    loginTab.classList.add("active");
+  }
+}
+
+
+/* =========================================================
+   AUTH MESSAGE
+   ========================================================= */
+
+function showMessage(text,type="error"){
+
+  const box =
+    document.getElementById("authMessage");
+
+  box.textContent = text;
+
+  box.className =
+    `message show ${type}`;
+}
+
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+async function login(event){
+
+  event.preventDefault();
+
+  const username =
+    document.getElementById("loginUsername")
+      .value.trim();
+
+  const password =
+    document.getElementById("loginPassword")
+      .value;
+
+  const button =
+    document.getElementById("loginButton");
+
+  button.disabled = true;
+  button.textContent = "Logging in...";
+
+  try{
+
+    const result =
+      await api("/api/auth/login",{
+        method:"POST",
+        body:JSON.stringify({
+          username,
+          password
+        })
+      });
+
+    if(!result.token){
+
+      throw new Error(
+        "Server did not return a login token."
+      );
+    }
+
+    token = result.token;
+
+    currentUser =
+      result.user || null;
+
+    localStorage.setItem(
+      "rizoraToken",
+      token
+    );
+
+    localStorage.setItem(
+      "rizoraUser",
+      JSON.stringify(currentUser)
+    );
+
+    showDashboard();
+
+  }catch(error){
+
+    console.error(error);
+
+    showMessage(
+      error.message ||
+      "Login failed."
+    );
+
+  }finally{
+
+    button.disabled = false;
+    button.textContent = "Login";
+  }
+}
+
+
+/* =========================================================
+   SIGN UP
+   ========================================================= */
+
+async function signup(event){
+
+  event.preventDefault();
+
+  const username =
+    document.getElementById("signupUsername")
+      .value.trim();
+
+  const password =
+    document.getElementById("signupPassword")
+      .value;
+
+  const referral =
+    document.getElementById("signupReferral")
+      .value.trim();
+
+  const button =
+    document.getElementById("signupButton");
+
+  button.disabled = true;
+  button.textContent = "Creating...";
+
+  try{
+
+    const body = {
+      username,
+      password
+    };
+
+    if(referral){
+      body.referralCode = referral;
+    }
+
+    const result =
+      await api("/api/auth/signup",{
+        method:"POST",
+        body:JSON.stringify(body)
+      });
+
+    if(!result.token){
+
+      throw new Error(
+        "Account created but no login token was returned."
+      );
+    }
+
+    token = result.token;
+
+    currentUser =
+      result.user || null;
+
+    localStorage.setItem(
+      "rizoraToken",
+      token
+    );
+
+    localStorage.setItem(
+      "rizoraUser",
+      JSON.stringify(currentUser)
+    );
+
+    showDashboard();
+
+  }catch(error){
+
+    console.error(error);
+
+    showMessage(
+      error.message ||
+      "Sign up failed."
+    );
+
+  }finally{
+
+    button.disabled = false;
+    button.textContent = "Create Account";
+  }
+}
+
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+async function logout(){
+
+  try{
+
+    if(token){
+
+      await api("/api/auth/logout",{
+        method:"POST"
+      });
+    }
+
+  }catch(error){
+
+    console.log("Logout request failed:",error);
+
+  }
+
+  token = "";
+  currentUser = null;
+
+  localStorage.removeItem("rizoraToken");
+  localStorage.removeItem("rizoraUser");
+
+  showLanding();
+}
+
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+async function loadDashboard(){
+
+  if(!token){
+
+    showAuth("login");
+    return;
+  }
+
+  try{
+
+    const me =
+      await api("/api/auth/me");
+
+    currentUser =
+      me.user || me;
+
+    localStorage.setItem(
+      "rizoraUser",
+      JSON.stringify(currentUser)
+    );
+
+    updateUserUI();
+
+    await Promise.all([
+      loadTasks(),
+      loadReferrals()
+    ]);
+
+    if(
+      currentUser.role === "admin" ||
+      currentUser.role === "super_admin"
+    ){
+
+      document
+        .getElementById("adminSection")
+        .classList.remove("hidden");
+
+      loadAdmin();
+
+    }else{
+
+      document
+        .getElementById("adminSection")
+        .classList.add("hidden");
+    }
+
+  }catch(error){
+
+    console.error("Dashboard error:",error);
+
+    if(error.message.includes("401")){
+
+      logout();
+
+      return;
+    }
+
+    updateUserUI();
+  }
+}
+
+
+/* =========================================================
+   USER UI
+   ========================================================= */
+
+function updateUserUI(){
+
+  if(!currentUser){
+    return;
+  }
+
+  const username =
+    currentUser.username ||
+    currentUser.name ||
+    "Creator";
+
+  document
+    .getElementById("userName")
+    .textContent = username;
+
+  document
+    .getElementById("pointsValue")
+    .textContent =
+      Number(currentUser.points || 0);
+
+  document
+    .getElementById("statusValue")
+    .textContent =
+      currentUser.status || "Active";
+
+  const completed =
+    currentUser.tasksCompleted ||
+    currentUser.completedTasks ||
+    0;
+
+  document
+    .getElementById("tasksValue")
+    .textContent = completed;
+}
+
+
+/* =========================================================
+   TASKS
+   ========================================================= */
+
+async function loadTasks(){
+
+  const list =
+    document.getElementById("tasksList");
+
+  list.innerHTML =
+    "<p class='muted'>Loading tasks...</p>";
+
+  try{
+
+    const result =
+      await api("/api/tasks");
+
+    const tasks =
+      Array.isArray(result)
+        ? result
+        : (
+            result.tasks ||
+            result.data ||
+            []
+          );
+
+    if(!tasks.length){
+
+      list.innerHTML =
+        "<p class='muted'>No tasks available right now.</p>";
+
+      return;
+    }
+
+    list.innerHTML = "";
+
+    tasks.forEach(task=>{
+
+      const completed =
+        task.completed === true ||
+        task.isCompleted === true ||
+        task.status === "completed";
+
+      const div =
+        document.createElement("div");
+
+      div.className = "task";
+
+      div.innerHTML = `
+
+        <div class="task-info">
+
+          <strong>
+            ${escapeHTML(
+              task.title ||
+              task.name ||
+              "Creator Task"
+            )}
+          </strong>
+
+          <span>
+            ${escapeHTML(
+              task.description ||
+              ""
+            )}
+          </span>
+
+          <br>
+
+          <span>
+            +${Number(task.points || task.reward || 0)} points
+          </span>
+
+        </div>
+
+        <button
+          class="btn ${completed ? "secondary" : "primary"}"
+          ${completed ? "disabled" : ""}
+          onclick="completeTask('${escapeJS(task.id || task._id || "")}')">
+
+          ${completed ? "Completed âœ“" : "Complete"}
+
+        </button>
+
+      `;
+
+      list.appendChild(div);
+    });
+
+  }catch(error){
+
+    console.error(error);
+
+    list.innerHTML =
+      `<p class="muted">${escapeHTML(error.message)}</p>`;
+  }
+}
+
+
+/* =========================================================
+   COMPLETE TASK
+   ========================================================= */
+
+async function completeTask(taskId){
+
+  if(!taskId){
+
+    alert("Invalid task.");
+    return;
+  }
+
+  try{
+
+    await api("/api/tasks/complete",{
+      method:"POST",
+      body:JSON.stringify({
+        taskId
+      })
+    });
+
+    await loadDashboard();
+
+  }catch(error){
+
+    alert(
+      error.message ||
+      "Could not complete task."
+    );
+  }
+}
+
+
+/* =========================================================
+   REFERRALS
+   ========================================================= */
+
+async function loadReferrals(){
+
+  try{
+
+    const result =
+      await api("/api/referrals/me");
+
+    referralCode =
+      result.code ||
+      result.referralCode ||
+      result.referral_code ||
+      (
+        result.referral &&
+        (
+          result.referral.code ||
+          result.referral.referralCode
+        )
+      ) ||
+      currentUser?.username ||
+      "";
+
+    document
+      .getElementById("referralCode")
+      .textContent =
+        referralCode || "No referral code";
+
+    const count =
+      result.count ||
+      result.referrals ||
+      result.total ||
+      (
+        Array.isArray(result.data)
+          ? result.data.length
+          : 0
+      );
+
+    document
+      .getElementById("referralsValue")
+      .textContent =
+        typeof count === "number"
+          ? count
+          : 0;
+
+  }catch(error){
+
+    console.error(
+      "Referral error:",
+      error
+    );
+
+    document
+      .getElementById("referralCode")
+      .textContent =
+        currentUser?.username ||
+        "Unavailable";
+  }
+}
+
+
+/* =========================================================
+   COPY REFERRAL
+   ========================================================= */
+
+async function copyReferral(){
+
+  if(!referralCode){
+
+    return;
+  }
+
+  try{
+
+    await navigator.clipboard.writeText(
+      referralCode
+    );
+
+    alert("Referral code copied!");
+
+  }catch{
+
+    const textarea =
+      document.createElement("textarea");
+
+    textarea.value = referralCode;
+
+    document.body.appendChild(textarea);
+
+    textarea.select();
+
+    document.execCommand("copy");
+
+    textarea.remove();
+
+    alert("Referral code copied!");
+  }
+}
+
+
+/* =========================================================
+   CREATOR TOOLS
+   ========================================================= */
+
+async function generateTool(type){
+
+  const output =
+    document.getElementById(
+      `${type}Output`
+    );
+
+  output.classList.remove("hidden");
+
+  output.textContent =
+    "Generating...";
+
+  try{
+
+    const result =
+      await api(`/api/generate/${type}`,{
+        method:"POST",
+        body:JSON.stringify({
+          topic:"creator content"
+        })
+      });
+
+    const value =
+      result[type] ||
+      result.result ||
+      result.output ||
+      result.content ||
+      result.text ||
+      result.data;
+
+    if(typeof value === "object"){
+
+      output.textContent =
+        JSON.stringify(
+          value,
+          null,
+          2
+        );
+
+    }else{
+
+      output.textContent =
+        value ||
+        "No result returned.";
+    }
+
+  }catch(error){
+
+    output.textContent =
+      error.message ||
+      "Generation failed.";
+  }
+}
+
+
+/* =========================================================
+   ADMIN
+   ========================================================= */
+
+async function loadAdmin(){
+
+  if(
+    !currentUser ||
+    (
+      currentUser.role !== "admin" &&
+      currentUser.role !== "super_admin"
+    )
+  ){
+
+    return;
+  }
+
+  try{
+
+    const stats =
+      await api("/api/admin/stats");
+
+    document
+      .getElementById("adminUsers")
+      .textContent =
+        stats.users ??
+        stats.totalUsers ??
+        0;
+
+    document
+      .getElementById("adminPoints")
+      .textContent =
+        stats.points ??
+        stats.totalPoints ??
+        0;
+
+    document
+      .getElementById("adminTasks")
+      .textContent =
+        stats.tasks ??
+        stats.totalTasks ??
+        0;
+
+  }catch(error){
+
+    console.error(
+      "Admin stats:",
+      error
+    );
+  }
+
+
+  try{
+
+    const result =
+      await api("/api/admin/users");
+
+    const users =
+      Array.isArray(result)
+        ? result
+        : (
+            result.users ||
+            result.data ||
+            []
+          );
+
+    const list =
+      document.getElementById(
+        "adminUsersList"
+      );
+
+    if(!users.length){
+
+      list.innerHTML =
+        "<p class='muted'>No users found.</p>";
+
+      return;
+    }
+
+    list.innerHTML = "";
+
+    users.forEach(user=>{
+
+      const row =
+        document.createElement("div");
+
+      row.className = "user-row";
+
+      row.innerHTML = `
+
+        <div>
+
+          <strong>
+            ${escapeHTML(
+              user.username || "Unknown"
+            )}
+          </strong>
+
+          <small>
+            Role: ${escapeHTML(
+              user.role || "user"
+            )}
+            Â· Status:
+            ${escapeHTML(
+              user.status || "active"
+            )}
+            Â· Points:
+            ${Number(user.points || 0)}
+          </small>
+
+        </div>
+
+      `;
+
+      list.appendChild(row);
+    });
+
+  }catch(error){
+
+    console.error(
+      "Admin users:",
+      error
+    );
+  }
+}
+
+
+/* =========================================================
+   SECURITY HELPERS
+   ========================================================= */
+
+function escapeHTML(value){
+
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+
+function escapeJS(value){
+
+  return String(value ?? "")
+    .replaceAll("\\","\\\\")
+    .replaceAll("'","\\'");
+}
+
+
+/* =========================================================
+   REFERRAL URL
+   ========================================================= */
+
+function loadReferralFromURL(){
+
+  try{
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const referral =
+      params.get("ref");
+
+    if(referral){
+
+      const input =
+        document.getElementById(
+          "signupReferral"
+        );
+
+      if(input){
+
+        input.value = referral;
+      }
+    }
+
+  }catch(error){
+
+    console.log(
+      "Referral URL error:",
+      error
+    );
+  }
+}
+
+
+/* =========================================================
+   STARTUP
+   ========================================================= */
+
+async function startup(){
+
+  loadReferralFromURL();
+
+  if(token){
+
+    try{
+
+      const me =
+        await api("/api/auth/me");
+
+      currentUser =
+        me.user || me;
+
+      localStorage.setItem(
+        "rizoraUser",
+        JSON.stringify(currentUser)
+      );
+
+      showDashboard();
+
+      return;
+
+    }catch(error){
+
+      console.log(
+        "Stored session invalid:",
+        error
+      );
+
+      token = "";
+      currentUser = null;
+
+      localStorage.removeItem(
+        "rizoraToken"
+      );
+
+      localStorage.removeItem(
+        "rizoraUser"
+      );
+    }
+  }
+
+  showLanding();
+}
+
+
+/* =========================================================
+   START
+   ========================================================= */
+
+startup();
+
+</script>
+
+</body>
+</html>

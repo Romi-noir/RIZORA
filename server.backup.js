@@ -1,4 +1,4 @@
-﻿// RIZORA Backend — Version 8.1.0
+﻿// RIZORA Backend — Version 8.0.0
 // Clean copy-paste version
 
 "use strict";
@@ -142,12 +142,9 @@ function json(res, statusCode, data, extraHeaders = {}) {
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
-    "Access-Control-Allow-Origin":
-      process.env.RIZORA_ALLOWED_ORIGINS || "*",
-    "Access-Control-Allow-Headers":
-      "Content-Type, Authorization",
-    "Access-Control-Allow-Methods":
-      "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Origin": process.env.RIZORA_ALLOWED_ORIGINS || "*",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     ...extraHeaders
   });
 
@@ -164,6 +161,14 @@ function sendError(res, statusCode, message) {
   });
 }
 
+function redirect(res, location) {
+  res.writeHead(302, {
+    Location: location
+  });
+
+  res.end();
+}
+
 function parseCookies(req) {
   const header = req.headers.cookie || "";
   const cookies = {};
@@ -176,11 +181,7 @@ function parseCookies(req) {
     const key = part.slice(0, index).trim();
     const value = part.slice(index + 1).trim();
 
-    try {
-      cookies[key] = decodeURIComponent(value);
-    } catch {
-      cookies[key] = value;
-    }
+    cookies[key] = decodeURIComponent(value);
   });
 
   return cookies;
@@ -230,7 +231,6 @@ function safeUser(user) {
   return {
     id: user.id,
     username: user.username,
-    displayName: user.displayName || user.username,
     email: user.email || "",
     role: user.role || "user",
     status: user.status || "active",
@@ -248,9 +248,7 @@ function isSuperAdmin(user) {
 
   return (
     user.role === "super_admin" &&
-    SUPER_ADMINS.has(
-      normalizeUsername(user.username)
-    )
+    SUPER_ADMINS.has(normalizeUsername(user.username))
   );
 }
 
@@ -271,41 +269,6 @@ function randomReferralCode(username) {
     .randomBytes(4)
     .toString("hex")
     .toUpperCase()}`;
-}
-
-function getPublicBaseURL(req) {
-  const forwardedProto =
-    String(
-      req.headers["x-forwarded-proto"] || ""
-    ).split(",")[0].trim();
-
-  const protocol =
-    forwardedProto ||
-    (
-      process.env.RIZORA_PUBLIC_URL
-        ? (() => {
-            try {
-              return new URL(
-                process.env.RIZORA_PUBLIC_URL
-              ).protocol.replace(":", "");
-            } catch {
-              return "http";
-            }
-          })()
-        : "http"
-    );
-
-  if (process.env.RIZORA_PUBLIC_URL) {
-    return String(
-      process.env.RIZORA_PUBLIC_URL
-    ).replace(/\/+$/, "");
-  }
-
-  const host =
-    req.headers.host ||
-    `localhost:${PORT}`;
-
-  return `${protocol}://${host}`;
 }
 
 
@@ -329,9 +292,7 @@ function hashPassword(password) {
           return;
         }
 
-        resolve(
-          `${salt}:${derivedKey.toString("hex")}`
-        );
+        resolve(`${salt}:${derivedKey.toString("hex")}`);
       }
     );
   });
@@ -339,16 +300,12 @@ function hashPassword(password) {
 
 function verifyPassword(password, storedHash) {
   return new Promise((resolve, reject) => {
-    if (
-      !storedHash ||
-      !storedHash.includes(":")
-    ) {
+    if (!storedHash || !storedHash.includes(":")) {
       resolve(false);
       return;
     }
 
-    const [salt, originalHash] =
-      storedHash.split(":");
+    const [salt, originalHash] = storedHash.split(":");
 
     crypto.pbkdf2(
       password,
@@ -362,29 +319,17 @@ function verifyPassword(password, storedHash) {
           return;
         }
 
-        const derivedHash =
-          derivedKey.toString("hex");
+        const derivedHash = derivedKey.toString("hex");
 
-        const a =
-          Buffer.from(
-            originalHash,
-            "hex"
-          );
-
-        const b =
-          Buffer.from(
-            derivedHash,
-            "hex"
-          );
+        const a = Buffer.from(originalHash, "hex");
+        const b = Buffer.from(derivedHash, "hex");
 
         if (a.length !== b.length) {
           resolve(false);
           return;
         }
 
-        resolve(
-          crypto.timingSafeEqual(a, b)
-        );
+        resolve(crypto.timingSafeEqual(a, b));
       }
     );
   });
@@ -404,12 +349,7 @@ function readBody(req) {
       size += chunk.length;
 
       if (size > MAX_BODY_SIZE) {
-        reject(
-          new Error(
-            "Request body too large."
-          )
-        );
-
+        reject(new Error("Request body too large."));
         req.destroy();
         return;
       }
@@ -426,11 +366,7 @@ function readBody(req) {
       try {
         resolve(JSON.parse(body));
       } catch {
-        reject(
-          new Error(
-            "Invalid JSON body."
-          )
-        );
+        reject(new Error("Invalid JSON body."));
       }
     });
 
@@ -443,20 +379,12 @@ function readBody(req) {
 // RATE LIMITING
 // ============================================================
 
-function checkRateLimit(
-  map,
-  key,
-  windowMs,
-  maxAttempts
-) {
+function checkRateLimit(map, key, windowMs, maxAttempts) {
   const current = now();
 
   const existing = map.get(key);
 
-  if (
-    !existing ||
-    current - existing.startedAt > windowMs
-  ) {
+  if (!existing || current - existing.startedAt > windowMs) {
     map.set(key, {
       startedAt: current,
       count: 1
@@ -479,17 +407,10 @@ function checkRateLimit(
 // AUDIT
 // ============================================================
 
-function audit(
-  db,
-  action,
-  actor,
-  details = {}
-) {
+function audit(db, action, actor, details = {}) {
   db.auditLogs.unshift({
     id: uid("audit_"),
-
     action,
-
     actor: actor
       ? {
           id: actor.id,
@@ -497,11 +418,8 @@ function audit(
           role: actor.role
         }
       : null,
-
     details,
-
-    createdAt:
-      new Date().toISOString()
+    createdAt: new Date().toISOString()
   });
 
   if (db.auditLogs.length > 2000) {
@@ -511,7 +429,7 @@ function audit(
 
 
 // ============================================================
-// AUTH / SESSIONS
+// AUTH
 // ============================================================
 
 function cleanupSessions(db) {
@@ -525,21 +443,14 @@ function cleanupSessions(db) {
   if (!Array.isArray(db.sessions)) {
     const sessions = [];
 
-    for (
-      const [key, session] of
-      Object.entries(db.sessions)
-    ) {
-      if (
-        !session ||
-        typeof session !== "object"
-      ) {
+    for (const [key, session] of Object.entries(db.sessions)) {
+      if (!session || typeof session !== "object") {
         continue;
       }
 
       if (
         session.expiresAt &&
-        new Date(session.expiresAt)
-          .getTime() > current
+        new Date(session.expiresAt).getTime() > current
       ) {
         if (!session.token) {
           session.token = key;
@@ -553,47 +464,33 @@ function cleanupSessions(db) {
     return;
   }
 
-  db.sessions = db.sessions.filter(
-    (session) => {
-      if (
-        !session ||
-        typeof session !== "object"
-      ) {
-        return false;
-      }
-
-      if (!session.expiresAt) {
-        return false;
-      }
-
-      return (
-        new Date(
-          session.expiresAt
-        ).getTime() > current
-      );
+  db.sessions = db.sessions.filter((session) => {
+    if (!session || typeof session !== "object") {
+      return false;
     }
-  );
+
+    if (!session.expiresAt) {
+      return false;
+    }
+
+    return (
+      new Date(session.expiresAt).getTime() >
+      current
+    );
+  });
 }
 
-function createSession(
-  db,
-  userId
-) {
+function createSession(db, userId) {
   cleanupSessions(db);
 
-  const token =
-    crypto.randomBytes(48).toString("hex");
+  const token = crypto.randomBytes(48).toString("hex");
 
   const session = {
     id: uid("session_"),
     token,
     userId,
-    createdAt:
-      new Date().toISOString(),
-    expiresAt:
-      new Date(
-        now() + SESSION_TTL_MS
-      ).toISOString()
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(now() + SESSION_TTL_MS).toISOString()
   };
 
   db.sessions.push(session);
@@ -601,37 +498,28 @@ function createSession(
   return token;
 }
 
-function getCurrentUser(
-  db,
-  req
-) {
+function getCurrentUser(db, req) {
   cleanupSessions(db);
 
-  const token =
-    getSessionToken(req);
+  const token = getSessionToken(req);
 
   if (!token) {
     return null;
   }
 
-  const session =
-    db.sessions.find(
-      (item) =>
-        item.token === token &&
-        new Date(item.expiresAt)
-          .getTime() > now()
-    );
+  const session = db.sessions.find(
+    (item) =>
+      item.token === token &&
+      new Date(item.expiresAt).getTime() > now()
+  );
 
   if (!session) {
     return null;
   }
 
-  return (
-    db.users.find(
-      (user) =>
-        user.id === session.userId
-    ) || null
-  );
+  return db.users.find(
+    (user) => user.id === session.userId
+  ) || null;
 }
 
 
@@ -643,8 +531,7 @@ const DEFAULT_TASKS = [
   {
     id: "task_follow",
     title: "Follow RIZORA",
-    description:
-      "Follow RIZORA and stay connected.",
+    description: "Follow RIZORA and stay connected.",
     points: 50,
     type: "social",
     active: true
@@ -652,8 +539,7 @@ const DEFAULT_TASKS = [
   {
     id: "task_create",
     title: "Create your first post",
-    description:
-      "Create and publish a piece of content.",
+    description: "Create and publish a piece of content.",
     points: 100,
     type: "creator",
     active: true
@@ -661,8 +547,7 @@ const DEFAULT_TASKS = [
   {
     id: "task_profile",
     title: "Complete your profile",
-    description:
-      "Make your creator profile ready.",
+    description: "Make your creator profile ready.",
     points: 75,
     type: "profile",
     active: true
@@ -670,8 +555,7 @@ const DEFAULT_TASKS = [
   {
     id: "task_referral",
     title: "Invite a creator",
-    description:
-      "Invite another creator to RIZORA.",
+    description: "Invite another creator to RIZORA.",
     points: 100,
     type: "referral",
     active: true
@@ -679,20 +563,15 @@ const DEFAULT_TASKS = [
 ];
 
 function seedTasks(db) {
-  for (
-    const task of DEFAULT_TASKS
-  ) {
-    const existing =
-      db.tasks.find(
-        (item) =>
-          item.id === task.id
-      );
+  for (const task of DEFAULT_TASKS) {
+    const existing = db.tasks.find(
+      (item) => item.id === task.id
+    );
 
     if (!existing) {
       db.tasks.push({
         ...task,
-        createdAt:
-          new Date().toISOString()
+        createdAt: new Date().toISOString()
       });
     }
   }
@@ -703,28 +582,18 @@ function seedTasks(db) {
 // REFERRALS
 // ============================================================
 
-function applyReferral(
-  db,
-  newUser,
-  referralCode
-) {
-  const code =
-    cleanString(
-      referralCode,
-      100
-    );
+function applyReferral(db, newUser, referralCode) {
+  const code = cleanString(referralCode, 100);
 
   if (!code) {
     return null;
   }
 
-  const inviter =
-    db.users.find(
-      (user) =>
-        user.referralCode &&
-        user.referralCode.toLowerCase() ===
-          code.toLowerCase()
-    );
+  const inviter = db.users.find(
+    (user) =>
+      user.referralCode &&
+      user.referralCode.toLowerCase() === code.toLowerCase()
+  );
 
   if (!inviter) {
     return null;
@@ -734,23 +603,16 @@ function applyReferral(
     return null;
   }
 
-  newUser.referredBy =
-    inviter.id;
+  newUser.referredBy = inviter.id;
 
   inviter.referralCount =
-    Number(
-      inviter.referralCount || 0
-    ) + 1;
+    Number(inviter.referralCount || 0) + 1;
 
   inviter.points =
-    Number(
-      inviter.points || 0
-    ) + REFERRAL_SIGNUP_REWARD;
+    Number(inviter.points || 0) + REFERRAL_SIGNUP_REWARD;
 
   newUser.points =
-    Number(
-      newUser.points || 0
-    ) + REFERRAL_MILESTONE_REWARD;
+    Number(newUser.points || 0) + REFERRAL_MILESTONE_REWARD;
 
   const referral = {
     id: uid("ref_"),
@@ -758,14 +620,11 @@ function applyReferral(
     referredUserId: newUser.id,
     code: inviter.referralCode,
     reward: REFERRAL_SIGNUP_REWARD,
-    createdAt:
-      new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     status: "completed"
   };
 
-  db.referrals.push(
-    referral
-  );
+  db.referrals.push(referral);
 
   return referral;
 }
@@ -810,35 +669,16 @@ const CAPTIONS = [
   "Consistency > motivation."
 ];
 
-function randomItems(
-  array,
-  amount = 5
-) {
+function randomItems(array, amount = 5) {
   const copy = [...array];
 
-  for (
-    let i = copy.length - 1;
-    i > 0;
-    i--
-  ) {
-    const j =
-      Math.floor(
-        Math.random() * (i + 1)
-      );
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
 
-    [
-      copy[i],
-      copy[j]
-    ] = [
-      copy[j],
-      copy[i]
-    ];
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
 
-  return copy.slice(
-    0,
-    amount
-  );
+  return copy.slice(0, amount);
 }
 
 
@@ -846,54 +686,28 @@ function randomItems(
 // ADMIN HELPERS
 // ============================================================
 
-function requireAdmin(
-  res,
-  user
-) {
+function requireAdmin(res, user) {
   if (!user) {
-    sendError(
-      res,
-      401,
-      "Authentication required."
-    );
-
+    sendError(res, 401, "Authentication required.");
     return false;
   }
 
   if (!isAdmin(user)) {
-    sendError(
-      res,
-      403,
-      "Admin access required."
-    );
-
+    sendError(res, 403, "Admin access required.");
     return false;
   }
 
   return true;
 }
 
-function requireSuperAdmin(
-  res,
-  user
-) {
+function requireSuperAdmin(res, user) {
   if (!user) {
-    sendError(
-      res,
-      401,
-      "Authentication required."
-    );
-
+    sendError(res, 401, "Authentication required.");
     return false;
   }
 
   if (!isSuperAdmin(user)) {
-    sendError(
-      res,
-      403,
-      "Super admin access required."
-    );
-
+    sendError(res, 403, "Super admin access required.");
     return false;
   }
 
@@ -906,40 +720,28 @@ function requireSuperAdmin(
 // ============================================================
 
 function getAdminStats(db) {
-  const totalUsers =
-    db.users.length;
+  const totalUsers = db.users.length;
 
-  const activeUsers =
-    db.users.filter(
-      (user) =>
-        user.status === "active"
-    ).length;
+  const activeUsers = db.users.filter(
+    (user) => user.status === "active"
+  ).length;
 
-  const blockedUsers =
-    db.users.filter(
-      (user) =>
-        user.status === "blocked"
-    ).length;
+  const blockedUsers = db.users.filter(
+    (user) => user.status === "blocked"
+  ).length;
 
-  const admins =
-    db.users.filter(
-      (user) =>
-        user.role === "admin"
-    ).length;
+  const admins = db.users.filter(
+    (user) => user.role === "admin"
+  ).length;
 
-  const superAdmins =
-    db.users.filter(
-      (user) =>
-        user.role === "super_admin"
-    ).length;
+  const superAdmins = db.users.filter(
+    (user) => user.role === "super_admin"
+  ).length;
 
-  const totalPoints =
-    db.users.reduce(
-      (sum, user) =>
-        sum +
-        Number(user.points || 0),
-      0
-    );
+  const totalPoints = db.users.reduce(
+    (sum, user) => sum + Number(user.points || 0),
+    0
+  );
 
   const totalTaskCompletions =
     db.taskCompletions.length;
@@ -965,180 +767,97 @@ function getAdminStats(db) {
 // ============================================================
 
 const MIME_TYPES = {
-  ".html":
-    "text/html; charset=utf-8",
-
-  ".js":
-    "application/javascript; charset=utf-8",
-
-  ".css":
-    "text/css; charset=utf-8",
-
-  ".json":
-    "application/json; charset=utf-8",
-
-  ".webmanifest":
-    "application/manifest+json",
-
-  ".png":
-    "image/png",
-
-  ".jpg":
-    "image/jpeg",
-
-  ".jpeg":
-    "image/jpeg",
-
-  ".gif":
-    "image/gif",
-
-  ".svg":
-    "image/svg+xml",
-
-  ".ico":
-    "image/x-icon",
-
-  ".webp":
-    "image/webp",
-
-  ".txt":
-    "text/plain; charset=utf-8"
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".webp": "image/webp",
+  ".txt": "text/plain; charset=utf-8",
+  ".webmanifest": "application/manifest+json"
 };
 
-function serveStatic(
-  req,
-  res,
-  pathname
-) {
-  let requestedPath =
-    pathname;
+function serveStatic(req, res, pathname) {
+  let requestedPath = pathname;
 
   if (
     requestedPath === "/" ||
     requestedPath === ""
   ) {
-    requestedPath =
-      "/index.html";
+    requestedPath = "/index.html";
   }
 
-  let filePath =
-    path.normalize(
-      path.join(
-        ROOT,
-        requestedPath
-      )
-    );
-
-  if (!filePath.startsWith(ROOT)) {
-    sendError(
-      res,
-      403,
-      "Forbidden."
-    );
-
-    return;
-  }
-
-  if (!fs.existsSync(filePath)) {
-    filePath =
-      path.join(
-        ROOT,
-        "index.html"
-      );
-  }
-
-  if (!fs.existsSync(filePath)) {
-    sendError(
-      res,
-      404,
-      "File not found."
-    );
-
-    return;
-  }
-
-  const stat =
-    fs.statSync(filePath);
-
-  if (!stat.isFile()) {
-    sendError(
-      res,
-      404,
-      "File not found."
-    );
-
-    return;
-  }
-
-  const ext =
-    path.extname(
-      filePath
-    ).toLowerCase();
-
-  res.writeHead(
-    200,
-    {
-      "Content-Type":
-        MIME_TYPES[ext] ||
-        "application/octet-stream",
-
-      "Cache-Control":
-        ext === ".html"
-          ? "no-cache"
-          : "public, max-age=3600",
-
-      "Access-Control-Allow-Origin":
-        process.env.RIZORA_ALLOWED_ORIGINS ||
-        "*"
-    }
+  let filePath = path.normalize(
+    path.join(ROOT, requestedPath)
   );
 
-  fs.createReadStream(
-    filePath
-  ).pipe(res);
+  if (!filePath.startsWith(ROOT)) {
+    sendError(res, 403, "Forbidden.");
+    return;
+  }
+
+  if (!fs.existsSync(filePath)) {
+    filePath = path.join(ROOT, "index.html");
+  }
+
+  if (!fs.existsSync(filePath)) {
+    sendError(res, 404, "File not found.");
+    return;
+  }
+
+  const stat = fs.statSync(filePath);
+
+  if (!stat.isFile()) {
+    sendError(res, 404, "File not found.");
+    return;
+  }
+
+  const ext = path.extname(filePath).toLowerCase();
+
+  res.writeHead(200, {
+    "Content-Type":
+      MIME_TYPES[ext] ||
+      "application/octet-stream",
+    "Cache-Control":
+      ext === ".html"
+        ? "no-cache"
+        : "public, max-age=3600",
+    "Access-Control-Allow-Origin":
+      process.env.RIZORA_ALLOWED_ORIGINS || "*"
+  });
+
+  fs.createReadStream(filePath).pipe(res);
 }
 
 
 // ============================================================
-// REQUEST HANDLER
+// SERVER
 // ============================================================
 
-async function handleRequest(
-  req,
-  res
-) {
-  const url =
-    new URL(
-      req.url,
-      `http://${req.headers.host || "localhost"}`
-    );
+async function handleRequest(req, res) {
+  const url = new URL(
+    req.url,
+    `http://${req.headers.host || "localhost"}`
+  );
 
-  const pathname =
-    url.pathname;
+  const pathname = url.pathname;
+  const method = req.method.toUpperCase();
 
-  const method =
-    String(req.method || "")
-      .toUpperCase();
-
-  // ----------------------------------------------------------
-  // CORS PREFLIGHT
-  // ----------------------------------------------------------
-
+  // CORS preflight
   if (method === "OPTIONS") {
-    res.writeHead(
-      204,
-      {
-        "Access-Control-Allow-Origin":
-          process.env.RIZORA_ALLOWED_ORIGINS ||
-          "*",
-
-        "Access-Control-Allow-Headers":
-          "Content-Type, Authorization",
-
-        "Access-Control-Allow-Methods":
-          "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-      }
-    );
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin":
+        process.env.RIZORA_ALLOWED_ORIGINS || "*",
+      "Access-Control-Allow-Headers":
+        "Content-Type, Authorization",
+      "Access-Control-Allow-Methods":
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    });
 
     res.end();
     return;
@@ -1156,18 +875,13 @@ async function handleRequest(
     method === "GET" &&
     pathname === "/api/health"
   ) {
-    sendJSON(
-      res,
-      200,
-      {
-        ok: true,
-        service: "RIZORA",
-        version: "8.1.0",
-        status: "online",
-        time:
-          new Date().toISOString()
-      }
-    );
+    sendJSON(res, 200, {
+      ok: true,
+      service: "RIZORA",
+      version: "8.0.0",
+      status: "online",
+      time: new Date().toISOString()
+    });
 
     return;
   }
@@ -1183,43 +897,22 @@ async function handleRequest(
     let body;
 
     try {
-      body =
-        await readBody(req);
+      body = await readBody(req);
     } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+      sendError(res, 400, error.message);
       return;
     }
 
-    const username =
-      normalizeUsername(
-        body.username
-      );
-
-    const email =
-      normalizeEmail(
-        body.email
-      );
-
-    const password =
-      String(
-        body.password || ""
-      );
-
-    const referralCode =
-      cleanString(
-        body.referralCode ||
-        body.referral,
-        100
-      );
+    const username = normalizeUsername(body.username);
+    const email = normalizeEmail(body.email);
+    const password = String(body.password || "");
+    const referralCode = cleanString(
+      body.referralCode || body.referral,
+      100
+    );
 
     const rateKey =
-      req.socket.remoteAddress ||
-      "unknown";
+      req.socket.remoteAddress || "unknown";
 
     if (
       !checkRateLimit(
@@ -1248,14 +941,21 @@ async function handleRequest(
       return;
     }
 
-    if (
-      !/^[a-zA-Z0-9_.-]{3,30}$/
-        .test(username)
-    ) {
+    if (!/^[a-zA-Z0-9_.-]{3,30}$/.test(username)) {
       sendError(
         res,
         400,
         "Username must be 3-30 characters and may contain letters, numbers, dots, underscores or hyphens."
+      );
+
+      return;
+    }
+
+    if (!email || !email.includes("@")) {
+      sendError(
+        res,
+        400,
+        "A valid email is required."
       );
 
       return;
@@ -1271,26 +971,10 @@ async function handleRequest(
       return;
     }
 
-    if (
-      email &&
-      !email.includes("@")
-    ) {
-      sendError(
-        res,
-        400,
-        "Invalid email address."
-      );
-
-      return;
-    }
-
-    const usernameExists =
-      db.users.some(
-        (user) =>
-          normalizeUsername(
-            user.username
-          ) === username
-      );
+    const usernameExists = db.users.some(
+      (user) =>
+        normalizeUsername(user.username) === username
+    );
 
     if (usernameExists) {
       sendError(
@@ -1302,118 +986,75 @@ async function handleRequest(
       return;
     }
 
-    if (email) {
-      const emailExists =
-        db.users.some(
-          (user) =>
-            normalizeEmail(
-              user.email
-            ) === email
-        );
+    const emailExists = db.users.some(
+      (user) =>
+        normalizeEmail(user.email) === email
+    );
 
-      if (emailExists) {
-        sendError(
-          res,
-          409,
-          "Email is already registered."
-        );
+    if (emailExists) {
+      sendError(
+        res,
+        409,
+        "Email is already registered."
+      );
 
-        return;
-      }
+      return;
     }
 
     const passwordHash =
-      await hashPassword(
-        password
-      );
+      await hashPassword(password);
 
     const isProtected =
-      SUPER_ADMINS.has(
-        username
-      );
+      SUPER_ADMINS.has(username);
 
     const user = {
       id: uid("user_"),
-
       username,
-
-      displayName:
-        cleanString(
-          body.displayName ||
-          username,
-          80
-        ),
-
       email,
-
       passwordHash,
-
-      role:
-        isProtected
-          ? "super_admin"
-          : "user",
-
+      role: isProtected
+        ? "super_admin"
+        : "user",
       status: "active",
-
       points: 0,
-
-      referralCode:
-        randomReferralCode(
-          username
-        ),
-
+      referralCode: randomReferralCode(username),
       referredBy: null,
-
       referralCount: 0,
-
-      createdAt:
-        new Date().toISOString(),
-
+      createdAt: new Date().toISOString(),
       lastLoginAt: null
     };
 
     db.users.push(user);
 
-    const referral =
-      applyReferral(
-        db,
-        user,
-        referralCode
-      );
+    const referral = applyReferral(
+      db,
+      user,
+      referralCode
+    );
 
-    const token =
-      createSession(
-        db,
-        user.id
-      );
+    const token = createSession(
+      db,
+      user.id
+    );
 
     audit(
       db,
       "user_signup",
       user,
       {
-        referralApplied:
-          Boolean(referral)
+        referralApplied: Boolean(referral)
       }
     );
 
     saveDB(db);
 
-    setSessionCookie(
-      res,
-      token
-    );
+    setSessionCookie(res, token);
 
-    sendJSON(
-      res,
-      201,
-      {
-        success: true,
-        token,
-        user:
-          safeUser(user)
-      }
-    );
+    sendJSON(res, 201, {
+      success: true,
+      token,
+      user: safeUser(user)
+    });
 
     return;
   }
@@ -1429,36 +1070,25 @@ async function handleRequest(
     let body;
 
     try {
-      body =
-        await readBody(req);
+      body = await readBody(req);
     } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+      sendError(res, 400, error.message);
       return;
     }
 
-    const identifier =
-      cleanString(
-        body.username ||
-        body.email ||
-        body.identifier,
-        100
-      ).toLowerCase();
+    const identifier = cleanString(
+      body.username ||
+      body.email ||
+      body.identifier,
+      100
+    ).toLowerCase();
 
-    const password =
-      String(
-        body.password || ""
-      );
+    const password = String(
+      body.password || ""
+    );
 
     const rateKey =
-      `${
-        req.socket.remoteAddress ||
-        "unknown"
-      }:${identifier}`;
+      `${req.socket.remoteAddress || "unknown"}:${identifier}`;
 
     if (
       !checkRateLimit(
@@ -1477,10 +1107,7 @@ async function handleRequest(
       return;
     }
 
-    if (
-      !identifier ||
-      !password
-    ) {
+    if (!identifier || !password) {
       sendError(
         res,
         400,
@@ -1490,16 +1117,13 @@ async function handleRequest(
       return;
     }
 
-    const user =
-      db.users.find(
-        (item) =>
-          normalizeUsername(
-            item.username
-          ) === identifier ||
-          normalizeEmail(
-            item.email
-          ) === identifier
-      );
+    const user = db.users.find(
+      (item) =>
+        normalizeUsername(item.username) ===
+          identifier ||
+        normalizeEmail(item.email) ===
+          identifier
+    );
 
     if (!user) {
       sendError(
@@ -1527,9 +1151,7 @@ async function handleRequest(
       return;
     }
 
-    if (
-      user.status !== "active"
-    ) {
+    if (user.status !== "active") {
       sendError(
         res,
         403,
@@ -1542,11 +1164,10 @@ async function handleRequest(
     user.lastLoginAt =
       new Date().toISOString();
 
-    const token =
-      createSession(
-        db,
-        user.id
-      );
+    const token = createSession(
+      db,
+      user.id
+    );
 
     audit(
       db,
@@ -1556,21 +1177,13 @@ async function handleRequest(
 
     saveDB(db);
 
-    setSessionCookie(
-      res,
-      token
-    );
+    setSessionCookie(res, token);
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        token,
-        user:
-          safeUser(user)
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      token,
+      user: safeUser(user)
+    });
 
     return;
   }
@@ -1583,15 +1196,13 @@ async function handleRequest(
     method === "POST" &&
     pathname === "/api/auth/logout"
   ) {
-    const sessionToken =
-      getSessionToken(req);
+    const token = getSessionToken(req);
 
-    if (sessionToken) {
+    if (token) {
       db.sessions =
         db.sessions.filter(
           (session) =>
-            session.token !==
-            sessionToken
+            session.token !== token
         );
 
       saveDB(db);
@@ -1599,13 +1210,9 @@ async function handleRequest(
 
     clearSessionCookie(res);
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true
-      }
-    );
+    sendJSON(res, 200, {
+      success: true
+    });
 
     return;
   }
@@ -1619,10 +1226,7 @@ async function handleRequest(
     pathname === "/api/auth/me"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
     if (!user) {
       sendError(
@@ -1634,15 +1238,10 @@ async function handleRequest(
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        user:
-          safeUser(user)
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      user: safeUser(user)
+    });
 
     return;
   }
@@ -1656,10 +1255,7 @@ async function handleRequest(
     pathname === "/api/points"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
     if (!user) {
       sendError(
@@ -1671,17 +1267,10 @@ async function handleRequest(
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        points:
-          Number(
-            user.points || 0
-          )
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      points: Number(user.points || 0)
+    });
 
     return;
   }
@@ -1695,10 +1284,7 @@ async function handleRequest(
     pathname === "/api/tasks"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
     if (!user) {
       sendError(
@@ -1710,39 +1296,26 @@ async function handleRequest(
       return;
     }
 
-    const tasks =
-      db.tasks
-        .filter(
-          (task) =>
-            task.active !== false
-        )
-        .map(
-          (task) => {
+    const tasks = db.tasks
+      .filter((task) => task.active !== false)
+      .map((task) => {
+        const completed =
+          db.taskCompletions.some(
+            (completion) =>
+              completion.userId === user.id &&
+              completion.taskId === task.id
+          );
 
-            const completed =
-              db.taskCompletions.some(
-                (completion) =>
-                  completion.userId ===
-                    user.id &&
-                  completion.taskId ===
-                    task.id
-              );
+        return {
+          ...task,
+          completed
+        };
+      });
 
-            return {
-              ...task,
-              completed
-            };
-          }
-        );
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        tasks
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      tasks
+    });
 
     return;
   }
@@ -1756,10 +1329,7 @@ async function handleRequest(
     pathname === "/api/tasks/complete"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
     if (!user) {
       sendError(
@@ -1774,24 +1344,16 @@ async function handleRequest(
     let body;
 
     try {
-      body =
-        await readBody(req);
+      body = await readBody(req);
     } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+      sendError(res, 400, error.message);
       return;
     }
 
-    const taskId =
-      cleanString(
-        body.taskId ||
-        body.id,
-        100
-      );
+    const taskId = cleanString(
+      body.taskId || body.id,
+      100
+    );
 
     if (!taskId) {
       sendError(
@@ -1803,12 +1365,11 @@ async function handleRequest(
       return;
     }
 
-    const task =
-      db.tasks.find(
-        (item) =>
-          item.id === taskId &&
-          item.active !== false
-      );
+    const task = db.tasks.find(
+      (item) =>
+        item.id === taskId &&
+        item.active !== false
+    );
 
     if (!task) {
       sendError(
@@ -1837,20 +1398,12 @@ async function handleRequest(
       return;
     }
 
-    const points =
-      Number(
-        task.points ||
-        task.reward ||
-        0
-      );
-
     const completion = {
       id: uid("completion_"),
       userId: user.id,
       taskId: task.id,
-      points,
-      completedAt:
-        new Date().toISOString()
+      points: Number(task.points || 0),
+      completedAt: new Date().toISOString()
     };
 
     db.taskCompletions.push(
@@ -1858,9 +1411,8 @@ async function handleRequest(
     );
 
     user.points =
-      Number(
-        user.points || 0
-      ) + points;
+      Number(user.points || 0) +
+      Number(task.points || 0);
 
     audit(
       db,
@@ -1868,26 +1420,18 @@ async function handleRequest(
       user,
       {
         taskId: task.id,
-        points
+        points: task.points
       }
     );
 
     saveDB(db);
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        completion,
-        points:
-          user.points,
-        reward:
-          points,
-        user:
-          safeUser(user)
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      completion,
+      points: user.points,
+      user: safeUser(user)
+    });
 
     return;
   }
@@ -1901,10 +1445,7 @@ async function handleRequest(
     pathname === "/api/referrals/me"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
     if (!user) {
       sendError(
@@ -1922,55 +1463,14 @@ async function handleRequest(
           referral.referrerId === user.id
       );
 
-    const referralCode =
-      user.referralCode || "";
-
-    const baseURL =
-      getPublicBaseURL(req);
-
-    const referralLink =
-      referralCode
-        ? `${baseURL}/?ref=${encodeURIComponent(
-            referralCode
-          )}`
-        : "";
-
-    const referralPoints =
-      referrals.reduce(
-        (total, referral) =>
-          total +
-          Number(
-            referral.reward || 0
-          ),
-        0
-      );
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-
-        referralCode,
-
-        referralLink,
-
-        count:
-          Number(
-            user.referralCount || 0
-          ),
-
-        referralCount:
-          Number(
-            user.referralCount || 0
-          ),
-
-        points:
-          referralPoints,
-
-        referrals
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      referralCode:
+        user.referralCode || "",
+      referralCount:
+        Number(user.referralCount || 0),
+      referrals
+    });
 
     return;
   }
@@ -1983,42 +1483,30 @@ async function handleRequest(
     method === "GET" &&
     pathname === "/api/romi/profile"
   ) {
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        profile: {
-          username: "romi",
-          displayName: "Romi",
-          platform: "RIZORA",
-          creator: true,
-          tiktok:
-            "https://www.tiktok.com/@romi.noir"
-        }
+    sendJSON(res, 200, {
+      success: true,
+      profile: {
+        username: "romi",
+        displayName: "Romi",
+        platform: "RIZORA",
+        creator: true,
+        tiktok: "https://www.tiktok.com/@romi.noir"
       }
-    );
+    });
 
     return;
   }
 
   // ----------------------------------------------------------
   // CREATOR TOOLS
-  // Supports GET and POST
   // ----------------------------------------------------------
 
   if (
-    (
-      method === "GET" ||
-      method === "POST"
-    ) &&
+    method === "GET" &&
     pathname === "/api/generate/hooks"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
     if (!user) {
       sendError(
@@ -2030,34 +1518,23 @@ async function handleRequest(
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        hooks:
-          randomItems(
-            HOOKS,
-            5
-          )
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      hooks: randomItems(
+        HOOKS,
+        5
+      )
+    });
 
     return;
   }
 
   if (
-    (
-      method === "GET" ||
-      method === "POST"
-    ) &&
+    method === "GET" &&
     pathname === "/api/generate/hashtags"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
     if (!user) {
       sendError(
@@ -2069,34 +1546,23 @@ async function handleRequest(
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        hashtags:
-          randomItems(
-            HASHTAGS,
-            8
-          )
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      hashtags: randomItems(
+        HASHTAGS,
+        8
+      )
+    });
 
     return;
   }
 
   if (
-    (
-      method === "GET" ||
-      method === "POST"
-    ) &&
+    method === "GET" &&
     pathname === "/api/generate/captions"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
     if (!user) {
       sendError(
@@ -2108,18 +1574,13 @@ async function handleRequest(
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        captions:
-          randomItems(
-            CAPTIONS,
-            5
-          )
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      captions: randomItems(
+        CAPTIONS,
+        5
+      )
+    });
 
     return;
   }
@@ -2133,27 +1594,16 @@ async function handleRequest(
     pathname === "/api/admin/stats"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireAdmin(
-      res,
-      user
-    )) {
+    if (!requireAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        stats:
-          getAdminStats(db)
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      stats: getAdminStats(db)
+    });
 
     return;
   }
@@ -2167,29 +1617,18 @@ async function handleRequest(
     pathname === "/api/admin/users"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireAdmin(
-      res,
-      user
-    )) {
+    if (!requireAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        users:
-          db.users.map(
-            safeUser
-          )
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      users: db.users.map(
+        safeUser
+      )
+    });
 
     return;
   }
@@ -2203,27 +1642,16 @@ async function handleRequest(
     pathname === "/api/admin/referrals"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireAdmin(
-      res,
-      user
-    )) {
+    if (!requireAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        referrals:
-          db.referrals
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      referrals: db.referrals
+    });
 
     return;
   }
@@ -2237,27 +1665,16 @@ async function handleRequest(
     pathname === "/api/admin/audit"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireAdmin(
-      res,
-      user
-    )) {
+    if (!requireAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        logs:
-          db.auditLogs
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      logs: db.auditLogs
+    });
 
     return;
   }
@@ -2271,27 +1688,16 @@ async function handleRequest(
     pathname === "/api/admin/tasks"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireAdmin(
-      res,
-      user
-    )) {
+    if (!requireAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        tasks:
-          db.tasks
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      tasks: db.tasks
+    });
 
     return;
   }
@@ -2305,51 +1711,35 @@ async function handleRequest(
     pathname === "/api/admin/users/role"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
     let body;
 
     try {
-      body =
-        await readBody(req);
+      body = await readBody(req);
     } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+      sendError(res, 400, error.message);
       return;
     }
 
-    const userId =
-      cleanString(
-        body.userId,
-        100
-      );
+    const userId = cleanString(
+      body.userId,
+      100
+    );
 
-    const role =
-      cleanString(
-        body.role,
-        50
-      );
+    const role = cleanString(
+      body.role,
+      50
+    );
 
     if (
-      ![
-        "user",
-        "admin",
-        "super_admin"
-      ].includes(role)
+      !["user", "admin", "super_admin"].includes(
+        role
+      )
     ) {
       sendError(
         res,
@@ -2362,8 +1752,7 @@ async function handleRequest(
 
     const target =
       db.users.find(
-        (item) =>
-          item.id === userId
+        (item) => item.id === userId
       );
 
     if (!target) {
@@ -2376,12 +1765,13 @@ async function handleRequest(
       return;
     }
 
+    const targetUsername =
+      normalizeUsername(
+        target.username
+      );
+
     if (
-      SUPER_ADMINS.has(
-        normalizeUsername(
-          target.username
-        )
-      ) &&
+      SUPER_ADMINS.has(targetUsername) &&
       role !== "super_admin"
     ) {
       sendError(
@@ -2400,27 +1790,19 @@ async function handleRequest(
       "role_changed",
       user,
       {
-        targetUserId:
-          target.id,
-
+        targetUserId: target.id,
         targetUsername:
           target.username,
-
         role
       }
     );
 
     saveDB(db);
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        user:
-          safeUser(target)
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      user: safeUser(target)
+    });
 
     return;
   }
@@ -2434,50 +1816,35 @@ async function handleRequest(
     pathname === "/api/admin/users/status"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
     let body;
 
     try {
-      body =
-        await readBody(req);
+      body = await readBody(req);
     } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+      sendError(res, 400, error.message);
       return;
     }
 
-    const userId =
-      cleanString(
-        body.userId,
-        100
-      );
+    const userId = cleanString(
+      body.userId,
+      100
+    );
 
-    const status =
-      cleanString(
-        body.status,
-        50
-      );
+    const status = cleanString(
+      body.status,
+      50
+    );
 
     if (
-      ![
-        "active",
-        "blocked"
-      ].includes(status)
+      !["active", "blocked"].includes(
+        status
+      )
     ) {
       sendError(
         res,
@@ -2490,8 +1857,7 @@ async function handleRequest(
 
     const target =
       db.users.find(
-        (item) =>
-          item.id === userId
+        (item) => item.id === userId
       );
 
     if (!target) {
@@ -2521,35 +1887,26 @@ async function handleRequest(
       return;
     }
 
-    target.status =
-      status;
+    target.status = status;
 
     audit(
       db,
       "user_status_changed",
       user,
       {
-        targetUserId:
-          target.id,
-
+        targetUserId: target.id,
         targetUsername:
           target.username,
-
         status
       }
     );
 
     saveDB(db);
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        user:
-          safeUser(target)
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      user: safeUser(target)
+    });
 
     return;
   }
@@ -2563,44 +1920,29 @@ async function handleRequest(
     pathname === "/api/admin/users/points"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
     let body;
 
     try {
-      body =
-        await readBody(req);
+      body = await readBody(req);
     } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+      sendError(res, 400, error.message);
       return;
     }
 
-    const userId =
-      cleanString(
-        body.userId,
-        100
-      );
+    const userId = cleanString(
+      body.userId,
+      100
+    );
 
-    const amount =
-      Number(
-        body.amount ??
-        body.points
-      );
+    const amount = Number(
+      body.amount ?? body.points
+    );
 
     if (
       !Number.isFinite(amount)
@@ -2616,8 +1958,7 @@ async function handleRequest(
 
     const target =
       db.users.find(
-        (item) =>
-          item.id === userId
+        (item) => item.id === userId
       );
 
     if (!target) {
@@ -2633,9 +1974,8 @@ async function handleRequest(
     target.points =
       Math.max(
         0,
-        Number(
-          target.points || 0
-        ) + amount
+        Number(target.points || 0) +
+          amount
       );
 
     audit(
@@ -2643,33 +1983,25 @@ async function handleRequest(
       "points_changed",
       user,
       {
-        targetUserId:
-          target.id,
-
+        targetUserId: target.id,
         targetUsername:
           target.username,
-
         amount
       }
     );
 
     saveDB(db);
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        user:
-          safeUser(target)
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      user: safeUser(target)
+    });
 
     return;
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — DASHBOARD
+  // SUPER ADMIN DASHBOARD
   // ----------------------------------------------------------
 
   if (
@@ -2677,44 +2009,25 @@ async function handleRequest(
     pathname === "/api/superadmin/dashboard"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        stats:
-          getAdminStats(db),
-
-        users:
-          db.users.map(
-            safeUser
-          ),
-
-        tasks:
-          db.tasks,
-
-        referrals:
-          db.referrals,
-
-        audit:
-          db.auditLogs.slice(
-            0,
-            200
-          )
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      stats: getAdminStats(db),
+      users: db.users.map(
+        safeUser
+      ),
+      tasks: db.tasks,
+      referrals: db.referrals,
+      audit: db.auditLogs.slice(
+        0,
+        200
+      )
+    });
 
     return;
   }
@@ -2728,29 +2041,18 @@ async function handleRequest(
     pathname === "/api/superadmin/users"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        users:
-          db.users.map(
-            safeUser
-          )
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      users: db.users.map(
+        safeUser
+      )
+    });
 
     return;
   }
@@ -2764,27 +2066,16 @@ async function handleRequest(
     pathname === "/api/superadmin/audit"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        logs:
-          db.auditLogs
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      logs: db.auditLogs
+    });
 
     return;
   }
@@ -2798,27 +2089,16 @@ async function handleRequest(
     pathname === "/api/superadmin/referrals"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        referrals:
-          db.referrals
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      referrals: db.referrals
+    });
 
     return;
   }
@@ -2832,51 +2112,35 @@ async function handleRequest(
     pathname === "/api/superadmin/users/role"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
     let body;
 
     try {
-      body =
-        await readBody(req);
+      body = await readBody(req);
     } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+      sendError(res, 400, error.message);
       return;
     }
 
-    const userId =
-      cleanString(
-        body.userId,
-        100
-      );
+    const userId = cleanString(
+      body.userId,
+      100
+    );
 
-    const role =
-      cleanString(
-        body.role,
-        50
-      );
+    const role = cleanString(
+      body.role,
+      50
+    );
 
     if (
-      ![
-        "user",
-        "admin",
-        "super_admin"
-      ].includes(role)
+      !["user", "admin", "super_admin"].includes(
+        role
+      )
     ) {
       sendError(
         res,
@@ -2889,8 +2153,7 @@ async function handleRequest(
 
     const target =
       db.users.find(
-        (item) =>
-          item.id === userId
+        (item) => item.id === userId
       );
 
     if (!target) {
@@ -2927,24 +2190,17 @@ async function handleRequest(
       "superadmin_role_changed",
       user,
       {
-        targetUserId:
-          target.id,
-
+        targetUserId: target.id,
         role
       }
     );
 
     saveDB(db);
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        user:
-          safeUser(target)
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      user: safeUser(target)
+    });
 
     return;
   }
@@ -2958,50 +2214,35 @@ async function handleRequest(
     pathname === "/api/superadmin/users/status"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
     let body;
 
     try {
-      body =
-        await readBody(req);
+      body = await readBody(req);
     } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+      sendError(res, 400, error.message);
       return;
     }
 
-    const userId =
-      cleanString(
-        body.userId,
-        100
-      );
+    const userId = cleanString(
+      body.userId,
+      100
+    );
 
-    const status =
-      cleanString(
-        body.status,
-        50
-      );
+    const status = cleanString(
+      body.status,
+      50
+    );
 
     if (
-      ![
-        "active",
-        "blocked"
-      ].includes(status)
+      !["active", "blocked"].includes(
+        status
+      )
     ) {
       sendError(
         res,
@@ -3014,8 +2255,7 @@ async function handleRequest(
 
     const target =
       db.users.find(
-        (item) =>
-          item.id === userId
+        (item) => item.id === userId
       );
 
     if (!target) {
@@ -3045,32 +2285,24 @@ async function handleRequest(
       return;
     }
 
-    target.status =
-      status;
+    target.status = status;
 
     audit(
       db,
       "superadmin_status_changed",
       user,
       {
-        targetUserId:
-          target.id,
-
+        targetUserId: target.id,
         status
       }
     );
 
     saveDB(db);
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        user:
-          safeUser(target)
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      user: safeUser(target)
+    });
 
     return;
   }
@@ -3084,44 +2316,29 @@ async function handleRequest(
     pathname === "/api/superadmin/users/points"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
     let body;
 
     try {
-      body =
-        await readBody(req);
+      body = await readBody(req);
     } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+      sendError(res, 400, error.message);
       return;
     }
 
-    const userId =
-      cleanString(
-        body.userId,
-        100
-      );
+    const userId = cleanString(
+      body.userId,
+      100
+    );
 
-    const amount =
-      Number(
-        body.amount ??
-        body.points
-      );
+    const amount = Number(
+      body.amount ?? body.points
+    );
 
     if (
       !Number.isFinite(amount)
@@ -3137,8 +2354,7 @@ async function handleRequest(
 
     const target =
       db.users.find(
-        (item) =>
-          item.id === userId
+        (item) => item.id === userId
       );
 
     if (!target) {
@@ -3154,9 +2370,8 @@ async function handleRequest(
     target.points =
       Math.max(
         0,
-        Number(
-          target.points || 0
-        ) + amount
+        Number(target.points || 0) +
+          amount
       );
 
     audit(
@@ -3164,24 +2379,17 @@ async function handleRequest(
       "superadmin_points_changed",
       user,
       {
-        targetUserId:
-          target.id,
-
+        targetUserId: target.id,
         amount
       }
     );
 
     saveDB(db);
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        user:
-          safeUser(target)
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      user: safeUser(target)
+    });
 
     return;
   }
@@ -3195,27 +2403,16 @@ async function handleRequest(
     pathname === "/api/superadmin/tasks"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        tasks:
-          db.tasks
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      tasks: db.tasks
+    });
 
     return;
   }
@@ -3229,48 +2426,32 @@ async function handleRequest(
     pathname === "/api/superadmin/tasks/status"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
     let body;
 
     try {
-      body =
-        await readBody(req);
+      body = await readBody(req);
     } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+      sendError(res, 400, error.message);
       return;
     }
 
-    const taskId =
-      cleanString(
-        body.taskId,
-        100
-      );
+    const taskId = cleanString(
+      body.taskId,
+      100
+    );
 
     const active =
-      Boolean(
-        body.active
-      );
+      Boolean(body.active);
 
     const task =
       db.tasks.find(
-        (item) =>
-          item.id === taskId
+        (item) => item.id === taskId
       );
 
     if (!task) {
@@ -3283,8 +2464,7 @@ async function handleRequest(
       return;
     }
 
-    task.active =
-      active;
+    task.active = active;
 
     audit(
       db,
@@ -3298,14 +2478,10 @@ async function handleRequest(
 
     saveDB(db);
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        task
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      task
+    });
 
     return;
   }
@@ -3319,27 +2495,16 @@ async function handleRequest(
     pathname === "/api/superadmin/tasks/list"
   ) {
     const user =
-      getCurrentUser(
-        db,
-        req
-      );
+      getCurrentUser(db, req);
 
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
+    if (!requireSuperAdmin(res, user)) {
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        tasks:
-          db.tasks
-      }
-    );
+    sendJSON(res, 200, {
+      success: true,
+      tasks: db.tasks
+    });
 
     return;
   }
@@ -3360,36 +2525,26 @@ async function handleRequest(
 // GLOBAL ERROR HANDLING
 // ============================================================
 
-async function requestHandler(
-  req,
-  res
-) {
+async function requestHandler(req, res) {
   try {
-
     await handleRequest(
       req,
       res
     );
-
   } catch (error) {
-
     console.error(
       "Request error:",
       error
     );
 
     if (!res.headersSent) {
-
       sendError(
         res,
         500,
         "Internal server error."
       );
-
     } else {
-
       res.end();
-
     }
   }
 }
@@ -3406,50 +2561,35 @@ function seedDatabase() {
 
   let changed = false;
 
-  for (
-    const username of
-    SUPER_ADMINS
-  ) {
-
-    let user =
-      db.users.find(
-        (item) =>
-          normalizeUsername(
-            item.username
-          ) === username
-      );
+  for (const username of SUPER_ADMINS) {
+    let user = db.users.find(
+      (item) =>
+        normalizeUsername(
+          item.username
+        ) === username
+    );
 
     if (!user) {
-
+      // We cannot create a working super admin
+      // password automatically without knowing it.
+      // This only logs that the account is missing.
       console.log(
         `Super admin account "${username}" does not exist yet.`
       );
-
       continue;
     }
 
-    if (
-      user.role !==
-      "super_admin"
-    ) {
-      user.role =
-        "super_admin";
-
+    if (user.role !== "super_admin") {
+      user.role = "super_admin";
       changed = true;
     }
 
-    if (
-      user.status !==
-      "active"
-    ) {
-      user.status =
-        "active";
-
+    if (user.status !== "active") {
+      user.status = "active";
       changed = true;
     }
 
     if (!user.referralCode) {
-
       user.referralCode =
         randomReferralCode(
           user.username
@@ -3476,10 +2616,9 @@ function seedDatabase() {
 ensureDatabase();
 seedDatabase();
 
-const server =
-  http.createServer(
-    requestHandler
-  );
+const server = http.createServer(
+  requestHandler
+);
 
 server.on(
   "error",
@@ -3495,7 +2634,6 @@ server.listen(
   PORT,
   HOST,
   () => {
-
     console.log("");
     console.log(
       "=========================================="
@@ -3507,16 +2645,16 @@ server.listen(
       "=========================================="
     );
     console.log(
-      "Version:  8.1.0"
+      `Version: 8.0.0`
     );
     console.log(
-      `Server:   http://${HOST}:${PORT}`
+      `Server:  http://${HOST}:${PORT}`
     );
     console.log(
-      `DB:       ${DB_FILE}`
+      `DB:      ${DB_FILE}`
     );
     console.log(
-      "Status:   ONLINE"
+      "Status:  ONLINE"
     );
     console.log(
       "=========================================="
@@ -3531,28 +2669,21 @@ server.listen(
 // ============================================================
 
 function shutdown(signal) {
-
   console.log(
     `\n${signal} received. Shutting down...`
   );
 
-  server.close(
-    () => {
+  server.close(() => {
+    console.log(
+      "RIZORA server stopped."
+    );
 
-      console.log(
-        "RIZORA server stopped."
-      );
+    process.exit(0);
+  });
 
-      process.exit(0);
-    }
-  );
-
-  setTimeout(
-    () => {
-      process.exit(1);
-    },
-    5000
-  );
+  setTimeout(() => {
+    process.exit(1);
+  }, 5000);
 }
 
 process.on(

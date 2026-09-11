@@ -1,0 +1,109 @@
+{
+  "users": [
+    {
+      "id": "usr_romi",
+      "username": "romi",
+      "displayName": "RoMi",
+      "passwordHash": "300c5212da637b55104ac6ad70cc78d6:805091790ec1671a8cf5601677e99b82cfb79781e620b91541b9193bf94e05475e19e94651c3caea8f2050d951adbb2b0bca1899b823017f93ac84d3b46243fb",
+      "role": "super_admin",
+      "points": 0,
+      "status": "active",
+      "referralCode": "ROMI-5F3119",
+      "referredBy": null,
+      "createdAt": "2026-09-11T16:50:32.987Z",
+      "updatedAt": "2026-09-11T17:08:48.230Z",
+      "lastLoginAt": "2026-09-11T17:26:40.391Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task_follow",
+      "title": "Follow RIZORA",
+      "description": "Follow RIZORA and stay connected.",
+      "points": 50,
+      "type": "social",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.329Z"
+    },
+    {
+      "id": "task_create",
+      "title": "Create your first post",
+      "description": "Create and publish a piece of content.",
+      "points": 100,
+      "type": "creator",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.331Z"
+    },
+    {
+      "id": "task_profile",
+      "title": "Complete your profile",
+      "description": "Make your creator profile ready.",
+      "points": 75,
+      "type": "profile",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.331Z"
+    },
+    {
+      "id": "task_referral",
+      "title": "Invite a creator",
+      "description": "Invite another creator to RIZORA.",
+      "points": 100,
+      "type": "referral",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.331Z"
+    }
+  ],
+  "taskCompletions": [],
+  "auditLogs": [
+    {
+      "id": "audit_5af6f876f2aa585f8e67e99bmtx8abrc",
+      "action": "user_login",
+      "actor": {
+        "id": "usr_romi",
+        "username": "romi",
+        "role": "super_admin"
+      },
+      "details": {},
+      "createdAt": "2026-09-11T17:26:40.392Z"
+    },
+    {
+      "id": "audit_b695b8f97028b9070e976fc3mtx81rkj",
+      "action": "user_login",
+      "actor": {
+        "id": "usr_romi",
+        "username": "romi",
+        "role": "super_admin"
+      },
+      "details": {},
+      "createdAt": "2026-09-11T17:20:00.979Z"
+    },
+    {
+      "id": "audit_af6eeb515727a81f5ca7ec7emtx7oam6",
+      "action": "user_login",
+      "actor": {
+        "id": "usr_romi",
+        "username": "romi",
+        "role": "super_admin"
+      },
+      "details": {},
+      "createdAt": "2026-09-11T17:09:32.478Z"
+    }
+  ],
+  "referrals": [],
+  "sessions": [
+    {
+      "id": "session_3d410db7c795da5ca304eb54mtx81rkj",
+      "token": "4112e0dd748198366458530849d1ef7e83ae99fddf0e7451282b392de243de96e73d11fcf934cd87b3cf48369e0c3f72",
+      "userId": "usr_romi",
+      "createdAt": "2026-09-11T17:20:00.979Z",
+      "expiresAt": "2026-09-18T17:20:00.979Z"
+    },
+    {
+      "id": "session_b5f8ba0562aa1aee1ef6ec2dmtx8abrc",
+      "token": "976bf30fca31dae8d47815d7ac6d1bfa42d6a77f14ac85e4143001123120c6412235b89f3be8fc9fff35eb0c855f2fbf",
+      "userId": "usr_romi",
+      "createdAt": "2026-09-11T17:26:40.392Z",
+      "expiresAt": "2026-09-18T17:26:40.392Z"
+    }
+  ]
+}

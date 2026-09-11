@@ -1,13 +1,16 @@
 {
   "name": "rizora",
-  "version": "6.0.0",
-  "description": "RIZORA — Creator Growth Studio",
+  "version": "7.0.0",
+  "description": "RIZORA Creator Growth Platform",
   "main": "server.js",
-  "type": "commonjs",
-  "engines": {
-    "node": "24.x"
-  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
+    "dotenv": "^16.6.1"
   }
 }
