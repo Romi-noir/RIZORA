@@ -1,2987 +1,4958 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-  >
-
-  <title>RIZORA — Creator Growth Platform</title>
-
-  <meta
-    name="description"
-    content="RIZORA is a creator growth platform for creators, missions, rewards and creator tools."
-  >
-
-  <meta name="theme-color" content="#080611">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="RIZORA">
-
-  <link rel="manifest" href="/manifest.json">
-
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --bg: #06050b;
-      --panel: #0d0b16;
-      --panel-2: #12101d;
-      --panel-3: #171322;
-
-      --border: rgba(255,255,255,.08);
-      --border-hover: rgba(177,128,255,.27);
-
-      --text: #f8f6ff;
-      --muted: #9791aa;
-
-      --accent: #a56cff;
-      --accent-dark: #713bd1;
-      --accent-light: #d1b8ff;
-
-      --success: #53e6a6;
-      --danger: #ff6a84;
-
-      --shadow: 0 30px 100px rgba(0,0,0,.40);
-    }
-
-    html {
-      scroll-behavior: smooth;
-      background: var(--bg);
-    }
-
-    body {
-      min-height: 100vh;
-      overflow-x: hidden;
-      color: var(--text);
-
-      background:
-        radial-gradient(
-          900px 600px at 90% -10%,
-          rgba(165,108,255,.17),
-          transparent 62%
-        ),
-        radial-gradient(
-          700px 500px at -10% 30%,
-          rgba(93,76,255,.08),
-          transparent 62%
-        ),
-        linear-gradient(
-          180deg,
-          #06050b 0%,
-          #08070e 100%
-        );
-
-      font-family:
-        Inter,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: -1;
-
-      background-image:
-        linear-gradient(
-          rgba(255,255,255,.012) 1px,
-          transparent 1px
-        ),
-        linear-gradient(
-          90deg,
-          rgba(255,255,255,.012) 1px,
-          transparent 1px
-        );
-
-      background-size: 42px 42px;
-
-      mask-image:
-        linear-gradient(
-          to bottom,
-          black,
-          transparent 80%
-        );
-    }
-
-    button,
-    input,
-    textarea,
-    select {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .muted {
-      color: var(--muted);
-    }
-
-    ::-webkit-scrollbar {
-      width: 9px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #07060b;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      border-radius: 99px;
-      background: #2c2639;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #4b3a61;
-    }
-
-    ::selection {
-      background: rgba(165,108,255,.35);
-      color: white;
-    }
-
-    /* ================= HEADER ================= */
-
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      height: 74px;
-
-      border-bottom: 1px solid var(--border);
-
-      background: rgba(6,5,11,.72);
-
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-    }
-
-    .header-inner {
-      width: min(1300px, calc(100% - 34px));
-      height: 100%;
-      margin: auto;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-
-      font-size: 15px;
-      font-weight: 950;
-      letter-spacing: .13em;
-    }
-
-    .brand-mark {
-      width: 39px;
-      height: 39px;
-
-      display: grid;
-      place-items: center;
-
-      border-radius: 13px;
-
-      color: white;
-      font-size: 17px;
-      font-weight: 1000;
-
-      background:
-        linear-gradient(
-          140deg,
-          #cfadff,
-          #9460fa 48%,
-          #6230c8
-        );
-
-      box-shadow:
-        0 10px 35px rgba(165,108,255,.32),
-        inset 0 1px 0 rgba(255,255,255,.24);
-    }
-
-    nav {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    nav a,
-    nav button {
-      border: 0;
-      color: var(--muted);
-      background: transparent;
-
-      padding: 10px 13px;
-      border-radius: 11px;
-
-      font-size: 13px;
-      font-weight: 700;
-
-      transition:
-        background .18s ease,
-        color .18s ease,
-        transform .18s ease;
-    }
-
-    nav a:hover,
-    nav button:hover {
-      color: white;
-      background: rgba(255,255,255,.055);
-    }
-
-    /* ================= BUTTONS ================= */
-
-    .btn {
-      min-height: 43px;
-
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-
-      border: 1px solid transparent;
-      border-radius: 12px;
-
-      padding: 0 16px;
-
-      color: white;
-
-      background:
-        linear-gradient(
-          135deg,
-          var(--accent),
-          var(--accent-dark)
-        );
-
-      font-size: 13px;
-      font-weight: 850;
-
-      box-shadow:
-        0 12px 30px rgba(165,108,255,.16);
-
-      transition:
-        transform .18s ease,
-        filter .18s ease,
-        border-color .18s ease,
-        background .18s ease;
-    }
-
-    .btn:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.08);
-    }
-
-    .btn:active {
-      transform: translateY(0);
-    }
-
-    .btn.secondary {
-      color: var(--text);
-      background: rgba(255,255,255,.035);
-      border-color: var(--border);
-      box-shadow: none;
-    }
-
-    .btn.secondary:hover {
-      background: rgba(255,255,255,.07);
-      border-color: var(--border-hover);
-    }
-
-    .btn.small {
-      min-height: 36px;
-      padding: 0 12px;
-      font-size: 12px;
-      border-radius: 10px;
-    }
-
-    /* ================= MOBILE ================= */
-
-    .mobile-menu {
-      display: none;
-
-      min-width: 43px;
-      min-height: 40px;
-
-      border: 1px solid var(--border);
-      border-radius: 11px;
-
-      color: white;
-      background: rgba(255,255,255,.045);
-
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: .08em;
-    }
-
-    /* ================= LANDING ================= */
-
-    .landing {
-      min-height: calc(100vh - 74px);
-
-      display: grid;
-      place-items: center;
-
-      padding: 80px 20px;
-    }
-
-    .landing-inner {
-      width: min(1160px, 100%);
-
-      display: grid;
-      grid-template-columns: 1.12fr .88fr;
-
-      gap: 60px;
-
-      align-items: center;
-    }
-
-    .hero-label {
-      width: fit-content;
-
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-
-      margin-bottom: 19px;
-      padding: 7px 11px;
-
-      color: var(--accent-light);
-
-      border: 1px solid rgba(165,108,255,.17);
-      border-radius: 999px;
-
-      background: rgba(165,108,255,.07);
-
-      font-size: 10px;
-      font-weight: 900;
-
-      letter-spacing: .13em;
-      text-transform: uppercase;
-    }
-
-    .hero-label::before {
-      content: "";
-
-      width: 6px;
-      height: 6px;
-
-      border-radius: 50%;
-      background: var(--success);
-
-      box-shadow:
-        0 0 12px rgba(83,230,166,.8);
-    }
-
-    .landing h1 {
-      max-width: 850px;
-
-      margin-bottom: 23px;
-
-      font-size:
-        clamp(
-          52px,
-          8.2vw,
-          92px
-        );
-
-      line-height: .9;
-      letter-spacing: -.075em;
-    }
-
-    .landing h1 span {
-      color: var(--accent-light);
-
-      text-shadow:
-        0 0 55px rgba(165,108,255,.22);
-    }
-
-    .hero-text {
-      max-width: 665px;
-
-      color: var(--muted);
-
-      line-height: 1.85;
-      font-size: 17px;
-    }
-
-    .landing-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 11px;
-
-      margin-top: 30px;
-    }
-
-    .hero-note {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 9px;
-
-      margin-top: 20px;
-    }
-
-    .hero-pill {
-      padding: 7px 10px;
-
-      color: var(--muted);
-
-      border: 1px solid var(--border);
-      border-radius: 999px;
-
-      background: rgba(255,255,255,.025);
-
-      font-size: 11px;
-    }
-
-    .hero-card {
-      position: relative;
-      overflow: hidden;
-
-      padding: 28px;
-
-      border: 1px solid var(--border);
-      border-radius: 27px;
-
-      background:
-        linear-gradient(
-          145deg,
-          rgba(165,108,255,.13),
-          rgba(255,255,255,.028)
-        );
-
-      box-shadow: var(--shadow);
-    }
-
-    .hero-card-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      gap: 15px;
-      margin-bottom: 24px;
-    }
-
-    .hero-card-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-
-      font-weight: 900;
-    }
-
-    .hero-status {
-      padding: 6px 9px;
-
-      color: #8df4c3;
-
-      border: 1px solid rgba(83,230,166,.16);
-      border-radius: 999px;
-
-      background: rgba(83,230,166,.07);
-
-      font-size: 9px;
-      font-weight: 900;
-      letter-spacing: .08em;
-    }
-
-    .hero-card-title {
-      margin-bottom: 9px;
-
-      font-size: 29px;
-      line-height: 1;
-      letter-spacing: -.045em;
-    }
-
-    .hero-card-copy {
-      color: var(--muted);
-
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    .hero-mini-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-
-      gap: 10px;
-      margin-top: 24px;
-    }
-
-    .hero-mini {
-      padding: 17px;
-
-      border: 1px solid var(--border);
-      border-radius: 15px;
-
-      background: rgba(6,5,11,.37);
-    }
-
-    .hero-mini strong {
-      display: block;
-
-      margin-bottom: 4px;
-
-      font-size: 22px;
-      letter-spacing: -.04em;
-    }
-
-    .hero-mini span {
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    /* ================= AUTH ================= */
-
-    .auth-wrap {
-      min-height: calc(100vh - 74px);
-
-      display: grid;
-      place-items: center;
-
-      padding: 55px 20px;
-    }
-
-    .auth-card {
-      width: min(455px, 100%);
-
-      padding: 30px;
-
-      border: 1px solid var(--border);
-      border-radius: 24px;
-
-      background:
-        linear-gradient(
-          150deg,
-          rgba(18,16,29,.98),
-          rgba(9,8,14,.98)
-        );
-
-      box-shadow: var(--shadow);
-    }
-
-    .auth-icon {
-      width: 45px;
-      height: 45px;
-
-      display: grid;
-      place-items: center;
-
-      margin-bottom: 20px;
-
-      border-radius: 14px;
-
-      background:
-        linear-gradient(
-          135deg,
-          #ba8aff,
-          #7040cf
-        );
-
-      box-shadow:
-        0 12px 30px rgba(165,108,255,.24);
-
-      font-size: 18px;
-      font-weight: 1000;
-    }
-
-    .auth-card h1 {
-      margin-bottom: 7px;
-
-      font-size: 31px;
-      letter-spacing: -.045em;
-    }
-
-    .auth-subtitle {
-      margin-bottom: 24px;
-
-      color: var(--muted);
-
-      line-height: 1.6;
-      font-size: 13px;
-    }
-
-    .field {
-      margin-bottom: 15px;
-    }
-
-    .field label {
-      display: block;
-
-      margin-bottom: 7px;
-
-      color: #aaa4b9;
-
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .field input,
-    #referralLink {
-      width: 100%;
-
-      outline: none;
-
-      padding: 13px 14px;
-
-      color: white;
-
-      border: 1px solid var(--border);
-      border-radius: 12px;
-
-      background: #08070d;
-
-      transition:
-        border-color .18s ease,
-        box-shadow .18s ease,
-        background .18s ease;
-    }
-
-    .field input::placeholder {
-      color: #5f596c;
-    }
-
-    .field input:focus,
-    #referralLink:focus {
-      border-color: rgba(165,108,255,.50);
-
-      background: #0a0811;
-
-      box-shadow:
-        0 0 0 4px rgba(165,108,255,.08);
-    }
-
-    .password-wrap {
-      position: relative;
-    }
-
-    .password-wrap input {
-      padding-right: 48px;
-    }
-
-    .password-toggle {
-      position: absolute;
-
-      right: 6px;
-      top: 50%;
-
-      width: 38px;
-      height: 38px;
-
-      transform: translateY(-50%);
-
-      border: 0;
-      border-radius: 9px;
-
-      color: #8f889c;
-      background: transparent;
-
-      font-size: 17px;
-    }
-
-    .password-toggle:hover {
-      color: white;
-      background: rgba(255,255,255,.055);
-    }
-
-    .field small {
-      display: block;
-      margin-top: 7px;
-
-      color: var(--muted);
-      font-size: 10px;
-      line-height: 1.5;
-    }
-
-    .auth-switch {
-      margin-top: 18px;
-
-      color: var(--muted);
-      text-align: center;
-
-      font-size: 12px;
-    }
-
-    .auth-switch button {
-      border: 0;
-
-      color: var(--accent-light);
-      background: transparent;
-
-      font-weight: 850;
-    }
-
-    .error,
-    .success-message {
-      padding: 12px 13px;
-
-      margin-bottom: 15px;
-
-      border-radius: 12px;
-
-      font-size: 12px;
-      line-height: 1.55;
-    }
-
-    .error {
-      color: #ffabb9;
-
-      border: 1px solid rgba(255,106,132,.18);
-      background: rgba(255,106,132,.07);
-    }
-
-    .success-message {
-      color: #82efbf;
-
-      border: 1px solid rgba(83,230,166,.18);
-      background: rgba(83,230,166,.07);
-    }
-
-    /* ================= DASHBOARD ================= */
-
-    .app {
-      width: min(1300px, calc(100% - 34px));
-
-      margin: auto;
-
-      padding: 34px 0 85px;
-    }
-
-    .welcome {
-      position: relative;
-      overflow: hidden;
-
-      min-height: 205px;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      gap: 25px;
-
-      padding: 32px;
-      margin-bottom: 17px;
-
-      border: 1px solid var(--border);
-      border-radius: 25px;
-
-      background:
-        radial-gradient(
-          480px 250px at 84% 20%,
-          rgba(165,108,255,.15),
-          transparent 66%
-        ),
-        linear-gradient(
-          135deg,
-          rgba(165,108,255,.08),
-          rgba(255,255,255,.017)
-        );
-
-      box-shadow: var(--shadow);
-    }
-
-    .welcome::after {
-      content: "R";
-
-      position: absolute;
-
-      right: 5px;
-      bottom: -85px;
-
-      color: rgba(255,255,255,.025);
-
-      font-size: 280px;
-      line-height: 1;
-
-      font-weight: 1000;
-
-      pointer-events: none;
-    }
-
-    .welcome-content,
-    .welcome-actions {
-      position: relative;
-      z-index: 2;
-    }
-
-    .welcome h1 {
-      margin: 6px 0 9px;
-
-      font-size:
-        clamp(
-          38px,
-          6vw,
-          61px
-        );
-
-      line-height: .95;
-      letter-spacing: -.065em;
-    }
-
-    .welcome-description {
-      max-width: 620px;
-
-      color: var(--muted);
-
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    .welcome-actions {
-      display: flex;
-      gap: 9px;
-      flex-wrap: wrap;
-    }
-
-    .stats {
-      display: grid;
-
-      grid-template-columns:
-        repeat(4, 1fr);
-
-      gap: 12px;
-      margin-bottom: 15px;
-    }
-
-    .stat {
-      position: relative;
-
-      min-height: 118px;
-      padding: 20px;
-
-      border: 1px solid var(--border);
-      border-radius: 18px;
-
-      background:
-        linear-gradient(
-          145deg,
-          rgba(13,11,22,.94),
-          rgba(255,255,255,.014)
-        );
-
-      box-shadow:
-        0 15px 45px rgba(0,0,0,.13);
-
-      transition:
-        transform .18s ease,
-        border-color .18s ease;
-    }
-
-    .stat:hover {
-      transform: translateY(-2px);
-      border-color: var(--border-hover);
-    }
-
-    .stat-label {
-      margin-bottom: 9px;
-
-      color: var(--muted);
-
-      text-transform: uppercase;
-      letter-spacing: .12em;
-
-      font-size: 9px;
-      font-weight: 800;
-    }
-
-    .stat-value {
-      font-size: 29px;
-      line-height: 1;
-
-      letter-spacing: -.045em;
-      font-weight: 950;
-    }
-
-    .dashboard-icon {
-      position: absolute;
-
-      top: 15px;
-      right: 15px;
-
-      width: 32px;
-      height: 32px;
-
-      display: grid;
-      place-items: center;
-
-      color: var(--accent-light);
-
-      border: 1px solid rgba(165,108,255,.16);
-      border-radius: 9px;
-
-      background: rgba(165,108,255,.08);
-
-      font-size: 8px;
-      font-weight: 900;
-      letter-spacing: .05em;
-    }
-
-    /* ================= CARDS ================= */
-
-    .card {
-      padding: 24px;
-
-      border: 1px solid var(--border);
-      border-radius: 21px;
-
-      background:
-        linear-gradient(
-          145deg,
-          rgba(13,11,22,.96),
-          rgba(255,255,255,.012)
-        );
-
-      box-shadow:
-        0 18px 60px rgba(0,0,0,.15);
-    }
-
-    .card h2 {
-      margin-bottom: 6px;
-
-      font-size: 20px;
-      letter-spacing: -.035em;
-    }
-
-    .card-description {
-      color: var(--muted);
-
-      font-size: 12px;
-      line-height: 1.65;
-    }
-
-    .rewards-card {
-      margin-bottom: 15px;
-    }
-
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-
-    .reward {
-      flex-shrink: 0;
-
-      padding: 7px 11px;
-
-      color: #e9dbff;
-
-      border: 1px solid rgba(165,108,255,.19);
-      border-radius: 999px;
-
-      background: rgba(165,108,255,.08);
-
-      font-size: 10px;
-      font-weight: 900;
-    }
-
-    /* ================= REFERRAL ================= */
-
-    .referral-grid {
-      display: grid;
-
-      grid-template-columns:
-        1.5fr .75fr .75fr;
-
-      gap: 11px;
-
-      margin-top: 18px;
-    }
-
-    .referral-code-row {
-      display: flex;
-      align-items: center;
-
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .referral-code {
-      font-size: 18px;
-      font-weight: 950;
-      letter-spacing: .03em;
-    }
-
-    .referral-link-section {
-      margin-top: 17px;
-    }
-
-    .referral-link-row {
-      display: grid;
-
-      grid-template-columns: 1fr auto auto;
-
-      gap: 8px;
-
-      margin-top: 8px;
-    }
-
-    .referral-link-row input {
-      min-width: 0;
-    }
-
-    #referralList {
-      margin-top: 17px;
-    }
-
-    /* ================= DASHBOARD GRID ================= */
-
-    .dashboard-grid {
-      display: grid;
-
-      grid-template-columns:
-        1.2fr .8fr;
-
-      gap: 15px;
-    }
-
-    /* ================= TASKS ================= */
-
-    .tasks {
-      display: grid;
-
-      gap: 9px;
-      margin-top: 17px;
-    }
-
-    .task {
-      padding: 17px;
-
-      border: 1px solid var(--border);
-      border-radius: 16px;
-
-      background:
-        rgba(255,255,255,.022);
-
-      transition:
-        transform .18s ease,
-        border-color .18s ease,
-        background .18s ease;
-    }
-
-    .task:hover {
-      transform: translateX(2px);
-
-      border-color:
-        rgba(165,108,255,.22);
-
-      background:
-        rgba(255,255,255,.04);
-    }
-
-    .task-top {
-      display: flex;
-
-      justify-content: space-between;
-      align-items: flex-start;
-
-      gap: 14px;
-    }
-
-    .task h3 {
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-
-    .task p {
-      color: var(--muted);
-
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    .task-actions {
-      display: flex;
-
-      flex-wrap: wrap;
-
-      gap: 7px;
-
-      margin-top: 13px;
-    }
-
-    /* ================= CREATOR LAB ================= */
-
-    .creator-actions {
-      display: grid;
-
-      gap: 9px;
-      margin-top: 18px;
-    }
-
-    #toolResult {
-      min-height: 78px;
-
-      margin-top: 15px;
-      padding: 14px;
-
-      border: 1px solid var(--border);
-      border-radius: 14px;
-
-      color: var(--muted);
-
-      background:
-        rgba(6,5,11,.67);
-
-      font-size: 12px;
-      line-height: 1.7;
-    }
-
-    .tool-line {
-      padding: 9px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .tool-line:last-child {
-      border-bottom: 0;
-    }
-
-    /* ================= FOLLOW ROMI ================= */
-
-    .creator-follow-card {
-      margin-top: 15px;
-    }
-
-    .creator-follow {
-      display: flex;
-
-      align-items: center;
-      justify-content: space-between;
-
-      gap: 15px;
-
-      padding: 17px;
-      margin-top: 17px;
-
-      border: 1px solid rgba(165,108,255,.12);
-      border-radius: 16px;
-
-      background:
-        linear-gradient(
-          135deg,
-          rgba(165,108,255,.08),
-          rgba(255,255,255,.02)
-        );
-    }
-
-    .creator-follow-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .creator-avatar {
-      width: 43px;
-      height: 43px;
-
-      flex-shrink: 0;
-
-      display: grid;
-      place-items: center;
-
-      border-radius: 13px;
-
-      color: white;
-
-      background:
-        linear-gradient(
-          135deg,
-          #ba8aff,
-          #6634c8
-        );
-
-      font-weight: 1000;
-    }
-
-    .creator-follow-info strong {
-      display: block;
-      font-size: 13px;
-    }
-
-    .creator-follow-info span {
-      display: block;
-
-      margin-top: 2px;
-
-      color: var(--muted);
-      font-size: 10px;
-    }
-
-    /* ================= ABOUT ================= */
-
-    .about-head {
-      display: flex;
-
-      align-items: flex-end;
-      justify-content: space-between;
-
-      gap: 20px;
-      flex-wrap: wrap;
-
-      margin-bottom: 22px;
-    }
-
-    .about-head h1 {
-      font-size:
-        clamp(
-          42px,
-          6vw,
-          64px
-        );
-
-      line-height: .9;
-      letter-spacing: -.06em;
-    }
-
-    .romi-card {
-      display: grid;
-
-      grid-template-columns:
-        115px 1fr;
-
-      gap: 23px;
-
-      align-items: center;
-    }
-
-    .romi-avatar {
-      width: 115px;
-      height: 115px;
-
-      display: grid;
-      place-items: center;
-
-      border: 1px solid var(--border);
-      border-radius: 27px;
-
-      background:
-        radial-gradient(
-          circle at 30% 20%,
-          rgba(203,170,255,.24),
-          transparent 35%
-        ),
-        linear-gradient(
-          145deg,
-          #251741,
-          #0c0a12
-        );
-
-      font-size: 38px;
-      font-weight: 1000;
-
-      box-shadow:
-        0 20px 60px rgba(0,0,0,.25);
-    }
-
-    .romi-card h2 {
-      margin-bottom: 10px;
-    }
-
-    .badges {
-      display: flex;
-      flex-wrap: wrap;
-
-      gap: 7px;
-      margin: 11px 0;
-    }
-
-    .badge {
-      padding: 6px 9px;
-
-      color: var(--muted);
-
-      border: 1px solid var(--border);
-      border-radius: 999px;
-
-      background: rgba(255,255,255,.025);
-
-      font-size: 10px;
-      font-weight: 700;
-    }
-
-    .romi-bio {
-      color: var(--muted);
-
-      font-size: 13px;
-      line-height: 1.8;
-    }
-
-    /* ================= TOAST ================= */
-
-    #toast {
-      position: fixed;
-
-      left: 50%;
-      bottom: 24px;
-
-      z-index: 5000;
-
-      max-width:
-        min(
-          430px,
-          calc(100% - 28px)
-        );
-
-      padding: 12px 15px;
-
-      transform:
-        translate(-50%, 130px);
-
-      border: 1px solid var(--border);
-      border-radius: 13px;
-
-      color: white;
-
-      background:
-        rgba(16,14,24,.94);
-
-      box-shadow:
-        0 20px 60px rgba(0,0,0,.35);
-
-      backdrop-filter: blur(18px);
-
-      font-size: 12px;
-      font-weight: 750;
-
-      opacity: 0;
-
-      transition:
-        transform .25s ease,
-        opacity .25s ease;
-    }
-
-    #toast.show {
-      transform:
-        translate(-50%, 0);
-
-      opacity: 1;
-    }
-
-    .loading-dot {
-      display: inline-block;
-
-      width: 6px;
-      height: 6px;
-
-      margin-left: 3px;
-
-      border-radius: 50%;
-
-      background: currentColor;
-
-      animation:
-        pulseDot 1s infinite ease-in-out;
-    }
-
-    @keyframes pulseDot {
-      0%,
-      100% {
-        opacity: .25;
-      }
-
-      50% {
-        opacity: 1;
-      }
-    }
-
-    /* ================= RESPONSIVE ================= */
-
-    @media (max-width: 1000px) {
-
-      .landing-inner {
-        grid-template-columns: 1fr;
-        gap: 35px;
-      }
-
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .referral-grid {
-        grid-template-columns:
-          1fr 1fr;
-      }
-    }
-
-    @media (max-width: 760px) {
-
-      header {
-        height: 65px;
-      }
-
-      .header-inner {
-        width:
-          calc(100% - 24px);
-      }
-
-      #desktopNav {
-        display: none;
-
-        position: absolute;
-
-        top: 65px;
-        left: 12px;
-        right: 12px;
-
-        padding: 10px;
-
-        flex-direction: column;
-        align-items: stretch;
-
-        border: 1px solid var(--border);
-        border-radius: 16px;
-
-        background:
-          rgba(11,9,17,.98);
-
-        box-shadow: var(--shadow);
-
-        backdrop-filter: blur(20px);
-      }
-
-      #desktopNav.mobile-open {
-        display: flex;
-      }
-
-      #desktopNav a,
-      #desktopNav button {
-        width: 100%;
-        text-align: left;
-      }
-
-      .mobile-menu {
-        display: block;
-      }
-
-      .landing {
-        min-height:
-          calc(100vh - 65px);
-
-        padding: 54px 14px;
-      }
-
-      .landing h1 {
-        font-size:
-          clamp(
-            48px,
-            14vw,
-            70px
-          );
-      }
-
-      .landing p {
-        font-size: 15px;
-      }
-
-      .app {
-        width:
-          calc(100% - 24px);
-
-        padding-top: 18px;
-      }
-
-      .welcome {
-        align-items: flex-start;
-        flex-direction: column;
-
-        min-height: 185px;
-
-        padding: 23px;
-
-        border-radius: 20px;
-      }
-
-      .welcome-actions {
-        width: 100%;
-      }
-
-      .welcome-actions .btn {
-        flex: 1;
-      }
-
-      .stats {
-        grid-template-columns:
-          1fr 1fr;
-      }
-
-      .referral-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .referral-link-row {
-        grid-template-columns: 1fr;
-      }
-
-      .romi-card {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 450px) {
-
-      .stats {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-mini-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-card {
-        padding: 22px;
-      }
-
-      .card {
-        padding: 19px;
-      }
-
-      .task-top {
-        flex-direction: column;
-      }
-
-      .task-actions .btn {
-        flex: 1;
-      }
-
-      .creator-follow {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .creator-follow .btn {
-        width: 100%;
-      }
-
-      .landing-actions {
-        flex-direction: column;
-      }
-
-      .landing-actions .btn {
-        width: 100%;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>RIZORA — Creator Growth Platform</title>
+<meta name="description" content="RIZORA is a creator growth platform for creators, missions, rewards and creator tools.">
+<meta name="theme-color" content="#080611">
+<link rel="manifest" href="/manifest.json">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#06050b;
+  --panel:#0d0b16;
+  --panel2:#12101d;
+  --panel3:#171322;
+  --border:rgba(255,255,255,.08);
+  --border2:rgba(174,125,255,.25);
+  --text:#f8f6ff;
+  --muted:#9791aa;
+  --accent:#a56cff;
+  --accent2:#d1b8ff;
+  --success:#53e6a6;
+  --danger:#ff6a84;
+  --warning:#ffc86b;
+  --shadow:0 30px 100px rgba(0,0,0,.4)
+}
+
+html{
+  scroll-behavior:smooth;
+  background:var(--bg)
+}
+
+body{
+  min-height:100vh;
+  overflow-x:hidden;
+  color:var(--text);
+  background:
+    radial-gradient(
+      900px 600px at 90% -10%,
+      rgba(165,108,255,.17),
+      transparent 62%
+    ),
+    radial-gradient(
+      700px 500px at -10% 30%,
+      rgba(93,76,255,.08),
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      #06050b 0%,
+      #08070e 100%
+    );
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif
+}
+
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,.012) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.012) 1px,
+      transparent 1px
+    );
+  background-size:42px 42px;
+  mask-image:
+    linear-gradient(
+      to bottom,
+      black,
+      transparent 80%
+    )
+}
+
+button,
+input,
+textarea,
+select{
+  font:inherit
+}
+
+button{
+  cursor:pointer
+}
+
+a{
+  color:inherit;
+  text-decoration:none
+}
+
+.hidden{
+  display:none!important
+}
+
+.muted{
+  color:var(--muted)
+}
+
+::-webkit-scrollbar{
+  width:9px
+}
+
+::-webkit-scrollbar-track{
+  background:#07060b
+}
+
+::-webkit-scrollbar-thumb{
+  border-radius:99px;
+  background:#2c2639
+}
+
+header{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  height:74px;
+  border-bottom:1px solid var(--border);
+  background:rgba(6,5,11,.72);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px)
+}
+
+.header-inner{
+  width:min(1320px,calc(100% - 34px));
+  height:100%;
+  margin:auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  font-size:15px;
+  font-weight:950;
+  letter-spacing:.13em
+}
+
+.brand-mark{
+  width:39px;
+  height:39px;
+  display:grid;
+  place-items:center;
+  border-radius:13px;
+  color:white;
+  font-size:17px;
+  font-weight:1000;
+  background:
+    linear-gradient(
+      140deg,
+      #cfadff,
+      #9460fa 48%,
+      #6230c8
+    );
+  box-shadow:
+    0 10px 35px rgba(165,108,255,.32),
+    inset 0 1px 0 rgba(255,255,255,.24)
+}
+
+nav{
+  display:flex;
+  align-items:center;
+  gap:5px
+}
+
+nav a,
+nav button{
+  border:0;
+  color:var(--muted);
+  background:transparent;
+  padding:10px 13px;
+  border-radius:11px;
+  font-size:13px;
+  font-weight:700;
+  transition:.18s
+}
+
+nav a:hover,
+nav button:hover{
+  color:white;
+  background:rgba(255,255,255,.055)
+}
+
+.btn{
+  min-height:43px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border:1px solid transparent;
+  border-radius:12px;
+  padding:0 16px;
+  color:white;
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      #713bd1
+    );
+  font-size:13px;
+  font-weight:850;
+  box-shadow:
+    0 12px 30px rgba(165,108,255,.16);
+  transition:.18s
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+  filter:brightness(1.08)
+}
+
+.btn:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+  transform:none;
+  filter:none
+}
+
+.btn.secondary{
+  color:var(--text);
+  background:rgba(255,255,255,.035);
+  border-color:var(--border);
+  box-shadow:none
+}
+
+.btn.danger{
+  background:rgba(255,106,132,.1);
+  border-color:rgba(255,106,132,.22);
+  color:#ffb4c2;
+  box-shadow:none
+}
+
+.btn.small{
+  min-height:36px;
+  padding:0 12px;
+  font-size:12px;
+  border-radius:10px
+}
+
+.btn.tiny{
+  min-height:32px;
+  padding:0 9px;
+  font-size:11px;
+  border-radius:9px
+}
+
+.mobile-menu{
+  display:none;
+  min-width:43px;
+  min-height:40px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  color:white;
+  background:rgba(255,255,255,.045);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.08em
+}
+
+main section{
+  width:min(1320px,calc(100% - 34px));
+  margin:auto
+}
+
+.landing{
+  min-height:calc(100vh - 74px);
+  display:grid;
+  place-items:center;
+  padding:80px 20px
+}
+
+.landing-inner{
+  width:min(1160px,100%);
+  display:grid;
+  grid-template-columns:1.12fr .88fr;
+  gap:60px;
+  align-items:center
+}
+
+.hero-label,
+.eyebrow{
+  width:fit-content;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:14px;
+  padding:7px 11px;
+  color:var(--accent2);
+  border:1px solid rgba(165,108,255,.17);
+  border-radius:999px;
+  background:rgba(165,108,255,.07);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.13em;
+  text-transform:uppercase
+}
+
+.hero-label:before{
+  content:"";
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--success);
+  box-shadow:0 0 12px rgba(83,230,166,.8)
+}
+
+.landing h1{
+  max-width:850px;
+  margin-bottom:23px;
+  font-size:clamp(52px,8.2vw,92px);
+  line-height:.9;
+  letter-spacing:-.075em
+}
+
+.landing h1 span{
+  color:var(--accent2);
+  text-shadow:0 0 55px rgba(165,108,255,.22)
+}
+
+.hero-text{
+  max-width:665px;
+  color:var(--muted);
+  line-height:1.85;
+  font-size:17px
+}
+
+.landing-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:11px;
+  margin-top:30px
+}
+
+.hero-note{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-top:20px
+}
+
+.hero-pill{
+  padding:7px 10px;
+  color:var(--muted);
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:rgba(255,255,255,.025);
+  font-size:11px
+}
+
+.hero-card,
+.card,
+.auth-card{
+  border:1px solid var(--border);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(18,16,29,.98),
+      rgba(9,8,14,.98)
+    );
+  box-shadow:var(--shadow)
+}
+
+.hero-card{
+  position:relative;
+  overflow:hidden;
+  padding:28px;
+  border-radius:27px
+}
+
+.hero-card-top,
+.card-top,
+.row-between{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:15px
+}
+
+.hero-status,
+.badge,
+.role-badge,
+.status-badge,
+.reward{
+  padding:6px 9px;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.08em
+}
+
+.hero-status,
+.status-active{
+  color:#8df4c3;
+  border:1px solid rgba(83,230,166,.16);
+  background:rgba(83,230,166,.07)
+}
+
+.hero-card-title{
+  margin-bottom:9px;
+  font-size:29px;
+  line-height:1;
+  letter-spacing:-.045em
+}
+
+.hero-card-copy,
+.card-description{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.7
+}
+
+.hero-mini-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:24px
+}
+
+.hero-mini{
+  padding:17px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:rgba(6,5,11,.37)
+}
+
+.hero-mini strong{
+  display:block;
+  margin-bottom:4px;
+  font-size:22px
+}
+
+.hero-mini span{
+  color:var(--muted);
+  font-size:11px
+}
+
+.auth-wrap{
+  min-height:calc(100vh - 74px);
+  display:grid;
+  place-items:center;
+  padding:55px 20px
+}
+
+.auth-card{
+  width:min(455px,100%);
+  padding:30px;
+  border-radius:24px
+}
+
+.auth-icon{
+  width:45px;
+  height:45px;
+  display:grid;
+  place-items:center;
+  margin-bottom:20px;
+  border-radius:14px;
+  background:
+    linear-gradient(
+      135deg,
+      #ba8aff,
+      #7040cf
+    );
+  box-shadow:
+    0 12px 30px rgba(165,108,255,.24);
+  font-size:18px;
+  font-weight:1000
+}
+
+.auth-card h1{
+  margin-bottom:7px;
+  font-size:31px;
+  letter-spacing:-.045em
+}
+
+.auth-subtitle{
+  margin-bottom:24px;
+  color:var(--muted);
+  line-height:1.6;
+  font-size:13px
+}
+
+.field{
+  margin-bottom:15px
+}
+
+.field label{
+  display:block;
+  margin-bottom:7px;
+  color:#aaa4b9;
+  font-size:11px;
+  font-weight:800
+}
+
+.field input,
+.field textarea,
+.field select,
+#referralLink{
+  width:100%;
+  outline:none;
+  padding:13px 14px;
+  color:white;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#08070d;
+  transition:.18s
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus,
+#referralLink:focus{
+  border-color:rgba(165,108,255,.5);
+  box-shadow:0 0 0 4px rgba(165,108,255,.08)
+}
+
+.field textarea{
+  min-height:110px;
+  resize:vertical
+}
+
+.field select option{
+  background:#111
+}
+
+.password-wrap{
+  position:relative
+}
+
+.password-wrap input{
+  padding-right:48px
+}
+
+.password-toggle{
+  position:absolute;
+  right:6px;
+  top:50%;
+  width:38px;
+  height:38px;
+  transform:translateY(-50%);
+  border:0;
+  border-radius:9px;
+  color:#8f889c;
+  background:transparent;
+  font-size:17px
+}
+
+.auth-switch{
+  margin-top:18px;
+  color:var(--muted);
+  text-align:center;
+  font-size:12px
+}
+
+.auth-switch button{
+  border:0;
+  color:var(--accent2);
+  background:transparent;
+  font-weight:850
+}
+
+.error,
+.success-message{
+  padding:12px 13px;
+  margin-bottom:15px;
+  border-radius:12px;
+  font-size:12px;
+  line-height:1.55
+}
+
+.error{
+  color:#ffabb9;
+  border:1px solid rgba(255,106,132,.18);
+  background:rgba(255,106,132,.07)
+}
+
+.success-message{
+  color:#82efbf;
+  border:1px solid rgba(83,230,166,.18);
+  background:rgba(83,230,166,.07)
+}
+
+.app{
+  padding:34px 0 85px
+}
+
+.welcome{
+  position:relative;
+  overflow:hidden;
+  min-height:205px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:25px;
+  padding:32px;
+  margin-bottom:17px;
+  border:1px solid var(--border);
+  border-radius:25px;
+  background:
+    radial-gradient(
+      480px 250px at 84% 20%,
+      rgba(165,108,255,.15),
+      transparent 66%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(165,108,255,.08),
+      rgba(255,255,255,.017)
+    );
+  box-shadow:var(--shadow)
+}
+
+.welcome:after{
+  content:"R";
+  position:absolute;
+  right:5px;
+  bottom:-85px;
+  color:rgba(255,255,255,.025);
+  font-size:280px;
+  line-height:1;
+  font-weight:1000;
+  pointer-events:none
+}
+
+.welcome-content,
+.welcome-actions{
+  position:relative;
+  z-index:2
+}
+
+.welcome h1{
+  margin:6px 0 9px;
+  font-size:clamp(38px,6vw,61px);
+  line-height:.95;
+  letter-spacing:-.065em
+}
+
+.welcome-description{
+  max-width:620px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.7
+}
+
+.welcome-actions{
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:15px
+}
+
+.stat{
+  position:relative;
+  min-height:118px;
+  padding:20px;
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(13,11,22,.94),
+      rgba(255,255,255,.014)
+    );
+  transition:.18s
+}
+
+.stat:hover{
+  border-color:var(--border2);
+  transform:translateY(-2px)
+}
+
+.stat-label{
+  margin-bottom:9px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-size:9px;
+  font-weight:800
+}
+
+.stat-value{
+  font-size:29px;
+  line-height:1;
+  letter-spacing:-.045em;
+  font-weight:950
+}
+
+.dashboard-icon{
+  position:absolute;
+  top:15px;
+  right:15px;
+  width:32px;
+  height:32px;
+  display:grid;
+  place-items:center;
+  color:var(--accent2);
+  border:1px solid rgba(165,108,255,.16);
+  border-radius:9px;
+  background:rgba(165,108,255,.08);
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.05em
+}
+
+.card{
+  padding:24px;
+  border-radius:21px
+}
+
+.card h2{
+  margin-bottom:6px;
+  font-size:20px;
+  letter-spacing:-.035em
+}
+
+.rewards-card{
+  margin-bottom:15px
+}
+
+.referral-grid{
+  display:grid;
+  grid-template-columns:1.5fr .75fr .75fr;
+  gap:11px;
+  margin-top:18px
+}
+
+.referral-code{
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:.03em
+}
+
+.referral-link-section{
+  margin-top:17px
+}
+
+.referral-link-row{
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:8px;
+  margin-top:8px
+}
+
+.dashboard-grid{
+  display:grid;
+  grid-template-columns:1.2fr .8fr;
+  gap:15px
+}
+
+.tasks,
+.list-stack{
+  display:grid;
+  gap:9px;
+  margin-top:17px
+}
+
+.task,
+.table-row{
+  padding:17px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:rgba(255,255,255,.022);
+  transition:.18s
+}
+
+.task:hover,
+.table-row:hover{
+  border-color:rgba(165,108,255,.22);
+  background:rgba(255,255,255,.04)
+}
+
+.task-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px
+}
+
+.task h3{
+  margin-bottom:6px;
+  font-size:14px
+}
+
+.task p{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6
+}
+
+.task-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:13px
+}
+
+.reward{
+  color:#e9dbff;
+  border:1px solid rgba(165,108,255,.19);
+  background:rgba(165,108,255,.08);
+  font-size:10px
+}
+
+.creator-actions{
+  display:grid;
+  gap:9px;
+  margin-top:18px
+}
+
+#toolResult{
+  min-height:78px;
+  margin-top:15px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  color:var(--muted);
+  background:rgba(6,5,11,.67);
+  font-size:12px;
+  line-height:1.7
+}
+
+.tool-line{
+  padding:9px 0;
+  border-bottom:1px solid var(--border)
+}
+
+.tool-line:last-child{
+  border-bottom:0
+}
+
+.creator-follow-card{
+  margin-top:15px
+}
+
+.creator-follow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  padding:17px;
+  margin-top:17px;
+  border:1px solid rgba(165,108,255,.12);
+  border-radius:16px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(165,108,255,.08),
+      rgba(255,255,255,.02)
+    )
+}
+
+.creator-follow-info{
+  display:flex;
+  align-items:center;
+  gap:12px
+}
+
+.creator-avatar{
+  width:43px;
+  height:43px;
+  display:grid;
+  place-items:center;
+  border-radius:13px;
+  color:white;
+  background:
+    linear-gradient(
+      135deg,
+      #ba8aff,
+      #6634c8
+    );
+  font-weight:1000
+}
+
+.creator-follow-info strong{
+  display:block;
+  font-size:13px
+}
+
+.creator-follow-info span{
+  display:block;
+  margin-top:2px;
+  color:var(--muted);
+  font-size:10px
+}
+
+/* ADMIN */
+
+.admin-hero{
+  margin-bottom:15px;
+  background:
+    radial-gradient(
+      560px 240px at 90% 10%,
+      rgba(165,108,255,.17),
+      transparent 65%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(165,108,255,.10),
+      rgba(255,255,255,.015)
+    )
+}
+
+.admin-grid{
+  display:grid;
+  grid-template-columns:1.25fr .75fr;
+  gap:15px;
+  margin-bottom:15px
+}
+
+.admin-stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:15px
+}
+
+.admin-stat{
+  min-height:108px
+}
+
+.admin-tabs{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  margin:0 0 15px
+}
+
+.admin-tab{
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.03);
+  color:var(--muted);
+  padding:9px 12px;
+  border-radius:10px;
+  font-size:11px;
+  font-weight:850
+}
+
+.admin-tab.active{
+  color:white;
+  border-color:rgba(165,108,255,.35);
+  background:rgba(165,108,255,.1)
+}
+
+.admin-panel{
+  display:none
+}
+
+.admin-panel.active{
+  display:block
+}
+
+.table{
+  display:grid;
+  gap:8px;
+  margin-top:15px
+}
+
+.table-head,
+.table-row{
+  display:grid;
+  grid-template-columns:1.1fr .8fr .7fr .7fr auto;
+  gap:10px;
+  align-items:center
+}
+
+.table-head{
+  padding:0 10px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.09em;
+  font-size:9px;
+  font-weight:900
+}
+
+.table-row{
+  padding:13px
+}
+
+.table-cell{
+  min-width:0;
+  font-size:12px
+}
+
+.table-cell strong{
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis
+}
+
+.table-cell small{
+  display:block;
+  color:var(--muted);
+  margin-top:2px
+}
+
+.status-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center
+}
+
+.status-blocked{
+  color:#ffabb9;
+  border:1px solid rgba(255,106,132,.18);
+  background:rgba(255,106,132,.07)
+}
+
+.role-badge{
+  color:#e5d7ff;
+  border:1px solid rgba(165,108,255,.19);
+  background:rgba(165,108,255,.08)
+}
+
+.admin-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:flex-end
+}
+
+.metric-list{
+  display:grid;
+  gap:9px;
+  margin-top:15px
+}
+
+.metric-line{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 13px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(255,255,255,.025);
+  font-size:12px
+}
+
+.metric-line span{
+  color:var(--muted)
+}
+
+.filter-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:15px
+}
+
+.filter-row input,
+.filter-row select{
+  flex:1;
+  min-width:160px;
+  outline:none;
+  padding:11px 12px;
+  color:white;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:#08070d
+}
+
+.audit-item{
+  padding:14px;
+  border-bottom:1px solid var(--border)
+}
+
+.audit-item:last-child{
+  border-bottom:0
+}
+
+.audit-main{
+  display:flex;
+  justify-content:space-between;
+  gap:12px
+}
+
+.audit-action{
+  font-weight:850;
+  font-size:12px
+}
+
+.audit-time{
+  color:var(--muted);
+  font-size:10px
+}
+
+.audit-meta{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.5
+}
+
+.empty{
+  padding:25px;
+  text-align:center;
+  color:var(--muted);
+  border:1px dashed var(--border);
+  border-radius:14px
+}
+
+.danger-note{
+  padding:12px;
+  border:1px solid rgba(255,106,132,.18);
+  border-radius:12px;
+  color:#ffb4c2;
+  background:rgba(255,106,132,.06);
+  font-size:11px;
+  line-height:1.5
+}
+
+.code-box{
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  word-break:break-all;
+  color:#d8cbef
+}
+
+#toast{
+  position:fixed;
+  left:50%;
+  bottom:24px;
+  z-index:5000;
+  max-width:min(430px,calc(100% - 28px));
+  padding:12px 15px;
+  transform:translate(-50%,130px);
+  border:1px solid var(--border);
+  border-radius:13px;
+  color:white;
+  background:rgba(16,14,24,.94);
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+  backdrop-filter:blur(18px);
+  font-size:12px;
+  font-weight:750;
+  opacity:0;
+  transition:.25s
+}
+
+#toast.show{
+  transform:translate(-50%,0);
+  opacity:1
+}
+
+.loading-dot{
+  display:inline-block;
+  width:6px;
+  height:6px;
+  margin-left:3px;
+  border-radius:50%;
+  background:currentColor;
+  animation:pulse 1s infinite ease-in-out
+}
+
+@keyframes pulse{
+  0%,100%{opacity:.25}
+  50%{opacity:1}
+}
+
+@media(max-width:1050px){
+  .landing-inner{
+    grid-template-columns:1fr;
+    gap:35px
+  }
+
+  .dashboard-grid,
+  .admin-grid{
+    grid-template-columns:1fr
+  }
+
+  .admin-stats{
+    grid-template-columns:repeat(2,1fr)
+  }
+}
+
+@media(max-width:760px){
+  header{
+    height:65px
+  }
+
+  .header-inner{
+    width:calc(100% - 24px)
+  }
+
+  #desktopNav{
+    display:none;
+    position:absolute;
+    top:65px;
+    left:12px;
+    right:12px;
+    padding:10px;
+    flex-direction:column;
+    align-items:stretch;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:rgba(11,9,17,.98);
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(20px)
+  }
+
+  #desktopNav.mobile-open{
+    display:flex
+  }
+
+  #desktopNav a,
+  #desktopNav button{
+    width:100%;
+    text-align:left
+  }
+
+  .mobile-menu{
+    display:block
+  }
+
+  .landing{
+    min-height:calc(100vh - 65px);
+    padding:54px 14px
+  }
+
+  .landing h1{
+    font-size:clamp(48px,14vw,70px)
+  }
+
+  .landing p{
+    font-size:15px
+  }
+
+  .app,
+  main section{
+    width:calc(100% - 24px);
+    padding-top:18px
+  }
+
+  .welcome{
+    align-items:flex-start;
+    flex-direction:column;
+    min-height:185px;
+    padding:23px;
+    border-radius:20px
+  }
+
+  .welcome-actions{
+    width:100%
+  }
+
+  .welcome-actions .btn{
+    flex:1
+  }
+
+  .stats,
+  .admin-stats{
+    grid-template-columns:1fr 1fr
+  }
+
+  .referral-grid{
+    grid-template-columns:1fr
+  }
+
+  .referral-link-row{
+    grid-template-columns:1fr
+  }
+
+  .table{
+    overflow:auto
+  }
+
+  .table-head,
+  .table-row{
+    min-width:720px
+  }
+
+  .creator-follow{
+    align-items:flex-start;
+    flex-direction:column
+  }
+
+  .creator-follow .btn{
+    width:100%
+  }
+}
+
+@media(max-width:450px){
+  .stats,
+  .admin-stats{
+    grid-template-columns:1fr
+  }
+
+  .hero-mini-grid{
+    grid-template-columns:1fr
+  }
+
+  .hero-card{
+    padding:22px
+  }
+
+  .card{
+    padding:19px
+  }
+
+  .task-top{
+    flex-direction:column
+  }
+
+  .task-actions .btn{
+    flex:1
+  }
+
+  .landing-actions{
+    flex-direction:column
+  }
+
+  .landing-actions .btn{
+    width:100%
+  }
+}
+</style>
 </head>
 
 <body>
 
-  <header>
-    <div class="header-inner">
-
-      <a
-        class="brand"
-        href="#"
-        onclick="showLanding(); return false;"
-      >
-        <span class="brand-mark">R</span>
-        <span>RIZORA</span>
-      </a>
-
-      <nav id="desktopNav">
-
-        <a
-          href="#"
-          onclick="showLanding(); return false;"
-        >
-          Home
-        </a>
-
-        <a
-          href="#about"
-          onclick="showAbout(); return false;"
-        >
-          About
-        </a>
-
-        <button
-          id="loginNav"
-          onclick="showLogin()"
-        >
-          Login
-        </button>
-
-        <button
-          id="signupNav"
-          class="btn"
-          onclick="showSignup()"
-        >
-          Sign up
-        </button>
-
-        <button
-          id="dashboardNav"
-          class="hidden"
-          onclick="showDashboard()"
-        >
-          Dashboard
-        </button>
-
-        <button
-          id="logoutNav"
-          class="hidden"
-          onclick="logoutUser()"
-        >
-          Logout
-        </button>
-
-      </nav>
-
-      <button
-        class="mobile-menu"
-        onclick="toggleMobileMenu()"
-      >
-        MENU
-      </button>
-
-    </div>
-  </header>
-
-  <!-- LANDING -->
-
-  <section
-    id="landing"
-    class="landing"
-  >
-
-    <div class="landing-inner">
-
-      <div>
-
-        <div class="hero-label">
-          Creator Growth Platform
-        </div>
-
-        <h1>
-          Create.
-          <span>Grow.</span>
-          Earn.
-        </h1>
-
-        <p class="hero-text">
-          RIZORA gives creators a space to complete missions,
-          earn points, share their work and unlock useful
-          creator-focused tools.
-        </p>
-
-        <div class="landing-actions">
-
-          <button
-            class="btn"
-            onclick="showSignup()"
-          >
-            🚀 Join RIZORA
-          </button>
+<header>
+<div class="header-inner">
+
+<a class="brand" href="#" onclick="showLanding();return false">
+<span class="brand-mark">R</span>
+<span>RIZORA</span>
+</a>
+
+<nav id="desktopNav">
+
+<a href="#" onclick="showLanding();return false">Home</a>
+
+<a href="#about" onclick="showAbout();return false">About</a>
+
+<button id="loginNav" onclick="showLogin()">
+Login
+</button>
+
+<button id="signupNav" class="btn" onclick="showSignup()">
+Sign up
+</button>
+
+<button
+id="dashboardNav"
+class="hidden"
+onclick="openBestDashboard()"
+>
+Dashboard
+</button>
 
-          <button
-            class="btn secondary"
-            onclick="showLogin()"
-          >
-            Login
-          </button>
+<button
+id="logoutNav"
+class="hidden"
+onclick="logoutUser()"
+>
+Logout
+</button>
 
-          <button
-            class="btn secondary"
-            onclick="showAbout()"
-          >
-            Meet RoMi
-          </button>
+</nav>
 
-        </div>
+<button
+class="mobile-menu"
+onclick="toggleMobileMenu()"
+>
+MENU
+</button>
 
-        <div class="hero-note">
+</div>
+</header>
 
-          <span class="hero-pill">
-            ✦ Creator Missions
-          </span>
+<section id="landing" class="landing">
 
-          <span class="hero-pill">
-            ✦ Reward Points
-          </span>
+<div class="landing-inner">
+
+<div>
 
-          <span class="hero-pill">
-            ✦ Content Lab
-          </span>
+<div class="hero-label">
+Creator Growth Platform
+</div>
 
-          <span class="hero-pill">
-            ✦ Referral Network
-          </span>
+<h1>
+Create.
+<span>Grow.</span>
+Earn.
+</h1>
 
-        </div>
+<p class="hero-text">
+RIZORA gives creators a space to complete missions,
+earn points, share their work and unlock useful
+creator-focused tools.
+</p>
 
-      </div>
+<div class="landing-actions">
 
-      <div class="hero-card">
+<button
+class="btn"
+onclick="showSignup()"
+>
+🚀 Join RIZORA
+</button>
 
-        <div class="hero-card-top">
+<button
+class="btn secondary"
+onclick="showLogin()"
+>
+Login
+</button>
 
-          <div class="hero-card-brand">
+<button
+class="btn secondary"
+onclick="showAbout()"
+>
+Meet RoMi
+</button>
 
-            <span class="brand-mark">
-              R
-            </span>
+</div>
 
-            <span>
-              RIZORA SYSTEM
-            </span>
+<div class="hero-note">
+<span class="hero-pill">✦ Creator Missions</span>
+<span class="hero-pill">✦ Reward Points</span>
+<span class="hero-pill">✦ Content Lab</span>
+<span class="hero-pill">✦ Referral Network</span>
+</div>
 
-          </div>
+</div>
 
-          <span class="hero-status">
-            ONLINE
-          </span>
+<div class="hero-card">
 
-        </div>
+<div class="hero-card-top">
 
-        <h2 class="hero-card-title">
-          Built for creators.
-        </h2>
+<div class="hero-card-brand">
 
-        <p class="hero-card-copy">
-          Complete tasks, earn points, invite creators and
-          turn ideas into content with the RIZORA Creator Lab.
-        </p>
+<span class="brand-mark">
+R
+</span>
 
-        <div class="hero-mini-grid">
+<span>
+RIZORA SYSTEM
+</span>
 
-          <div class="hero-mini">
-            <strong>PTS</strong>
-            <span>Reward System</span>
-          </div>
+</div>
 
-          <div class="hero-mini">
-            <strong>LAB</strong>
-            <span>Creator Tools</span>
-          </div>
+<span class="hero-status">
+ONLINE
+</span>
 
-          <div class="hero-mini">
-            <strong>24/7</strong>
-            <span>Platform Access</span>
-          </div>
+</div>
 
-          <div class="hero-mini">
-            <strong>R</strong>
-            <span>Creator Network</span>
-          </div>
+<h2 class="hero-card-title">
+Built for creators.
+</h2>
 
-        </div>
+<p class="hero-card-copy">
+Complete tasks, earn points, invite creators
+and turn ideas into content with the RIZORA Creator Lab.
+</p>
 
-      </div>
+<div class="hero-mini-grid">
 
-    </div>
+<div class="hero-mini">
+<strong>PTS</strong>
+<span>Reward System</span>
+</div>
 
-  </section>
+<div class="hero-mini">
+<strong>LAB</strong>
+<span>Creator Tools</span>
+</div>
 
-  <!-- AUTH -->
+<div class="hero-mini">
+<strong>24/7</strong>
+<span>Platform Access</span>
+</div>
 
-  <section
-    id="auth"
-    class="auth-wrap hidden"
-  >
+<div class="hero-mini">
+<strong>R</strong>
+<span>Creator Network</span>
+</div>
 
-    <div class="auth-card">
+</div>
 
-      <div class="auth-icon">
-        R
-      </div>
+</div>
 
-      <h1 id="authTitle">
-        Create your account
-      </h1>
+</div>
 
-      <p
-        id="authSubtitle"
-        class="auth-subtitle"
-      >
-        Join RIZORA and start building your creator momentum.
-      </p>
+</section>
 
-      <div
-        id="authMessage"
-        class="hidden"
-      ></div>
+<section id="auth" class="auth-wrap hidden">
 
-      <form
-        id="signupForm"
-        onsubmit="handleSignup(event)"
-      >
+<div class="auth-card">
 
-        <div class="field">
+<div class="auth-icon">
+R
+</div>
 
-          <label for="signupUsername">
-            Username
-          </label>
+<h1 id="authTitle">
+Create your account
+</h1>
 
-          <input
-            id="signupUsername"
-            required
-            minlength="3"
-            maxlength="24"
-            autocomplete="username"
-            placeholder="Choose a username"
-          >
+<p
+id="authSubtitle"
+class="auth-subtitle"
+>
+Join RIZORA and start building your creator momentum.
+</p>
 
-        </div>
+<div id="authMessage" class="hidden"></div>
 
-        <div class="field">
+<form
+id="signupForm"
+onsubmit="handleSignup(event)"
+>
 
-          <label for="signupDisplayName">
-            Display name
-          </label>
+<div class="field">
+<label for="signupUsername">Username</label>
 
-          <input
-            id="signupDisplayName"
-            required
-            maxlength="80"
-            autocomplete="name"
-            placeholder="Your name"
-          >
+<input
+id="signupUsername"
+required
+minlength="3"
+maxlength="30"
+autocomplete="username"
+placeholder="Choose a username"
+>
+</div>
 
-        </div>
+<div class="field">
+<label for="signupDisplayName">
+Display name
+</label>
 
-        <div class="field">
+<input
+id="signupDisplayName"
+required
+maxlength="80"
+autocomplete="name"
+placeholder="Your name"
+>
+</div>
 
-          <label for="signupPassword">
-            Password
-          </label>
+<div class="field">
 
-          <div class="password-wrap">
+<label for="signupPassword">
+Password
+</label>
 
-            <input
-              id="signupPassword"
-              type="password"
-              required
-              minlength="6"
-              autocomplete="new-password"
-              placeholder="At least 6 characters"
-            >
+<div class="password-wrap">
 
-            <button
-              type="button"
-              class="password-toggle"
-              onclick="togglePassword('signupPassword', this)"
-            >
-              👁
-            </button>
+<input
+id="signupPassword"
+type="password"
+required
+minlength="6"
+autocomplete="new-password"
+placeholder="At least 6 characters"
+>
 
-          </div>
+<button
+type="button"
+class="password-toggle"
+onclick="togglePassword('signupPassword',this)"
+>
+👁
+</button>
 
-        </div>
+</div>
 
-        <div class="field">
+</div>
 
-          <label for="signupReferralCode">
-            Referral code
-            <span style="opacity:.5">
-              optional
-            </span>
-          </label>
+<div class="field">
 
-          <input
-            id="signupReferralCode"
-            maxlength="100"
-            placeholder="Enter a friend's code"
-          >
+<label for="signupReferralCode">
+Referral code
+<span style="opacity:.5">optional</span>
+</label>
 
-          <small>
-            Referral rewards are applied automatically when valid.
-          </small>
+<input
+id="signupReferralCode"
+maxlength="100"
+placeholder="Enter a friend's code"
+>
 
-        </div>
+<small class="muted">
+Referral rewards are applied automatically when valid.
+</small>
 
-        <button
-          id="signupSubmit"
-          class="btn"
-          style="width:100%"
-          type="submit"
-        >
-          Create RIZORA account
-        </button>
+</div>
 
-        <div class="auth-switch">
+<button
+id="signupSubmit"
+class="btn"
+style="width:100%"
+type="submit"
+>
+Create RIZORA account
+</button>
 
-          Already have an account?
+<div class="auth-switch">
 
-          <button
-            type="button"
-            onclick="showLogin()"
-          >
-            Login
-          </button>
+Already have an account?
 
-        </div>
+<button
+type="button"
+onclick="showLogin()"
+>
+Login
+</button>
 
-      </form>
+</div>
 
-      <form
-        id="loginForm"
-        class="hidden"
-        onsubmit="handleLogin(event)"
-      >
+</form>
 
-        <div class="field">
+<form
+id="loginForm"
+class="hidden"
+onsubmit="handleLogin(event)"
+>
 
-          <label for="loginUsername">
-            Username or Email
-          </label>
+<div class="field">
 
-          <input
-            id="loginUsername"
-            required
-            autocomplete="username"
-            placeholder="Your username or email"
-          >
+<label for="loginUsername">
+Username or Email
+</label>
 
-        </div>
+<input
+id="loginUsername"
+required
+autocomplete="username"
+placeholder="Your username or email"
+>
 
-        <div class="field">
+</div>
 
-          <label for="loginPassword">
-            Password
-          </label>
+<div class="field">
 
-          <div class="password-wrap">
+<label for="loginPassword">
+Password
+</label>
 
-            <input
-              id="loginPassword"
-              type="password"
-              required
-              autocomplete="current-password"
-              placeholder="Your password"
-            >
+<div class="password-wrap">
 
-            <button
-              type="button"
-              class="password-toggle"
-              onclick="togglePassword('loginPassword', this)"
-            >
-              👁
-            </button>
+<input
+id="loginPassword"
+type="password"
+required
+autocomplete="current-password"
+placeholder="Your password"
+>
 
-          </div>
+<button
+type="button"
+class="password-toggle"
+onclick="togglePassword('loginPassword',this)"
+>
+👁
+</button>
 
-        </div>
+</div>
 
-        <button
-          id="loginSubmit"
-          class="btn"
-          style="width:100%"
-          type="submit"
-        >
-          Login to RIZORA
-        </button>
+</div>
 
-        <div class="auth-switch">
+<button
+id="loginSubmit"
+class="btn"
+style="width:100%"
+type="submit"
+>
+Login to RIZORA
+</button>
 
-          Don't have an account?
+<div class="auth-switch">
 
-          <button
-            type="button"
-            onclick="showSignup()"
-          >
-            Sign up
-          </button>
+Don't have an account?
 
-        </div>
+<button
+type="button"
+onclick="showSignup()"
+>
+Sign up
+</button>
 
-      </form>
+</div>
 
-    </div>
+</form>
 
-  </section>
+</div>
 
-  <!-- DASHBOARD -->
+</section>
 
-  <section
-    id="dashboard"
-    class="app hidden"
-  >
+<section
+id="dashboard"
+class="app hidden"
+>
 
-    <div class="welcome">
+<div class="welcome">
 
-      <div class="welcome-content">
+<div class="welcome-content">
 
-        <div class="eyebrow">
-          RIZORA CREATOR STUDIO
-        </div>
+<div class="eyebrow">
+RIZORA CREATOR STUDIO
+</div>
 
-        <h1 id="welcomeName">
-          Welcome.
-        </h1>
+<h1 id="welcomeName">
+Welcome.
+</h1>
 
-        <p class="welcome-description">
-          Your creator workspace. Complete missions,
-          build points, share your network and keep growing.
-        </p>
+<p class="welcome-description">
+Your creator workspace. Complete missions,
+build points, share your network and keep growing.
+</p>
 
-      </div>
+</div>
 
-      <div class="welcome-actions">
+<div class="welcome-actions">
 
-        <button
-          class="btn secondary"
-          onclick="refreshDashboard()"
-        >
-          ↻ Refresh
-        </button>
+<button
+class="btn secondary"
+onclick="refreshDashboard()"
+>
+↻ Refresh
+</button>
 
-      </div>
+</div>
 
-    </div>
+</div>
 
-    <div class="stats">
+<div class="stats">
 
-      <div class="stat">
+<div class="stat">
 
-        <span class="dashboard-icon">
-          ID
-        </span>
+<span class="dashboard-icon">
+ID
+</span>
 
-        <div class="stat-label">
-          Username
-        </div>
+<div class="stat-label">
+Username
+</div>
 
-        <div
-          id="dashUsername"
-          class="stat-value"
-          style="font-size:20px"
-        >
-          —
-        </div>
+<div
+id="dashUsername"
+class="stat-value"
+style="font-size:20px"
+>
+—
+</div>
 
-      </div>
+</div>
 
-      <div class="stat">
+<div class="stat">
 
-        <span class="dashboard-icon">
-          PTS
-        </span>
+<span class="dashboard-icon">
+PTS
+</span>
 
-        <div class="stat-label">
-          Points
-        </div>
+<div class="stat-label">
+Points
+</div>
 
-        <div
-          id="dashPoints"
-          class="stat-value"
-        >
-          0
-        </div>
+<div
+id="dashPoints"
+class="stat-value"
+>
+0
+</div>
 
-      </div>
+</div>
 
-      <div class="stat">
+<div class="stat">
 
-        <span class="dashboard-icon">
-          ROLE
-        </span>
+<span class="dashboard-icon">
+ROLE
+</span>
 
-        <div class="stat-label">
-          Account role
-        </div>
+<div class="stat-label">
+Account role
+</div>
 
-        <div
-          id="dashRole"
-          class="stat-value"
-          style="font-size:18px"
-        >
-          User
-        </div>
+<div
+id="dashRole"
+class="stat-value"
+style="font-size:18px"
+>
+User
+</div>
 
-      </div>
+</div>
 
-      <div class="stat">
+<div class="stat">
 
-        <span class="dashboard-icon">
-          LIVE
-        </span>
+<span class="dashboard-icon">
+LIVE
+</span>
 
-        <div class="stat-label">
-          Account status
-        </div>
+<div class="stat-label">
+Account status
+</div>
 
-        <div
-          id="dashStatus"
-          class="stat-value"
-          style="font-size:18px"
-        >
-          Active
-        </div>
+<div
+id="dashStatus"
+class="stat-value"
+style="font-size:18px"
+>
+Active
+</div>
 
-      </div>
+</div>
 
-    </div>
+</div>
 
-    <!-- REFERRALS -->
+<div class="card rewards-card">
 
-    <div class="card rewards-card">
+<div class="card-top">
 
-      <div class="card-top">
+<div>
 
-        <div>
+<div class="eyebrow">
+REWARDS NETWORK
+</div>
 
-          <div class="eyebrow">
-            REWARDS NETWORK
-          </div>
+<h2>
+Invite creators. Earn points.
+</h2>
 
-          <h2>
-            Invite creators. Earn points.
-          </h2>
+<p class="card-description">
+Share your RIZORA referral link and grow the network.
+</p>
 
-          <p class="card-description">
-            Share your RIZORA referral link and grow the network.
-          </p>
+</div>
 
-        </div>
+<div class="reward">
++100 / referral
+</div>
 
-        <div class="reward">
-          +100 / referral
-        </div>
+</div>
 
-      </div>
+<div class="referral-grid">
 
-      <div class="referral-grid">
+<div class="stat">
 
-        <div class="stat">
+<div class="stat-label">
+Referral code
+</div>
 
-          <div class="stat-label">
-            Referral code
-          </div>
+<div class="row-between">
 
-          <div class="referral-code-row">
+<strong
+id="referralCode"
+class="referral-code"
+>
+—
+</strong>
 
-            <strong
-              id="referralCode"
-              class="referral-code"
-            >
-              —
-            </strong>
+<button
+class="btn secondary small"
+onclick="copyReferralCode()"
+>
+Copy
+</button>
 
-            <button
-              class="btn secondary small"
-              onclick="copyReferralCode()"
-            >
-              Copy
-            </button>
+</div>
 
-          </div>
+</div>
 
-        </div>
+<div class="stat">
 
-        <div class="stat">
+<div class="stat-label">
+Creators referred
+</div>
 
-          <div class="stat-label">
-            Creators referred
-          </div>
+<div
+id="referralCount"
+class="stat-value"
+>
+0
+</div>
 
-          <div
-            id="referralCount"
-            class="stat-value"
-          >
-            0
-          </div>
+</div>
 
-        </div>
+<div class="stat">
 
-        <div class="stat">
+<div class="stat-label">
+Referral points
+</div>
 
-          <div class="stat-label">
-            Referral points
-          </div>
+<div
+id="referralPoints"
+class="stat-value"
+>
+0
+</div>
 
-          <div
-            id="referralPoints"
-            class="stat-value"
-          >
-            0
-          </div>
+</div>
 
-        </div>
+</div>
 
-      </div>
+<div class="referral-link-section">
 
-      <div class="referral-link-section">
+<div class="stat-label">
+Personal referral link
+</div>
 
-        <div class="stat-label">
-          Personal referral link
-        </div>
+<div class="referral-link-row">
 
-        <div class="referral-link-row">
+<input
+id="referralLink"
+readonly
+placeholder="Your referral link will appear here"
+>
 
-          <input
-            id="referralLink"
-            readonly
-            placeholder="Your referral link will appear here"
-          >
+<button
+class="btn"
+onclick="copyReferralLink()"
+>
+Copy
+</button>
 
-          <button
-            class="btn"
-            onclick="copyReferralLink()"
-          >
-            Copy
-          </button>
+<button
+class="btn secondary"
+onclick="shareReferralLink()"
+>
+📤 Share
+</button>
 
-          <button
-            class="btn secondary"
-            onclick="shareReferralLink()"
-          >
-            📤 Share
-          </button>
+</div>
 
-        </div>
+</div>
 
-      </div>
+<div id="referralList"></div>
 
-      <div id="referralList"></div>
+</div>
 
-    </div>
+<div class="dashboard-grid">
 
-    <div class="dashboard-grid">
+<div class="card">
 
-      <!-- TASKS -->
+<div class="card-top">
 
-      <div class="card">
+<div>
 
-        <div class="card-top">
+<div class="eyebrow">
+DAILY MISSIONS
+</div>
 
-          <div>
+<h2>
+Available tasks
+</h2>
 
-            <div class="eyebrow">
-              DAILY MISSIONS
-            </div>
+<p class="card-description">
+Complete missions and increase your RIZORA points.
+</p>
 
-            <h2>
-              Available tasks
-            </h2>
+</div>
 
-            <p class="card-description">
-              Complete missions and increase your RIZORA points.
-            </p>
+<div class="dashboard-icon">
+TASKS
+</div>
 
-          </div>
+</div>
 
-          <div class="dashboard-icon">
-            TASKS
-          </div>
+<div
+id="tasks"
+class="tasks"
+>
 
-        </div>
+<div class="muted">
+Loading tasks...
+</div>
 
-        <div
-          id="tasks"
-          class="tasks"
-        >
+</div>
 
-          <div class="muted">
-            Loading tasks...
-          </div>
+</div>
 
-        </div>
+<div class="card">
 
-      </div>
+<div class="card-top">
 
-      <!-- CREATOR TOOLS -->
+<div>
 
-      <div class="card">
+<div class="eyebrow">
+CREATOR TOOLS
+</div>
 
-        <div class="card-top">
+<h2>
+Content Lab
+</h2>
 
-          <div>
+<p class="card-description">
+Turn ideas into content-ready copy.
+</p>
 
-            <div class="eyebrow">
-              CREATOR TOOLS
-            </div>
+</div>
 
-            <h2>
-              Content Lab
-            </h2>
+<div class="dashboard-icon">
+LAB
+</div>
 
-            <p class="card-description">
-              Turn ideas into content-ready copy.
-            </p>
+</div>
 
-          </div>
+<div class="creator-actions">
 
-          <div class="dashboard-icon">
-            LAB
-          </div>
+<button
+class="btn secondary"
+onclick="runCreatorTool('/api/generate/hooks')"
+>
+✦ Generate Hooks
+</button>
 
-        </div>
+<button
+class="btn secondary"
+onclick="runCreatorTool('/api/generate/hashtags')"
+>
+# Generate Hashtags
+</button>
 
-        <div class="creator-actions">
+<button
+class="btn secondary"
+onclick="runCreatorTool('/api/generate/captions')"
+>
+✎ Generate Captions
+</button>
 
-          <button
-            class="btn secondary"
-            onclick="runCreatorTool('/api/generate/hooks')"
-          >
-            ✦ Generate Hooks
-          </button>
+</div>
 
-          <button
-            class="btn secondary"
-            onclick="runCreatorTool('/api/generate/hashtags')"
-          >
-            # Generate Hashtags
-          </button>
+<div id="toolResult">
+Ready for your next idea.
+</div>
 
-          <button
-            class="btn secondary"
-            onclick="runCreatorTool('/api/generate/captions')"
-          >
-            ✎ Generate Captions
-          </button>
+</div>
 
-        </div>
+</div>
 
-        <div id="toolResult">
-          Ready for your next idea.
-        </div>
+<div class="card creator-follow-card">
 
-      </div>
+<div class="card-top">
 
-    </div>
+<div>
 
-    <!-- FOLLOW ROMI -->
+<div class="eyebrow">
+CREATOR
+</div>
 
-    <div class="card creator-follow-card">
+<h2>
+Support RoMi
+</h2>
 
-      <div class="card-top">
+<p class="card-description">
+Follow the creator building RIZORA.
+</p>
 
-        <div>
+</div>
 
-          <div class="eyebrow">
-            CREATOR
-          </div>
+</div>
 
-          <h2>
-            Support RoMi
-          </h2>
+<div class="creator-follow">
 
-          <p class="card-description">
-            Follow the creator building RIZORA.
-          </p>
+<div class="creator-follow-info">
 
-        </div>
+<div class="creator-avatar">
+R
+</div>
 
-      </div>
+<div>
 
-      <div class="creator-follow">
+<strong>
+RoMi
+</strong>
 
-        <div class="creator-follow-info">
+<span>
+@romi.noir
+</span>
 
-          <div class="creator-avatar">
-            R
-          </div>
+</div>
 
-          <div>
+</div>
 
-            <strong>
-              RoMi
-            </strong>
+<a
+class="btn"
+href="https://www.tiktok.com/@romi.noir"
+target="_blank"
+rel="noopener noreferrer"
+>
+Follow @romi.noir ↗
+</a>
 
-            <span>
-              @romi.noir
-            </span>
+</div>
 
-          </div>
+</div>
 
-        </div>
+</section>
 
-        <a
-          class="btn"
-          href="https://www.tiktok.com/@romi.noir"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Follow @romi.noir ↗
-        </a>
+<section
+id="adminDashboard"
+class="app hidden"
+>
 
-      </div>
+<div class="welcome admin-hero">
 
-    </div>
+<div class="welcome-content">
 
-  </section>
+<div class="eyebrow">
+RIZORA COMMAND CENTER
+</div>
 
-  <!-- ABOUT -->
+<h1 id="adminWelcome">
+Super Admin.
+</h1>
 
-  <section
-    id="about"
-    class="app hidden"
-  >
+<p class="welcome-description">
+Live platform control: users, roles, points,
+referrals, tasks and audit activity.
+</p>
 
-    <div class="about-head">
+</div>
 
-      <div>
+<div class="welcome-actions">
 
-        <div class="eyebrow">
-          MEET THE CREATOR
-        </div>
+<button
+class="btn"
+onclick="loadAdminDashboard()"
+>
+↻ Refresh data
+</button>
 
-        <h1>
-          RoMi
-        </h1>
+<button
+class="btn secondary"
+onclick="openCreatorDashboard()"
+>
+Creator view
+</button>
 
-        <p
-          class="muted"
-          style="margin-top:10px;line-height:1.6;"
-        >
-          Artist. Developer. Creator. Builder.
-        </p>
+</div>
 
-      </div>
+</div>
 
-      <a
-        class="btn"
-        href="https://www.tiktok.com/@romi.noir"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Follow @romi.noir ↗
-      </a>
+<div class="admin-stats">
 
-    </div>
+<div class="stat admin-stat">
+<div class="stat-label">Total Users</div>
+<div id="adminTotalUsers" class="stat-value">0</div>
+</div>
 
-    <div class="card">
+<div class="stat admin-stat">
+<div class="stat-label">Active Users</div>
+<div id="adminActiveUsers" class="stat-value">0</div>
+</div>
 
-      <div class="romi-card">
+<div class="stat admin-stat">
+<div class="stat-label">Blocked Users</div>
+<div id="adminBlockedUsers" class="stat-value">0</div>
+</div>
 
-        <div class="romi-avatar">
-          R
-        </div>
+<div class="stat admin-stat">
+<div class="stat-label">Total Points</div>
+<div id="adminTotalPoints" class="stat-value">0</div>
+</div>
 
-        <div>
+<div class="stat admin-stat">
+<div class="stat-label">Admins</div>
+<div id="adminAdmins" class="stat-value">0</div>
+</div>
 
-          <h2>
-            Artist. Developer. Creator. Builder.
-          </h2>
+<div class="stat admin-stat">
+<div class="stat-label">Super Admins</div>
+<div id="adminSuperAdmins" class="stat-value">0</div>
+</div>
 
-          <div class="badges">
+<div class="stat admin-stat">
+<div class="stat-label">Task Completions</div>
+<div id="adminTaskCompletions" class="stat-value">0</div>
+</div>
 
-            <span class="badge">Artist</span>
-            <span class="badge">Developer</span>
-            <span class="badge">Creator</span>
-            <span class="badge">Builder</span>
+<div class="stat admin-stat">
+<div class="stat-label">Referrals</div>
+<div id="adminReferralsCount" class="stat-value">0</div>
+</div>
 
-          </div>
+</div>
 
-          <p class="romi-bio">
-            I'm Romi, a young Nigerian artist and developer
-            passionate about music, technology, creativity and
-            building digital products that stand out.
-            RIZORA is one of the platforms I'm building to
-            bring creators together through tasks, growth and rewards.
-          </p>
+<div class="admin-tabs">
 
-          <div class="badges">
+<button
+class="admin-tab active"
+onclick="switchAdminTab('users',this)"
+>
+Users
+</button>
 
-            <span class="badge">Gaming</span>
-            <span class="badge">Football</span>
-            <span class="badge">Anime</span>
-            <span class="badge">Music</span>
+<button
+class="admin-tab"
+onclick="switchAdminTab('referrals',this)"
+>
+Referrals
+</button>
 
-          </div>
+<button
+class="admin-tab"
+onclick="switchAdminTab('tasks',this)"
+>
+Tasks
+</button>
 
-        </div>
+<button
+class="admin-tab"
+onclick="switchAdminTab('audit',this)"
+>
+Audit Log
+</button>
 
-      </div>
+<button
+class="admin-tab"
+onclick="switchAdminTab('overview',this)"
+>
+Overview
+</button>
 
-    </div>
+</div>
 
-  </section>
+<div
+id="adminPanelUsers"
+class="admin-panel active"
+>
 
-  <div id="toast"></div>
+<div class="card">
 
-  <script>
-    "use strict";
+<div class="card-top">
 
-    let token =
-      localStorage.getItem("rizoraToken") || "";
+<div>
 
-    let currentUser =
-      JSON.parse(
-        localStorage.getItem("rizoraUser") || "null"
+<div class="eyebrow">
+ACCOUNT CONTROL
+</div>
+
+<h2>
+Users
+</h2>
+
+<p class="card-description">
+Manage platform accounts and permissions.
+</p>
+
+</div>
+
+</div>
+
+<div class="filter-row">
+
+<input
+id="userSearch"
+placeholder="Search username, email or name"
+oninput="renderAdminUsers()"
+>
+
+<select
+id="userRoleFilter"
+onchange="renderAdminUsers()"
+>
+
+<option value="">
+All roles
+</option>
+
+<option value="user">
+User
+</option>
+
+<option value="admin">
+Admin
+</option>
+
+<option value="super_admin">
+Super Admin
+</option>
+
+</select>
+
+<select
+id="userStatusFilter"
+onchange="renderAdminUsers()"
+>
+
+<option value="">
+All status
+</option>
+
+<option value="active">
+Active
+</option>
+
+<option value="blocked">
+Blocked
+</option>
+
+</select>
+
+</div>
+
+<div
+id="adminUsersTable"
+class="table"
+>
+</div>
+
+</div>
+
+</div>
+
+<div
+id="adminPanelReferrals"
+class="admin-panel"
+>
+
+<div class="admin-grid">
+
+<div class="card">
+
+<div class="eyebrow">
+REFERRAL NETWORK
+</div>
+
+<h2>
+All referrals
+</h2>
+
+<p class="card-description">
+Live referral records and reward activity.
+</p>
+
+<div
+id="adminReferralList"
+class="list-stack"
+>
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="eyebrow">
+REFERRAL SUMMARY
+</div>
+
+<h2>
+Network health
+</h2>
+
+<div
+id="referralSummary"
+class="metric-list"
+>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div
+id="adminPanelTasks"
+class="admin-panel"
+>
+
+<div class="card">
+
+<div class="eyebrow">
+MISSION CONTROL
+</div>
+
+<h2>
+Task management
+</h2>
+
+<p class="card-description">
+Enable or disable official RIZORA missions.
+</p>
+
+<div
+id="adminTaskList"
+class="list-stack"
+>
+</div>
+
+</div>
+
+</div>
+
+<div
+id="adminPanelAudit"
+class="admin-panel"
+>
+
+<div class="card">
+
+<div class="eyebrow">
+SECURITY & ACTIVITY
+</div>
+
+<h2>
+Audit log
+</h2>
+
+<p class="card-description">
+Recent authentication and administrative activity.
+</p>
+
+<div
+id="adminAuditList"
+class="list-stack"
+>
+</div>
+
+</div>
+
+</div>
+
+<div
+id="adminPanelOverview"
+class="admin-panel"
+>
+
+<div class="admin-grid">
+
+<div class="card">
+
+<div class="eyebrow">
+SYSTEM STATUS
+</div>
+
+<h2>
+RIZORA backend
+</h2>
+
+<div
+id="systemStatus"
+class="metric-list"
+>
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="eyebrow">
+ADMIN SECURITY
+</div>
+
+<h2>
+Protected actions
+</h2>
+
+<div class="danger-note">
+Super Admin permissions are required for role changes,
+account blocking/unblocking and point adjustments.
+Protected super-admin accounts cannot be demoted or blocked.
+</div>
+
+<div
+id="adminIdentity"
+class="metric-list"
+>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<section id="about" class="app hidden">
+
+<div
+class="row-between"
+style="margin-bottom:22px"
+>
+
+<div>
+
+<div class="eyebrow">
+MEET THE CREATOR
+</div>
+
+<h1
+style="
+font-size:clamp(42px,6vw,64px);
+line-height:.9;
+letter-spacing:-.06em"
+>
+RoMi
+</h1>
+
+<p
+class="muted"
+style="margin-top:10px;line-height:1.6"
+>
+Artist. Developer. Creator. Builder.
+</p>
+
+</div>
+
+<a
+class="btn"
+href="https://www.tiktok.com/@romi.noir"
+target="_blank"
+rel="noopener noreferrer"
+>
+Follow @romi.noir ↗
+</a>
+
+</div>
+
+<div class="card">
+
+<div
+style="
+display:grid;
+grid-template-columns:115px 1fr;
+gap:23px;
+align-items:center"
+>
+
+<div
+class="creator-avatar"
+style="
+width:115px;
+height:115px;
+border-radius:27px;
+font-size:38px"
+>
+R
+</div>
+
+<div>
+
+<h2>
+Artist. Developer. Creator. Builder.
+</h2>
+
+<div class="hero-note">
+
+<span class="hero-pill">
+Artist
+</span>
+
+<span class="hero-pill">
+Developer
+</span>
+
+<span class="hero-pill">
+Creator
+</span>
+
+<span class="hero-pill">
+Builder
+</span>
+
+</div>
+
+<p
+class="card-description"
+style="font-size:13px"
+>
+I'm Romi, a young Nigerian artist and developer
+passionate about music, technology, creativity and
+building digital products that stand out.
+RIZORA is one of the platforms I'm building to
+bring creators together through tasks, growth and rewards.
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+let token =
+  localStorage.getItem("rizoraToken") || "";
+
+let currentUser =
+  JSON.parse(
+    localStorage.getItem("rizoraUser") || "null"
+  );
+
+let referralData = null;
+
+let adminData = {
+  stats:{},
+  users:[],
+  tasks:[],
+  referrals:[],
+  audit:[]
+};
+
+function $(id){
+  return document.getElementById(id);
+}
+
+function escapeHTML(value){
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function showToast(message){
+
+  const toast = $("toast");
+
+  if(!toast) return;
+
+  toast.textContent = message;
+
+  toast.classList.add("show");
+
+  clearTimeout(showToast.timer);
+
+  showToast.timer =
+    setTimeout(
+      () => toast.classList.remove("show"),
+      2800
+    );
+}
+
+async function api(
+  endpoint,
+  options={}
+){
+
+  const headers = {
+    ...(options.headers || {})
+  };
+
+  if(options.body !== undefined){
+    headers["Content-Type"] =
+      "application/json";
+  }
+
+  if(token){
+    headers.Authorization =
+      `Bearer ${token}`;
+  }
+
+  const response =
+    await fetch(
+      endpoint,
+      {
+        ...options,
+        headers
+      }
+    );
+
+  const data =
+    await response
+      .json()
+      .catch(() => ({}));
+
+  if(!response.ok){
+    throw new Error(
+      data.error ||
+      "Something went wrong."
+    );
+  }
+
+  return data;
+}
+
+function togglePassword(
+  id,
+  button
+){
+
+  const input = $(id);
+
+  if(!input) return;
+
+  input.type =
+    input.type === "password"
+      ? "text"
+      : "password";
+
+  button.textContent =
+    input.type === "password"
+      ? "👁"
+      : "🙈";
+}
+
+function setAuthMessage(
+  message,
+  type="error"
+){
+
+  const element =
+    $("authMessage");
+
+  if(!message){
+
+    element.className =
+      "hidden";
+
+    element.textContent = "";
+
+    return;
+  }
+
+  element.className =
+    type === "success"
+      ? "success-message"
+      : "error";
+
+  element.textContent =
+    message;
+}
+
+function hideAll(){
+
+  [
+    "landing",
+    "auth",
+    "dashboard",
+    "adminDashboard",
+    "about"
+  ].forEach(
+    id =>
+      $(id)
+        ?.classList
+        .add("hidden")
+  );
+}
+
+function closeMobileMenu(){
+
+  $("desktopNav")
+    ?.classList
+    .remove("mobile-open");
+}
+
+function showLanding(){
+
+  hideAll();
+
+  $("landing")
+    .classList
+    .remove("hidden");
+
+  closeMobileMenu();
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
+function showAbout(){
+
+  hideAll();
+
+  $("about")
+    .classList
+    .remove("hidden");
+
+  closeMobileMenu();
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
+function showLogin(){
+
+  hideAll();
+
+  $("auth")
+    .classList
+    .remove("hidden");
+
+  $("signupForm")
+    .classList
+    .add("hidden");
+
+  $("loginForm")
+    .classList
+    .remove("hidden");
+
+  $("authTitle")
+    .textContent =
+    "Welcome back";
+
+  $("authSubtitle")
+    .textContent =
+    "Login to continue to RIZORA.";
+
+  setAuthMessage("");
+
+  closeMobileMenu();
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
+function showSignup(){
+
+  hideAll();
+
+  $("auth")
+    .classList
+    .remove("hidden");
+
+  $("loginForm")
+    .classList
+    .add("hidden");
+
+  $("signupForm")
+    .classList
+    .remove("hidden");
+
+  $("authTitle")
+    .textContent =
+    "Create your account";
+
+  $("authSubtitle")
+    .textContent =
+    "Join RIZORA and start building your creator momentum.";
+
+  setAuthMessage("");
+
+  loadReferralFromURL();
+
+  closeMobileMenu();
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
+function isSuperAdmin(){
+  return currentUser?.role ===
+    "super_admin";
+}
+
+function openBestDashboard(){
+
+  if(
+    !token ||
+    !currentUser
+  ){
+    showLogin();
+    return;
+  }
+
+  if(isSuperAdmin()){
+    showAdminDashboard();
+  }else{
+    showDashboard();
+  }
+}
+
+function openCreatorDashboard(){
+
+  if(
+    !token ||
+    !currentUser
+  ){
+    showLogin();
+    return;
+  }
+
+  showDashboard();
+}
+
+function showDashboard(){
+
+  if(
+    !token ||
+    !currentUser
+  ){
+    showLogin();
+    return;
+  }
+
+  hideAll();
+
+  $("dashboard")
+    .classList
+    .remove("hidden");
+
+  renderUser();
+
+  refreshDashboard();
+
+  closeMobileMenu();
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
+function showAdminDashboard(){
+
+  if(
+    !token ||
+    !currentUser
+  ){
+    showLogin();
+    return;
+  }
+
+  if(!isSuperAdmin()){
+    showDashboard();
+    return;
+  }
+
+  hideAll();
+
+  $("adminDashboard")
+    .classList
+    .remove("hidden");
+
+  $("adminWelcome")
+    .textContent =
+    `Welcome, ${
+      currentUser.displayName ||
+      currentUser.username
+    }.`;
+
+  loadAdminDashboard();
+
+  closeMobileMenu();
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
+function updateHeader(){
+
+  const logged =
+    Boolean(
+      token &&
+      currentUser
+    );
+
+  $("loginNav")
+    .classList
+    .toggle(
+      "hidden",
+      logged
+    );
+
+  $("signupNav")
+    .classList
+    .toggle(
+      "hidden",
+      logged
+    );
+
+  $("dashboardNav")
+    .classList
+    .toggle(
+      "hidden",
+      !logged
+    );
+
+  $("logoutNav")
+    .classList
+    .toggle(
+      "hidden",
+      !logged
+    );
+
+  $("dashboardNav")
+    .textContent =
+    isSuperAdmin()
+      ? "Command Center"
+      : "Dashboard";
+}
+
+async function handleSignup(event){
+
+  event.preventDefault();
+
+  const submit =
+    $("signupSubmit");
+
+  try{
+
+    submit.disabled = true;
+
+    submit.textContent =
+      "Creating account...";
+
+    setAuthMessage(
+      "Creating your RIZORA account...",
+      "success"
+    );
+
+    const result =
+      await api(
+        "/api/auth/signup",
+        {
+          method:"POST",
+          body:
+            JSON.stringify({
+              username:
+                $("signupUsername")
+                  .value
+                  .trim(),
+
+              displayName:
+                $("signupDisplayName")
+                  .value
+                  .trim(),
+
+              password:
+                $("signupPassword")
+                  .value,
+
+              referralCode:
+                $("signupReferralCode")
+                  .value
+                  .trim()
+            })
+        }
       );
 
-    let referralData = null;
-
-    function $(id) {
-      return document.getElementById(id);
-    }
-
-    function escapeHTML(value) {
-      return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    function escapeAttribute(value) {
-      return escapeHTML(value);
-    }
-
-    function showToast(message) {
-      const toast = $("toast");
-
-      if (!toast) return;
-
-      toast.textContent = message;
-
-      toast.classList.add("show");
-
-      clearTimeout(showToast.timer);
-
-      showToast.timer =
-        setTimeout(() => {
-          toast.classList.remove("show");
-        }, 2800);
-    }
-
-    async function api(
-      endpoint,
-      options = {}
-    ) {
-      const headers = {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-      };
-
-      if (token) {
-        headers.Authorization =
-          `Bearer ${token}`;
-      }
-
-      const response =
-        await fetch(
-          endpoint,
-          {
-            ...options,
-            headers
-          }
-        );
-
-      const data =
-        await response
-          .json()
-          .catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          data.error ||
-          "Something went wrong."
-        );
-      }
-
-      return data;
-    }
-
-    function togglePassword(
-      inputId,
-      button
-    ) {
-      const input = $(inputId);
-
-      if (!input) return;
-
-      if (input.type === "password") {
-        input.type = "text";
-        button.textContent = "🙈";
-      } else {
-        input.type = "password";
-        button.textContent = "👁";
-      }
-    }
-
-    function setAuthMessage(
-      message,
-      type = "error"
-    ) {
-      const el = $("authMessage");
-
-      if (!message) {
-        el.className = "hidden";
-        el.textContent = "";
-        return;
-      }
+    token =
+      result.token;
 
-      el.className =
-        type === "success"
-          ? "success-message"
-          : "error";
+    currentUser =
+      result.user;
 
-      el.textContent = message;
-    }
+    localStorage.setItem(
+      "rizoraToken",
+      token
+    );
 
-    function hideAllMainSections() {
-      [
-        "landing",
-        "auth",
-        "dashboard",
-        "about"
-      ].forEach(id => {
-        $(id)
-          .classList
-          .add("hidden");
-      });
-    }
+    localStorage.setItem(
+      "rizoraUser",
+      JSON.stringify(
+        currentUser
+      )
+    );
 
-    function showLanding() {
-      hideAllMainSections();
-
-      $("landing")
-        .classList
-        .remove("hidden");
+    updateHeader();
 
-      closeMobileMenu();
+    openBestDashboard();
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    }
+    showToast(
+      "Welcome to RIZORA 🚀"
+    );
 
-    function showLogin() {
-      hideAllMainSections();
+  }catch(error){
 
-      $("auth")
-        .classList
-        .remove("hidden");
+    setAuthMessage(
+      error.message
+    );
 
-      $("signupForm")
-        .classList
-        .add("hidden");
-
-      $("loginForm")
-        .classList
-        .remove("hidden");
-
-      $("authTitle")
-        .textContent =
-        "Welcome back";
-
-      $("authSubtitle")
-        .textContent =
-        "Login to continue to RIZORA.";
-
-      setAuthMessage("");
-
-      closeMobileMenu();
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    }
-
-    function showSignup() {
-      hideAllMainSections();
-
-      $("auth")
-        .classList
-        .remove("hidden");
-
-      $("loginForm")
-        .classList
-        .add("hidden");
-
-      $("signupForm")
-        .classList
-        .remove("hidden");
-
-      $("authTitle")
-        .textContent =
-        "Create your account";
-
-      $("authSubtitle")
-        .textContent =
-        "Join RIZORA and start building your creator momentum.";
-
-      setAuthMessage("");
-
-      loadReferralFromURL();
-
-      closeMobileMenu();
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    }
-
-    function showAbout() {
-      hideAllMainSections();
-
-      $("about")
-        .classList
-        .remove("hidden");
-
-      closeMobileMenu();
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    }
-
-    function showDashboard() {
-      if (!token || !currentUser) {
-        showLogin();
-        return;
-      }
-
-      hideAllMainSections();
-
-      $("dashboard")
-        .classList
-        .remove("hidden");
-
-      closeMobileMenu();
-
-      renderUser();
-      refreshDashboard();
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    }
-
-    function updateHeader() {
-      const loggedIn =
-        Boolean(
-          token &&
-          currentUser
-        );
-
-      $("loginNav")
-        .classList
-        .toggle(
-          "hidden",
-          loggedIn
-        );
-
-      $("signupNav")
-        .classList
-        .toggle(
-          "hidden",
-          loggedIn
-        );
-
-      $("dashboardNav")
-        .classList
-        .toggle(
-          "hidden",
-          !loggedIn
-        );
-
-      $("logoutNav")
-        .classList
-        .toggle(
-          "hidden",
-          !loggedIn
-        );
-    }
-
-    async function handleSignup(event) {
-      event.preventDefault();
-
-      const submit =
-        $("signupSubmit");
-
-      try {
-        submit.disabled = true;
-        submit.textContent =
-          "Creating account...";
-
-        setAuthMessage(
-          "Creating your RIZORA account...",
-          "success"
-        );
-
-        const result =
-          await api(
-            "/api/auth/signup",
-            {
-              method: "POST",
-              body:
-                JSON.stringify({
-                  username:
-                    $("signupUsername")
-                      .value
-                      .trim(),
-
-                  displayName:
-                    $("signupDisplayName")
-                      .value
-                      .trim(),
-
-                  password:
-                    $("signupPassword")
-                      .value,
-
-                  referralCode:
-                    $("signupReferralCode")
-                      ?.value
-                      .trim() || ""
-                })
-            }
-          );
-
-        token = result.token;
-        currentUser = result.user;
-
-        localStorage.setItem(
-          "rizoraToken",
-          token
-        );
-
-        localStorage.setItem(
-          "rizoraUser",
-          JSON.stringify(
-            currentUser
-          )
-        );
-
-        sessionStorage.removeItem(
-          "rizoraReferralCode"
-        );
-
-        updateHeader();
-        showDashboard();
-        showToast(
-          "Welcome to RIZORA 🚀"
-        );
-
-      } catch (error) {
-
-        setAuthMessage(
-          error.message
-        );
-
-      } finally {
-
-        submit.disabled = false;
-        submit.textContent =
-          "Create RIZORA account";
-      }
-    }
-
-    async function handleLogin(event) {
-      event.preventDefault();
-
-      const submit =
-        $("loginSubmit");
-
-      try {
-        submit.disabled = true;
-        submit.textContent =
-          "Logging in...";
-
-        setAuthMessage(
-          "Logging in...",
-          "success"
-        );
-
-        const identifier =
-          $("loginUsername")
-            .value
-            .trim();
-
-        const password =
-          $("loginPassword")
-            .value;
-
-        const result =
-          await api(
-            "/api/auth/login",
-            {
-              method: "POST",
-              body:
-                JSON.stringify({
-                  username:
-                    identifier,
-                  password
-                })
-            }
-          );
-
-        token = result.token;
-        currentUser = result.user;
-
-        localStorage.setItem(
-          "rizoraToken",
-          token
-        );
-
-        localStorage.setItem(
-          "rizoraUser",
-          JSON.stringify(
-            currentUser
-          )
-        );
-
-        updateHeader();
-        showDashboard();
-
-        showToast(
-          "Welcome back 👋"
-        );
-
-      } catch (error) {
-
-        setAuthMessage(
-          error.message
-        );
-
-      } finally {
-
-        submit.disabled = false;
-        submit.textContent =
-          "Login to RIZORA";
-      }
-    }
-
-    async function logoutUser() {
-      try {
-        if (token) {
-          await api(
-            "/api/auth/logout",
-            {
-              method: "POST"
-            }
-          );
+  }finally{
+
+    submit.disabled = false;
+
+    submit.textContent =
+      "Create RIZORA account";
+  }
+}
+
+async function handleLogin(event){
+
+  event.preventDefault();
+
+  const submit =
+    $("loginSubmit");
+
+  try{
+
+    submit.disabled = true;
+
+    submit.textContent =
+      "Logging in...";
+
+    setAuthMessage(
+      "Logging in...",
+      "success"
+    );
+
+    const result =
+      await api(
+        "/api/auth/login",
+        {
+          method:"POST",
+          body:
+            JSON.stringify({
+              username:
+                $("loginUsername")
+                  .value
+                  .trim(),
+
+              password:
+                $("loginPassword")
+                  .value
+            })
         }
-      } catch {}
+      );
+
+    token =
+      result.token;
+
+    currentUser =
+      result.user;
+
+    localStorage.setItem(
+      "rizoraToken",
+      token
+    );
+
+    localStorage.setItem(
+      "rizoraUser",
+      JSON.stringify(
+        currentUser
+      )
+    );
+
+    updateHeader();
+
+    openBestDashboard();
+
+    showToast(
+      isSuperAdmin()
+        ? "Command Center unlocked 🔥"
+        : "Welcome back 👋"
+    );
+
+  }catch(error){
+
+    setAuthMessage(
+      error.message
+    );
+
+  }finally{
+
+    submit.disabled = false;
+
+    submit.textContent =
+      "Login to RIZORA";
+  }
+}
+
+async function logoutUser(){
+
+  try{
+
+    if(token){
+
+      await api(
+        "/api/auth/logout",
+        {
+          method:"POST"
+        }
+      );
+
+    }
+
+  }catch{}
+
+  token = "";
+
+  currentUser = null;
+
+  referralData = null;
+
+  adminData = {
+    stats:{},
+    users:[],
+    tasks:[],
+    referrals:[],
+    audit:[]
+  };
+
+  localStorage.removeItem(
+    "rizoraToken"
+  );
+
+  localStorage.removeItem(
+    "rizoraUser"
+  );
+
+  updateHeader();
+
+  showLanding();
+
+  showToast(
+    "Logged out successfully."
+  );
+}
+
+function loadReferralFromURL(){
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const ref =
+    params.get("ref");
+
+  if(ref){
+
+    $("signupReferralCode")
+      .value =
+      ref.trim();
+
+    sessionStorage.setItem(
+      "rizoraReferralCode",
+      ref.trim()
+    );
+
+  }else{
+
+    $("signupReferralCode")
+      .value =
+      sessionStorage.getItem(
+        "rizoraReferralCode"
+      ) || "";
+
+  }
+}
+
+async function refreshDashboard(){
+
+  if(
+    !token ||
+    !currentUser
+  ) return;
+
+  try{
+
+    const me =
+      await api(
+        "/api/auth/me"
+      );
+
+    currentUser =
+      me.user;
+
+    localStorage.setItem(
+      "rizoraUser",
+      JSON.stringify(
+        currentUser
+      )
+    );
+
+    renderUser();
+
+    await Promise.all([
+      loadTasks(),
+      loadReferrals()
+    ]);
+
+  }catch(error){
+
+    console.error(
+      "Dashboard refresh failed:",
+      error
+    );
+
+    await logoutUser();
+  }
+}
+
+function renderUser(){
+
+  if(!currentUser) return;
+
+  $("welcomeName")
+    .textContent =
+    `Welcome, ${
+      currentUser.displayName ||
+      currentUser.username
+    }.`;
+
+  $("dashUsername")
+    .textContent =
+    `@${currentUser.username}`;
+
+  $("dashPoints")
+    .textContent =
+    Number(
+      currentUser.points || 0
+    ).toLocaleString();
+
+  $("dashRole")
+    .textContent =
+    isSuperAdmin()
+      ? "Super Admin"
+      : currentUser.role === "admin"
+        ? "Admin"
+        : "User";
+
+  $("dashStatus")
+    .textContent =
+    currentUser.status === "active"
+      ? "Active"
+      : "Disabled";
+}
+
+async function loadReferrals(){
+
+  if(!token) return;
+
+  try{
+
+    referralData =
+      await api(
+        "/api/referrals/me"
+      );
+
+    $("referralCode")
+      .textContent =
+      referralData.referralCode ||
+      "—";
+
+    $("referralCount")
+      .textContent =
+      Number(
+        referralData.count || 0
+      ).toLocaleString();
+
+    $("referralPoints")
+      .textContent =
+      Number(
+        referralData.points || 0
+      ).toLocaleString();
+
+    $("referralLink")
+      .value =
+      referralData.referralLink ||
+      "";
+
+    const rows =
+      referralData.referrals || [];
+
+    $("referralList")
+      .innerHTML =
+      rows.length
+        ? `
+          <div
+            class="stat-label"
+            style="margin-top:17px"
+          >
+            Recent referrals
+          </div>
+
+          ${
+            rows
+              .slice()
+              .reverse()
+              .slice(0,5)
+              .map(
+                r =>
+                  `
+                  <div class="task">
+
+                    <div class="task-top">
+
+                      <div>
+
+                        <strong>
+                          Creator referral
+                        </strong>
+
+                        <p>
+                          ${escapeHTML(
+                            r.code ||
+                            "Referral completed"
+                          )}
+                        </p>
+
+                      </div>
+
+                      <span class="reward">
+                        +${Number(
+                          r.reward || 0
+                        )} pts
+                      </span>
+
+                    </div>
+
+                  </div>
+                  `
+              )
+              .join("")
+          }
+        `
+        : `
+          <p
+            class="muted"
+            style="margin-top:17px"
+          >
+            No referrals yet.
+            Share your link and start earning.
+          </p>
+        `;
+
+  }catch(error){
+
+    console.error(
+      "Referral load failed:",
+      error
+    );
+
+  }
+}
+
+async function copyText(
+  text,
+  message
+){
+
+  try{
+
+    if(
+      navigator.clipboard
+    ){
+
+      await navigator.clipboard
+        .writeText(text);
+
+    }else{
+
+      const input =
+        document.createElement(
+          "textarea"
+        );
+
+      input.value = text;
+
+      document.body.appendChild(
+        input
+      );
+
+      input.select();
+
+      document.execCommand(
+        "copy"
+      );
+
+      input.remove();
+    }
+
+    showToast(message);
+
+  }catch{
+
+    showToast(
+      "Could not copy."
+    );
+
+  }
+}
+
+async function copyReferralCode(){
+
+  if(
+    referralData?.referralCode
+  ){
+
+    await copyText(
+      referralData.referralCode,
+      "Referral code copied."
+    );
+
+  }
+
+}
+
+async function copyReferralLink(){
+
+  if(
+    referralData?.referralLink
+  ){
+
+    await copyText(
+      referralData.referralLink,
+      "Referral link copied."
+    );
+
+  }else{
+
+    showToast(
+      "Your referral link is still loading."
+    );
+
+  }
+
+}
+
+async function shareReferralLink(){
+
+  if(
+    !referralData?.referralLink
+  ){
+
+    showToast(
+      "Your referral link is still loading."
+    );
+
+    return;
+  }
+
+  const url =
+    referralData.referralLink;
+
+  if(
+    navigator.share
+  ){
+
+    try{
+
+      await navigator.share({
+        title:"Join RIZORA",
+        text:
+          "Join me on RIZORA. Create, grow and earn points.",
+        url
+      });
+
+      return;
+
+    }catch{}
+
+  }
+
+  await copyText(
+    url,
+    "Referral link copied."
+  );
+}
+
+async function loadTasks(){
+
+  const container =
+    $("tasks");
+
+  container.innerHTML =
+    `<div class="muted">
+      Loading tasks...
+    </div>`;
+
+  try{
+
+    const result =
+      await api(
+        "/api/tasks"
+      );
+
+    const tasks =
+      result.tasks || [];
+
+    if(!tasks.length){
+
+      container.innerHTML =
+        `<div class="empty">
+          No tasks available right now.
+        </div>`;
+
+      return;
+    }
+
+    container.innerHTML =
+      tasks
+        .map(
+          task => {
+
+            const reward =
+              Number(
+                task.points ??
+                task.reward ??
+                0
+              );
+
+            const completed =
+              Boolean(
+                task.completed
+              );
+
+            return `
+              <div class="task">
+
+                <div class="task-top">
+
+                  <div>
+
+                    <h3>
+                      ${escapeHTML(
+                        task.title ||
+                        "RIZORA Task"
+                      )}
+                    </h3>
+
+                    <p>
+                      ${escapeHTML(
+                        task.description ||
+                        ""
+                      )}
+                    </p>
+
+                  </div>
+
+                  <span class="reward">
+                    +${reward} pts
+                  </span>
+
+                </div>
+
+                <div class="task-actions">
+
+                  ${
+                    task.url
+                      ? `
+                        <a
+                          class="btn secondary small"
+                          href="${escapeHTML(
+                            task.url
+                          )}"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open ↗
+                        </a>
+                      `
+                      : ""
+                  }
+
+                  <button
+                    class="btn small"
+                    ${
+                      completed
+                        ? "disabled"
+                        : ""
+                    }
+                    onclick="
+                      completeTask(
+                        '${escapeHTML(
+                          task.id
+                        )}'
+                      )
+                    "
+                  >
+                    ${
+                      completed
+                        ? "Completed"
+                        : "Complete"
+                    }
+                  </button>
+
+                </div>
+
+              </div>
+            `;
+          }
+        )
+        .join("");
+
+  }catch(error){
+
+    container.innerHTML =
+      `
+      <div class="error">
+        ${escapeHTML(
+          error.message
+        )}
+      </div>
+      `;
+
+  }
+}
+
+async function completeTask(
+  taskId
+){
+
+  try{
+
+    const result =
+      await api(
+        "/api/tasks/complete",
+        {
+          method:"POST",
+          body:
+            JSON.stringify({
+              taskId
+            })
+        }
+      );
+
+    currentUser =
+      result.user;
+
+    localStorage.setItem(
+      "rizoraUser",
+      JSON.stringify(
+        currentUser
+      )
+    );
+
+    renderUser();
+
+    showToast(
+      `+${result.reward} RIZORA points earned!`
+    );
+
+    await Promise.all([
+      loadTasks(),
+      loadReferrals()
+    ]);
+
+  }catch(error){
+
+    showToast(
+      error.message
+    );
+
+  }
+}
+
+async function runCreatorTool(
+  endpoint
+){
+
+  const box =
+    $("toolResult");
+
+  box.innerHTML =
+    `
+      Generating
+      <span class="loading-dot"></span>
+    `;
+
+  try{
+
+    const result =
+      await api(
+        endpoint,
+        {
+          method:"POST",
+          body:
+            JSON.stringify({
+              topic:"creator growth",
+              category:"lifestyle",
+              vibe:"aesthetic gen z"
+            })
+        }
+      );
+
+    const values =
+      result.items ||
+      result.hooks ||
+      result.hashtags ||
+      result.captions ||
+      [];
+
+    box.innerHTML =
+      values.length
+        ? values
+            .slice(0,8)
+            .map(
+              value =>
+                `
+                <div class="tool-line">
+                  ${escapeHTML(value)}
+                </div>
+                `
+            )
+            .join("")
+        : "No results returned.";
+
+  }catch(error){
+
+    box.textContent =
+      error.message;
+
+  }
+}
+
+/* ============================
+   ADMIN DASHBOARD
+============================ */
+
+async function loadAdminDashboard(){
+
+  if(!isSuperAdmin()) return;
+
+  try{
+
+    const result =
+      await api(
+        "/api/superadmin/dashboard"
+      );
+
+    adminData = {
+      stats:
+        result.stats || {},
+
+      users:
+        result.users || [],
+
+      tasks:
+        result.tasks || [],
+
+      referrals:
+        result.referrals || [],
+
+      audit:
+        result.audit || []
+    };
+
+    renderAdminStats();
+    renderAdminUsers();
+    renderAdminReferrals();
+    renderAdminTasks();
+    renderAdminAudit();
+    renderAdminOverview();
+
+  }catch(error){
+
+    showToast(
+      error.message
+    );
+
+    if(
+      error.message
+        .toLowerCase()
+        .includes("super admin")
+    ){
+
+      showDashboard();
+
+    }
+
+  }
+}
+
+function renderAdminStats(){
+
+  const stats =
+    adminData.stats || {};
+
+  $("adminTotalUsers")
+    .textContent =
+    Number(
+      stats.totalUsers || 0
+    ).toLocaleString();
+
+  $("adminActiveUsers")
+    .textContent =
+    Number(
+      stats.activeUsers || 0
+    ).toLocaleString();
+
+  $("adminBlockedUsers")
+    .textContent =
+    Number(
+      stats.blockedUsers || 0
+    ).toLocaleString();
+
+  $("adminTotalPoints")
+    .textContent =
+    Number(
+      stats.totalPoints || 0
+    ).toLocaleString();
+
+  $("adminAdmins")
+    .textContent =
+    Number(
+      stats.admins || 0
+    ).toLocaleString();
+
+  $("adminSuperAdmins")
+    .textContent =
+    Number(
+      stats.superAdmins || 0
+    ).toLocaleString();
+
+  $("adminTaskCompletions")
+    .textContent =
+    Number(
+      stats.totalTaskCompletions || 0
+    ).toLocaleString();
+
+  $("adminReferralsCount")
+    .textContent =
+    Number(
+      stats.totalReferrals || 0
+    ).toLocaleString();
+}
+
+function switchAdminTab(
+  name,
+  button
+){
+
+  document
+    .querySelectorAll(
+      ".admin-tab"
+    )
+    .forEach(
+      item =>
+        item.classList
+          .remove("active")
+    );
+
+  button?.classList
+    .add("active");
+
+  document
+    .querySelectorAll(
+      ".admin-panel"
+    )
+    .forEach(
+      panel =>
+        panel.classList
+          .remove("active")
+    );
+
+  const panel =
+    $(
+      "adminPanel" +
+      name
+        .charAt(0)
+        .toUpperCase() +
+      name.slice(1)
+    );
+
+  if(panel){
+    panel.classList
+      .add("active");
+  }
+
+}
+
+function renderAdminUsers(){
+
+  const container =
+    $("adminUsersTable");
+
+  const query =
+    (
+      $("userSearch")
+        .value || ""
+    ).toLowerCase();
+
+  const role =
+    $("userRoleFilter")
+      .value;
+
+  const status =
+    $("userStatusFilter")
+      .value;
+
+  const rows =
+    adminData.users
+      .filter(
+        user =>
+          (
+            !query ||
+            user.username
+              .toLowerCase()
+              .includes(query) ||
+            (
+              user.email || ""
+            )
+              .toLowerCase()
+              .includes(query) ||
+            (
+              user.displayName || ""
+            )
+              .toLowerCase()
+              .includes(query)
+          ) &&
+          (
+            !role ||
+            user.role === role
+          ) &&
+          (
+            !status ||
+            user.status === status
+          )
+      );
+
+  if(!rows.length){
+
+    container.innerHTML =
+      `
+      <div class="empty">
+        No matching users.
+      </div>
+      `;
+
+    return;
+  }
+
+  container.innerHTML =
+    `
+      <div class="table-head">
+
+        <div>User</div>
+        <div>Role</div>
+        <div>Status</div>
+        <div>Points</div>
+        <div>Actions</div>
+
+      </div>
+
+      ${
+        rows
+          .map(
+            user => {
+
+              const protectedUser =
+                [
+                  "romi",
+                  "superadmin2"
+                ].includes(
+                  String(
+                    user.username || ""
+                  ).toLowerCase()
+                );
+
+              return `
+                <div class="table-row">
+
+                  <div class="table-cell">
+
+                    <strong>
+                      ${escapeHTML(
+                        user.displayName ||
+                        user.username
+                      )}
+                    </strong>
+
+                    <small>
+                      @${escapeHTML(
+                        user.username
+                      )}
+                      ${
+                        user.email
+                          ? ` · ${escapeHTML(
+                              user.email
+                            )}`
+                          : ""
+                      }
+                    </small>
+
+                  </div>
+
+                  <div class="table-cell">
+
+                    <span class="role-badge">
+                      ${escapeHTML(
+                        user.role
+                      )}
+                    </span>
+
+                  </div>
+
+                  <div class="table-cell">
+
+                    <span
+                      class="
+                        status-badge
+                        ${
+                          user.status ===
+                          "active"
+                            ? "status-active"
+                            : "status-blocked"
+                        }
+                      "
+                    >
+                      ${escapeHTML(
+                        user.status
+                      )}
+                    </span>
+
+                  </div>
+
+                  <div class="table-cell">
+
+                    <strong>
+                      ${Number(
+                        user.points || 0
+                      ).toLocaleString()}
+                    </strong>
+
+                  </div>
+
+                  <div
+                    class="table-cell admin-actions"
+                  >
+
+                    <button
+                      class="btn secondary tiny"
+                      onclick="
+                        manageUser(
+                          '${escapeHTML(
+                            user.id
+                          )}'
+                        )
+                      "
+                    >
+                      Manage
+                    </button>
+
+                    ${
+                      !protectedUser
+                        ? `
+                          <button
+                            class="btn secondary tiny"
+                            onclick="
+                              quickToggleStatus(
+                                '${escapeHTML(
+                                  user.id
+                                )}',
+                                '${user.status === "active"
+                                  ? "blocked"
+                                  : "active"}'
+                              )
+                            "
+                          >
+                            ${
+                              user.status ===
+                              "active"
+                                ? "Block"
+                                : "Unblock"
+                            }
+                          </button>
+                        `
+                        : ""
+                    }
+
+                  </div>
+
+                </div>
+              `;
+            }
+          )
+          .join("")
+      }
+    `;
+}
+
+async function manageUser(
+  id
+){
+
+  const user =
+    adminData.users
+      .find(
+        item =>
+          item.id === id
+      );
+
+  if(!user) return;
+
+  const action =
+    prompt(
+      `Manage @${user.username}\n\n` +
+      `Type: role, status or points`
+    );
+
+  if(!action) return;
+
+  const normalized =
+    action
+      .toLowerCase()
+      .trim();
+
+  if(
+    normalized === "role"
+  ){
+
+    const role =
+      prompt(
+        "Enter role: user, admin, super_admin",
+        user.role
+      );
+
+    if(!role) return;
+
+    await adminChangeRole(
+      user.id,
+      role
+    );
+
+  }else if(
+    normalized === "status"
+  ){
+
+    const status =
+      prompt(
+        "Enter status: active or blocked",
+        user.status
+      );
+
+    if(!status) return;
+
+    await adminChangeStatus(
+      user.id,
+      status
+    );
+
+  }else if(
+    normalized === "points"
+  ){
+
+    const amount =
+      prompt(
+        "Enter points adjustment (example: 100 or -50)",
+        "100"
+      );
+
+    if(amount === null) return;
+
+    await adminChangePoints(
+      user.id,
+      amount
+    );
+
+  }else{
+
+    showToast(
+      "Use role, status or points."
+    );
+
+  }
+}
+
+async function adminChangeRole(
+  id,
+  role
+){
+
+  try{
+
+    const result =
+      await api(
+        "/api/superadmin/users/role",
+        {
+          method:"POST",
+          body:
+            JSON.stringify({
+              userId:id,
+              role
+            })
+        }
+      );
+
+    showToast(
+      `Role updated to ${result.user.role}`
+    );
+
+    await loadAdminDashboard();
+
+  }catch(error){
+
+    showToast(
+      error.message
+    );
+
+  }
+}
+
+async function adminChangeStatus(
+  id,
+  status
+){
+
+  try{
+
+    const result =
+      await api(
+        "/api/superadmin/users/status",
+        {
+          method:"POST",
+          body:
+            JSON.stringify({
+              userId:id,
+              status
+            })
+        }
+      );
+
+    showToast(
+      `Account ${result.user.status}`
+    );
+
+    await loadAdminDashboard();
+
+  }catch(error){
+
+    showToast(
+      error.message
+    );
+
+  }
+}
+
+async function adminChangePoints(
+  id,
+  amount
+){
+
+  try{
+
+    const numeric =
+      Number(amount);
+
+    if(
+      !Number.isFinite(
+        numeric
+      )
+    ){
+
+      throw new Error(
+        "Invalid points amount."
+      );
+
+    }
+
+    const result =
+      await api(
+        "/api/superadmin/users/points",
+        {
+          method:"POST",
+          body:
+            JSON.stringify({
+              userId:id,
+              amount:numeric
+            })
+        }
+      );
+
+    showToast(
+      `Points updated: ${
+        Number(
+          result.user.points || 0
+        ).toLocaleString()
+      }`
+    );
+
+    await loadAdminDashboard();
+
+  }catch(error){
+
+    showToast(
+      error.message
+    );
+
+  }
+}
+
+async function quickToggleStatus(
+  id,
+  status
+){
+
+  const user =
+    adminData.users
+      .find(
+        item =>
+          item.id === id
+      );
+
+  if(!user) return;
+
+  if(
+    !confirm(
+      `${
+        status === "blocked"
+          ? "Block"
+          : "Unblock"
+      } @${user.username}?`
+    )
+  ){
+
+    return;
+  }
+
+  await adminChangeStatus(
+    id,
+    status
+  );
+}
+
+function renderAdminReferrals(){
+
+  const container =
+    $("adminReferralList");
+
+  const rows =
+    adminData.referrals || [];
+
+  container.innerHTML =
+    rows.length
+      ? rows
+          .slice()
+          .reverse()
+          .slice(0,100)
+          .map(
+            referral =>
+              `
+              <div class="task">
+
+                <div class="task-top">
+
+                  <div>
+
+                    <strong>
+                      Referral ${
+                        escapeHTML(
+                          referral.id || ""
+                        )
+                      }
+                    </strong>
+
+                    <p>
+                      Referrer:
+                      ${escapeHTML(
+                        referral.referrerId ||
+                        "unknown"
+                      )}
+                      · New user:
+                      ${escapeHTML(
+                        referral.referredUserId ||
+                        "unknown"
+                      )}
+                    </p>
+
+                    <p>
+                      Code:
+                      <span class="code-box">
+                        ${escapeHTML(
+                          referral.code || ""
+                        )}
+                      </span>
+                    </p>
+
+                  </div>
+
+                  <span class="reward">
+                    +${Number(
+                      referral.reward || 0
+                    )} pts
+                  </span>
+
+                </div>
+
+              </div>
+              `
+          )
+          .join("")
+      : `
+        <div class="empty">
+          No referrals yet.
+        </div>
+        `;
+
+  const total =
+    rows.reduce(
+      (sum, referral) =>
+        sum +
+        Number(
+          referral.reward || 0
+        ),
+      0
+    );
+
+  $("referralSummary")
+    .innerHTML =
+      `
+      <div class="metric-line">
+        <span>
+          Total referrals
+        </span>
+
+        <strong>
+          ${rows.length.toLocaleString()}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>
+          Total referral rewards
+        </span>
+
+        <strong>
+          ${total.toLocaleString()} pts
+        </strong>
+      </div>
+      `;
+}
+
+function renderAdminTasks(){
+
+  const container =
+    $("adminTaskList");
+
+  const rows =
+    adminData.tasks || [];
+
+  container.innerHTML =
+    rows.length
+      ? rows
+          .map(
+            task =>
+              `
+              <div class="task">
+
+                <div class="task-top">
+
+                  <div>
+
+                    <h3>
+                      ${escapeHTML(
+                        task.title ||
+                        task.id
+                      )}
+                    </h3>
+
+                    <p>
+                      ${escapeHTML(
+                        task.description ||
+                        ""
+                      )}
+                    </p>
+
+                    <p
+                      style="margin-top:5px"
+                    >
+                      Reward:
+                      ${Number(
+                        task.points ||
+                        task.reward ||
+                        0
+                      )} pts
+                      · Status:
+                      ${
+                        task.active !== false
+                          ? "active"
+                          : "disabled"
+                      }
+                    </p>
+
+                  </div>
+
+                  <button
+                    class="
+                      btn
+                      ${
+                        task.active === false
+                          ? ""
+                          : "danger"
+                      }
+                      small
+                    "
+                    onclick="
+                      toggleTaskStatus(
+                        '${escapeHTML(
+                          task.id
+                        )}',
+                        ${
+                          task.active !== false
+                        }
+                      )
+                    "
+                  >
+                    ${
+                      task.active === false
+                        ? "Enable"
+                        : "Disable"
+                    }
+                  </button>
+
+                </div>
+
+              </div>
+              `
+          )
+          .join("")
+      : `
+        <div class="empty">
+          No tasks.
+        </div>
+        `;
+}
+
+async function toggleTaskStatus(
+  id,
+  current
+){
+
+  if(
+    !confirm(
+      `${
+        current
+          ? "Disable"
+          : "Enable"
+      } this task?`
+    )
+  ){
+
+    return;
+  }
+
+  try{
+
+    await api(
+      "/api/superadmin/tasks/status",
+      {
+        method:"POST",
+        body:
+          JSON.stringify({
+            taskId:id,
+            active:!current
+          })
+      }
+    );
+
+    showToast(
+      `Task ${
+        current
+          ? "disabled"
+          : "enabled"
+      }.`
+    );
+
+    await loadAdminDashboard();
+
+  }catch(error){
+
+    showToast(
+      error.message
+    );
+
+  }
+}
+
+function renderAdminAudit(){
+
+  const container =
+    $("adminAuditList");
+
+  const rows =
+    adminData.audit || [];
+
+  container.innerHTML =
+    rows.length
+      ? rows
+          .slice(0,200)
+          .map(
+            audit =>
+              `
+              <div class="audit-item">
+
+                <div class="audit-main">
+
+                  <div class="audit-action">
+                    ${escapeHTML(
+                      audit.action ||
+                      "activity"
+                    )}
+                  </div>
+
+                  <div class="audit-time">
+                    ${
+                      audit.createdAt
+                        ? new Date(
+                            audit.createdAt
+                          ).toLocaleString()
+                        : ""
+                    }
+                  </div>
+
+                </div>
+
+                <div class="audit-meta">
+
+                  Actor:
+                  ${escapeHTML(
+                    audit.actor?.username ||
+                    "system"
+                  )}
+
+                  · Role:
+                  ${escapeHTML(
+                    audit.actor?.role ||
+                    ""
+                  )}
+
+                  <br>
+
+                  ${
+                    escapeHTML(
+                      JSON.stringify(
+                        audit.details || {}
+                      )
+                    )
+                  }
+
+                </div>
+
+              </div>
+              `
+          )
+          .join("")
+      : `
+        <div class="empty">
+          No audit events yet.
+        </div>
+        `;
+}
+
+async function renderAdminOverview(){
+
+  const health =
+    await fetch(
+      "/api/health"
+    )
+      .then(
+        response =>
+          response.json()
+      )
+      .catch(
+        () => ({})
+      );
+
+  $("systemStatus")
+    .innerHTML =
+      `
+      <div class="metric-line">
+        <span>Service</span>
+        <strong>
+          ${escapeHTML(
+            health.service ||
+            "RIZORA"
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>Status</span>
+        <strong>
+          ${escapeHTML(
+            health.status ||
+            "unknown"
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>Version</span>
+        <strong>
+          ${escapeHTML(
+            health.version ||
+            "unknown"
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>Server time</span>
+        <strong>
+          ${
+            health.time
+              ? new Date(
+                  health.time
+                ).toLocaleString()
+              : "—"
+          }
+        </strong>
+      </div>
+      `;
+
+  $("adminIdentity")
+    .innerHTML =
+      `
+      <div class="metric-line">
+        <span>
+          Signed in as
+        </span>
+
+        <strong>
+          @${escapeHTML(
+            currentUser.username
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>
+          Role
+        </span>
+
+        <strong>
+          ${escapeHTML(
+            currentUser.role
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>
+          Status
+        </span>
+
+        <strong>
+          ${escapeHTML(
+            currentUser.status
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>
+          Account ID
+        </span>
+
+        <span class="code-box">
+          ${escapeHTML(
+            currentUser.id
+          )}
+        </span>
+      </div>
+      `;
+}
+
+function toggleMobileMenu(){
+
+  $("desktopNav")
+    .classList
+    .toggle(
+      "mobile-open"
+    );
+}
+
+window.addEventListener(
+  "resize",
+  () => {
+
+    if(
+      window.innerWidth >
+      760
+    ){
+
+      closeMobileMenu();
+
+    }
+
+  }
+);
+
+if(
+  "serviceWorker" in navigator
+){
+
+  window.addEventListener(
+    "load",
+    () => {
+
+      navigator.serviceWorker
+        .register("/sw.js")
+        .catch(
+          () => {}
+        );
+
+    }
+  );
+
+}
+
+async function startup(){
+
+  updateHeader();
+
+  loadReferralFromURL();
+
+  if(
+    token &&
+    currentUser
+  ){
+
+    try{
+
+      const result =
+        await api(
+          "/api/auth/me"
+        );
+
+      currentUser =
+        result.user;
+
+      localStorage.setItem(
+        "rizoraUser",
+        JSON.stringify(
+          currentUser
+        )
+      );
+
+      updateHeader();
+
+      openBestDashboard();
+
+    }catch{
 
       token = "";
+
       currentUser = null;
-      referralData = null;
 
       localStorage.removeItem(
         "rizoraToken"
@@ -2992,796 +4963,21 @@
       );
 
       updateHeader();
+
       showLanding();
 
-      showToast(
-        "Logged out successfully."
-      );
     }
 
-    async function loadReferrals() {
-      if (!token || !currentUser) {
-        return;
-      }
+  }else{
 
-      try {
+    showLanding();
 
-        referralData =
-          await api(
-            "/api/referrals/me"
-          );
+  }
+}
 
-        $("referralCode")
-          .textContent =
-          referralData.referralCode ||
-          "—";
+startup();
 
-        $("referralCount")
-          .textContent =
-          Number(
-            referralData.count ||
-            referralData.referralCount ||
-            0
-          ).toLocaleString();
-
-        $("referralPoints")
-          .textContent =
-          Number(
-            referralData.points ||
-            0
-          ).toLocaleString();
-
-        $("referralLink")
-          .value =
-          referralData.referralLink ||
-          "";
-
-        const rows =
-          referralData.referrals ||
-          [];
-
-        if (!rows.length) {
-
-          $("referralList")
-            .innerHTML =
-            `
-              <p class="muted">
-                No referrals yet.
-                Share your link and start earning.
-              </p>
-            `;
-
-          return;
-        }
-
-        $("referralList")
-          .innerHTML =
-          `
-            <div
-              class="stat-label"
-              style="margin-bottom:8px"
-            >
-              Recent referrals
-            </div>
-
-            ${rows
-              .slice()
-              .reverse()
-              .slice(0, 5)
-              .map(
-                referral =>
-                  `
-                    <div class="task">
-
-                      <div class="task-top">
-
-                        <div>
-
-                          <strong>
-                            ${escapeHTML(
-                              referral.displayName ||
-                              referral.username ||
-                              "Creator"
-                            )}
-                          </strong>
-
-                          <p>
-                            @${escapeHTML(
-                              referral.username ||
-                              ""
-                            )}
-                          </p>
-
-                        </div>
-
-                        <span class="reward">
-                          +${Number(
-                            referral.reward ||
-                            0
-                          )} pts
-                        </span>
-
-                      </div>
-
-                    </div>
-                  `
-              )
-              .join("")}
-          `;
-
-      } catch (error) {
-
-        console.error(
-          "Referral load failed:",
-          error
-        );
-      }
-    }
-
-    async function copyReferralCode() {
-      if (!referralData?.referralCode) {
-        return;
-      }
-
-      await copyText(
-        referralData.referralCode,
-        "Referral code copied."
-      );
-    }
-
-    async function copyReferralLink() {
-      if (!referralData?.referralLink) {
-        showToast(
-          "Your referral link is still loading."
-        );
-        return;
-      }
-
-      await copyText(
-        referralData.referralLink,
-        "Referral link copied."
-      );
-    }
-
-    async function copyText(
-      text,
-      message
-    ) {
-      try {
-
-        if (
-          navigator.clipboard &&
-          window.isSecureContext
-        ) {
-
-          await navigator.clipboard
-            .writeText(text);
-
-        } else {
-
-          const input =
-            document.createElement(
-              "textarea"
-            );
-
-          input.value = text;
-
-          input.style.position =
-            "fixed";
-
-          input.style.left =
-            "-9999px";
-
-          document.body.appendChild(
-            input
-          );
-
-          input.select();
-
-          document.execCommand(
-            "copy"
-          );
-
-          input.remove();
-        }
-
-        showToast(message);
-
-      } catch (error) {
-
-        console.error(
-          "Copy failed:",
-          error
-        );
-
-        showToast(
-          "Could not copy the link."
-        );
-      }
-    }
-
-    async function shareReferralLink() {
-
-      if (!referralData?.referralLink) {
-
-        showToast(
-          "Your referral link is still loading."
-        );
-
-        return;
-      }
-
-      const url =
-        referralData.referralLink;
-
-      const message =
-        "Join me on RIZORA. Create, grow and earn points.";
-
-      if (
-        typeof navigator.share ===
-        "function"
-      ) {
-
-        try {
-
-          await navigator.share({
-            title: "Join RIZORA",
-            text: message,
-            url
-          });
-
-          return;
-
-        } catch (error) {
-
-          if (
-            error?.name ===
-            "AbortError"
-          ) {
-            return;
-          }
-        }
-      }
-
-      const whatsappURL =
-        "https://wa.me/?text=" +
-        encodeURIComponent(
-          `${message}\n${url}`
-        );
-
-      window.open(
-        whatsappURL,
-        "_blank",
-        "noopener,noreferrer"
-      );
-    }
-
-    function loadReferralFromURL() {
-
-      const params =
-        new URLSearchParams(
-          window.location.search
-        );
-
-      const ref =
-        params.get("ref");
-
-      if (
-        ref &&
-        $("signupReferralCode")
-      ) {
-
-        $("signupReferralCode")
-          .value =
-          ref.trim();
-
-        sessionStorage.setItem(
-          "rizoraReferralCode",
-          ref.trim()
-        );
-
-      } else {
-
-        const saved =
-          sessionStorage.getItem(
-            "rizoraReferralCode"
-          );
-
-        if (
-          saved &&
-          $("signupReferralCode")
-        ) {
-
-          $("signupReferralCode")
-            .value =
-            saved;
-        }
-      }
-    }
-
-    async function refreshDashboard() {
-
-      if (!token || !currentUser) {
-        return;
-      }
-
-      try {
-
-        const me =
-          await api(
-            "/api/auth/me"
-          );
-
-        currentUser =
-          me.user;
-
-        localStorage.setItem(
-          "rizoraUser",
-          JSON.stringify(
-            currentUser
-          )
-        );
-
-        renderUser();
-
-        await Promise.all([
-          loadTasks(),
-          loadReferrals()
-        ]);
-
-      } catch (error) {
-
-        console.error(
-          "Dashboard refresh failed:",
-          error
-        );
-
-        await logoutUser();
-      }
-    }
-
-    function renderUser() {
-
-      if (!currentUser) {
-        return;
-      }
-
-      $("welcomeName")
-        .textContent =
-        `Welcome, ${
-          currentUser.displayName ||
-          currentUser.username
-        }.`;
-
-      $("dashUsername")
-        .textContent =
-        `@${currentUser.username}`;
-
-      $("dashPoints")
-        .textContent =
-        Number(
-          currentUser.points ||
-          0
-        ).toLocaleString();
-
-      $("dashRole")
-        .textContent =
-        currentUser.role ===
-        "super_admin"
-          ? "Super Admin"
-          : currentUser.role ===
-            "admin"
-              ? "Admin"
-              : "User";
-
-      $("dashStatus")
-        .textContent =
-        currentUser.status ===
-        "active"
-          ? "Active"
-          : "Disabled";
-    }
-
-    async function loadTasks() {
-
-      const container =
-        $("tasks");
-
-      container.innerHTML =
-        `
-          <div class="muted">
-            Loading tasks...
-          </div>
-        `;
-
-      try {
-
-        const result =
-          await api(
-            "/api/tasks"
-          );
-
-        const tasks =
-          result.tasks || [];
-
-        if (!tasks.length) {
-
-          container.innerHTML =
-            `
-              <div class="muted">
-                No tasks available right now.
-              </div>
-            `;
-
-          return;
-        }
-
-        container.innerHTML =
-          tasks
-            .map(
-              task => {
-
-                const reward =
-                  Number(
-                    task.reward ??
-                    task.points ??
-                    0
-                  );
-
-                return `
-                  <div class="task">
-
-                    <div class="task-top">
-
-                      <div>
-
-                        <h3>
-                          ${escapeHTML(
-                            task.title ||
-                            "RIZORA Task"
-                          )}
-                        </h3>
-
-                        <p>
-                          ${escapeHTML(
-                            task.description ||
-                            ""
-                          )}
-                        </p>
-
-                      </div>
-
-                      <span class="reward">
-                        +${reward} pts
-                      </span>
-
-                    </div>
-
-                    <div class="task-actions">
-
-                      ${
-                        task.url
-                          ?
-                          `
-                            <a
-                              class="btn secondary small"
-                              href="${escapeAttribute(
-                                task.url
-                              )}"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Open ↗
-                            </a>
-                          `
-                          :
-                          ""
-                      }
-
-                      <button
-                        class="btn small"
-                        onclick="
-                          completeTask(
-                            '${escapeAttribute(
-                              task.id
-                            )}'
-                          )
-                        "
-                      >
-                        Complete
-                      </button>
-
-                    </div>
-
-                  </div>
-                `;
-              }
-            )
-            .join("");
-
-      } catch (error) {
-
-        container.innerHTML =
-          `
-            <div class="error">
-              ${escapeHTML(
-                error.message
-              )}
-            </div>
-          `;
-      }
-    }
-
-    async function completeTask(
-      taskId
-    ) {
-
-      try {
-
-        const result =
-          await api(
-            "/api/tasks/complete",
-            {
-              method: "POST",
-
-              body:
-                JSON.stringify({
-                  taskId
-                })
-            }
-          );
-
-        currentUser =
-          result.user;
-
-        localStorage.setItem(
-          "rizoraUser",
-          JSON.stringify(
-            currentUser
-          )
-        );
-
-        renderUser();
-
-        showToast(
-          `+${result.reward} RIZORA points earned!`
-        );
-
-        await Promise.all([
-          loadTasks(),
-          loadReferrals()
-        ]);
-
-      } catch (error) {
-
-        showToast(
-          error.message
-        );
-      }
-    }
-
-    async function runCreatorTool(
-      endpoint
-    ) {
-
-      const resultBox =
-        $("toolResult");
-
-      resultBox.innerHTML =
-        `
-          Generating
-          <span class="loading-dot"></span>
-        `;
-
-      try {
-
-        let body = {};
-
-        if (
-          endpoint.includes("hooks")
-        ) {
-
-          body = {
-            topic: "creator growth",
-            category: "lifestyle"
-          };
-
-        } else if (
-          endpoint.includes("hashtags")
-        ) {
-
-          body = {
-            topic: "creator growth",
-            category: "lifestyle"
-          };
-
-        } else if (
-          endpoint.includes("captions")
-        ) {
-
-          body = {
-            topic: "RIZORA",
-            vibe: "aesthetic gen z"
-          };
-        }
-
-        const result =
-          await api(
-            endpoint,
-            {
-              method: "POST",
-
-              body:
-                JSON.stringify(body)
-            }
-          );
-
-        const values =
-          result.items ||
-          result.hooks ||
-          result.hashtags ||
-          result.captions ||
-          result.ideas ||
-          [];
-
-        if (
-          !Array.isArray(values) ||
-          !values.length
-        ) {
-
-          resultBox.textContent =
-            "No results returned.";
-
-          return;
-        }
-
-        resultBox.innerHTML =
-          values
-            .slice(0, 8)
-            .map(
-              item =>
-                `
-                  <div class="tool-line">
-                    ${escapeHTML(item)}
-                  </div>
-                `
-            )
-            .join("");
-
-      } catch (error) {
-
-        resultBox.textContent =
-          error.message;
-      }
-    }
-
-    function toggleMobileMenu() {
-
-      const nav =
-        $("desktopNav");
-
-      if (!nav) return;
-
-      nav.classList.toggle(
-        "mobile-open"
-      );
-    }
-
-    function closeMobileMenu() {
-
-      const nav =
-        $("desktopNav");
-
-      if (!nav) return;
-
-      nav.classList.remove(
-        "mobile-open"
-      );
-    }
-
-    window.addEventListener(
-      "resize",
-      () => {
-
-        if (
-          window.innerWidth >
-          760
-        ) {
-          closeMobileMenu();
-        }
-
-      }
-    );
-
-    if (
-      "serviceWorker" in
-      navigator
-    ) {
-
-      window.addEventListener(
-        "load",
-        () => {
-
-          navigator.serviceWorker
-            .register("/sw.js")
-            .then(() => {
-
-              console.log(
-                "RIZORA service worker registered."
-              );
-
-            })
-            .catch(error => {
-
-              console.error(
-                "RIZORA service worker registration failed:",
-                error
-              );
-
-            });
-
-        }
-      );
-    }
-
-    async function startup() {
-
-      updateHeader();
-
-      loadReferralFromURL();
-
-      if (
-        token &&
-        currentUser
-      ) {
-
-        try {
-
-          const result =
-            await api(
-              "/api/auth/me"
-            );
-
-          currentUser =
-            result.user;
-
-          localStorage.setItem(
-            "rizoraUser",
-            JSON.stringify(
-              currentUser
-            )
-          );
-
-          updateHeader();
-
-          showDashboard();
-
-        } catch {
-
-          token = "";
-          currentUser = null;
-
-          localStorage.removeItem(
-            "rizoraToken"
-          );
-
-          localStorage.removeItem(
-            "rizoraUser"
-          );
-
-          updateHeader();
-
-          showLanding();
-        }
-
-      } else {
-
-        showLanding();
-      }
-    }
-
-    startup();
-  </script>
+</script>
 
 </body>
 </html>
