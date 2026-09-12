@@ -3983,212 +3983,208 @@ function switchAdminTab(
 
 function renderAdminUsers(){
 
-  const container =
-    $("adminUsersTable");
+  const container = $("adminUsersTable");
+  if(!container) return;
 
-  const query =
-    (
-      $("userSearch")
-        .value || ""
+  const users = Array.isArray(adminData?.users)
+    ? adminData.users
+    : [];
+
+  const search = String(
+    $("userSearch")?.value || ""
+  ).trim().toLowerCase();
+
+  const role = String(
+    $("userRoleFilter")?.value || ""
+  );
+
+  const status = String(
+    $("userStatusFilter")?.value || ""
+  );
+
+  const rows = users.filter(user => {
+
+    const username = String(
+      user?.username || ""
     ).toLowerCase();
 
-  const role =
-    $("userRoleFilter")
-      .value;
+    const email = String(
+      user?.email || ""
+    ).toLowerCase();
 
-  const status =
-    $("userStatusFilter")
-      .value;
+    const displayName = String(
+      user?.displayName || ""
+    ).toLowerCase();
 
-  const rows =
-    adminData.users
-      .filter(
-        user =>
-          (
-            !query ||
-            user.username
-              .toLowerCase()
-              .includes(query) ||
-            (
-              user.email || ""
-            )
-              .toLowerCase()
-              .includes(query) ||
-            (
-              user.displayName || ""
-            )
-              .toLowerCase()
-              .includes(query)
-          ) &&
-          (
-            !role ||
-            user.role === role
-          ) &&
-          (
-            !status ||
-            user.status === status
-          )
-      );
+    const userRole = String(
+      user?.role || "user"
+    );
+
+    const userStatus = String(
+      user?.status || "active"
+    );
+
+    const matchesSearch =
+      !search ||
+      username.includes(search) ||
+      email.includes(search) ||
+      displayName.includes(search);
+
+    const matchesRole =
+      !role ||
+      userRole === role;
+
+    const matchesStatus =
+      !status ||
+      userStatus === status;
+
+    return (
+      matchesSearch &&
+      matchesRole &&
+      matchesStatus
+    );
+  });
 
   if(!rows.length){
 
-    container.innerHTML =
-      `
+    container.innerHTML = `
       <div class="empty">
-        No matching users.
+        ${
+          users.length
+            ? "No matching users."
+            : "No users returned by the server."
+        }
       </div>
-      `;
+    `;
 
     return;
   }
 
-  container.innerHTML =
-    `
-      <div class="table-head">
+  container.innerHTML = `
+    <div class="table-head">
+      <div>User</div>
+      <div>Role</div>
+      <div>Status</div>
+      <div>Points</div>
+      <div>Actions</div>
+    </div>
 
-        <div>User</div>
-        <div>Role</div>
-        <div>Status</div>
-        <div>Points</div>
-        <div>Actions</div>
+    ${rows.map(user => {
 
-      </div>
+      const id =
+        String(user?.id || "");
 
-      ${
-        rows
-          .map(
-            user => {
+      const username =
+        String(user?.username || "unknown");
 
-              const protectedUser =
-                [
-                  "romi",
-                  "superadmin2"
-                ].includes(
-                  String(
-                    user.username || ""
-                  ).toLowerCase()
-                );
+      const displayName =
+        String(
+          user?.displayName ||
+          username
+        );
 
-              return `
-                <div class="table-row">
+      const email =
+        String(user?.email || "");
 
-                  <div class="table-cell">
+      const userRole =
+        String(
+          user?.role ||
+          "user"
+        );
 
-                    <strong>
-                      ${escapeHTML(
-                        user.displayName ||
-                        user.username
-                      )}
-                    </strong>
+      const userStatus =
+        String(
+          user?.status ||
+          "active"
+        );
 
-                    <small>
-                      @${escapeHTML(
-                        user.username
-                      )}
-                      ${
-                        user.email
-                          ? ` · ${escapeHTML(
-                              user.email
-                            )}`
-                          : ""
-                      }
-                    </small>
+      const points =
+        Number(
+          user?.points || 0
+        );
 
-                  </div>
+      const protectedUser =
+        ["romi","superadmin2"]
+          .includes(
+            username.toLowerCase()
+          );
 
-                  <div class="table-cell">
+      return `
+        <div class="table-row">
 
-                    <span class="role-badge">
-                      ${escapeHTML(
-                        user.role
-                      )}
-                    </span>
+          <div class="table-cell">
+            <strong>
+              ${escapeHTML(displayName)}
+            </strong>
 
-                  </div>
+            <small>
+              @${escapeHTML(username)}
+              ${
+                email
+                  ? ` · ${escapeHTML(email)}`
+                  : ""
+              }
+            </small>
+          </div>
 
-                  <div class="table-cell">
+          <div class="table-cell">
+            <span class="role-badge">
+              ${escapeHTML(userRole)}
+            </span>
+          </div>
 
-                    <span
-                      class="
-                        status-badge
-                        ${
-                          user.status ===
-                          "active"
-                            ? "status-active"
-                            : "status-blocked"
-                        }
-                      "
-                    >
-                      ${escapeHTML(
-                        user.status
-                      )}
-                    </span>
+          <div class="table-cell">
+            <span class="status-badge ${
+              userStatus === "active"
+                ? "status-active"
+                : "status-blocked"
+            }">
+              ${escapeHTML(userStatus)}
+            </span>
+          </div>
 
-                  </div>
+          <div class="table-cell">
+            <strong>
+              ${points.toLocaleString()}
+            </strong>
+          </div>
 
-                  <div class="table-cell">
+          <div class="table-cell admin-actions">
 
-                    <strong>
-                      ${Number(
-                        user.points || 0
-                      ).toLocaleString()}
-                    </strong>
+            <button
+              class="btn secondary tiny"
+              onclick="manageUser('${escapeHTML(id)}')"
+            >
+              Manage
+            </button>
 
-                  </div>
-
-                  <div
-                    class="table-cell admin-actions"
+            ${
+              !protectedUser
+                ? `
+                  <button
+                    class="btn secondary tiny"
+                    onclick="quickToggleStatus(
+                      '${escapeHTML(id)}',
+                      '${userStatus === "active" ? "blocked" : "active"}'
+                    )"
                   >
-
-                    <button
-                      class="btn secondary tiny"
-                      onclick="
-                        manageUser(
-                          '${escapeHTML(
-                            user.id
-                          )}'
-                        )
-                      "
-                    >
-                      Manage
-                    </button>
-
                     ${
-                      !protectedUser
-                        ? `
-                          <button
-                            class="btn secondary tiny"
-                            onclick="
-                              quickToggleStatus(
-                                '${escapeHTML(
-                                  user.id
-                                )}',
-                                '${user.status === "active"
-                                  ? "blocked"
-                                  : "active"}'
-                              )
-                            "
-                          >
-                            ${
-                              user.status ===
-                              "active"
-                                ? "Block"
-                                : "Unblock"
-                            }
-                          </button>
-                        `
-                        : ""
+                      userStatus === "active"
+                        ? "Block"
+                        : "Unblock"
                     }
-
-                  </div>
-
-                </div>
-              `;
+                  </button>
+                `
+                : ""
             }
-          )
-          .join("")
-      }
-    `;
+
+          </div>
+
+        </div>
+      `;
+
+    }).join("")}
+  `;
 }
 
 async function manageUser(
@@ -4985,4 +4981,5 @@ startup();
 
 </body>
 </html>
+
 
