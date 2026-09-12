@@ -1,0 +1,142 @@
+{
+  "users": [
+    {
+      "id": "usr_romi",
+      "username": "romi",
+      "displayName": "RoMi",
+      "passwordHash": "f3aacdd0359bc1034286e8bcb65793d7:e7a143c478995ec5b9f9007f7b52e33a020bbeaa81ca6d4b8cd1ba84a331df9a89320b51467c44672a597cb7c90b6c8391b4889ec4f33bb902a376e59425f2f7",
+      "role": "super_admin",
+      "points": 50,
+      "status": "active",
+      "referralCode": "ROMI-5F3119",
+      "referredBy": null,
+      "createdAt": "2026-09-11T16:50:32.987Z",
+      "updatedAt": "2026-09-12T12:05:22.764Z",
+      "lastLoginAt": "2026-09-11T17:26:40.391Z",
+      "emailVerified": true,
+      "email": "romi@rizora.com"
+    },
+    {
+      "id": "usr_d3b8f14c1570fcd44d4c20c1",
+      "username": "superadmin2",
+      "email": "superadmin2@rizora.com",
+      "displayName": "Super Admin 2",
+      "passwordHash": "6af192178b93cc07431e7cde38eada21:48dc4229f446cb00f3559083598a242b69f1cf858eb2e4b1c390c06dbd70c299579a80c549b549ee4c4bd5ea1950d752515181734ff8303adfea77e0c919fef6",
+      "role": "super_admin",
+      "points": 0,
+      "status": "active",
+      "emailVerified": true,
+      "referralCode": "superadm104B062D",
+      "referredBy": null,
+      "createdAt": "2026-09-12T12:05:22.923Z",
+      "updatedAt": "2026-09-12T12:05:22.923Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task_follow",
+      "title": "Follow RIZORA",
+      "description": "Follow RIZORA and stay connected.",
+      "points": 50,
+      "type": "social",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.329Z"
+    },
+    {
+      "id": "task_create",
+      "title": "Create your first post",
+      "description": "Create and publish a piece of content.",
+      "points": 100,
+      "type": "creator",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.331Z"
+    },
+    {
+      "id": "task_profile",
+      "title": "Complete your profile",
+      "description": "Make your creator profile ready.",
+      "points": 75,
+      "type": "profile",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.331Z"
+    },
+    {
+      "id": "task_referral",
+      "title": "Invite a creator",
+      "description": "Invite another creator to RIZORA.",
+      "points": 100,
+      "type": "referral",
+      "active": true,
+      "createdAt": "2026-09-11T16:36:53.331Z"
+    }
+  ],
+  "taskCompletions": [
+    {
+      "id": "completion_deedbc1e3e2ee95bbae80d4cmtybzl79",
+      "userId": "usr_romi",
+      "taskId": "task_follow",
+      "points": 50,
+      "completedAt": "2026-09-12T11:58:04.053Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "audit_2ccc4ca76d177065d264286dmtybzl7a",
+      "action": "task_completed",
+      "actor": {
+        "id": "usr_romi",
+        "username": "romi",
+        "role": "super_admin"
+      },
+      "details": {
+        "taskId": "task_follow",
+        "points": 50
+      },
+      "createdAt": "2026-09-12T11:58:04.054Z"
+    },
+    {
+      "id": "audit_5af6f876f2aa585f8e67e99bmtx8abrc",
+      "action": "user_login",
+      "actor": {
+        "id": "usr_romi",
+        "username": "romi",
+        "role": "super_admin"
+      },
+      "details": {},
+      "createdAt": "2026-09-11T17:26:40.392Z"
+    },
+    {
+      "id": "audit_b695b8f97028b9070e976fc3mtx81rkj",
+      "action": "user_login",
+      "actor": {
+        "id": "usr_romi",
+        "username": "romi",
+        "role": "super_admin"
+      },
+      "details": {},
+      "createdAt": "2026-09-11T17:20:00.979Z"
+    },
+    {
+      "id": "audit_af6eeb515727a81f5ca7ec7emtx7oam6",
+      "action": "user_login",
+      "actor": {
+        "id": "usr_romi",
+        "username": "romi",
+        "role": "super_admin"
+      },
+      "details": {},
+      "createdAt": "2026-09-11T17:09:32.478Z"
+    }
+  ],
+  "referrals": [],
+  "sessions": [
+    {
+      "id": "session_3d410db7c795da5ca304eb54mtx81rkj",
+      "token": "4112e0dd748198366458530849d1ef7e83ae99fddf0e7451282b392de243de96e73d11fcf934cd87b3cf48369e0c3f72",
+      "userId": "usr_romi",
+      "createdAt": "2026-09-11T17:20:00.979Z",
+      "expiresAt": "2026-09-18T17:20:00.979Z"
+    }
+  ],
+  "userTaskState": {}
+}

@@ -24,7 +24,7 @@ const REFERRAL_MILESTONE_REWARD = 250;
 
 const SUPER_ADMINS = new Set([
   "romi",
-  "rizora"
+  "superadmin2"
 ]);
 
 const loginAttempts = new Map();
@@ -3584,3 +3584,5 @@ process.on(
     );
   }
 );
+
+

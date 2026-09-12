@@ -24,7 +24,7 @@ const REFERRAL_MILESTONE_REWARD = 250;
 
 const SUPER_ADMINS = new Set([
   "romi",
-  "rizora"
+  "superadmin2"
 ]);
 
 const loginAttempts = new Map();
@@ -77,6 +77,12 @@ function loadDB() {
     db.auditLogs ||= [];
     db.referrals ||= [];
     db.sessions ||= [];
+    db.pointsLedger ||= [];
+    db.creatorProfiles ||= {};
+    db.analytics ||= {};
+    db.communityPosts ||= [];
+    db.experiments ||= [];
+    db.userSettings ||= {};
 
     return db;
   } catch (error) {
@@ -639,67 +645,214 @@ function getCurrentUser(
 // TASKS
 // ============================================================
 
+
+const TASK_COOLDOWN_MS = 45 * 60 * 1000;
+
+const RIZORA_FEATURE_LAYER_V1 = true;
+
 const DEFAULT_TASKS = [
   {
-    id: "task_follow",
-    title: "Follow RIZORA",
-    description:
-      "Follow RIZORA and stay connected.",
-    points: 50,
-    type: "social",
+    id: "rizora_tiktok",
+    title: "Follow @official_rizora.hq on TikTok",
+    description: "Follow the official RIZORA TikTok account.",
+    points: 100,
+    type: "social_follow",
+    platform: "tiktok",
+    url: "https://www.tiktok.com/@official_rizora.hq",
     active: true
   },
   {
-    id: "task_create",
+    id: "rizora_instagram",
+    title: "Follow @rizora.hq on Instagram",
+    description: "Follow the official RIZORA Instagram account.",
+    points: 75,
+    type: "social_follow",
+    platform: "instagram",
+    url: "https://www.instagram.com/rizora.hq",
+    active: true
+  },
+  {
+    id: "rizora_x",
+    title: "Follow @Rizora_hq on X",
+    description: "Follow the official RIZORA X account.",
+    points: 75,
+    type: "social_follow",
+    platform: "x",
+    url: "https://x.com/Rizora_hq",
+    active: true
+  },
+  {
+    id: "romi_tiktok",
+    title: "Follow @romi.noir on TikTok",
+    description: "Follow RoMi on TikTok.",
+    points: 75,
+    type: "social_follow",
+    platform: "tiktok",
+    url: "https://www.tiktok.com/@romi.noir",
+    active: true
+  },
+  {
+    id: "rizora_explore",
+    title: "Explore RIZORA",
+    description: "Explore the RIZORA creator platform.",
+    points: 50,
+    type: "engagement",
+    url: "/",
+    active: true
+  },
+  {
+    id: "rizora_share",
+    title: "Share RIZORA",
+    description: "Share RIZORA with another creator.",
+    points: 50,
+    type: "social_share",
+    url: "/",
+    active: true
+  },
+  {
+    id: "rizora_create",
     title: "Create your first post",
-    description:
-      "Create and publish a piece of content.",
+    description: "Create and publish content.",
     points: 100,
     type: "creator",
+    url: "/",
     active: true
   },
   {
-    id: "task_profile",
+    id: "rizora_profile",
     title: "Complete your profile",
-    description:
-      "Make your creator profile ready.",
+    description: "Make your RIZORA profile ready.",
     points: 75,
     type: "profile",
+    url: "/",
     active: true
   },
   {
-    id: "task_referral",
+    id: "rizora_invite",
     title: "Invite a creator",
-    description:
-      "Invite another creator to RIZORA.",
-    points: 100,
+    description: "Invite another creator to RIZORA.",
+    points: 150,
     type: "referral",
+    url: "/",
     active: true
   }
 ];
 
 function seedTasks(db) {
-  for (
-    const task of DEFAULT_TASKS
-  ) {
-    const existing =
-      db.tasks.find(
-        (item) =>
-          item.id === task.id
-      );
+  for (const task of DEFAULT_TASKS) {
+    const existing = db.tasks.find(
+      x => x.id === task.id
+    );
 
-    if (!existing) {
+    if (existing) {
+      Object.assign(existing, task);
+    } else {
       db.tasks.push({
         ...task,
-        createdAt:
-          new Date().toISOString()
+        createdAt: new Date().toISOString()
       });
     }
   }
 }
 
+function getCooldown(db, userId) {
+  db.taskCooldowns ||= {};
 
-// ============================================================
+  const state =
+    db.taskCooldowns[userId];
+
+  if (!state) {
+    return {
+      active: false,
+      remainingMs: 0,
+      nextAvailableAt: null
+    };
+  }
+
+  const next =
+    new Date(
+      state.nextAvailableAt
+    ).getTime();
+
+  const remaining =
+    Math.max(
+      0,
+      next - Date.now()
+    );
+
+  return {
+    active: remaining > 0,
+    remainingMs: remaining,
+    nextAvailableAt:
+      remaining > 0
+        ? state.nextAvailableAt
+        : null
+  };
+}
+
+function startCooldown(
+  db,
+  userId,
+  taskId
+) {
+  db.taskCooldowns ||= {};
+
+  const next =
+    new Date(
+      Date.now() + TASK_COOLDOWN_MS
+    ).toISOString();
+
+  db.taskCooldowns[userId] = {
+    lastTaskId: taskId,
+    nextAvailableAt: next
+  };
+
+  return next;
+}
+
+function addLedger(
+  db,
+  userId,
+  type,
+  amount,
+  details
+) {
+  db.pointsLedger ||= [];
+
+  db.pointsLedger.push({
+    id:
+      "ledger_" +
+      Date.now().toString(36) +
+      Math.random().toString(36).slice(2),
+    userId,
+    type,
+    amount,
+    details: details || {},
+    createdAt:
+      new Date().toISOString()
+  });
+}
+
+function validURL(value) {
+  try {
+    const u =
+      new URL(
+        String(value || "").trim()
+      );
+
+    if (
+      u.protocol !== "http:" &&
+      u.protocol !== "https:"
+    ) {
+      return "";
+    }
+
+    return u.toString();
+
+  } catch {
+    return "";
+  }
+}
 // REFERRALS
 // ============================================================
 
@@ -1687,213 +1840,1028 @@ async function handleRequest(
   }
 
   // ----------------------------------------------------------
-  // TASKS — LIST
-  // ----------------------------------------------------------
+  
+// ============================================================
+// RIZORA FEATURE LAYER
+// ============================================================
 
-  if (
-    method === "GET" &&
-    pathname === "/api/tasks"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
+if (
+  method === "GET" &&
+  pathname === "/api/tasks"
+) {
 
-    if (!user) {
-      sendError(
-        res,
-        401,
-        "Authentication required."
-      );
+  const user =
+    getCurrentUser(db, req);
 
-      return;
-    }
-
-    const tasks =
-      db.tasks
-        .filter(
-          (task) =>
-            task.active !== false
-        )
-        .map(
-          (task) => {
-
-            const completed =
-              db.taskCompletions.some(
-                (completion) =>
-                  completion.userId ===
-                    user.id &&
-                  completion.taskId ===
-                    task.id
-              );
-
-            return {
-              ...task,
-              completed
-            };
-          }
-        );
-
-    sendJSON(
+  if (!user) {
+    sendError(
       res,
-      200,
-      {
-        success: true,
-        tasks
-      }
+      401,
+      "Authentication required."
     );
-
     return;
   }
 
-  // ----------------------------------------------------------
-  // TASKS — COMPLETE
-  // ----------------------------------------------------------
+  const cooldown =
+    getCooldown(
+      db,
+      user.id
+    );
 
-  if (
-    method === "POST" &&
-    pathname === "/api/tasks/complete"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
+  const tasks =
+    db.tasks
+      .filter(
+        task =>
+          task.active !== false
+      )
+      .map(
+        task => ({
+          ...task,
+          completed:
+            db.taskCompletions.some(
+              c =>
+                c.userId === user.id &&
+                c.taskId === task.id
+            ),
+          locked:
+            cooldown.active
+        })
       );
 
-    if (!user) {
-      sendError(
-        res,
-        401,
-        "Authentication required."
-      );
-
-      return;
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      tasks,
+      cooldown,
+      cooldownMinutes: 45
     }
+  );
 
-    let body;
+  return;
+}
 
-    try {
-      body =
-        await readBody(req);
-    } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
 
-      return;
-    }
+/* ============================================================
+   COMPLETE OFFICIAL TASK
+============================================================ */
 
-    const taskId =
-      cleanString(
-        body.taskId ||
-        body.id,
-        100
-      );
+if (
+  method === "POST" &&
+  pathname === "/api/tasks/complete"
+) {
 
-    if (!taskId) {
-      sendError(
-        res,
-        400,
-        "Task ID is required."
-      );
+  const user =
+    getCurrentUser(db, req);
 
-      return;
-    }
+  if (!user) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
 
-    const task =
-      db.tasks.find(
-        (item) =>
-          item.id === taskId &&
-          item.active !== false
-      );
+  let body = {};
 
-    if (!task) {
-      sendError(
-        res,
-        404,
-        "Task not found."
-      );
+  try {
+    body =
+      await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+    return;
+  }
 
-      return;
-    }
+  const taskId =
+    cleanString(
+      body.taskId ||
+      body.id,
+      100
+    );
 
-    const alreadyCompleted =
-      db.taskCompletions.some(
-        (completion) =>
-          completion.userId === user.id &&
-          completion.taskId === task.id
-      );
+  const task =
+    db.tasks.find(
+      x =>
+        x.id === taskId &&
+        x.active !== false
+    );
 
-    if (alreadyCompleted) {
-      sendError(
-        res,
-        409,
-        "Task already completed."
-      );
+  if (!task) {
+    sendError(
+      res,
+      404,
+      "Task not found."
+    );
+    return;
+  }
 
-      return;
-    }
+  const cooldown =
+    getCooldown(
+      db,
+      user.id
+    );
 
-    const points =
+  if (cooldown.active) {
+    sendJSON(
+      res,
+      429,
+      {
+        error:
+          "Your next RIZORA task is still on cooldown.",
+        cooldown,
+        cooldownMinutes: 45
+      }
+    );
+    return;
+  }
+
+  const already =
+    db.taskCompletions.some(
+      c =>
+        c.userId === user.id &&
+        c.taskId === task.id
+    );
+
+  if (already) {
+    sendError(
+      res,
+      409,
+      "Task already completed."
+    );
+    return;
+  }
+
+  const reward =
+    Math.max(
+      0,
       Number(
         task.points ||
         task.reward ||
         0
+      )
+    );
+
+  const completion = {
+    id:
+      uid("completion_"),
+    userId:
+      user.id,
+    taskId:
+      task.id,
+    points:
+      reward,
+    completedAt:
+      new Date().toISOString()
+  };
+
+  db.taskCompletions.push(
+    completion
+  );
+
+  user.points =
+    Number(user.points || 0) +
+    reward;
+
+  addLedger(
+    db,
+    user.id,
+    "task_reward",
+    reward,
+    {
+      taskId:
+        task.id
+    }
+  );
+
+  const nextTaskAt =
+    startCooldown(
+      db,
+      user.id,
+      task.id
+    );
+
+  audit(
+    db,
+    "task_completed",
+    user,
+    {
+      taskId:
+        task.id,
+      points:
+        reward
+    }
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      completion,
+      reward,
+      points:
+        user.points,
+      nextTaskAt,
+      cooldownMinutes: 45,
+      cooldown:
+        getCooldown(
+          db,
+          user.id
+        ),
+      user:
+        safeUser(user)
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   BOOSTS — AVAILABLE
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/boosts"
+) {
+
+  const user =
+    getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
+
+  const cooldown =
+    getCooldown(
+      db,
+      user.id
+    );
+
+  const boosts =
+    (db.boostTasks || [])
+      .filter(
+        b =>
+          b.status === "active" &&
+          b.ownerId !== user.id &&
+          Number(b.remaining || 0) > 0 &&
+          !(db.boostCompletions || [])
+            .some(
+              c =>
+                c.userId === user.id &&
+                c.boostId === b.id
+            )
       );
 
-    const completion = {
-      id: uid("completion_"),
-      userId: user.id,
-      taskId: task.id,
-      points,
-      completedAt:
-        new Date().toISOString()
-    };
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      boosts,
+      cooldown
+    }
+  );
 
-    db.taskCompletions.push(
-      completion
+  return;
+}
+
+
+/* ============================================================
+   BOOSTS — CREATE
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/boosts/create"
+) {
+
+  const user =
+    getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body =
+      await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+    return;
+  }
+
+  const platforms = [
+    "tiktok",
+    "instagram",
+    "x",
+    "youtube",
+    "spotify",
+    "facebook"
+  ];
+
+  const actions = [
+    "follow",
+    "like",
+    "subscribe",
+    "view"
+  ];
+
+  const platform =
+    cleanString(
+      body.platform,
+      30
+    ).toLowerCase();
+
+  const action =
+    cleanString(
+      body.action,
+      30
+    ).toLowerCase();
+
+  const username =
+    cleanString(
+      body.username,
+      100
     );
 
-    user.points =
-      Number(
-        user.points || 0
-      ) + points;
+  const url =
+    validURL(body.url);
 
-    audit(
+  const reward =
+    Math.floor(
+      Number(body.reward)
+    );
+
+  const quantity =
+    Math.floor(
+      Number(
+        body.maxCompletions
+      )
+    );
+
+  if (!platforms.includes(platform)) {
+    sendError(
+      res,
+      400,
+      "Invalid platform."
+    );
+    return;
+  }
+
+  if (!actions.includes(action)) {
+    sendError(
+      res,
+      400,
+      "Invalid action."
+    );
+    return;
+  }
+
+  if (!username || !url) {
+    sendError(
+      res,
+      400,
+      "Username and valid URL are required."
+    );
+    return;
+  }
+
+  if (
+    !Number.isFinite(reward) ||
+    reward < 1 ||
+    reward > 10000
+  ) {
+    sendError(
+      res,
+      400,
+      "Reward must be between 1 and 10000."
+    );
+    return;
+  }
+
+  if (
+    !Number.isFinite(quantity) ||
+    quantity < 1 ||
+    quantity > 10000
+  ) {
+    sendError(
+      res,
+      400,
+      "Completion count must be between 1 and 10000."
+    );
+    return;
+  }
+
+  const budget =
+    reward * quantity;
+
+  if (
+    Number(user.points || 0) <
+    budget
+  ) {
+    sendError(
+      res,
+      400,
+      "Not enough RIZORA points."
+    );
+    return;
+  }
+
+  user.points =
+    Number(user.points || 0) -
+    budget;
+
+  db.boostTasks ||= [];
+
+  const boost = {
+    id:
+      uid("boost_"),
+    ownerId:
+      user.id,
+    ownerUsername:
+      user.username,
+    platform,
+    action,
+    username,
+    url,
+    reward,
+    maxCompletions:
+      quantity,
+    completedCount:
+      0,
+    remaining:
+      quantity,
+    totalBudget:
+      budget,
+    status:
+      "active",
+    createdAt:
+      new Date().toISOString()
+  };
+
+  db.boostTasks.push(
+    boost
+  );
+
+  addLedger(
+    db,
+    user.id,
+    "boost_fund",
+    -budget,
+    {
+      boostId:
+        boost.id
+    }
+  );
+
+  audit(
+    db,
+    "boost_created",
+    user,
+    {
+      boostId:
+        boost.id,
+      budget
+    }
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    201,
+    {
+      success: true,
+      boost,
+      totalBudget:
+        budget,
+      user:
+        safeUser(user)
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   BOOSTS — COMPLETE
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/boosts/complete"
+) {
+
+  const user =
+    getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body =
+      await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+    return;
+  }
+
+  const boostId =
+    cleanString(
+      body.boostId ||
+      body.id,
+      100
+    );
+
+  const boost =
+    (db.boostTasks || [])
+      .find(
+        b =>
+          b.id === boostId &&
+          b.status === "active"
+      );
+
+  if (!boost) {
+    sendError(
+      res,
+      404,
+      "Boost not found."
+    );
+    return;
+  }
+
+  if (
+    boost.ownerId === user.id
+  ) {
+    sendError(
+      res,
+      403,
+      "You cannot complete your own boost."
+    );
+    return;
+  }
+
+  const cooldown =
+    getCooldown(
       db,
-      "task_completed",
-      user,
+      user.id
+    );
+
+  if (cooldown.active) {
+    sendJSON(
+      res,
+      429,
       {
-        taskId: task.id,
-        points
+        error:
+          "Your next task is still on cooldown.",
+        cooldown,
+        cooldownMinutes: 45
       }
     );
+    return;
+  }
+
+  db.boostCompletions ||= [];
+
+  const duplicate =
+    db.boostCompletions.some(
+      c =>
+        c.userId === user.id &&
+        c.boostId === boost.id
+    );
+
+  if (duplicate) {
+    sendError(
+      res,
+      409,
+      "You already completed this boost."
+    );
+    return;
+  }
+
+  if (
+    Number(boost.remaining || 0) <= 0
+  ) {
+    boost.status =
+      "completed";
 
     saveDB(db);
+
+    sendError(
+      res,
+      409,
+      "Boost already completed."
+    );
+    return;
+  }
+
+  const reward =
+    Math.max(
+      1,
+      Number(boost.reward || 0)
+    );
+
+  db.boostCompletions.push({
+    id:
+      uid("boost_completion_"),
+    boostId:
+      boost.id,
+    userId:
+      user.id,
+    reward,
+    completedAt:
+      new Date().toISOString()
+  });
+
+  boost.completedCount =
+    Number(
+      boost.completedCount || 0
+    ) + 1;
+
+  boost.remaining =
+    Math.max(
+      0,
+      Number(
+        boost.maxCompletions || 0
+      ) -
+      boost.completedCount
+    );
+
+  if (
+    boost.remaining === 0
+  ) {
+    boost.status =
+      "completed";
+  }
+
+  user.points =
+    Number(user.points || 0) +
+    reward;
+
+  addLedger(
+    db,
+    user.id,
+    "boost_reward",
+    reward,
+    {
+      boostId:
+        boost.id
+    }
+  );
+
+  const nextTaskAt =
+    startCooldown(
+      db,
+      user.id,
+      boost.id
+    );
+
+  audit(
+    db,
+    "boost_completed",
+    user,
+    {
+      boostId:
+        boost.id,
+      reward
+    }
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      reward,
+      points:
+        user.points,
+      nextTaskAt,
+      cooldownMinutes: 45,
+      cooldown:
+        getCooldown(
+          db,
+          user.id
+        ),
+      user:
+        safeUser(user)
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   RIZORA AI
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/ai/chat"
+) {
+
+  const user =
+    getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body =
+      await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+    return;
+  }
+
+  const message =
+    cleanString(
+      body.message,
+      4000
+    );
+
+  if (!message) {
+    sendError(
+      res,
+      400,
+      "Message required."
+    );
+    return;
+  }
+
+  const apiKey =
+    String(
+      process.env.OPENAI_API_KEY || ""
+    ).trim();
+
+  if (!apiKey) {
+
+    const q =
+      message.toLowerCase();
+
+    let reply =
+      "RIZORA AI: ";
+
+    if (
+      q.includes("caption")
+    ) {
+      reply +=
+        "Give me your topic and vibe and I will build a stronger caption.";
+    } else if (
+      q.includes("idea")
+    ) {
+      reply +=
+        "Try a behind-the-scenes post, opinion, tutorial, before/after or story-led post.";
+    } else if (
+      q.includes("growth") ||
+      q.includes("followers")
+    ) {
+      reply +=
+        "Build around a clear niche, strong hooks, consistency and formats that hold attention.";
+    } else if (
+      q.includes("boost")
+    ) {
+      reply +=
+        "Choose one clear social action, add the target URL, set the reward and fund the completion budget.";
+    } else {
+      reply +=
+        "I can help with captions, hooks, ideas, creator growth and RIZORA boosts.";
+    }
 
     sendJSON(
       res,
       200,
       {
-        success: true,
-        completion,
-        points:
-          user.points,
-        reward:
-          points,
-        user:
-          safeUser(user)
+        success:
+          true,
+        mode:
+          "local",
+        reply
       }
     );
 
     return;
   }
 
-  // ----------------------------------------------------------
-  // REFERRALS — ME
+  try {
+
+    const response =
+      await fetch(
+        "https://api.openai.com/v1/responses",
+        {
+          method:
+            "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+            Authorization:
+              "Bearer " +
+              apiKey
+          },
+          body:
+            JSON.stringify({
+              model:
+                process.env.RIZORA_AI_MODEL ||
+                "gpt-5.6-luna",
+              input: [
+                {
+                  role:
+                    "system",
+                  content: [
+                    {
+                      type:
+                        "input_text",
+                      text:
+                        "You are RIZORA AI, the built-in creator-growth assistant. Help with content ideas, captions, hooks, creator strategy, profile improvement and RIZORA boosting. Be practical and concise. Never request passwords or secrets."
+                    }
+                  ]
+                },
+                {
+                  role:
+                    "user",
+                  content: [
+                    {
+                      type:
+                        "input_text",
+                      text:
+                        message
+                    }
+                  ]
+                }
+              ]
+            })
+        }
+      );
+
+    const data =
+      await response
+        .json()
+        .catch(
+          () => ({})
+        );
+
+    if (!response.ok) {
+      sendError(
+        res,
+        502,
+        "RIZORA AI provider error."
+      );
+      return;
+    }
+
+    sendJSON(
+      res,
+      200,
+      {
+        success:
+          true,
+        mode:
+          "openai",
+        reply:
+          data.output_text ||
+          "RIZORA AI returned no response."
+      }
+    );
+
+  } catch (error) {
+
+    sendError(
+      res,
+      502,
+      "RIZORA AI is temporarily unavailable."
+    );
+
+  }
+
+  return;
+}
+
+
+/* ============================================================
+   SEARCH ENGINE
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/robots.txt"
+) {
+
+  const base =
+    getPublicBaseURL(req);
+
+  res.writeHead(
+    200,
+    {
+      "Content-Type":
+        "text/plain; charset=utf-8"
+    }
+  );
+
+  res.end(
+    "User-agent: *\n" +
+    "Allow: /\n\n" +
+    "Sitemap: " +
+    base +
+    "/sitemap.xml\n"
+  );
+
+  return;
+}
+
+if (
+  method === "GET" &&
+  pathname === "/sitemap.xml"
+) {
+
+  const base =
+    getPublicBaseURL(req);
+
+  const pages = [
+    "/",
+    "/about",
+    "/login",
+    "/signup"
+  ];
+
+  const xml =
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+    pages.map(
+      p =>
+        "<url><loc>" +
+        base +
+        p +
+        "</loc></url>"
+    ).join("") +
+    "</urlset>";
+
+  res.writeHead(
+    200,
+    {
+      "Content-Type":
+        "application/xml; charset=utf-8"
+    }
+  );
+
+  res.end(xml);
+
+  return;
+}
+
+// REFERRALS — ME
   // ----------------------------------------------------------
 
   if (
@@ -3344,6 +4312,640 @@ async function handleRequest(
     return;
   }
 
+
+/* ============================================================
+   RIZORA CREATOR INTELLIGENCE
+============================================================ */
+
+function creatorProfileFor(db, userId) {
+  db.creatorProfiles ||= {};
+
+  if (!db.creatorProfiles[userId]) {
+    db.creatorProfiles[userId] = {
+      niche: "",
+      platforms: [],
+      goals: [],
+      bio: "",
+      strengths: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  return db.creatorProfiles[userId];
+}
+
+function creatorAnalyticsFor(db, userId) {
+  db.analytics ||= {};
+
+  if (!db.analytics[userId]) {
+    db.analytics[userId] = {
+      posts: [],
+      scores: [],
+      ideasGenerated: 0
+    };
+  }
+
+  return db.analytics[userId];
+}
+
+function analyzeCreatorPost(body = {}) {
+  const hook = cleanString(body.hook, 1000);
+  const caption = cleanString(body.caption, 3000);
+  const hashtags = cleanString(body.hashtags, 1500);
+  const topic = cleanString(body.topic, 300);
+
+  let hookScore = 45;
+  let captionScore = 45;
+  let hashtagScore = 45;
+  let clarityScore = 45;
+  let engagementScore = 45;
+
+  if (hook.length >= 15 && hook.length <= 90) hookScore += 15;
+  if (/[?!]/.test(hook)) hookScore += 8;
+  if (/\b(secret|truth|mistake|why|how|before|after|nobody|stop|wait|pov)\b/i.test(hook)) hookScore += 15;
+  if (/\b(you|your)\b/i.test(hook)) hookScore += 7;
+
+  if (caption.length >= 30 && caption.length <= 500) captionScore += 20;
+  if (caption.includes("\n") || caption.length > 80) captionScore += 10;
+
+  const tagList = hashtags
+    .split(/[,\s]+/)
+    .map(x => x.trim())
+    .filter(Boolean);
+
+  if (tagList.length >= 3 && tagList.length <= 8) hashtagScore += 25;
+  if (tagList.length > 10) hashtagScore -= 20;
+
+  const totalText = `${topic} ${hook} ${caption}`.trim();
+
+  if (totalText.length >= 40) clarityScore += 20;
+  if (/\b(follow|comment|save|share|tell me|what do you think)\b/i.test(totalText)) {
+    engagementScore += 30;
+  }
+
+  hookScore = Math.max(0, Math.min(100, hookScore));
+  captionScore = Math.max(0, Math.min(100, captionScore));
+  hashtagScore = Math.max(0, Math.min(100, hashtagScore));
+  clarityScore = Math.max(0, Math.min(100, clarityScore));
+  engagementScore = Math.max(0, Math.min(100, engagementScore));
+
+  const score = Math.round(
+    hookScore * 0.30 +
+    captionScore * 0.20 +
+    hashtagScore * 0.15 +
+    clarityScore * 0.15 +
+    engagementScore * 0.20
+  );
+
+  const improvements = [];
+
+  if (hookScore < 70) improvements.push("Make the opening more curiosity-driven.");
+  if (captionScore < 70) improvements.push("Give the caption a clearer reason to keep reading.");
+  if (hashtagScore < 70) improvements.push("Use a smaller, more focused hashtag mix.");
+  if (clarityScore < 70) improvements.push("Make the message easier to understand quickly.");
+  if (engagementScore < 70) improvements.push("Add a simple interaction prompt.");
+
+  let rating = "Needs Work";
+  if (score >= 90) rating = "Elite";
+  else if (score >= 80) rating = "Strong";
+  else if (score >= 70) rating = "Promising";
+  else if (score >= 60) rating = "Needs polish";
+
+  return {
+    score,
+    rating,
+    componentScores: {
+      hook: hookScore,
+      caption: captionScore,
+      hashtags: hashtagScore,
+      clarity: clarityScore,
+      engagement: engagementScore
+    },
+    improvements
+  };
+}
+
+function generateCreatorIdeas(niche = "content") {
+  return [
+    `3 things I wish I knew about ${niche}.`,
+    `Before vs after: ${niche}.`,
+    `A hot take about ${niche}.`,
+    `A common misconception about ${niche}.`,
+    `Beginner vs expert: ${niche}.`,
+    `Behind the scenes of my ${niche} process.`,
+    `Answer the most common ${niche} question.`,
+    `React to a trending ${niche} topic.`,
+    `Tell a short story about ${niche}.`,
+    `Things nobody tells you about ${niche}.`
+  ];
+}
+
+/* ============================================================
+   CREATOR PROFILE
+============================================================ */
+
+if (
+  (method === "GET" || method === "POST") &&
+  pathname === "/api/creator/profile"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  if (method === "GET") {
+    sendJSON(res, 200, {
+      success: true,
+      profile: creatorProfileFor(db, user.id)
+    });
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body = await readBody(req);
+  } catch (error) {
+    sendError(res, 400, error.message);
+    return;
+  }
+
+  const profile = creatorProfileFor(db, user.id);
+
+  profile.niche = cleanString(body.niche, 120);
+  profile.platforms = Array.isArray(body.platforms)
+    ? body.platforms.slice(0, 10).map(x => cleanString(x, 30))
+    : [];
+  profile.goals = Array.isArray(body.goals)
+    ? body.goals.slice(0, 10).map(x => cleanString(x, 80))
+    : [];
+  profile.bio = cleanString(body.bio, 500);
+  profile.updatedAt = new Date().toISOString();
+
+  saveDB(db);
+
+  sendJSON(res, 200, {
+    success: true,
+    profile
+  });
+
+  return;
+}
+
+/* ============================================================
+   CREATOR ANALYTICS
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/creator/analytics"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  const analytics = creatorAnalyticsFor(db, user.id);
+
+  const scores = Array.isArray(analytics.scores)
+    ? analytics.scores
+    : [];
+
+  const averageScore = scores.length
+    ? Math.round(
+        scores.reduce((a, b) => a + Number(b.score || 0), 0) /
+        scores.length
+      )
+    : 0;
+
+  const bestScore = scores.length
+    ? Math.max(...scores.map(x => Number(x.score || 0)))
+    : 0;
+
+  sendJSON(res, 200, {
+    success: true,
+    posts: analytics.posts || [],
+    scores,
+    ideasGenerated: Number(analytics.ideasGenerated || 0),
+    averageScore,
+    bestScore,
+    totalPosts: analytics.posts?.length || 0
+  });
+
+  return;
+}
+
+/* ============================================================
+   POST ANALYSIS
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/creator/analyze"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body = await readBody(req);
+  } catch (error) {
+    sendError(res, 400, error.message);
+    return;
+  }
+
+  const result = analyzeCreatorPost(body);
+  const analytics = creatorAnalyticsFor(db, user.id);
+
+  analytics.scores.push({
+    id: uid("score_"),
+    score: result.score,
+    rating: result.rating,
+    createdAt: new Date().toISOString()
+  });
+
+  if (analytics.scores.length > 100) {
+    analytics.scores = analytics.scores.slice(-100);
+  }
+
+  saveDB(db);
+
+  sendJSON(res, 200, {
+    success: true,
+    ...result
+  });
+
+  return;
+}
+
+/* ============================================================
+   IDEAS
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/creator/ideas"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body = await readBody(req);
+  } catch (error) {
+    sendError(res, 400, error.message);
+    return;
+  }
+
+  const ideas = generateCreatorIdeas(
+    cleanString(body.niche, 120) || "content"
+  );
+
+  const analytics = creatorAnalyticsFor(db, user.id);
+
+  analytics.ideasGenerated =
+    Number(analytics.ideasGenerated || 0) + ideas.length;
+
+  saveDB(db);
+
+  sendJSON(res, 200, {
+    success: true,
+    ideas
+  });
+
+  return;
+}
+
+/* ============================================================
+   LEADERBOARD
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/leaderboard"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  const leaderboard = [...db.users]
+    .filter(x => x.status === "active")
+    .sort((a, b) =>
+      Number(b.points || 0) -
+      Number(a.points || 0)
+    )
+    .slice(0, 50)
+    .map((item, index) => ({
+      rank: index + 1,
+      username: item.username,
+      displayName: item.displayName || item.username,
+      points: Number(item.points || 0)
+    }));
+
+  sendJSON(res, 200, {
+    success: true,
+    leaderboard
+  });
+
+  return;
+}
+
+/* ============================================================
+   COMMUNITY
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/community"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  db.communityPosts ||= [];
+
+  sendJSON(res, 200, {
+    success: true,
+    posts: db.communityPosts
+      .slice()
+      .reverse()
+      .slice(0, 50)
+  });
+
+  return;
+}
+
+if (
+  method === "POST" &&
+  pathname === "/api/community"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body = await readBody(req);
+  } catch (error) {
+    sendError(res, 400, error.message);
+    return;
+  }
+
+  const text = cleanString(body.text, 500);
+
+  if (!text) {
+    sendError(res, 400, "Community message required.");
+    return;
+  }
+
+  db.communityPosts ||= [];
+
+  const post = {
+    id: uid("community_"),
+    userId: user.id,
+    username: user.username,
+    displayName: user.displayName || user.username,
+    text,
+    createdAt: new Date().toISOString()
+  };
+
+  db.communityPosts.push(post);
+
+  if (db.communityPosts.length > 500) {
+    db.communityPosts =
+      db.communityPosts.slice(-500);
+  }
+
+  saveDB(db);
+
+  sendJSON(res, 201, {
+    success: true,
+    post
+  });
+
+  return;
+}
+
+/* ============================================================
+   EXPERIMENT LAB
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/experiments"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  db.experiments ||= [];
+
+  sendJSON(res, 200, {
+    success: true,
+    experiments:
+      db.experiments
+        .filter(x => x.userId === user.id)
+        .reverse()
+        .slice(0, 50)
+  });
+
+  return;
+}
+
+if (
+  method === "POST" &&
+  pathname === "/api/experiments"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body = await readBody(req);
+  } catch (error) {
+    sendError(res, 400, error.message);
+    return;
+  }
+
+  const experiment = {
+    id: uid("experiment_"),
+    userId: user.id,
+    name: cleanString(body.name, 120) || "New experiment",
+    hookA: cleanString(body.hookA, 500),
+    hookB: cleanString(body.hookB, 500),
+    notes: cleanString(body.notes, 1000),
+    createdAt: new Date().toISOString()
+  };
+
+  db.experiments ||= [];
+  db.experiments.push(experiment);
+
+  saveDB(db);
+
+  sendJSON(res, 201, {
+    success: true,
+    experiment
+  });
+
+  return;
+}
+
+/* ============================================================
+   HISTORY
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/history"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  const ledger =
+    (db.pointsLedger || [])
+      .filter(x => x.userId === user.id)
+      .slice()
+      .reverse()
+      .slice(0, 100);
+
+  const scores =
+    (creatorAnalyticsFor(db, user.id).scores || [])
+      .slice()
+      .reverse()
+      .slice(0, 50)
+      .map(x => ({
+        type: "content_score",
+        amount: x.score,
+        details: {
+          rating: x.rating
+        },
+        createdAt: x.createdAt
+      }));
+
+  sendJSON(res, 200, {
+    success: true,
+    history: [
+      ...ledger.map(x => ({
+        type: x.type,
+        amount: x.amount,
+        details: x.details || {},
+        createdAt: x.createdAt
+      })),
+      ...scores
+    ].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    )
+  });
+
+  return;
+}
+
+/* ============================================================
+   SETTINGS
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/settings"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  db.userSettings ||= {};
+
+  sendJSON(res, 200, {
+    success: true,
+    settings:
+      db.userSettings[user.id] || {
+        notifications: true,
+        compactMode: false
+      }
+  });
+
+  return;
+}
+
+if (
+  method === "POST" &&
+  pathname === "/api/settings"
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body = await readBody(req);
+  } catch (error) {
+    sendError(res, 400, error.message);
+    return;
+  }
+
+  db.userSettings ||= {};
+
+  db.userSettings[user.id] = {
+    notifications: Boolean(body.notifications),
+    compactMode: Boolean(body.compactMode)
+  };
+
+  saveDB(db);
+
+  sendJSON(res, 200, {
+    success: true,
+    settings:
+      db.userSettings[user.id]
+  });
+
+  return;
+}
+
   // ----------------------------------------------------------
   // STATIC FRONTEND
   // ----------------------------------------------------------
@@ -3584,3 +5186,8 @@ process.on(
     );
   }
 );
+
+
+
+
+

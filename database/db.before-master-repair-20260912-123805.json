@@ -4,7 +4,7 @@
       "id": "usr_romi",
       "username": "romi",
       "displayName": "RoMi",
-      "passwordHash": "ae525a60a90f8b57855d101ac2e4f1b1:3e35916cee0ebcf4cdf868e1ed9de3958fd2862c629e56d87feb67984aec32e86e187fdeef2c52347f5f06b0d166fd08ddb268b382560b995eaad4b2d75a3527",
+      "passwordHash": "e4223fe3013d0d672a0c82020cc1da87:44d91f438af2bdd1ca70966a172be4a8f6c9e6c99864e1f7b9c9f25281dc426a2bc509b7c8c5fbff63f4aaa042760c342f3dcfdfdc2ee0648cddcf0b83ce562b",
       "role": "super_admin",
       "points": 50,
       "status": "active",
@@ -12,7 +12,7 @@
       "referredBy": null,
       "createdAt": "2026-09-11T16:50:32.987Z",
       "updatedAt": "2026-09-12T12:58:50.444Z",
-      "lastLoginAt": "2026-09-12T19:41:00.769Z",
+      "lastLoginAt": "2026-09-12T14:50:41.006Z",
       "emailVerified": true,
       "email": "romi@rizora.com"
     },
@@ -139,17 +139,6 @@
     }
   ],
   "auditLogs": [
-    {
-      "id": "audit_1913b7f7493ecf72dee5c1d8mtysixuq",
-      "action": "user_login",
-      "actor": {
-        "id": "usr_romi",
-        "username": "romi",
-        "role": "super_admin"
-      },
-      "details": {},
-      "createdAt": "2026-09-12T19:41:00.770Z"
-    },
     {
       "id": "audit_190c7bf7f3b1a858712fde43mtyktekp",
       "action": "user_login",
@@ -310,13 +299,6 @@
       "userId": "usr_d3b8f14c1570fcd44d4c20c1",
       "createdAt": "2026-09-12T16:05:12.073Z",
       "expiresAt": "2026-09-19T16:05:12.073Z"
-    },
-    {
-      "id": "session_83fb6552727c805f1de194e3mtysixuq",
-      "token": "c83171ba0fc4f1edc2f0b6c19e1fb6943f77dc4920011970f41354ed837c2ca6e11052ccc1f1bdda8bc27987b9b2fba6",
-      "userId": "usr_romi",
-      "createdAt": "2026-09-12T19:41:00.770Z",
-      "expiresAt": "2026-09-19T19:41:00.770Z"
     }
   ],
   "userTaskState": {},
