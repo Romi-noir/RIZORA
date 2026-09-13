@@ -1819,6 +1819,24 @@ onclick="togglePassword('signupPassword',this)"
 </div>
 
 <div class="field">
+<label for="signupSocialHandle">
+Social media handle
+<span style="opacity:.5">optional</span>
+</label>
+
+<input
+id="signupSocialHandle"
+maxlength="100"
+autocomplete="off"
+placeholder="@yourhandle"
+>
+
+<small class="muted">
+Add your social media handle so creators can find you. You can skip this.
+</small>
+
+</div>
+<div class="field">
 
 <label for="signupReferralCode">
 Referral code
@@ -3576,6 +3594,11 @@ async function handleSignup(event){
               referralCode:
                 $("signupReferralCode")
                   .value
+                  .trim(),
+
+              socialHandle:
+                $("signupSocialHandle")
+                  ?.value
                   .trim()
             })
         }
@@ -4577,7 +4600,8 @@ function renderAdminUsers(){
   container.innerHTML = `
     <div class="table-head">
       <div>User</div>
-      <div>Role</div>
+<div>Social</div>
+<div>Role</div>
       <div>Status</div>
       <div>Points</div>
       <div>Actions</div>
@@ -4639,6 +4663,17 @@ function renderAdminUsers(){
                   : ""
               }
             </small>
+          </div>
+
+          <div class="table-cell">
+            ${
+              user?.socialHandle
+                ? `<span>@${escapeHTML(
+                    String(user.socialHandle)
+                      .replace(/^@+/, "")
+                  )}</span>`
+                : `<span class="muted">Not added</span>`
+            }
           </div>
 
           <div class="table-cell">
@@ -7199,6 +7234,9 @@ document.addEventListener("pointerdown",function(e){
 </script>
 </body>
 </html>
+
+
+
 
 
 

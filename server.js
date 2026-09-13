@@ -242,6 +242,7 @@ function safeUser(user) {
     status: user.status || "active",
     points: Number(user.points || 0),
     referralCode: user.referralCode || "",
+    socialHandle: user.socialHandle || "",
     referredBy: user.referredBy || null,
     referralCount: Number(user.referralCount || 0),
     createdAt: user.createdAt || null,
@@ -1387,6 +1388,16 @@ async function handleRequest(
         100
       );
 
+    const socialHandle =
+      cleanString(
+        body.socialHandle ||
+        body.handle ||
+        "",
+        100
+      )
+        .replace(/^@+/, "")
+        .trim();
+
     const rateKey =
       req.socket.remoteAddress ||
       "unknown";
@@ -1515,6 +1526,8 @@ async function handleRequest(
         ),
 
       email,
+
+      socialHandle,
 
       passwordHash,
 
@@ -5208,6 +5221,9 @@ process.on(
     );
   }
 );
+
+
+
 
 
 
