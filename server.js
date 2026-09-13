@@ -83,6 +83,7 @@ function loadDB() {
     db.communityPosts ||= [];
     db.experiments ||= [];
     db.userSettings ||= {};
+    db.supportTickets ||= [];
 
     return db;
   } catch (error) {
@@ -1880,48 +1881,35 @@ if (
   pathname === "/api/tasks"
 ) {
 
-  const user =
-    getCurrentUser(db, req);
+  const user = getCurrentUser(db, req);
 
-  const authenticated =
-    !!user;
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
 
-  const cooldown =
-    getCooldown(
-      db,
-      user.id
-    );
+  const cooldown = getCooldown(db, user.id);
 
   const tasks =
     db.tasks
-      .filter(
-        task =>
-          task.active !== false
-      )
-      .map(
-        task => ({
-          ...task,
-          completed:
-            db.taskCompletions.some(
-              c =>
-                c.userId === user.id &&
-                c.taskId === task.id
-            ),
-          locked:
-            cooldown.active
-        })
-      );
+      .filter(task => task.active !== false)
+      .map(task => ({
+        ...task,
+        completed:
+          db.taskCompletions.some(
+            c =>
+              c.userId === user.id &&
+              c.taskId === task.id
+          ),
+        locked: cooldown.active
+      }));
 
-  sendJSON(
-    res,
-    200,
-    {
-      success: true,
-      tasks,
-      cooldown,
-      cooldownMinutes: 45
-    }
-  );
+  sendJSON(res, 200, {
+    success: true,
+    tasks,
+    cooldown,
+    cooldownMinutes: 45
+  });
 
   return;
 }
@@ -2112,17 +2100,14 @@ if (
   pathname === "/api/boosts"
 ) {
 
-  const user =
-    getCurrentUser(db, req);
+  const user = getCurrentUser(db, req);
 
-  const authenticated =
-    !!user;
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
 
-  const cooldown =
-    getCooldown(
-      db,
-      user.id
-    );
+  const cooldown = getCooldown(db, user.id);
 
   const boosts =
     (db.boostTasks || [])
@@ -2679,7 +2664,7 @@ if (
       return "RIZORA AI: Make your bio instantly say who you are, what you create and why someone should follow you.";
     }
 
-    return "RIZORA AI: I’m ready to help with captions, hooks, content ideas, creator growth, profiles and RIZORA boosts.";
+    return "RIZORA AI: I am here to help with captions, hooks, content ideas, creator growth, profiles and RIZORA boosts. RIZORA is created by RoMi, a member and founder of the Royal Saents Group. TikTok: @romi.noir. Create. Grow. Earn. Explore RIZORA: https://rizora.com.ng/";
   }
 
   if(!apiKey){
@@ -2723,7 +2708,7 @@ if (
                   {
                     type:"input_text",
                     text:
-                      "You are RIZORA AI, the built-in creator-growth assistant for RIZORA. Help with captions, hooks, content ideas, creator growth, profiles, branding, tasks and boosts. Be practical, concise and natural. Never request passwords, API keys or secrets."
+                      "You are RIZORA AI, the built-in creator-growth assistant for RIZORA. RIZORA is created by RoMi, a member and founder of the Royal Saents Group. RoMi TikTok: @romi.noir. RIZORA app: https://rizora.com.ng/. RIZORA helps creators Create, Grow and Earn through growth tools, tasks, rewards and opportunities. Be practical, concise and natural. Never request passwords, API keys or secrets."
                   }
                 ]
               },
@@ -5221,6 +5206,8 @@ process.on(
     );
   }
 );
+
+
 
 
 
