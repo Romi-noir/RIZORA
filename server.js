@@ -2626,7 +2626,7 @@ if (
   const apiKey =
     authenticated
       ? String(
-          process.env.OPENAI_API_KEY || ""
+          process.env.GROQ_API_KEY || ""
         ).trim()
       : "";
 
@@ -2635,50 +2635,41 @@ if (
     const q =
       String(text || "").toLowerCase();
 
-    if (
-      q.includes("caption")
-    ) {
-      return "RIZORA AI: Send me your topic, platform and vibe and I’ll build you a stronger caption with a hook.";
+    if(q.includes("caption")){
+      return "RIZORA AI: Give me your topic and vibe and I’ll build a stronger caption.";
     }
 
-    if (
-      q.includes("hook")
-    ) {
-      return "RIZORA AI: Start with one sharp line that creates curiosity, then make the second line deliver the value.";
+    if(q.includes("hook")){
+      return "RIZORA AI: Start with a short curiosity hook, then deliver the value immediately.";
     }
 
-    if (
+    if(
       q.includes("growth") ||
       q.includes("followers") ||
       q.includes("views")
-    ) {
-      return "RIZORA AI: Focus on a clear niche, stronger first-second hooks, consistent posting and formats people already watch to completion.";
+    ){
+      return "RIZORA AI: Focus on a clear niche, stronger hooks, consistency and content that holds attention.";
     }
 
-    if (
+    if(
       q.includes("idea") ||
       q.includes("content")
-    ) {
-      return "RIZORA AI: Try a behind-the-scenes post, reaction, tutorial, story, transformation, opinion or challenge built around one clear idea.";
+    ){
+      return "RIZORA AI: Try a behind-the-scenes post, reaction, tutorial, story, transformation or opinion-led post.";
     }
 
-    if (
-      q.includes("boost")
-    ) {
-      return "RIZORA AI: Choose one clear action, set the reward, define the target URL and make the task easy to complete.";
+    if(q.includes("boost")){
+      return "RIZORA AI: Pick one clear action, set the reward, add the target URL and keep the task easy to complete.";
     }
 
-    if (
-      q.includes("profile") ||
-      q.includes("bio")
-    ) {
+    if(q.includes("bio") || q.includes("profile")){
       return "RIZORA AI: Make your bio instantly say who you are, what you create and why someone should follow you.";
     }
 
     return "RIZORA AI: I’m ready to help with captions, hooks, content ideas, creator growth, profiles and RIZORA boosts.";
   }
 
-  if (!apiKey) {
+  if(!apiKey){
 
     sendJSON(
       res,
@@ -2697,32 +2688,18 @@ if (
 
     const model =
       String(
-        process.env.RIZORA_AI_MODEL || ""
+        process.env.RIZORA_AI_MODEL ||
+        "openai/gpt-oss-20b"
       ).trim();
-
-    if(!model){
-
-      sendJSON(
-        res,
-        200,
-        {
-          success:true,
-          mode:"local",
-          reply:localAIRizoraReply(message)
-        }
-      );
-
-      return;
-    }
 
     const response =
       await fetch(
-        "https://api.openai.com/v1/responses",
+        "https://api.groq.com/openai/v1/responses",
         {
           method:"POST",
           headers:{
             "Content-Type":"application/json",
-            Authorization:"Bearer " + apiKey
+            "Authorization":"Bearer " + apiKey
           },
           body:JSON.stringify({
             model:model,
@@ -2733,7 +2710,7 @@ if (
                   {
                     type:"input_text",
                     text:
-                      "You are RIZORA AI, the built-in creator-growth assistant. Help with content ideas, captions, hooks, creator strategy, profile improvement and RIZORA boosting. Be practical, concise and natural. Never request passwords, API keys or secrets."
+                      "You are RIZORA AI, the built-in creator-growth assistant for RIZORA. Help with captions, hooks, content ideas, creator growth, profiles, branding, tasks and boosts. Be practical, concise and natural. Never request passwords, API keys or secrets."
                   }
                 ]
               },
@@ -2758,65 +2735,65 @@ if (
           return {};
         });
 
-    if(response.ok){
+    if(!response.ok){
 
-      const providerReply =
-        data.output_text ||
-        (
-          Array.isArray(data.output)
-            ? data.output
-                .flatMap(function(item){
-                  return Array.isArray(item.content)
-                    ? item.content
-                    : [];
-                })
-                .map(function(item){
-                  return item.text || "";
-                })
-                .filter(Boolean)
-                .join("\n")
-            : ""
-        );
+      console.error(
+        "GROQ AI ERROR:",
+        response.status,
+        data
+      );
 
-      if(providerReply){
+      sendJSON(
+        res,
+        200,
+        {
+          success:true,
+          mode:"local_fallback",
+          reply:
+            localAIRizoraReply(message)
+        }
+      );
 
-        sendJSON(
-          res,
-          200,
-          {
-            success:true,
-            mode:"openai",
-            reply:providerReply
-          }
-        );
-
-        return;
-      }
-
+      return;
     }
 
-    console.error(
-      "RIZORA AI provider returned an unusable response:",
-      response.status,
-      data
-    );
+    const reply =
+      data.output_text ||
+      (
+        Array.isArray(data.output)
+          ? data.output
+              .flatMap(function(item){
+                return Array.isArray(item.content)
+                  ? item.content
+                  : [];
+              })
+              .filter(function(item){
+                return item.type === "output_text";
+              })
+              .map(function(item){
+                return item.text || "";
+              })
+              .filter(Boolean)
+              .join("\n")
+          : ""
+      );
 
     sendJSON(
       res,
       200,
       {
         success:true,
-        mode:"local_fallback",
+        mode:"groq",
         reply:
-          localAIRizoraReply(message) +
-          " (AI provider is temporarily unavailable.)"
+          reply ||
+          localAIRizoraReply(message)
       }
     );
 
   } catch(error){
 
     console.error(
-      "RIZORA AI provider error:",
+      "GROQ AI PROVIDER ERROR:",
       error
     );
 
@@ -2827,8 +2804,7 @@ if (
         success:true,
         mode:"local_fallback",
         reply:
-          localAIRizoraReply(message) +
-          " (AI provider is temporarily unavailable.)"
+          localAIRizoraReply(message)
       }
     );
 
@@ -2836,7 +2812,6 @@ if (
 
   return;
 }
-
 /* ============================================================
    SEARCH ENGINE
 ============================================================ */
@@ -5233,6 +5208,7 @@ process.on(
     );
   }
 );
+
 
 
 
