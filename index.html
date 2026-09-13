@@ -7157,8 +7157,49 @@ document.addEventListener("pointerdown",function(e){
 
 })();
 </script>
+<script id="RIZORA_AI_SUPPORT_NOTE">
+(function(){
+  function addSupportNote(){
+    const result = document.getElementById("creatorAIResult");
+    if(!result) return;
+
+    if(document.getElementById("rizoraAISupportNote")) return;
+
+    const note = document.createElement("div");
+    note.id = "rizoraAISupportNote";
+    note.innerHTML =
+      "<strong>Need better AI support?</strong><br>" +
+      "Not satisfied with your RIZORA AI experience? " +
+      "Contact our <strong>Help Center</strong> and let us know how we can improve.";
+
+    note.style.cssText =
+      "margin-top:10px;" +
+      "padding:10px 12px;" +
+      "font-size:12px;" +
+      "line-height:1.5;" +
+      "color:rgba(255,255,255,.62);" +
+      "background:rgba(255,255,255,.03);" +
+      "border:1px solid rgba(255,255,255,.07);" +
+      "border-radius:12px;";
+
+    result.insertAdjacentElement("afterend", note);
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", addSupportNote);
+  }else{
+    addSupportNote();
+  }
+
+  new MutationObserver(addSupportNote).observe(
+    document.body,
+    {childList:true,subtree:true}
+  );
+})();
+</script>
 </body>
 </html>
+
 
 
 
