@@ -403,29 +403,19 @@ function verifyPassword(password, storedHash) {
 // REQUEST BODY
 // ============================================================
 
-function readBody(req) {
+async function readBody(req) {
   return new Promise((resolve, reject) => {
-    let body = "";
-    let size = 0;
+    let raw = "";
 
-    req.on("data", (chunk) => {
-      size += chunk.length;
+    req.setEncoding("utf8");
 
-      if (size > MAX_BODY_SIZE) {
-        reject(
-          new Error(
-            "Request body too large."
-          )
-        );
-
-        req.destroy();
-        return;
-      }
-
-      body += chunk.toString();
+    req.on("data", chunk => {
+      raw += chunk;
     });
 
     req.on("end", () => {
+      const body = raw.trim();
+
       if (!body) {
         resolve({});
         return;
@@ -433,12 +423,8 @@ function readBody(req) {
 
       try {
         resolve(JSON.parse(body));
-      } catch {
-        reject(
-          new Error(
-            "Invalid JSON body."
-          )
-        );
+      } catch (error) {
+        reject(new Error("Invalid JSON body."));
       }
     });
 
@@ -5206,6 +5192,7 @@ process.on(
     );
   }
 );
+
 
 
 
