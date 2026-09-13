@@ -1,4 +1,4 @@
-const API = "";
+﻿const API = "https://rizora-guse.onrender.com";
 
 /* =========================================================
    CORE API
@@ -229,12 +229,12 @@ function refreshDashboard() {
   } else {
     if (averageScore) {
       averageScore.textContent =
-        "—";
+        "â€”";
     }
 
     if (bestScore) {
       bestScore.textContent =
-        "—";
+        "â€”";
     }
   }
 
@@ -440,7 +440,7 @@ async function runBoost() {
       (
         caption.trim()
           ? caption.trim()
-          : `${length || "Short video"} — what do you think?`
+          : `${length || "Short video"} â€” what do you think?`
       );
 
     const postingPlan =
@@ -511,11 +511,11 @@ async function runBoost() {
                 .slice(0, 4)
                 .map(
                   item =>
-                    "• " +
+                    "â€¢ " +
                     escapeRizora(item)
                 )
                 .join("<br>")
-            : "• Keep testing creative variations."
+            : "â€¢ Keep testing creative variations."
         }
 
       </div>
@@ -852,7 +852,7 @@ async function analyzePost() {
           result.strengths
         ).map(
           item =>
-            `• ${item}`
+            `â€¢ ${item}`
         ),
         "",
         "Improvements:",
@@ -860,7 +860,7 @@ async function analyzePost() {
           result.improvements
         ).map(
           item =>
-            `• ${item}`
+            `â€¢ ${item}`
         ),
         "",
         result.feedback || ""
@@ -1010,7 +1010,7 @@ async function runPerformance() {
         )
           .map(
             item =>
-              "• " +
+              "â€¢ " +
               escapeRizora(
                 item
               )
@@ -1243,7 +1243,7 @@ function loadHistory() {
             "boost"
           ) {
             title =
-              "🚀 Boost";
+              "ðŸš€ Boost";
           }
 
           if (
@@ -1251,7 +1251,7 @@ function loadHistory() {
             "idea"
           ) {
             title =
-              "✨ Ideas";
+              "âœ¨ Ideas";
           }
 
           if (
@@ -1259,7 +1259,7 @@ function loadHistory() {
             "analyze"
           ) {
             title =
-              "📊 Analysis";
+              "ðŸ“Š Analysis";
           }
 
           return `
@@ -1489,7 +1489,7 @@ function renderCommunitySignup() {
 
     if (button) {
       button.textContent =
-        "Joined ✓";
+        "Joined âœ“";
 
       button.disabled =
         true;
@@ -1588,7 +1588,7 @@ function completeCommunitySignup() {
   loadCommunity();
 
   alert(
-    "Welcome to RIZORA Community — +40 points added."
+    "Welcome to RIZORA Community â€” +40 points added."
   );
 }
 
@@ -1719,13 +1719,13 @@ function renderCreatorDirectory() {
                     creator.handle
                   )}
 
-                  ·
+                  Â·
 
                   ${escapeRizora(
                     creator.niche
                   )}
 
-                  ·
+                  Â·
 
                   ${escapeRizora(
                     creator.style
@@ -1783,7 +1783,7 @@ function renderCreatorDirectory() {
                   <div class="demo-support">
 
                     <div class="demo-support-title">
-                      ⭐ Support this RIZORA demo creator
+                      â­ Support this RIZORA demo creator
                     </div>
 
                     <div class="demo-support-text">
@@ -1803,7 +1803,7 @@ function renderCreatorDirectory() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        🎵 ${escapeRizora(
+                        ðŸŽµ ${escapeRizora(
                           creator.handle
                         )}
                       </a>
@@ -2491,13 +2491,13 @@ function renderIntelligence(
           profile.niche
         )}
 
-        •
+        â€¢
 
         ${escapeRizora(
           profile.style
         )}
 
-        •
+        â€¢
 
         Goal:
 
@@ -2581,32 +2581,32 @@ async function loadCreatorIntelligence() {
     if (!result.hasData) {
       if (averageEl) {
         averageEl.textContent =
-          "—";
+          "â€”";
       }
 
       if (bestEl) {
         bestEl.textContent =
-          "—";
+          "â€”";
       }
 
       if (lowestEl) {
         lowestEl.textContent =
-          "—";
+          "â€”";
       }
 
       if (trendEl) {
         trendEl.textContent =
-          "—";
+          "â€”";
       }
 
       if (topicEl) {
         topicEl.textContent =
-          "—";
+          "â€”";
       }
 
       if (weakestEl) {
         weakestEl.textContent =
-          "—";
+          "â€”";
       }
 
       if (nextActionEl) {
@@ -2677,7 +2677,7 @@ async function loadCreatorIntelligence() {
                   )
                     .map(
                       item =>
-                        "• " +
+                        "â€¢ " +
                         escapeRizora(
                           item
                         )
@@ -2857,3 +2857,4 @@ window.addEventListener(
     );
   }
 );
+
