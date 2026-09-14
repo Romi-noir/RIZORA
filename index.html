@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head><script>window.RIZORA_API_BASE="https://rizora-guse.onrender.com";</script>
 <meta charset="UTF-8">
@@ -3319,8 +3319,46 @@ function showToast(message){
     );
 }
 
-async function api(endpoint, options = {}) {
+async function apiFetch(endpoint, options = {}) {
+  const currentToken =
+    localStorage.getItem("rizoraToken") ||
+    token ||
+    "";
+
   const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {})
+  };
+
+  if (currentToken) {
+    headers.Authorization =
+      "Bearer " + currentToken;
+  }
+
+  const apiBase =
+    window.RIZORA_API_BASE ||
+    "https://rizora-guse.onrender.com";
+
+  const url =
+    endpoint.startsWith("http")
+      ? endpoint
+      : apiBase + endpoint;
+
+  return fetch(
+    url,
+    {
+      ...options,
+      headers
+    }
+  );
+}
+async function api(endpoint, options = {}) {
+  
+  token =
+    localStorage.getItem("rizoraToken") ||
+    token ||
+    "";
+const headers = {
     "Content-Type": "application/json",
     ...(options.headers || {})
   };
@@ -5983,7 +6021,7 @@ async function creatorAskAI(){
     const authToken =
       localStorage.getItem("rizoraToken") || "";
 
-    const response = await fetch("/api/ai/chat",{
+    const response = await apiFetch("/api/ai/chat",{
       method:"POST",
       headers:{
         "Content-Type":"application/json",
@@ -6394,7 +6432,7 @@ document.addEventListener("pointerdown",function(e){
 
       const token = localStorage.getItem("rizoraToken") || "";
 
-      const response = await fetch("/api/ai/chat",{
+      const response = await apiFetch("/api/ai/chat",{
         method:"POST",
         headers:{
           "Content-Type":"application/json",
@@ -6494,7 +6532,7 @@ document.addEventListener("pointerdown",function(e){
       const token =
         localStorage.getItem("rizoraToken") || "";
 
-      const response = await fetch("/api/ai/chat",{
+      const response = await apiFetch("/api/ai/chat",{
         method:"POST",
         headers:{
           "Content-Type":"application/json",
@@ -7410,7 +7448,40 @@ document.addEventListener("pointerdown",function(e){
       .replace(/'/g,"&#039;");
   }
 
-  async function api(url, options){
+  async function apiFetch(endpoint, options = {}) {
+  const currentToken =
+    localStorage.getItem("rizoraToken") ||
+    token ||
+    "";
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {})
+  };
+
+  if (currentToken) {
+    headers.Authorization =
+      "Bearer " + currentToken;
+  }
+
+  const apiBase =
+    window.RIZORA_API_BASE ||
+    "https://rizora-guse.onrender.com";
+
+  const url =
+    endpoint.startsWith("http")
+      ? endpoint
+      : apiBase + endpoint;
+
+  return fetch(
+    url,
+    {
+      ...options,
+      headers
+    }
+  );
+}
+async function api(url, options){
     const token = getToken();
 
     return fetch(
