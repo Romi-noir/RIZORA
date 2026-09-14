@@ -651,9 +651,112 @@ function getCurrentUser(
 // ============================================================
 
 
-const TASK_COOLDOWN_MS = 45 * 60 * 1000;
+const TASK_COOLDOWN_MS = 4 * 60 * 1000;
 
 const RIZORA_FEATURE_LAYER_V1 = true;
+
+function rizoraTaskSeen(db, userId, taskId) {
+  db.taskSeen ||= {};
+
+  return (
+    Array.isArray(db.taskSeen[userId]) &&
+    db.taskSeen[userId].includes(taskId)
+  );
+}
+
+function rizoraMarkTaskSeen(db, userId, taskId) {
+  db.taskSeen ||= {};
+  db.taskSeen[userId] ||= [];
+
+  if (!db.taskSeen[userId].includes(taskId)) {
+    db.taskSeen[userId].push(taskId);
+  }
+
+  if (db.taskSeen[userId].length > 1000) {
+    db.taskSeen[userId] =
+      db.taskSeen[userId].slice(-1000);
+  }
+}
+
+
+
+/* ============================================================
+   RIZORA_FRESH_TASK_ENGINE
+   ============================================================ */
+
+const RIZORA_GENERATED_ACTIONS = [
+  { key: "post", name: "Create a new piece of creator content" },
+  { key: "profile", name: "Improve one part of your creator profile" },
+  { key: "engage", name: "Meaningfully engage with another creator" },
+  { key: "review", name: "Review one of your recent posts" },
+  { key: "audience", name: "Study your audience and choose one content idea" },
+  { key: "hook", name: "Create a stronger hook for your next post" },
+  { key: "caption", name: "Improve a caption for your next post" },
+  { key: "plan", name: "Plan your next three creator posts" }
+];
+
+const RIZORA_GENERATED_PLATFORMS = [
+  { key: "tiktok", name: "TikTok" },
+  { key: "instagram", name: "Instagram" },
+  { key: "youtube", name: "YouTube" },
+  { key: "x", name: "X" },
+  { key: "facebook", name: "Facebook" },
+  { key: "spotify", name: "Spotify" }
+];
+
+function rizoraGeneratedSeen(db, userId, key) {
+  db.taskSeen ||= {};
+  db.taskSeen[userId] ||= {};
+  return !!db.taskSeen[userId][`generated:${key}`];
+}
+
+function rizoraMarkGeneratedSeen(db, userId, key) {
+  db.taskSeen ||= {};
+  db.taskSeen[userId] ||= {};
+  db.taskSeen[userId][`generated:${key}`] = Date.now();
+}
+
+function rizoraGenerateFreshTasks(db, userId) {
+  const candidates = [];
+
+  for (const action of RIZORA_GENERATED_ACTIONS) {
+    for (const platform of RIZORA_GENERATED_PLATFORMS) {
+      const key = `${action.key}:${platform.key}`;
+
+      if (rizoraGeneratedSeen(db, userId, key)) continue;
+
+      candidates.push({
+        id: `generated_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+        type: "generated",
+        generated: true,
+        sourceKey: key,
+        title: `${action.name} on ${platform.name}`,
+        description:
+          `${action.name} on ${platform.name}. ` +
+          `Keep it authentic and focused on creator growth.`,
+        platform: platform.key,
+        points: 10,
+        reward: 10,
+        active: true,
+        creatorId: null,
+        creatorUsername: "RIZORA"
+      });
+    }
+  }
+
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  const fresh = candidates.slice(0, 4);
+
+  for (const task of fresh) {
+    rizoraMarkGeneratedSeen(db, userId, task.sourceKey);
+  }
+
+  return fresh;
+}
 
 const DEFAULT_TASKS = [
   {
@@ -670,7 +773,7 @@ const DEFAULT_TASKS = [
     id: "rizora_instagram",
     title: "Follow @rizora.hq on Instagram",
     description: "Follow the official RIZORA Instagram account.",
-    points: 75,
+    points: 50,
     type: "social_follow",
     platform: "instagram",
     url: "https://www.instagram.com/rizora.hq",
@@ -680,7 +783,7 @@ const DEFAULT_TASKS = [
     id: "rizora_x",
     title: "Follow @Rizora_hq on X",
     description: "Follow the official RIZORA X account.",
-    points: 75,
+    points: 50,
     type: "social_follow",
     platform: "x",
     url: "https://x.com/Rizora_hq",
@@ -690,7 +793,7 @@ const DEFAULT_TASKS = [
     id: "romi_tiktok",
     title: "Follow @romi.noir on TikTok",
     description: "Follow RoMi on TikTok.",
-    points: 75,
+    points: 50,
     type: "social_follow",
     platform: "tiktok",
     url: "https://www.tiktok.com/@romi.noir",
@@ -700,7 +803,7 @@ const DEFAULT_TASKS = [
     id: "rizora_explore",
     title: "Explore RIZORA",
     description: "Explore the RIZORA creator platform.",
-    points: 50,
+    points: 25,
     type: "engagement",
     url: "/",
     active: true
@@ -736,7 +839,7 @@ const DEFAULT_TASKS = [
     id: "rizora_invite",
     title: "Invite a creator",
     description: "Invite another creator to RIZORA.",
-    points: 150,
+    points: 100,
     type: "referral",
     url: "/",
     active: true
@@ -1862,49 +1965,170 @@ async function handleRequest(
 // RIZORA FEATURE LAYER
 // ============================================================
 
-if (
-  method === "GET" &&
-  pathname === "/api/tasks"
-) {
-
-  const user = getCurrentUser(db, req);
+if (method === "GET" && pathname === "/api/tasks") {
+  const user = getCurrentUser(req);
 
   if (!user) {
-    sendError(res, 401, "Authentication required.");
-    return;
+    return sendJSON(res, 401, {
+      success: false,
+      error: "Authentication required"
+    });
   }
+
+  db.tasks ||= [];
+  db.taskCompletions ||= [];
+  db.taskSeen ||= {};
+  db.rizoraGeneratedHistory ||= {};
+  db.rizoraGeneratedHistory[user.id] ||= [];
 
   const cooldown = getCooldown(db, user.id);
 
-  const tasks =
-    db.tasks
-      .filter(task => task.active !== false)
-      .map(task => ({
-        ...task,
-        completed:
-          db.taskCompletions.some(
-            c =>
-              c.userId === user.id &&
-              c.taskId === task.id
-          ),
-        locked: cooldown.active
-      }));
+  const completedIds = new Set(
+    db.taskCompletions
+      .filter(x => x.userId === user.id)
+      .map(x => x.taskId)
+  );
 
-  sendJSON(res, 200, {
+  /*
+   * Official + community tasks.
+   */
+  const normalTasks = db.tasks
+    .filter(task => task.active !== false)
+    .filter(task => task.type !== "generated")
+    .filter(task => !(task.type === "community" && task.creatorId === user.id))
+    .filter(task => !completedIds.has(task.id))
+    .map(task => ({
+      ...task,
+      completed: false,
+      locked: cooldown.active
+    }));
+
+  /*
+   * Existing generated tasks belonging to this user.
+   */
+  let generatedTasks = db.tasks
+    .filter(task =>
+      task.active !== false &&
+      task.type === "generated" &&
+      task.createdForUserId === user.id &&
+      !completedIds.has(task.id)
+    )
+    .map(task => ({
+      ...task,
+      completed: false,
+      locked: cooldown.active
+    }));
+
+  /*
+   * GUARANTEED FRESH GENERATION
+   *
+   * If this user has no generated task waiting, create four.
+   * History prevents reuse of the same action/platform pair.
+   */
+  if (!cooldown.active && generatedTasks.length === 0) {
+
+    const actionPool = [
+      ["Create a new piece of creator content", "TikTok"],
+      ["Create a new piece of creator content", "Instagram"],
+      ["Create a new piece of creator content", "YouTube"],
+      ["Improve one part of your creator profile", "TikTok"],
+      ["Improve one part of your creator profile", "Instagram"],
+      ["Improve one part of your creator profile", "YouTube"],
+      ["Engage meaningfully with another creator", "TikTok"],
+      ["Engage meaningfully with another creator", "Instagram"],
+      ["Engage meaningfully with another creator", "X"],
+      ["Review one of your recent posts", "TikTok"],
+      ["Review one of your recent posts", "Instagram"],
+      ["Review one of your recent posts", "YouTube"],
+      ["Create a stronger hook for your next post", "TikTok"],
+      ["Create a stronger hook for your next post", "Instagram"],
+      ["Create a stronger hook for your next post", "YouTube"],
+      ["Improve a caption for your next post", "TikTok"],
+      ["Improve a caption for your next post", "Instagram"],
+      ["Plan your next three creator posts", "TikTok"],
+      ["Plan your next three creator posts", "Instagram"],
+      ["Plan your next three creator posts", "YouTube"]
+    ];
+
+    const history = db.rizoraGeneratedHistory[user.id];
+
+    const available = actionPool.filter(item => {
+      const key = `${item[0]}::${item[1]}`;
+      return !history.includes(key);
+    });
+
+    for (let i = available.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [available[i], available[j]] = [available[j], available[i]];
+    }
+
+    const selected = available.slice(0, 4);
+
+    for (const item of selected) {
+      const action = item[0];
+      const platform = item[1];
+      const historyKey = `${action}::${platform}`;
+
+      history.push(historyKey);
+
+      const generated = {
+        id:
+          "generated_" +
+          Date.now() +
+          "_" +
+          Math.random().toString(36).slice(2, 10),
+
+        type: "generated",
+        generated: true,
+        createdForUserId: user.id,
+        creatorId: null,
+        creatorUsername: "RIZORA",
+
+        title: `${action} on ${platform}`,
+
+        description:
+          `${action} on ${platform}. ` +
+          "Keep it authentic, useful and focused on creator growth.",
+
+        platform: platform.toLowerCase(),
+        points: 10,
+        reward: 10,
+        active: true,
+
+        sourceKey: historyKey,
+        generatedAt: Date.now()
+      };
+
+      db.tasks.push(generated);
+
+      generatedTasks.push({
+        ...generated,
+        completed: false,
+        locked: false
+      });
+    }
+
+    saveDB(db);
+  }
+
+  return sendJSON(res, 200, {
     success: true,
-    tasks,
+
+    tasks: [
+      ...normalTasks,
+      ...generatedTasks
+    ],
+
     cooldown,
-    cooldownMinutes: 45
+    cooldownMinutes: 4,
+    generatedCount: generatedTasks.length,
+
+    message:
+      generatedTasks.length
+        ? null
+        : "No new tasks right now. Check back after the next rotation."
   });
-
-  return;
 }
-
-
-/* ============================================================
-   COMPLETE OFFICIAL TASK
-============================================================ */
-
 if (
   method === "POST" &&
   pathname === "/api/tasks/complete"
@@ -1953,6 +2177,17 @@ if (
     return;
   }
 
+  if (
+    task.creatorId &&
+    task.creatorId === user.id
+  ) {
+    sendError(
+      res,
+      403,
+      "You cannot complete your own task."
+    );
+    return;
+  }
   const cooldown =
     getCooldown(
       db,
@@ -1967,7 +2202,7 @@ if (
         error:
           "Your next RIZORA task is still on cooldown.",
         cooldown,
-        cooldownMinutes: 45
+        cooldownMinutes: 4
       }
     );
     return;
@@ -1990,14 +2225,16 @@ if (
   }
 
   const reward =
-    Math.max(
-      0,
-      Number(
-        task.points ||
-        task.reward ||
-        0
-      )
-    );
+    task.type === "community"
+      ? 10
+      : Math.max(
+          0,
+          Number(
+            task.points ||
+            task.reward ||
+            0
+          )
+        );
 
   const completion = {
     id:
@@ -2014,6 +2251,12 @@ if (
 
   db.taskCompletions.push(
     completion
+  );
+
+  rizoraMarkTaskSeen(
+    db,
+    user.id,
+    task.id
   );
 
   user.points =
@@ -2062,7 +2305,7 @@ if (
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: 45,
+      cooldownMinutes: 4,
       cooldown:
         getCooldown(
           db,
@@ -2076,6 +2319,175 @@ if (
   return;
 }
 
+
+/* ============================================================
+   COMMUNITY TASK — CREATE
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/tasks/create"
+) {
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!user) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body =
+      await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+    return;
+  }
+
+  const title =
+    cleanString(
+      body.title,
+      160
+    );
+
+  const description =
+    cleanString(
+      body.description,
+      1000
+    );
+
+  const url =
+    body.url
+      ? validURL(body.url)
+      : "";
+
+  if (!title || !description) {
+    sendError(
+      res,
+      400,
+      "Task title and description are required."
+    );
+    return;
+  }
+
+  const publishFee = 10;
+
+  if (
+    Number(user.points || 0) <
+    publishFee
+  ) {
+    sendError(
+      res,
+      400,
+      "You need 10 RIZORA points to create a task."
+    );
+    return;
+  }
+
+  db.tasks ||= [];
+
+  const task = {
+    id:
+      uid("community_task_"),
+
+    title,
+
+    description,
+
+    url,
+
+    type:
+      "community",
+
+    platform:
+      cleanString(
+        body.platform,
+        40
+      ).toLowerCase() ||
+      "creator",
+
+    creatorId:
+      user.id,
+
+    creatorUsername:
+      user.username || "",
+
+    points:
+      10,
+
+    reward:
+      10,
+
+    active:
+      true,
+
+    createdAt:
+      new Date().toISOString()
+  };
+
+  user.points =
+    Number(
+      user.points || 0
+    ) -
+    publishFee;
+
+  db.tasks.push(
+    task
+  );
+
+  addLedger(
+    db,
+    user.id,
+    "community_task_publish",
+    -publishFee,
+    {
+      taskId:
+        task.id
+    }
+  );
+
+  audit(
+    db,
+    "community_task_created",
+    user,
+    {
+      taskId:
+        task.id
+    }
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    201,
+    {
+      success: true,
+      task,
+      publishFee,
+      points:
+        user.points,
+      user:
+        safeUser(user)
+    }
+  );
+
+  return;
+}
 
 /* ============================================================
    BOOSTS — AVAILABLE
@@ -2411,6 +2823,17 @@ if (
     return;
   }
 
+  if (
+    task.creatorId &&
+    task.creatorId === user.id
+  ) {
+    sendError(
+      res,
+      403,
+      "You cannot complete your own task."
+    );
+    return;
+  }
   const cooldown =
     getCooldown(
       db,
@@ -2425,7 +2848,7 @@ if (
         error:
           "Your next task is still on cooldown.",
         cooldown,
-        cooldownMinutes: 45
+        cooldownMinutes: 4
       }
     );
     return;
@@ -2548,7 +2971,7 @@ if (
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: 45,
+      cooldownMinutes: 4,
       cooldown:
         getCooldown(
           db,
@@ -2650,7 +3073,22 @@ if (
       return "RIZORA AI: Make your bio instantly say who you are, what you create and why someone should follow you.";
     }
 
-    return "RIZORA AI: I am here to help with captions, hooks, content ideas, creator growth, profiles and RIZORA boosts. RIZORA is created by RoMi, a member and founder of the Royal Saents Group. TikTok: @romi.noir. Create. Grow. Earn. Explore RIZORA: https://rizora.com.ng/";
+    if(
+      q.includes("who created rizora") ||
+      q.includes("who made rizora") ||
+      q.includes("creator of rizora") ||
+      q.includes("founder of rizora") ||
+      q.includes("who is behind rizora") ||
+      q.includes("about rizora") ||
+      q.includes("tell me about rizora") ||
+      q.includes("what is rizora") ||
+      q.includes("what's rizora") ||
+      q.includes("what is rizora ai")
+    ){
+      return "RIZORA was created by RoMi, a member and founder of the Royal Saents Group. TikTok: @romi.noir. Create. Grow. Earn. Explore RIZORA: https://rizora.com.ng/";
+    }
+
+    return "I’m not sure about that yet.";
   }
 
   if(!apiKey){
@@ -2670,57 +3108,39 @@ if (
 
   try {
 
-    const model =
-      String(
-        process.env.RIZORA_AI_MODEL ||
-        "openai/gpt-oss-20b"
-      ).trim();
+    const model = "openai/gpt-oss-20b";
 
-    const response =
-      await fetch(
-        "https://api.groq.com/openai/v1/responses",
-        {
-          method:"POST",
-          headers:{
-            "Content-Type":"application/json",
-            "Authorization":"Bearer " + apiKey
-          },
-          body:JSON.stringify({
-            model:model,
-            input:[
-              {
-                role:"system",
-                content:[
-                  {
-                    type:"input_text",
-                    text:
-                      "You are RIZORA AI, the built-in creator-growth assistant for RIZORA. RIZORA is created by RoMi, a member and founder of the Royal Saents Group. RoMi TikTok: @romi.noir. RIZORA app: https://rizora.com.ng/. RIZORA helps creators Create, Grow and Earn through growth tools, tasks, rewards and opportunities. Be practical, concise and natural. Never request passwords, API keys or secrets."
-                  }
-                ]
-              },
-              {
-                role:"user",
-                content:[
-                  {
-                    type:"input_text",
-                    text:message
-                  }
-                ]
-              }
-            ]
-          })
-        }
-      );
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + apiKey
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are the official RIZORA AI. Answer the user's actual question directly, naturally, accurately, and conversationally. Never begin every answer with a generic RIZORA introduction. RIZORA is a creator growth platform built to help creators CREATE, GROW and EARN through creator tools, missions and tasks, rewards, referrals, community features, analytics, and related creator-growth features. RIZORA is NOT a digital marketplace, ecommerce platform, or marketplace for buying and selling digital goods or services. Never invent RIZORA features or describe it as something it is not. When the user asks 'What is RIZORA?', explain that creator-growth purpose first. When the user asks who created RIZORA, answer that RoMi created it and that RoMi is a member and founder of the Royal Saents Group; you may mention @romi.noir when relevant. Mention the RIZORA website https://rizora.com.ng/ only when relevant or requested. For normal questions, answer only what was asked. Do not append founder information, TikTok handles, website links, slogans, or promotional text to unrelated answers. Never request passwords, API keys, tokens, or secrets."
+            },
+            {
+              role: "user",
+              content: message
+            }
+          ],
+          max_completion_tokens: 2048
+        })
+      }
+    );
 
-    const data =
-      await response
-        .json()
-        .catch(function(){
-          return {};
-        });
+    const data = await response.json().catch(function () {
+      return {};
+    });
 
-    if(!response.ok){
-
+    if (!response.ok) {
       console.error(
         "GROQ AI ERROR:",
         response.status,
@@ -2729,12 +3149,13 @@ if (
 
       sendJSON(
         res,
-        200,
+        500,
         {
-          success:true,
-          mode:"local_fallback",
-          reply:
-            localAIRizoraReply(message)
+          success: false,
+          mode: "groq_error",
+          error:
+            data?.error?.message ||
+            "Groq AI request failed."
         }
       );
 
@@ -2742,39 +3163,38 @@ if (
     }
 
     const reply =
-      data.output_text ||
-      (
-        Array.isArray(data.output)
-          ? data.output
-              .flatMap(function(item){
-                return Array.isArray(item.content)
-                  ? item.content
-                  : [];
-              })
-              .filter(function(item){
-                return item.type === "output_text";
-              })
-              .map(function(item){
-                return item.text || "";
-              })
-              .filter(Boolean)
-              .join("\n")
-          : ""
+      data?.choices?.[0]?.message?.content?.trim() || "";
+
+    if (!reply) {
+      console.error(
+        "GROQ AI EMPTY RESPONSE:",
+        data
       );
+
+      sendJSON(
+        res,
+        500,
+        {
+          success: false,
+          mode: "groq_error",
+          error: "Groq returned an empty response."
+        }
+      );
+
+      return;
+    }
 
     sendJSON(
       res,
       200,
       {
-        success:true,
-        mode:"groq",
-        reply:
-          reply ||
-          localAIRizoraReply(message)
+        success: true,
+        mode: "groq",
+        reply
       }
     );
 
-  } catch(error){
+  } catch (error) {
 
     console.error(
       "GROQ AI PROVIDER ERROR:",
@@ -2783,20 +3203,20 @@ if (
 
     sendJSON(
       res,
-      200,
+      500,
       {
-        success:true,
-        mode:"local_fallback",
-        reply:
-          localAIRizoraReply(message)
+        success: false,
+        mode: "groq_error",
+        error:
+          error?.message ||
+          "Unable to reach the AI provider."
       }
     );
 
   }
 
   return;
-}
-/* ============================================================
+}/* ============================================================
    SEARCH ENGINE
 ============================================================ */
 
@@ -4320,6 +4740,431 @@ if (
 
 
 /* ============================================================
+   RIZORA HELP CENTER / SUPPORT
+============================================================ */
+
+if (
+  (
+    method === "GET" ||
+    method === "POST"
+  ) &&
+  pathname === "/api/support/tickets"
+) {
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!user) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+  }
+
+  db.supportTickets ||= [];
+
+  if (method === "GET") {
+
+    const tickets =
+      db.supportTickets
+        .filter(
+          ticket =>
+            ticket.userId === user.id
+        )
+        .slice()
+        .reverse()
+        .slice(0, 50);
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        tickets
+      }
+    );
+
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body = await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+
+    return;
+  }
+
+  const subject =
+    cleanString(
+      body.subject,
+      160
+    );
+
+  const message =
+    cleanString(
+      body.message,
+      5000
+    );
+
+  if (!subject || !message) {
+    sendError(
+      res,
+      400,
+      "Subject and message are required."
+    );
+
+    return;
+  }
+
+  const ticket = {
+    id: uid("ticket_"),
+    userId: user.id,
+    username:
+      user.username ||
+      "",
+    displayName:
+      user.displayName ||
+      user.username ||
+      "",
+    subject,
+    status: "open",
+    priority: "normal",
+    messages: [
+      {
+        id: uid("ticket_msg_"),
+        senderId: user.id,
+        senderRole: "user",
+        senderName:
+          user.displayName ||
+          user.username ||
+          "User",
+        message,
+        createdAt:
+          new Date().toISOString()
+      }
+    ],
+    createdAt:
+      new Date().toISOString(),
+    updatedAt:
+      new Date().toISOString()
+  };
+
+  db.supportTickets.push(
+    ticket
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    201,
+    {
+      success: true,
+      ticket
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   SUPER ADMIN SUPPORT INBOX
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/superadmin/support"
+) {
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (
+    !user ||
+    user.role !== "super_admin"
+  ) {
+    sendError(
+      res,
+      403,
+      "Super Admin access required."
+    );
+
+    return;
+  }
+
+  db.supportTickets ||= [];
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      tickets:
+        db.supportTickets
+          .slice()
+          .reverse()
+          .slice(0, 200)
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   SUPER ADMIN SUPPORT REPLY
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/superadmin/support/reply"
+) {
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (
+    !user ||
+    user.role !== "super_admin"
+  ) {
+    sendError(
+      res,
+      403,
+      "Super Admin access required."
+    );
+
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body = await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+
+    return;
+  }
+
+  const ticketId =
+    cleanString(
+      body.ticketId,
+      100
+    );
+
+  const reply =
+    cleanString(
+      body.reply,
+      5000
+    );
+
+  if (!ticketId || !reply) {
+    sendError(
+      res,
+      400,
+      "Ticket ID and reply are required."
+    );
+
+    return;
+  }
+
+  db.supportTickets ||= [];
+
+  const ticket =
+    db.supportTickets.find(
+      item =>
+        item.id === ticketId
+    );
+
+  if (!ticket) {
+    sendError(
+      res,
+      404,
+      "Support ticket not found."
+    );
+
+    return;
+  }
+
+  ticket.messages ||= [];
+
+  ticket.messages.push(
+    {
+      id:
+        uid("ticket_msg_"),
+      senderId:
+        user.id,
+      senderRole:
+        "super_admin",
+      senderName:
+        user.displayName ||
+        user.username ||
+        "RIZORA Support",
+      message:
+        reply,
+      createdAt:
+        new Date().toISOString()
+    }
+  );
+
+  ticket.status =
+    "answered";
+
+  ticket.updatedAt =
+    new Date().toISOString();
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      ticket
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   SUPER ADMIN SUPPORT STATUS
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/superadmin/support/status"
+) {
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (
+    !user ||
+    user.role !== "super_admin"
+  ) {
+    sendError(
+      res,
+      403,
+      "Super Admin access required."
+    );
+
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body = await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+
+    return;
+  }
+
+  const ticketId =
+    cleanString(
+      body.ticketId,
+      100
+    );
+
+  const status =
+    cleanString(
+      body.status,
+      30
+    );
+
+  const allowed =
+    [
+      "open",
+      "answered",
+      "closed"
+    ];
+
+  if (
+    !ticketId ||
+    !allowed.includes(status)
+  ) {
+    sendError(
+      res,
+      400,
+      "Invalid ticket status."
+    );
+
+    return;
+  }
+
+  db.supportTickets ||= [];
+
+  const ticket =
+    db.supportTickets.find(
+      item =>
+        item.id === ticketId
+    );
+
+  if (!ticket) {
+    sendError(
+      res,
+      404,
+      "Support ticket not found."
+    );
+
+    return;
+  }
+
+  ticket.status =
+    status;
+
+  ticket.updatedAt =
+    new Date().toISOString();
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      ticket
+    }
+  );
+
+  return;
+}
+
+/* ============================================================
    RIZORA CREATOR INTELLIGENCE
 ============================================================ */
 
@@ -5192,6 +6037,26 @@ process.on(
     );
   }
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
