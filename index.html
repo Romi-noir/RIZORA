@@ -3325,8 +3325,13 @@ async function api(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  const authToken =
+    localStorage.getItem("rizoraToken") ||
+    token ||
+    "";
+
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
   }
 
   const apiBase =
@@ -9212,6 +9217,7 @@ document.addEventListener("pointerdown",function(e){
 
 </script></body>
 </html>
+
 
 
 
