@@ -1966,7 +1966,7 @@ async function handleRequest(
 // ============================================================
 
 if (method === "GET" && pathname === "/api/tasks") {
-  const user = getCurrentUser(req);
+  const user = getCurrentUser(db, req);
 
   if (!user) {
     return sendJSON(res, 401, {
@@ -6037,6 +6037,7 @@ process.on(
     );
   }
 );
+
 
 
 
