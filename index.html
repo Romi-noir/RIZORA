@@ -7482,10 +7482,20 @@ document.addEventListener("pointerdown",function(e){
   );
 }
 async function api(url, options){
-    const token = getToken();
+    const token =
+      getToken();
+
+    const apiBase =
+      window.RIZORA_API_BASE ||
+      "https://rizora-guse.onrender.com";
+
+    const finalUrl =
+      /^https?:\/\//i.test(url)
+        ? url
+        : apiBase + url;
 
     return fetch(
-      url,
+      finalUrl,
       {
         ...(options || {}),
         headers:{
@@ -7501,8 +7511,7 @@ async function api(url, options){
       }
     );
   }
-
-  function ensureStyles(){
+function ensureStyles(){
 
     if(
       document.getElementById(
