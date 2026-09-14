@@ -1,4 +1,4 @@
-﻿// RIZORA Backend — Version 8.1.0
+// RIZORA Backend — Version 8.1.0
 // Clean copy-paste version
 
 "use strict";
@@ -1271,41 +1271,52 @@ function serveStatic(
   res,
   pathname
 ) {
-  let requestedPath =
-    pathname;
+  let requestedPath = pathname;
 
   if (
     requestedPath === "/" ||
     requestedPath === ""
   ) {
-    requestedPath =
-      "/index.html";
+    requestedPath = "/index.html";
   }
 
-  let filePath =
-    path.normalize(
-      path.join(
-        ROOT,
-        requestedPath
-      )
-    );
-
-  if (!filePath.startsWith(ROOT)) {
-    sendError(
-      res,
-      403,
-      "Forbidden."
-    );
-
+  // Decode URL safely.
+  try {
+    requestedPath = decodeURIComponent(requestedPath);
+  } catch {
+    sendError(res, 400, "Bad request.");
     return;
   }
 
-  if (!fs.existsSync(filePath)) {
-    filePath =
-      path.join(
-        ROOT,
-        "index.html"
-      );
+  // Normalize separators and block traversal.
+  requestedPath = requestedPath.replace(/\\/g, "/");
+
+  if (
+    requestedPath.includes("\0") ||
+    requestedPath.includes("..")
+  ) {
+    sendError(res, 403, "Forbidden.");
+    return;
+  }
+
+  const relativePath =
+    requestedPath.replace(/^\/+/, "");
+
+  const filePath =
+    path.resolve(
+      ROOT,
+      relativePath
+    );
+
+  const rootPath =
+    path.resolve(ROOT);
+
+  if (
+    filePath !== rootPath &&
+    !filePath.startsWith(rootPath + path.sep)
+  ) {
+    sendError(res, 403, "Forbidden.");
+    return;
   }
 
   if (!fs.existsSync(filePath)) {
@@ -1314,12 +1325,10 @@ function serveStatic(
       404,
       "File not found."
     );
-
     return;
   }
 
-  const stat =
-    fs.statSync(filePath);
+  const stat = fs.statSync(filePath);
 
   if (!stat.isFile()) {
     sendError(
@@ -1327,14 +1336,24 @@ function serveStatic(
       404,
       "File not found."
     );
-
     return;
   }
 
   const ext =
-    path.extname(
-      filePath
-    ).toLowerCase();
+    path.extname(filePath).toLowerCase();
+
+  const isHtml =
+    ext === ".html";
+
+  const isAsset =
+    requestedPath.startsWith("/assets/");
+
+  const cacheControl =
+    isHtml
+      ? "no-cache, no-store, must-revalidate"
+      : isAsset
+        ? "public, max-age=31536000, immutable"
+        : "public, max-age=3600";
 
   res.writeHead(
     200,
@@ -1344,9 +1363,7 @@ function serveStatic(
         "application/octet-stream",
 
       "Cache-Control":
-        ext === ".html"
-          ? "no-cache"
-          : "public, max-age=3600",
+        cacheControl,
 
       "Access-Control-Allow-Origin":
         process.env.RIZORA_ALLOWED_ORIGINS ||
@@ -1356,9 +1373,18 @@ function serveStatic(
 
   fs.createReadStream(
     filePath
-  ).pipe(res);
+  ).on("error", () => {
+    if (!res.headersSent) {
+      sendError(
+        res,
+        500,
+        "Unable to read file."
+      );
+    } else {
+      res.destroy();
+    }
+  }).pipe(res);
 }
-
 
 // ============================================================
 // REQUEST HANDLER
