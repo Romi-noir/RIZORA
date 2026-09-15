@@ -1,8 +1,1 @@
-﻿{
-    "rewrites":  [
-                     {
-                         "destination":  "https://rizora-guse.onrender.com/api/ai/chat",
-                         "source":  "/api/ai/chat"
-                     }
-                 ]
-}
+{"rewrites":[{"source":"/api/ai/chat","destination":"https://rizora-guse.onrender.com/api/ai/chat"}]}
