@@ -6747,7 +6747,7 @@ document.addEventListener("pointerdown",function(e){
       var token = getToken();
 
       var response = await fetch(
-        window.location.origin + "/api/ai/chat",
+        "https://rizora-guse.onrender.com/api/ai/chat",
         {
           method:"POST",
           headers:{
@@ -7243,7 +7243,7 @@ document.addEventListener("pointerdown",function(e){
     try{
 
       var response = await fetch(
-        window.location.origin + "/api/ai/chat",
+        "https://rizora-guse.onrender.com/api/ai/chat",
         {
           method:"POST",
           credentials:"same-origin",
