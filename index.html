@@ -7524,6 +7524,14 @@ async function api(url, options){
     );
   }
 
+  data.ok = true;
+
+  if (typeof data.json !== "function") {
+    data.json = async function () {
+      return data;
+    };
+  }
+
   return data;
 }
 function ensureStyles(){
