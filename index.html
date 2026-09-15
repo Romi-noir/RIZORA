@@ -7482,11 +7482,10 @@ document.addEventListener("pointerdown",function(e){
   );
 }
 async function api(url, options){
-    const token =
-      getToken();
+    const currentToken =
+      localStorage.getItem("rizoraToken") || "";
 
     const apiBase =
-      window.RIZORA_API_BASE ||
       "https://rizora-guse.onrender.com";
 
     const finalUrl =
@@ -7494,20 +7493,21 @@ async function api(url, options){
         ? url
         : apiBase + url;
 
+    const headers = {
+      "Content-Type":"application/json",
+      ...((options && options.headers) || {})
+    };
+
+    if (currentToken) {
+      headers.Authorization =
+        "Bearer " + currentToken;
+    }
+
     return fetch(
       finalUrl,
       {
         ...(options || {}),
-        headers:{
-          "Content-Type":"application/json",
-          ...((options && options.headers) || {}),
-          ...(token
-            ? {
-                "Authorization":
-                  "Bearer " + token
-              }
-            : {})
-        }
+        headers
       }
     );
   }
