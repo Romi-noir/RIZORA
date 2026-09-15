@@ -7482,35 +7482,50 @@ document.addEventListener("pointerdown",function(e){
   );
 }
 async function api(url, options){
-    const currentToken =
-      localStorage.getItem("rizoraToken") || "";
+  const currentToken =
+    localStorage.getItem("rizoraToken") || "";
 
-    const apiBase =
-      "https://rizora-guse.onrender.com";
+  const apiBase =
+    "https://rizora-guse.onrender.com";
 
-    const finalUrl =
-      /^https?:\/\//i.test(url)
-        ? url
-        : apiBase + url;
+  const finalUrl =
+    /^https?:\/\//i.test(url)
+      ? url
+      : apiBase + url;
 
-    const headers = {
-      "Content-Type":"application/json",
-      ...((options && options.headers) || {})
-    };
+  const headers = {
+    "Content-Type": "application/json",
+    ...((options && options.headers) || {})
+  };
 
-    if (currentToken) {
-      headers.Authorization =
-        "Bearer " + currentToken;
-    }
+  if (currentToken) {
+    headers.Authorization =
+      "Bearer " + currentToken;
+  }
 
-    return fetch(
+  const response =
+    await fetch(
       finalUrl,
       {
         ...(options || {}),
         headers
       }
     );
+
+  const data =
+    await response.json().catch(
+      () => ({})
+    );
+
+  if (!response.ok) {
+    throw new Error(
+      data.error ||
+      "RIZORA API request failed."
+    );
   }
+
+  return data;
+}
 function ensureStyles(){
 
     if(
