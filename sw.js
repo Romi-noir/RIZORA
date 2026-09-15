@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = "rizora-v1";
+const CACHE_NAME = "rizora-v9";
 
 const APP_SHELL = [
   "/",
