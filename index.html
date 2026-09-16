@@ -9314,12 +9314,13 @@ function ensureStyles(){
 })();
 
 </script>
-<!-- RIZORA_EXISTING_MENU_UPGRADE -->
 
-<style id="rizora-existing-menu-upgrade">
+<!-- RIZORA_MENU_FUNCTIONAL_FIX -->
+
+<style>
 @media (max-width:900px){
 
-  #rzExistingMenuPanel{
+  #rzWorkingMenuPanel{
     display:none;
     position:fixed;
     top:0;
@@ -9327,16 +9328,16 @@ function ensureStyles(){
     width:min(350px,88vw);
     height:100dvh;
     height:100vh;
-    box-sizing:border-box;
-    padding:76px 16px 24px;
+    padding:80px 16px 24px;
     overflow-y:auto;
+    box-sizing:border-box;
     background:#100b18;
     border-left:1px solid rgba(255,255,255,.10);
     box-shadow:-20px 0 50px rgba(0,0,0,.45);
     z-index:2147483646;
   }
 
-  #rzExistingMenuBackdrop{
+  #rzWorkingMenuBackdrop{
     display:none;
     position:fixed;
     inset:0;
@@ -9344,7 +9345,7 @@ function ensureStyles(){
     z-index:2147483645;
   }
 
-  #rzExistingMenuClose{
+  #rzWorkingMenuClose{
     position:absolute;
     top:16px;
     right:16px;
@@ -9352,168 +9353,113 @@ function ensureStyles(){
     height:44px;
     border:0;
     border-radius:12px;
-    background:rgba(255,255,255,.07);
+    background:rgba(255,255,255,.08);
     color:#fff;
     font-size:24px;
-    font-weight:700;
   }
 
-  #rzExistingMenuPanel h3{
-    color:#fff;
+  #rzWorkingMenuPanelTitle{
     margin:0 0 20px;
+    color:#fff;
     font-size:22px;
     font-weight:800;
   }
 
-  .rz-existing-menu-item{
+  .rzWorkingMenuItem{
     width:100%;
     min-height:54px;
-    margin:0 0 10px;
-    padding:0 16px;
+    margin-bottom:10px;
     border:1px solid rgba(255,255,255,.08);
     border-radius:13px;
     background:rgba(255,255,255,.045);
     color:#fff;
     text-align:left;
+    padding:0 16px;
     font:inherit;
-    font-size:14px;
     font-weight:700;
     pointer-events:auto;
     touch-action:manipulation;
   }
 
-  .rz-existing-menu-item:active{
-    background:rgba(125,76,255,.28);
+  .rzWorkingMenuItem:active{
+    background:rgba(126,76,255,.28);
   }
 }
 
 @media (min-width:901px){
-  #rzExistingMenuPanel,
-  #rzExistingMenuBackdrop{
+  #rzWorkingMenuPanel,
+  #rzWorkingMenuBackdrop{
     display:none !important;
   }
 }
 </style>
 
-<div id="rzExistingMenuBackdrop"></div>
+<div id="rzWorkingMenuBackdrop"></div>
 
-<div id="rzExistingMenuPanel" aria-hidden="true">
+<div id="rzWorkingMenuPanel">
 
-  <button id="rzExistingMenuClose" type="button">×</button>
+  <button id="rzWorkingMenuClose" type="button">×</button>
 
-  <h3>RIZORA</h3>
+  <div id="rzWorkingMenuPanelTitle">RIZORA</div>
 
-  <button class="rz-existing-menu-item" data-rz-existing="dashboard" type="button">
-    Dashboard
-  </button>
-
-  <button class="rz-existing-menu-item" data-rz-existing="tasks" type="button">
-    Tasks
-  </button>
-
-  <button class="rz-existing-menu-item" data-rz-existing="boost" type="button">
-    Boost Center
-  </button>
-
-  <button class="rz-existing-menu-item" data-rz-existing="growth" type="button">
-    Creator Growth
-  </button>
-
-  <button class="rz-existing-menu-item" data-rz-existing="ai" type="button">
-    RIZORA AI
-  </button>
-
-  <button class="rz-existing-menu-item" data-rz-existing="referrals" type="button">
-    Referrals
-  </button>
-
-  <button class="rz-existing-menu-item" data-rz-existing="profile" type="button">
-    Profile
-  </button>
-
-  <button class="rz-existing-menu-item" data-rz-existing="settings" type="button">
-    Settings
-  </button>
-
-  <button class="rz-existing-menu-item" data-rz-existing="help" type="button">
-    Help Center
-  </button>
-
-  <button class="rz-existing-menu-item" data-rz-existing="logout" type="button">
-    Logout
-  </button>
+  <button class="rzWorkingMenuItem" data-rz-go="dashboard" type="button">Dashboard</button>
+  <button class="rzWorkingMenuItem" data-rz-go="tasks" type="button">Tasks</button>
+  <button class="rzWorkingMenuItem" data-rz-go="boost" type="button">Boost Center</button>
+  <button class="rzWorkingMenuItem" data-rz-go="growth" type="button">Creator Growth</button>
+  <button class="rzWorkingMenuItem" data-rz-go="ai" type="button">RIZORA AI</button>
+  <button class="rzWorkingMenuItem" data-rz-go="referrals" type="button">Referrals</button>
+  <button class="rzWorkingMenuItem" data-rz-go="profile" type="button">Profile</button>
+  <button class="rzWorkingMenuItem" data-rz-go="settings" type="button">Settings</button>
+  <button class="rzWorkingMenuItem" data-rz-go="help" type="button">Help Center</button>
+  <button class="rzWorkingMenuItem" data-rz-go="logout" type="button">Logout</button>
 
 </div>
 
 <script>
 (function(){
 
-  function normalize(v){
-    return String(v || "").toLowerCase().replace(/\s+/g," ").trim();
+  var menuButton = null;
+
+  function getText(el){
+    return String(
+      el.innerText ||
+      el.textContent ||
+      el.getAttribute("aria-label") ||
+      el.getAttribute("title") ||
+      ""
+    ).replace(/\s+/g," ").trim().toLowerCase();
   }
 
-  function existingMenuControls(){
+  function findOriginalMenu(){
 
-    var all = document.querySelectorAll(
-      'button,a,[role="button"],div[tabindex]'
+    var els = document.querySelectorAll(
+      "button,a,[role='button'],div[tabindex]"
     );
 
-    var found = [];
+    for(var i=0;i<els.length;i++){
 
-    for(var i=0;i<all.length;i++){
+      var t = getText(els[i]);
 
-      var el = all[i];
-
-      var text = normalize(
-        el.innerText ||
-        el.textContent ||
-        el.getAttribute("aria-label") ||
-        el.getAttribute("title") ||
-        ""
-      );
-
-      if(text === "menu" || text === "menu ☰" || text === "☰ menu"){
-        found.push(el);
+      if(
+        t === "menu" ||
+        t === "menu ☰" ||
+        t === "☰ menu"
+      ){
+        return els[i];
       }
-    }
-
-    return found;
-  }
-
-  function findFirstExistingMenu(){
-
-    var found = existingMenuControls();
-
-    if(found.length){
-      return found[0];
     }
 
     return null;
   }
 
-  function hideDuplicateMenus(first){
-
-    var found = existingMenuControls();
-
-    for(var i=1;i<found.length;i++){
-
-      if(found[i] !== first){
-        found[i].style.display = "none";
-        found[i].setAttribute("aria-hidden","true");
-        found[i].style.pointerEvents = "none";
-      }
-    }
-  }
-
   function openMenu(){
 
-    var panel = document.getElementById("rzExistingMenuPanel");
-    var back = document.getElementById("rzExistingMenuBackdrop");
+    var panel = document.getElementById("rzWorkingMenuPanel");
+    var back = document.getElementById("rzWorkingMenuBackdrop");
 
     if(!panel) return;
 
     panel.style.display = "block";
-    panel.setAttribute("aria-hidden","false");
 
     if(back){
       back.style.display = "block";
@@ -9524,12 +9470,11 @@ function ensureStyles(){
 
   function closeMenu(){
 
-    var panel = document.getElementById("rzExistingMenuPanel");
-    var back = document.getElementById("rzExistingMenuBackdrop");
+    var panel = document.getElementById("rzWorkingMenuPanel");
+    var back = document.getElementById("rzWorkingMenuBackdrop");
 
     if(panel){
       panel.style.display = "none";
-      panel.setAttribute("aria-hidden","true");
     }
 
     if(back){
@@ -9539,16 +9484,14 @@ function ensureStyles(){
     document.body.style.overflow = "";
   }
 
-  function call(names){
+  function callFunction(names){
 
     for(var i=0;i<names.length;i++){
 
       try{
 
         if(typeof window[names[i]] === "function"){
-
           window[names[i]]();
-
           return true;
         }
 
@@ -9558,35 +9501,21 @@ function ensureStyles(){
     return false;
   }
 
-  function clickText(words){
+  function clickExisting(words){
 
-    var els =
-      document.querySelectorAll(
-        'a,button,[role="button"]'
-      );
+    var els = document.querySelectorAll(
+      "a,button,[role='button']"
+    );
 
     for(var i=0;i<els.length;i++){
 
-      if(
-        els[i].closest &&
-        els[i].closest("#rzExistingMenuPanel")
-      ){
-        continue;
-      }
-
-      var text = normalize(
-        els[i].innerText ||
-        els[i].textContent ||
-        els[i].getAttribute("aria-label") ||
-        els[i].getAttribute("title") ||
-        ""
-      );
+      var t = getText(els[i]);
 
       for(var j=0;j<words.length;j++){
 
         if(
-          text === normalize(words[j]) ||
-          text.indexOf(normalize(words[j])) !== -1
+          t === words[j] ||
+          t.indexOf(words[j]) !== -1
         ){
 
           try{
@@ -9600,139 +9529,127 @@ function ensureStyles(){
     return false;
   }
 
-  function navigate(action){
+  function go(action){
 
     closeMenu();
 
     if(action === "dashboard"){
-      if(call([
+      if(callFunction([
         "showDashboard",
         "openDashboard",
-        "goDashboard",
-        "loadDashboard"
+        "goDashboard"
       ])) return;
 
-      if(clickText(["dashboard","home"])) return;
-
-      window.scrollTo({
-        top:0,
-        behavior:"smooth"
-      });
-
+      clickExisting(["dashboard","home"]);
       return;
     }
 
     if(action === "tasks"){
-      if(call([
+      if(callFunction([
         "showTasks",
         "openTasks",
-        "goTasks",
-        "loadTasks"
+        "goTasks"
       ])) return;
 
-      clickText(["tasks","daily tasks"]);
+      clickExisting(["tasks","daily tasks"]);
       return;
     }
 
     if(action === "boost"){
-      if(call([
+      if(callFunction([
         "openBoostCenter",
         "showBoostCenter",
-        "openBoost",
-        "showBoosts"
+        "openBoost"
       ])) return;
 
-      clickText(["boost center","boost"]);
+      clickExisting(["boost center","boost"]);
       return;
     }
 
     if(action === "growth"){
-      if(call([
+      if(callFunction([
         "openCreatorGrowth",
         "showCreatorGrowth",
-        "openGrowth",
-        "showGrowth"
+        "openGrowth"
       ])) return;
 
-      clickText(["creator growth","growth"]);
+      clickExisting(["creator growth","growth"]);
       return;
     }
 
     if(action === "ai"){
-      if(call([
+      if(callFunction([
         "openRizoraAI",
         "openRizoraAi",
         "openAI",
-        "showRizoraAI",
-        "showAI"
+        "showRizoraAI"
       ])) return;
 
-      clickText(["rizora ai","ai"]);
+      clickExisting(["rizora ai"]);
       return;
     }
 
     if(action === "referrals"){
-      if(call([
+      if(callFunction([
         "openReferrals",
         "showReferrals",
         "goReferrals"
       ])) return;
 
-      clickText(["referrals","referral"]);
+      clickExisting(["referrals","referral"]);
       return;
     }
 
     if(action === "profile"){
-      if(call([
+      if(callFunction([
         "openProfile",
         "showProfile",
         "goProfile"
       ])) return;
 
-      clickText(["profile","my profile"]);
+      clickExisting(["profile","my profile"]);
       return;
     }
 
     if(action === "settings"){
-      if(call([
+      if(callFunction([
         "openSettings",
         "showSettings",
         "goSettings"
       ])) return;
 
-      clickText(["settings"]);
+      clickExisting(["settings"]);
       return;
     }
 
     if(action === "help"){
-      if(call([
+      if(callFunction([
         "openHelpCenter",
         "showHelpCenter",
         "openHelp",
-        "showHelp",
         "openSupport",
         "showSupport"
       ])) return;
 
-      clickText([
+      clickExisting([
         "help center",
-        "help",
+        "customer service",
         "support",
-        "customer service"
+        "help"
       ]);
 
       return;
     }
 
     if(action === "logout"){
-      if(call([
+      if(callFunction([
         "logout",
         "rizoraLogout",
         "handleLogout",
         "signOut"
       ])) return;
 
-      clickText([
+      clickExisting([
         "logout",
         "sign out",
         "log out"
@@ -9742,19 +9659,25 @@ function ensureStyles(){
     }
   }
 
-  function init(){
+  function install(){
 
-    var original = findFirstExistingMenu();
+    menuButton = findOriginalMenu();
 
-    if(!original){
+    if(!menuButton){
+      console.warn("RIZORA MENU button not found");
       return;
     }
 
-    hideDuplicateMenus(original);
+    /*
+      Force the original MENU button to be tappable.
+    */
+    menuButton.style.pointerEvents = "auto";
+    menuButton.style.touchAction = "manipulation";
+    menuButton.style.cursor = "pointer";
 
     /*
-      Use a capture-phase pointer handler so the ORIGINAL
-      RIZORA MENU button remains the only menu control.
+      Capture the tap BEFORE existing RIZORA handlers.
+      This is what fixes the current dead button.
     */
     document.addEventListener(
       "pointerup",
@@ -9763,35 +9686,18 @@ function ensureStyles(){
         var target = e.target;
 
         if(
-          target.closest &&
-          target.closest("#rzExistingMenuPanel")
-        ){
-          return;
-        }
-
-        if(
-          target === original ||
-          (target.closest && target.closest("button,a,[role='button'],div[tabindex]") === original)
+          target === menuButton ||
+          (
+            target.closest &&
+            target.closest("button,a,[role='button'],div[tabindex]") === menuButton
+          )
         ){
 
-          var txt = normalize(
-            original.innerText ||
-            original.textContent ||
-            original.getAttribute("aria-label") ||
-            ""
-          );
+          e.preventDefault();
+          e.stopImmediatePropagation();
 
-          if(
-            txt === "menu" ||
-            txt === "menu ☰" ||
-            txt === "☰ menu"
-          ){
+          openMenu();
 
-            e.preventDefault();
-            e.stopPropagation();
-
-            openMenu();
-          }
         }
 
       },
@@ -9805,14 +9711,18 @@ function ensureStyles(){
         var target = e.target;
 
         if(
-          target === original ||
-          (target.closest && target.closest("button,a,[role='button'],div[tabindex]") === original)
+          target === menuButton ||
+          (
+            target.closest &&
+            target.closest("button,a,[role='button'],div[tabindex]") === menuButton
+          )
         ){
 
           e.preventDefault();
-          e.stopPropagation();
+          e.stopImmediatePropagation();
 
           openMenu();
+
         }
 
       },
@@ -9827,33 +9737,33 @@ function ensureStyles(){
 
         if(
           target.closest &&
-          target.closest("#rzExistingMenuClose")
+          target.closest("#rzWorkingMenuClose")
         ){
 
           e.preventDefault();
-          e.stopPropagation();
+          e.stopImmediatePropagation();
 
           closeMenu();
 
           return;
         }
 
-        if(target.id === "rzExistingMenuBackdrop"){
+        if(target.id === "rzWorkingMenuBackdrop"){
           closeMenu();
           return;
         }
 
         var item =
           target.closest &&
-          target.closest("[data-rz-existing]");
+          target.closest("[data-rz-go]");
 
         if(item){
 
           e.preventDefault();
-          e.stopPropagation();
+          e.stopImmediatePropagation();
 
-          navigate(
-            item.getAttribute("data-rz-existing")
+          go(
+            item.getAttribute("data-rz-go")
           );
         }
 
@@ -9869,29 +9779,18 @@ function ensureStyles(){
 
     });
 
-    window.addEventListener("resize",function(){
-
-      if(window.innerWidth > 900){
-        closeMenu();
-      }
-
-      hideDuplicateMenus(original);
-
-    });
-
-    console.log("RIZORA original MENU upgraded");
   }
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded",init);
+    document.addEventListener("DOMContentLoaded",install);
   }else{
-    init();
+    install();
   }
 
 })();
 </script>
 
-<!-- /RIZORA_EXISTING_MENU_UPGRADE -->
+<!-- /RIZORA_MENU_FUNCTIONAL_FIX -->
 </body>
 </html>
 
