@@ -2903,17 +2903,7 @@ bring creators together through tasks, growth and rewards.
           generate ideas and test different hooks.
         </p>
 
-        <div class="creator-actions">
-          <button class="btn" onclick="creatorTab(null,'creatorTools')">
-            Open Content Tools
-          </button>
-          <button class="btn secondary" onclick="creatorTab(null,'creatorProfile')">
-            Build Creator Profile
-          </button>
-          <button class="btn secondary" onclick="creatorTab(null,'creatorExperiments')">
-            Start Experiment
-          </button>
-        </div>
+        
       </div>
 
       <div class="card">
@@ -9607,9 +9597,11 @@ function ensureStyles(){
 </script>
 
 <!-- /RIZORA_MENU_AUTH_GATE -->
+
+
 <!-- RIZORA_MENU_FUNCTIONAL_FIX -->
 
-<style id="rizora-menu-feature-style">
+<style id="rizora-real-menu-style">
 
 @media (max-width:900px){
 
@@ -9618,6 +9610,7 @@ function ensureStyles(){
     position:fixed;
     top:0;
     right:0;
+
     width:min(350px,88vw);
     height:100dvh;
     height:100vh;
@@ -9632,9 +9625,7 @@ function ensureStyles(){
     overflow-y:auto;
 
     background:#100b18;
-
     border-left:1px solid rgba(255,255,255,.10);
-
     box-shadow:-20px 0 50px rgba(0,0,0,.45);
 
     z-index:2147483646;
@@ -9698,6 +9689,7 @@ function ensureStyles(){
     text-align:left;
 
     font:inherit;
+    font-size:14px;
     font-weight:700;
 
     pointer-events:auto;
@@ -9710,7 +9702,6 @@ function ensureStyles(){
     background:rgba(126,76,255,.28);
     transform:scale(.985);
   }
-
 }
 
 @media (min-width:901px){
@@ -9734,87 +9725,45 @@ function ensureStyles(){
     aria-label="Close menu"
   >×</button>
 
-  <div id="rzWorkingMenuPanelTitle">
-    RIZORA
-  </div>
+  <div id="rzWorkingMenuPanelTitle">RIZORA</div>
 
-  <button
-    class="rzWorkingMenuItem"
-    data-rz-go="boost"
-    type="button"
-  >
+  <button class="rzWorkingMenuItem" data-rz-go="boost" type="button">
     Boost Studio
   </button>
 
-  <button
-    class="rzWorkingMenuItem"
-    data-rz-go="tasks"
-    type="button"
-  >
+  <button class="rzWorkingMenuItem" data-rz-go="tasks" type="button">
     Tasks
   </button>
 
-  <button
-    class="rzWorkingMenuItem"
-    data-rz-go="content"
-    type="button"
-  >
+  <button class="rzWorkingMenuItem" data-rz-go="content" type="button">
     Content Tools
   </button>
 
-  <button
-    class="rzWorkingMenuItem"
-    data-rz-go="analytics"
-    type="button"
-  >
+  <button class="rzWorkingMenuItem" data-rz-go="analytics" type="button">
     Analytics
   </button>
 
-  <button
-    class="rzWorkingMenuItem"
-    data-rz-go="leaderboard"
-    type="button"
-  >
+  <button class="rzWorkingMenuItem" data-rz-go="leaderboard" type="button">
     Leaderboard
   </button>
 
-  <button
-    class="rzWorkingMenuItem"
-    data-rz-go="community"
-    type="button"
-  >
+  <button class="rzWorkingMenuItem" data-rz-go="community" type="button">
     Community
   </button>
 
-  <button
-    class="rzWorkingMenuItem"
-    data-rz-go="experiments"
-    type="button"
-  >
+  <button class="rzWorkingMenuItem" data-rz-go="experiments" type="button">
     Experiment Lab
   </button>
 
-  <button
-    class="rzWorkingMenuItem"
-    data-rz-go="history"
-    type="button"
-  >
+  <button class="rzWorkingMenuItem" data-rz-go="history" type="button">
     History
   </button>
 
-  <button
-    class="rzWorkingMenuItem"
-    data-rz-go="profile"
-    type="button"
-  >
+  <button class="rzWorkingMenuItem" data-rz-go="profile" type="button">
     Profile
   </button>
 
-  <button
-    class="rzWorkingMenuItem"
-    data-rz-go="settings"
-    type="button"
-  >
+  <button class="rzWorkingMenuItem" data-rz-go="settings" type="button">
     Settings
   </button>
 
@@ -9822,15 +9771,6 @@ function ensureStyles(){
 
 <script>
 (function(){
-
-  function normalize(value){
-
-    return String(value || "")
-      .replace(/\s+/g," ")
-      .trim()
-      .toLowerCase();
-
-  }
 
   function openMenu(){
 
@@ -9852,7 +9792,6 @@ function ensureStyles(){
     }
 
     document.body.style.overflow="hidden";
-
   }
 
   function closeMenu(){
@@ -9873,383 +9812,113 @@ function ensureStyles(){
     }
 
     document.body.style.overflow="";
-
   }
 
-  function callExistingFunction(names){
-
-    for(var i=0;i<names.length;i++){
-
-      try{
-
-        var fn =
-          window[names[i]];
-
-        if(typeof fn==="function"){
-
-          fn();
-
-          return true;
-
-        }
-
-      }catch(error){}
-
-    }
-
-    return false;
-
-  }
-
-  /*
-    Search only REAL RIZORA UI outside our mobile menu.
-  */
-  function findRealTarget(words){
-
-    var selectors = [
-      "nav a",
-      "nav button",
-      "header a",
-      "header button",
-      "main a",
-      "main button",
-      "[data-section]",
-      "[data-view]",
-      "[data-page]",
-      "[data-tab]",
-      "[id]"
-    ];
-
-    var candidates=[];
-
-    for(var s=0;s<selectors.length;s++){
-
-      var elements =
-        document.querySelectorAll(
-          selectors[s]
-        );
-
-      for(var i=0;i<elements.length;i++){
-
-        var element=elements[i];
-
-        if(
-          element.closest &&
-          (
-            element.closest("#rzWorkingMenuPanel") ||
-            element.closest("#rzWorkingMenuBackdrop")
-          )
-        ){
-          continue;
-        }
-
-        if(candidates.indexOf(element)===-1){
-          candidates.push(element);
-        }
-
-      }
-
-    }
-
-    for(var i=0;i<candidates.length;i++){
-
-      var element=candidates[i];
-
-      var text=normalize(
-        [
-          element.innerText,
-          element.textContent,
-          element.getAttribute("aria-label"),
-          element.getAttribute("title"),
-          element.getAttribute("data-section"),
-          element.getAttribute("data-view"),
-          element.getAttribute("data-page"),
-          element.getAttribute("data-tab"),
-          element.id
-        ].join(" ")
-      );
-
-      if(!text){
-        continue;
-      }
-
-      for(var j=0;j<words.length;j++){
-
-        var wanted=normalize(words[j]);
-
-        if(
-          text===wanted ||
-          text.indexOf(wanted)!==-1
-        ){
-
-          return element;
-
-        }
-
-      }
-
-    }
-
-    return null;
-  }
-
-  function activateTarget(element){
-
-    if(!element){
-      return false;
-    }
-
-    try{
-
-      element.dispatchEvent(
-        new MouseEvent(
-          "click",
-          {
-            bubbles:true,
-            cancelable:true,
-            view:window
-          }
-        )
-      );
-
-      return true;
-
-    }catch(error){}
-
-    try{
-
-      element.click();
-
-      return true;
-
-    }catch(error){}
-
-    return false;
-  }
-
-  function go(action){
+  function runFeature(action){
 
     closeMenu();
 
     /*
-      Every menu item first uses an existing RIZORA
-      function when one is actually defined.
+      These IDs and functions come directly from the
+      RIZORA source you inspected.
     */
 
     if(action==="boost"){
 
-      if(callExistingFunction([
-        "openBoostCenter",
-        "showBoostCenter",
-        "openBoostStudio",
-        "showBoostStudio",
-        "openBoost",
-        "showBoosts"
-      ])){
-        return;
-      }
-
-      activateTarget(
-        findRealTarget([
-          "boost studio",
-          "boost center",
-          "boost"
-        ])
-      );
-
-      return;
-    }
-
-    if(action==="tasks"){
-
-      if(callExistingFunction([
-        "showTasks",
-        "openTasks",
-        "goTasks",
-        "loadTasks"
-      ])){
-        return;
-      }
-
-      activateTarget(
-        findRealTarget([
-          "tasks",
-          "daily tasks"
-        ])
-      );
-
+      creatorTab(null,"creatorBoost");
       return;
     }
 
     if(action==="content"){
 
-      if(callExistingFunction([
-        "openContentTools",
-        "showContentTools",
-        "openContent",
-        "showContentTools",
-        "openCreatorTools"
-      ])){
-        return;
-      }
-
-      activateTarget(
-        findRealTarget([
-          "content tools",
-          "content",
-          "creator tools"
-        ])
-      );
-
+      creatorTab(null,"creatorTools");
       return;
     }
 
     if(action==="analytics"){
 
-      if(callExistingFunction([
-        "openAnalytics",
-        "showAnalytics",
-        "openCreatorAnalytics",
-        "showCreatorAnalytics"
-      ])){
-        return;
-      }
-
-      activateTarget(
-        findRealTarget([
-          "analytics",
-          "creator analytics"
-        ])
-      );
-
+      creatorTab(null,"creatorAnalytics");
       return;
     }
 
     if(action==="leaderboard"){
 
-      if(callExistingFunction([
-        "openLeaderboard",
-        "showLeaderboard",
-        "goLeaderboard"
-      ])){
-        return;
-      }
-
-      activateTarget(
-        findRealTarget([
-          "leaderboard",
-          "leader board"
-        ])
-      );
-
+      creatorTab(null,"creatorLeaderboard");
       return;
     }
 
     if(action==="community"){
 
-      if(callExistingFunction([
-        "openCommunity",
-        "showCommunity",
-        "goCommunity"
-      ])){
-        return;
-      }
-
-      activateTarget(
-        findRealTarget([
-          "community"
-        ])
-      );
-
+      creatorTab(null,"creatorCommunity");
       return;
     }
 
     if(action==="experiments"){
 
-      if(callExistingFunction([
-        "openExperiments",
-        "showExperiments",
-        "openExperimentLab",
-        "showExperimentLab"
-      ])){
-        return;
-      }
-
-      activateTarget(
-        findRealTarget([
-          "experiment lab",
-          "experiments",
-          "experiment"
-        ])
-      );
-
+      creatorTab(null,"creatorExperiments");
       return;
     }
 
     if(action==="history"){
 
-      if(callExistingFunction([
-        "openHistory",
-        "showHistory",
-        "goHistory"
-      ])){
-        return;
-      }
-
-      activateTarget(
-        findRealTarget([
-          "history"
-        ])
-      );
-
+      creatorTab(null,"creatorHistory");
       return;
     }
 
     if(action==="profile"){
 
-      if(callExistingFunction([
-        "openProfile",
-        "showProfile",
-        "goProfile",
-        "openCreatorProfile"
-      ])){
-        return;
-      }
-
-      activateTarget(
-        findRealTarget([
-          "profile",
-          "my profile"
-        ])
-      );
-
+      creatorTab(null,"creatorProfile");
       return;
     }
 
     if(action==="settings"){
 
-      if(callExistingFunction([
-        "openSettings",
-        "showSettings",
-        "goSettings"
-      ])){
-        return;
-      }
-
-      activateTarget(
-        findRealTarget([
-          "settings"
-        ])
-      );
-
+      creatorTab(null,"creatorSettings");
       return;
     }
 
+    if(action==="tasks"){
+
+      /*
+        Tasks is the actual main dashboard section:
+        <section id="tasks" class="tasks">
+      */
+
+      try{
+
+        showDashboard();
+
+      }catch(e){}
+
+      try{
+
+        loadTasks();
+
+      }catch(e){}
+
+      setTimeout(function(){
+
+        var tasks =
+          document.getElementById("tasks");
+
+        if(tasks){
+
+          tasks.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+          });
+
+        }
+
+      },100);
+
+      return;
+    }
   }
 
-  function findOriginalMenuButton(){
+  function findOriginalMenu(){
 
-    var elements=
+    var elements =
       document.querySelectorAll(
         "button,a,[role='button'],div[tabindex]"
       );
@@ -10258,27 +9927,33 @@ function ensureStyles(){
 
       if(
         elements[i].closest &&
-        elements[i].closest("#rzWorkingMenuPanel")
+        elements[i].closest(
+          "#rzWorkingMenuPanel"
+        )
       ){
         continue;
       }
 
-      var text=normalize(
+      var text=String(
         elements[i].innerText ||
         elements[i].textContent ||
         elements[i].getAttribute("aria-label") ||
         elements[i].getAttribute("title") ||
         ""
-      );
+      )
+      .replace(/\s+/g," ")
+      .trim()
+      .toLowerCase();
 
       if(
         text==="menu" ||
         text==="menu ☰" ||
         text==="☰ menu"
       ){
-        return elements[i];
-      }
 
+        return elements[i];
+
+      }
     }
 
     return null;
@@ -10287,12 +9962,14 @@ function ensureStyles(){
   function install(){
 
     var originalMenu =
-      findOriginalMenuButton();
+      findOriginalMenu();
 
     if(!originalMenu){
+
       console.warn(
-        "RIZORA original MENU button not found."
+        "RIZORA MENU button not found."
       );
+
       return;
     }
 
@@ -10383,7 +10060,7 @@ function ensureStyles(){
           return;
         }
 
-        var item=
+        var item =
           target.closest &&
           target.closest(
             "[data-rz-go]"
@@ -10394,7 +10071,7 @@ function ensureStyles(){
           event.preventDefault();
           event.stopImmediatePropagation();
 
-          go(
+          runFeature(
             item.getAttribute(
               "data-rz-go"
             )
@@ -10411,7 +10088,9 @@ function ensureStyles(){
       function(event){
 
         if(event.key==="Escape"){
+
           closeMenu();
+
         }
 
       }
@@ -10436,191 +10115,6 @@ function ensureStyles(){
 </script>
 
 <!-- /RIZORA_MENU_FUNCTIONAL_FIX -->
-<!-- RIZORA_OVERVIEW_MENU_CLEANUP -->
-
-<script>
-(function(){
-
-  var featureNames = [
-    "boost studio",
-    "boost center",
-    "tasks",
-    "content tools",
-    "analytics",
-    "leaderboard",
-    "community",
-    "experiment lab",
-    "experiments",
-    "history",
-    "profile",
-    "settings"
-  ];
-
-  function norm(v){
-    return String(v || "")
-      .replace(/\s+/g," ")
-      .trim()
-      .toLowerCase();
-  }
-
-  function getOverviewRoot(){
-
-    var headings =
-      document.querySelectorAll(
-        "h1,h2,h3,h4,[data-section],[data-view]"
-      );
-
-    for(var i=0;i<headings.length;i++){
-
-      var text=norm(
-        headings[i].innerText ||
-        headings[i].textContent ||
-        headings[i].getAttribute("data-section") ||
-        headings[i].getAttribute("data-view") ||
-        ""
-      );
-
-      if(
-        text==="overview" ||
-        text.indexOf("overview")!==-1
-      ){
-
-        var root =
-          headings[i].closest(
-            "section,article,.section,.panel,.page,main,div"
-          );
-
-        if(root){
-          return root;
-        }
-
-      }
-
-    }
-
-    return null;
-  }
-
-  function shouldHide(text){
-
-    text=norm(text);
-
-    if(!text || text.length>180){
-      return false;
-    }
-
-    for(var i=0;i<featureNames.length;i++){
-
-      if(
-        text===featureNames[i] ||
-        text.indexOf(featureNames[i])!==-1
-      ){
-        return true;
-      }
-
-    }
-
-    return false;
-  }
-
-  function cleanup(){
-
-    var overview=
-      getOverviewRoot();
-
-    if(!overview){
-      return;
-    }
-
-    var elements=
-      overview.querySelectorAll(
-        "article,li,[class*='card'],[class*='tile'],[class*='panel'],[data-card],section,button,a"
-      );
-
-    for(var i=0;i<elements.length;i++){
-
-      var element=elements[i];
-
-      var text=norm(
-        element.innerText ||
-        element.textContent ||
-        ""
-      );
-
-      if(!shouldHide(text)){
-        continue;
-      }
-
-      /*
-        Don't hide the entire Overview container.
-        Hide the smallest useful feature card.
-      */
-      if(
-        element.matches &&
-        element.matches(
-          "button,a"
-        )
-      ){
-
-        var parent=
-          element.closest(
-            "article,li,[class*='card'],[class*='tile'],[class*='panel'],[data-card]"
-          );
-
-        if(parent && parent!==overview){
-          parent.style.display="none";
-        }
-
-      }else{
-
-        element.style.display="none";
-
-      }
-
-    }
-
-  }
-
-  if(document.readyState==="loading"){
-
-    document.addEventListener(
-      "DOMContentLoaded",
-      cleanup
-    );
-
-  }else{
-
-    cleanup();
-
-  }
-
-  /*
-    RIZORA is heavily dynamic, so run the cleanup again
-    when dashboard content is rendered.
-  */
-  var observer=
-    new MutationObserver(
-      function(){
-        cleanup();
-      }
-    );
-
-  if(document.body){
-
-    observer.observe(
-      document.body,
-      {
-        childList:true,
-        subtree:true
-      }
-    );
-
-  }
-
-})();
-</script>
-
-<!-- /RIZORA_OVERVIEW_MENU_CLEANUP -->
 </body>
 </html>
 
