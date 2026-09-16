@@ -4620,30 +4620,139 @@ async function runCreatorTool(
 
 async function loadAdminDashboard(){
 
-  if(!isSuperAdmin()) return;
+  if(!isSuperAdmin()){
+    return;
+  }
 
   try{
 
-    const result =
-      await api(
-        "/api/superadmin/dashboard"
+    const results =
+      await Promise.all([
+        api("/api/admin/stats"),
+        api("/api/admin/users"),
+        api("/api/admin/referrals"),
+        api("/api/admin/tasks"),
+        api("/api/admin/audit")
+      ]);
+
+    const statsResult =
+      results[0] || {};
+
+    const usersResult =
+      results[1] || {};
+
+    const referralsResult =
+      results[2] || {};
+
+    const tasksResult =
+      results[3] || {};
+
+    const auditResult =
+      results[4] || {};
+
+    const users =
+      Array.isArray(usersResult.users)
+        ? usersResult.users
+        : [];
+
+    const referrals =
+      Array.isArray(referralsResult.referrals)
+        ? referralsResult.referrals
+        : [];
+
+    const tasks =
+      Array.isArray(tasksResult.tasks)
+        ? tasksResult.tasks
+        : [];
+
+    const audit =
+      Array.isArray(auditResult.logs)
+        ? auditResult.logs
+        : Array.isArray(auditResult.audit)
+          ? auditResult.audit
+          : [];
+
+    const rawStats =
+      statsResult.stats || {};
+
+    const blockedUsers =
+      users.filter(function(user){
+        return String(user.status || "").toLowerCase() === "blocked";
+      }).length;
+
+    const superAdmins =
+      users.filter(function(user){
+        return String(user.role || "").toLowerCase() === "super_admin";
+      }).length;
+
+    const totalTaskCompletions =
+      Number(
+        rawStats.taskCompletions ||
+        rawStats.totalTaskCompletions ||
+        0
+      );
+
+    const totalReferrals =
+      Number(
+        rawStats.referrals ||
+        rawStats.totalReferrals ||
+        referrals.length ||
+        0
       );
 
     adminData = {
-      stats:
-        result.stats || {},
 
-      users:
-        result.users || [],
+      stats: {
+        ...rawStats,
 
-      tasks:
-        result.tasks || [],
+        totalUsers:
+          Number(
+            rawStats.totalUsers ??
+            users.length ??
+            0
+          ),
 
-      referrals:
-        result.referrals || [],
+        activeUsers:
+          Number(
+            rawStats.activeUsers ??
+            users.filter(function(user){
+              return String(user.status || "").toLowerCase() === "active";
+            }).length
+          ),
 
-      audit:
-        result.audit || []
+        blockedUsers,
+
+        admins:
+          Number(
+            rawStats.admins ??
+            users.filter(function(user){
+              const role =
+                String(user.role || "").toLowerCase();
+
+              return role === "admin" ||
+                     role === "super_admin";
+            }).length
+          ),
+
+        superAdmins,
+
+        totalPoints:
+          Number(
+            rawStats.totalPoints ??
+            users.reduce(function(total,user){
+              return total + Number(user.points || 0);
+            },0)
+          ),
+
+        totalTaskCompletions,
+
+        totalReferrals
+      },
+
+      users,
+      tasks,
+      referrals,
+      audit
     };
 
     renderAdminStats();
@@ -4655,20 +4764,15 @@ async function loadAdminDashboard(){
 
   }catch(error){
 
-    showToast(
-      error.message
+    console.error(
+      "Command Center data load failed:",
+      error
     );
 
-    if(
+    showToast(
+      "Command Center: " +
       error.message
-        .toLowerCase()
-        .includes("super admin")
-    ){
-
-      showDashboard();
-
-    }
-
+    );
   }
 }
 
@@ -5083,7 +5187,7 @@ async function adminChangeRole(
 
     const result =
       await api(
-        "/api/superadmin/users/role",
+        "/api/admin/users/role",
         {
           method:"POST",
           body:
@@ -5118,7 +5222,7 @@ async function adminChangeStatus(
 
     const result =
       await api(
-        "/api/superadmin/users/status",
+        "/api/admin/users/status",
         {
           method:"POST",
           body:
@@ -5168,7 +5272,7 @@ async function adminChangePoints(
 
     const result =
       await api(
-        "/api/superadmin/users/points",
+        "/api/admin/users/points",
         {
           method:"POST",
           body:
