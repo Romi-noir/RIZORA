@@ -11339,500 +11339,742 @@ function ensureStyles(){
 <!-- ============================================================
      END RIZORA_HAMBURGER_MENU
 ============================================================= -->
-<!-- RIZORA_HAMBURGER_TOUCH_HOTFIX_V2 -->
-<style id="rizora-hamburger-touch-fix">
-#rzHamburgerButton{
-  position:fixed !important;
-  top:calc(env(safe-area-inset-top,0px) + 76px) !important;
-  right:14px !important;
-  z-index:2147483647 !important;
-  width:52px !important;
-  height:52px !important;
-  min-width:52px !important;
-  min-height:52px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  opacity:1 !important;
-  visibility:visible !important;
-  pointer-events:auto !important;
-  touch-action:manipulation !important;
-  -webkit-tap-highlight-color:transparent !important;
-  cursor:pointer !important;
+
+<!-- RIZORA_MOBILE_MENU_REPLACEMENT -->
+
+<style id="rizora-mobile-menu-replacement">
+
+#rzMobileMenuButton{
+  display:none;
 }
 
-#rzHamburgerButton *{
-  pointer-events:none !important;
+@media (max-width: 900px){
+
+  #rzMobileMenuButton{
+    display:flex !important;
+    position:fixed !important;
+
+    top:calc(env(safe-area-inset-top,0px) + 12px) !important;
+    right:14px !important;
+
+    width:92px !important;
+    height:48px !important;
+
+    align-items:center !important;
+    justify-content:center !important;
+
+    border:1px solid rgba(255,255,255,.18) !important;
+    border-radius:14px !important;
+
+    background:linear-gradient(
+      135deg,
+      rgba(130,70,255,.98),
+      rgba(72,32,180,.98)
+    ) !important;
+
+    color:#fff !important;
+
+    font-size:15px !important;
+    font-weight:800 !important;
+    letter-spacing:1.2px !important;
+
+    box-shadow:
+      0 8px 30px rgba(70,25,180,.35),
+      0 2px 8px rgba(0,0,0,.35) !important;
+
+    z-index:2147483647 !important;
+
+    pointer-events:auto !important;
+    touch-action:manipulation !important;
+    -webkit-tap-highlight-color:transparent !important;
+
+    cursor:pointer !important;
+  }
+
+  #rzMobileMenuButton:active{
+    transform:scale(.96) !important;
+  }
+
+  #rzMobileMenuOverlay{
+    display:none;
+    position:fixed !important;
+    inset:0 !important;
+
+    background:rgba(0,0,0,.58) !important;
+    backdrop-filter:blur(4px) !important;
+    -webkit-backdrop-filter:blur(4px) !important;
+
+    z-index:2147483645 !important;
+
+    pointer-events:none;
+  }
+
+  #rzMobileMenuPanel{
+    display:none;
+    position:fixed !important;
+
+    top:0 !important;
+    right:0 !important;
+
+    width:min(88vw,360px) !important;
+    height:100dvh !important;
+    height:100vh !important;
+
+    padding:
+      calc(env(safe-area-inset-top,0px) + 76px)
+      18px
+      calc(env(safe-area-inset-bottom,0px) + 24px) !important;
+
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+
+    background:
+      linear-gradient(
+        180deg,
+        #171022 0%,
+        #0b0811 100%
+      ) !important;
+
+    border-left:1px solid rgba(255,255,255,.10) !important;
+
+    box-shadow:-18px 0 50px rgba(0,0,0,.45) !important;
+
+    z-index:2147483646 !important;
+
+    pointer-events:auto !important;
+    touch-action:pan-y !important;
+  }
+
+  #rzMobileMenuClose{
+    position:absolute !important;
+    top:calc(env(safe-area-inset-top,0px) + 14px) !important;
+    right:16px !important;
+
+    width:46px !important;
+    height:46px !important;
+
+    border:1px solid rgba(255,255,255,.15) !important;
+    border-radius:12px !important;
+
+    background:rgba(255,255,255,.07) !important;
+    color:#fff !important;
+
+    font-size:24px !important;
+    font-weight:700 !important;
+
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+
+    pointer-events:auto !important;
+    touch-action:manipulation !important;
+  }
+
+  #rzMobileMenuTitle{
+    color:#fff !important;
+    font-size:24px !important;
+    font-weight:900 !important;
+    letter-spacing:.5px !important;
+    margin:0 0 22px !important;
+  }
+
+  #rzMobileMenuSubtitle{
+    color:rgba(255,255,255,.52) !important;
+    font-size:13px !important;
+    margin:-12px 0 22px !important;
+  }
+
+  .rz-mobile-menu-item{
+    width:100% !important;
+    min-height:58px !important;
+
+    margin:0 0 10px !important;
+
+    padding:14px 16px !important;
+
+    border:1px solid rgba(255,255,255,.09) !important;
+    border-radius:16px !important;
+
+    background:rgba(255,255,255,.055) !important;
+    color:#fff !important;
+
+    text-align:left !important;
+
+    font-size:15px !important;
+    font-weight:700 !important;
+
+    display:flex !important;
+    align-items:center !important;
+    gap:12px !important;
+
+    pointer-events:auto !important;
+    touch-action:manipulation !important;
+    -webkit-tap-highlight-color:transparent !important;
+  }
+
+  .rz-mobile-menu-item:active{
+    background:rgba(138,82,255,.30) !important;
+    transform:scale(.985) !important;
+  }
+
+  .rz-mobile-menu-icon{
+    width:34px !important;
+    height:34px !important;
+
+    flex:0 0 34px !important;
+
+    border-radius:10px !important;
+
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+
+    background:rgba(132,75,255,.18) !important;
+    color:#cdb9ff !important;
+
+    font-size:17px !important;
+  }
+
 }
 
-#rzHamburgerOverlay{
-  z-index:2147483645 !important;
+@media (min-width:901px){
+  #rzMobileMenuButton,
+  #rzMobileMenuOverlay,
+  #rzMobileMenuPanel{
+    display:none !important;
+  }
 }
 
-#rzHamburgerPanel{
-  z-index:2147483646 !important;
-  pointer-events:auto !important;
-  touch-action:pan-y !important;
-}
-
-#rzHamburgerPanel [data-rz-menu]{
-  position:relative !important;
-  z-index:2147483647 !important;
-  pointer-events:auto !important;
-  touch-action:manipulation !important;
-  -webkit-tap-highlight-color:transparent !important;
-  cursor:pointer !important;
-}
 </style>
+
+<button
+  id="rzMobileMenuButton"
+  type="button"
+  aria-label="Open RIZORA menu"
+>
+  MENU
+</button>
+
+<div id="rzMobileMenuOverlay"></div>
+
+<aside
+  id="rzMobileMenuPanel"
+  aria-hidden="true"
+>
+
+  <button
+    id="rzMobileMenuClose"
+    type="button"
+    aria-label="Close menu"
+  >
+    ×
+  </button>
+
+  <div id="rzMobileMenuTitle">RIZORA</div>
+  <div id="rzMobileMenuSubtitle">Navigate your creator space</div>
+
+  <button class="rz-mobile-menu-item" data-rz-mobile="dashboard" type="button">
+    <span class="rz-mobile-menu-icon">⌂</span>
+    <span>Dashboard</span>
+  </button>
+
+  <button class="rz-mobile-menu-item" data-rz-mobile="tasks" type="button">
+    <span class="rz-mobile-menu-icon">✓</span>
+    <span>Tasks</span>
+  </button>
+
+  <button class="rz-mobile-menu-item" data-rz-mobile="boost" type="button">
+    <span class="rz-mobile-menu-icon">↗</span>
+    <span>Boost Center</span>
+  </button>
+
+  <button class="rz-mobile-menu-item" data-rz-mobile="growth" type="button">
+    <span class="rz-mobile-menu-icon">★</span>
+    <span>Creator Growth</span>
+  </button>
+
+  <button class="rz-mobile-menu-item" data-rz-mobile="ai" type="button">
+    <span class="rz-mobile-menu-icon">✦</span>
+    <span>RIZORA AI</span>
+  </button>
+
+  <button class="rz-mobile-menu-item" data-rz-mobile="referrals" type="button">
+    <span class="rz-mobile-menu-icon">♧</span>
+    <span>Referrals</span>
+  </button>
+
+  <button class="rz-mobile-menu-item" data-rz-mobile="help" type="button">
+    <span class="rz-mobile-menu-icon">?</span>
+    <span>Help Center</span>
+  </button>
+
+</aside>
 
 <script>
 (function(){
-  "use strict";
 
-  function bootRizoraHamburgerFix(){
+  function rzOpenMobileMenu(){
 
-    var button = document.getElementById("rzHamburgerButton");
-    var overlay = document.getElementById("rzHamburgerOverlay");
-    var panel = document.getElementById("rzHamburgerPanel");
+    var panel =
+      document.getElementById("rzMobileMenuPanel");
+
+    var overlay =
+      document.getElementById("rzMobileMenuOverlay");
+
+    if(!panel){
+      return;
+    }
+
+    panel.style.display = "block";
+    panel.setAttribute("aria-hidden","false");
+
+    if(overlay){
+      overlay.style.display = "block";
+      overlay.style.pointerEvents = "auto";
+    }
+
+    document.body.style.overflow = "hidden";
+  }
+
+  function rzCloseMobileMenu(){
+
+    var panel =
+      document.getElementById("rzMobileMenuPanel");
+
+    var overlay =
+      document.getElementById("rzMobileMenuOverlay");
+
+    if(panel){
+      panel.style.display = "none";
+      panel.setAttribute("aria-hidden","true");
+    }
+
+    if(overlay){
+      overlay.style.display = "none";
+      overlay.style.pointerEvents = "none";
+    }
+
+    document.body.style.overflow = "";
+  }
+
+  function rzCall(names){
+
+    for(var i=0;i<names.length;i++){
+
+      try{
+
+        if(
+          typeof window[names[i]] === "function"
+        ){
+
+          window[names[i]]();
+
+          return true;
+        }
+
+      }catch(e){}
+    }
+
+    return false;
+  }
+
+  function rzClickText(words){
+
+    var els =
+      document.querySelectorAll(
+        "a,button,[role='button']"
+      );
+
+    for(var i=0;i<els.length;i++){
+
+      var el = els[i];
+
+      if(
+        el.id === "rzMobileMenuButton" ||
+        el.closest("#rzMobileMenuPanel")
+      ){
+        continue;
+      }
+
+      var text = String(
+        el.innerText ||
+        el.textContent ||
+        el.getAttribute("aria-label") ||
+        ""
+      ).toLowerCase().trim();
+
+      for(var j=0;j<words.length;j++){
+
+        if(
+          text === words[j] ||
+          text.indexOf(words[j]) !== -1
+        ){
+
+          try{
+            el.click();
+            return true;
+          }catch(e){}
+        }
+      }
+    }
+
+    return false;
+  }
+
+  function rzScrollText(words){
+
+    var els =
+      document.querySelectorAll(
+        "section,main,article,div,h1,h2,h3"
+      );
+
+    for(var i=0;i<els.length;i++){
+
+      var text =
+        String(
+          els[i].innerText ||
+          els[i].textContent ||
+          ""
+        ).toLowerCase();
+
+      for(var j=0;j<words.length;j++){
+
+        if(text.indexOf(words[j]) !== -1){
+
+          try{
+
+            els[i].scrollIntoView({
+              behavior:"smooth",
+              block:"start"
+            });
+
+            return true;
+
+          }catch(e){}
+        }
+      }
+    }
+
+    return false;
+  }
+
+  function rzNavigate(action){
+
+    rzCloseMobileMenu();
+
+    if(action === "dashboard"){
+
+      if(rzCall([
+        "showDashboard",
+        "openDashboard",
+        "goDashboard",
+        "loadDashboard"
+      ])) return;
+
+      if(rzClickText([
+        "dashboard",
+        "home"
+      ])) return;
+
+      window.scrollTo({
+        top:0,
+        behavior:"smooth"
+      });
+
+      return;
+    }
+
+    if(action === "tasks"){
+
+      if(rzCall([
+        "showTasks",
+        "openTasks",
+        "goTasks",
+        "loadTasks"
+      ])) return;
+
+      if(rzClickText([
+        "tasks"
+      ])) return;
+
+      rzScrollText([
+        "tasks",
+        "daily tasks"
+      ]);
+
+      return;
+    }
+
+    if(action === "boost"){
+
+      if(rzCall([
+        "openBoostCenter",
+        "showBoostCenter",
+        "openBoost",
+        "showBoosts",
+        "openCreatorBoost"
+      ])) return;
+
+      if(rzClickText([
+        "boost center",
+        "boost"
+      ])) return;
+
+      rzScrollText([
+        "boost center",
+        "boost"
+      ]);
+
+      return;
+    }
+
+    if(action === "growth"){
+
+      if(rzCall([
+        "openCreatorGrowth",
+        "showCreatorGrowth",
+        "openGrowth",
+        "showGrowth"
+      ])) return;
+
+      if(rzClickText([
+        "creator growth",
+        "growth"
+      ])) return;
+
+      rzScrollText([
+        "creator growth",
+        "growth"
+      ]);
+
+      return;
+    }
+
+    if(action === "ai"){
+
+      if(rzCall([
+        "openRizoraAI",
+        "openRizoraAi",
+        "openAI",
+        "showRizoraAI",
+        "showAI"
+      ])) return;
+
+      if(rzClickText([
+        "rizora ai",
+        "ai"
+      ])) return;
+
+      rzScrollText([
+        "rizora ai"
+      ]);
+
+      return;
+    }
+
+    if(action === "referrals"){
+
+      if(rzCall([
+        "openReferrals",
+        "showReferrals",
+        "goReferrals"
+      ])) return;
+
+      if(rzClickText([
+        "referrals",
+        "referral"
+      ])) return;
+
+      rzScrollText([
+        "referrals",
+        "referral"
+      ]);
+
+      return;
+    }
+
+    if(action === "help"){
+
+      if(rzCall([
+        "openHelpCenter",
+        "showHelpCenter",
+        "openHelp",
+        "showHelp",
+        "openSupport",
+        "showSupport"
+      ])) return;
+
+      if(rzClickText([
+        "help center",
+        "help",
+        "support"
+      ])) return;
+
+      rzScrollText([
+        "help center",
+        "customer service",
+        "support"
+      ]);
+
+      return;
+    }
+  }
+
+  function rzInitMobileMenu(){
+
+    var button =
+      document.getElementById("rzMobileMenuButton");
+
+    var close =
+      document.getElementById("rzMobileMenuClose");
+
+    var overlay =
+      document.getElementById("rzMobileMenuOverlay");
+
+    var panel =
+      document.getElementById("rzMobileMenuPanel");
 
     if(!button || !panel){
       return;
     }
 
-    function closeMenu(){
-      try{
-        panel.style.display = "none";
-        panel.style.pointerEvents = "none";
-        panel.style.transform = "translateX(100%)";
-        panel.setAttribute("aria-hidden","true");
-
-        if(overlay){
-          overlay.style.display = "none";
-          overlay.style.opacity = "0";
-          overlay.style.pointerEvents = "none";
-        }
-
-        document.documentElement.classList.remove("rz-menu-open");
-        document.body.classList.remove("rz-menu-open");
-        document.body.style.overflow = "";
-      }catch(e){}
-    }
-
-    function openMenu(){
-      try{
-        panel.style.display = "block";
-        panel.style.visibility = "visible";
-        panel.style.opacity = "1";
-        panel.style.pointerEvents = "auto";
-        panel.style.transform = "translateX(0)";
-        panel.setAttribute("aria-hidden","false");
-
-        if(overlay){
-          overlay.style.display = "block";
-          overlay.style.visibility = "visible";
-          overlay.style.opacity = "1";
-          overlay.style.pointerEvents = "auto";
-        }
-
-        document.documentElement.classList.add("rz-menu-open");
-        document.body.classList.add("rz-menu-open");
-      }catch(e){}
-    }
-
-    function toggleMenu(){
-      var isOpen =
-        panel.getAttribute("aria-hidden") === "false" ||
-        panel.style.transform === "translateX(0px)" ||
-        panel.style.display === "block";
-
-      if(isOpen){
-        closeMenu();
-      }else{
-        openMenu();
-      }
-    }
-
     /*
-      Clone the hamburger button.
-      This removes old/broken click listeners attached by earlier menu code.
+      Use document-level pointer handling so no old
+      listener or transparent layer can break the button.
     */
-    var cleanButton = button.cloneNode(true);
-    button.parentNode.replaceChild(cleanButton,button);
-    button = cleanButton;
+    document.addEventListener(
+      "pointerup",
+      function(e){
 
-    button.setAttribute("type","button");
-    button.setAttribute("aria-label","Open RIZORA menu");
-    button.setAttribute("role","button");
-    button.style.pointerEvents = "auto";
-    button.style.touchAction = "manipulation";
+        var target = e.target;
 
-    var lastTouch = 0;
-
-    button.addEventListener("pointerup",function(e){
-      e.preventDefault();
-      e.stopPropagation();
-
-      var now = Date.now();
-
-      if(now - lastTouch < 300){
-        return;
-      }
-
-      lastTouch = now;
-      toggleMenu();
-    },{passive:false});
-
-    button.addEventListener("click",function(e){
-      e.preventDefault();
-      e.stopPropagation();
-
-      var now = Date.now();
-
-      if(now - lastTouch < 500){
-        return;
-      }
-
-      lastTouch = now;
-      toggleMenu();
-    },{passive:false});
-
-    button.addEventListener("keydown",function(e){
-      if(e.key === "Enter" || e.key === " "){
-        e.preventDefault();
-        toggleMenu();
-      }
-    });
-
-    if(overlay){
-      overlay.style.pointerEvents = "none";
-
-      overlay.addEventListener("pointerup",function(e){
-        e.preventDefault();
-        closeMenu();
-      },{passive:false});
-    }
-
-    function normalize(text){
-      return String(text || "")
-        .toLowerCase()
-        .replace(/\s+/g," ")
-        .trim();
-    }
-
-    function tryGlobal(names){
-      for(var i=0;i<names.length;i++){
-        try{
-          var fn = window[names[i]];
-          if(typeof fn === "function"){
-            fn();
-            return true;
-          }
-        }catch(e){}
-      }
-      return false;
-    }
-
-    function clickMatchingTarget(words){
-      var els = document.querySelectorAll(
-        'a,button,[role="button"],[data-section],[data-page],nav [href]'
-      );
-
-      var candidates = [];
-
-      for(var i=0;i<els.length;i++){
-        var el = els[i];
-
-        if(panel.contains(el)){
-          continue;
-        }
-
-        var txt = normalize(
-          (el.innerText || el.textContent || "") + " " +
-          (el.getAttribute("aria-label") || "") + " " +
-          (el.getAttribute("title") || "")
-        );
-
-        if(!txt){
-          continue;
-        }
-
-        for(var j=0;j<words.length;j++){
-          if(txt === normalize(words[j]) ||
-             txt.indexOf(normalize(words[j])) !== -1){
-            candidates.push(el);
-            break;
-          }
-        }
-      }
-
-      if(candidates.length){
-        try{
-          candidates[0].click();
-          return true;
-        }catch(e){}
-      }
-
-      return false;
-    }
-
-    function scrollToMatch(words){
-      var els = document.querySelectorAll(
-        "section,main,article,div,h1,h2,h3"
-      );
-
-      for(var i=0;i<els.length;i++){
-        var el = els[i];
-
-        var txt = normalize(
-          (el.innerText || el.textContent || "").slice(0,300)
-        );
-
-        for(var j=0;j<words.length;j++){
-          if(txt.indexOf(normalize(words[j])) !== -1){
-            try{
-              el.scrollIntoView({
-                behavior:"smooth",
-                block:"start"
-              });
-              return true;
-            }catch(e){}
-          }
-        }
-      }
-
-      return false;
-    }
-
-    function navigate(action){
-
-      closeMenu();
-
-      if(action === "dashboard"){
         if(
-          tryGlobal([
-            "showDashboard",
-            "openDashboard",
-            "goDashboard",
-            "loadDashboard"
-          ])
+          target.closest &&
+          target.closest("#rzMobileMenuButton")
         ){
-          return;
-        }
 
-        if(clickMatchingTarget(["dashboard","home"])){
-          return;
-        }
-
-        window.scrollTo({
-          top:0,
-          behavior:"smooth"
-        });
-
-        return;
-      }
-
-      if(action === "tasks"){
-        if(
-          tryGlobal([
-            "showTasks",
-            "openTasks",
-            "goTasks",
-            "loadTasks"
-          ])
-        ){
-          return;
-        }
-
-        if(clickMatchingTarget(["tasks","task"])){
-          return;
-        }
-
-        scrollToMatch(["Tasks","Daily Tasks"]);
-        return;
-      }
-
-      if(action === "boost"){
-        if(
-          tryGlobal([
-            "openBoostCenter",
-            "showBoostCenter",
-            "openBoost",
-            "showBoosts",
-            "openCreatorBoost"
-          ])
-        ){
-          return;
-        }
-
-        if(clickMatchingTarget(["boost center","boost"])){
-          return;
-        }
-
-        scrollToMatch(["Boost Center","Boost"]);
-        return;
-      }
-
-      if(action === "growth"){
-        if(
-          tryGlobal([
-            "openCreatorGrowth",
-            "showCreatorGrowth",
-            "openGrowth",
-            "showGrowth"
-          ])
-        ){
-          return;
-        }
-
-        if(clickMatchingTarget([
-          "creator growth",
-          "growth",
-          "creator"
-        ])){
-          return;
-        }
-
-        scrollToMatch([
-          "Creator Growth",
-          "Growth"
-        ]);
-
-        return;
-      }
-
-      if(action === "ai"){
-        if(
-          tryGlobal([
-            "openRizoraAI",
-            "openRizoraAi",
-            "openAI",
-            "showRizoraAI",
-            "showAI"
-          ])
-        ){
-          return;
-        }
-
-        if(clickMatchingTarget([
-          "rizora ai",
-          "ai"
-        ])){
-          return;
-        }
-
-        scrollToMatch([
-          "RIZORA AI",
-          "Rizora AI"
-        ]);
-
-        return;
-      }
-
-      if(action === "referrals"){
-        if(
-          tryGlobal([
-            "openReferrals",
-            "showReferrals",
-            "goReferrals"
-          ])
-        ){
-          return;
-        }
-
-        if(clickMatchingTarget([
-          "referrals",
-          "referral"
-        ])){
-          return;
-        }
-
-        scrollToMatch([
-          "Referrals",
-          "Referral"
-        ]);
-
-        return;
-      }
-
-      if(action === "help"){
-        if(
-          tryGlobal([
-            "openHelpCenter",
-            "showHelpCenter",
-            "openHelp",
-            "showHelp",
-            "openSupport",
-            "showSupport"
-          ])
-        ){
-          return;
-        }
-
-        if(clickMatchingTarget([
-          "help center",
-          "help",
-          "support"
-        ])){
-          return;
-        }
-
-        scrollToMatch([
-          "Help Center",
-          "Customer Service",
-          "Support"
-        ]);
-
-        return;
-      }
-    }
-
-    /*
-      Direct handlers for every menu button.
-    */
-    var items = panel.querySelectorAll("[data-rz-menu]");
-
-    for(var i=0;i<items.length;i++){
-      (function(item){
-        item.addEventListener("pointerup",function(e){
           e.preventDefault();
           e.stopPropagation();
-          navigate(item.getAttribute("data-rz-menu"));
-        },{passive:false});
 
-        item.addEventListener("click",function(e){
+          rzOpenMobileMenu();
+
+          return;
+        }
+
+        if(
+          target.closest &&
+          target.closest("#rzMobileMenuClose")
+        ){
+
           e.preventDefault();
           e.stopPropagation();
-          navigate(item.getAttribute("data-rz-menu"));
-        },{passive:false});
 
-      })(items[i]);
-    }
+          rzCloseMobileMenu();
 
-    document.addEventListener("keydown",function(e){
-      if(e.key === "Escape"){
-        closeMenu();
+          return;
+        }
+
+        var item =
+          target.closest &&
+          target.closest("[data-rz-mobile]");
+
+        if(item){
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          rzNavigate(
+            item.getAttribute("data-rz-mobile")
+          );
+
+          return;
+        }
+
+        if(
+          target === overlay
+        ){
+
+          rzCloseMobileMenu();
+
+        }
+
+      },
+      true
+    );
+
+    document.addEventListener(
+      "click",
+      function(e){
+
+        var target = e.target;
+
+        if(
+          target.closest &&
+          target.closest("#rzMobileMenuButton")
+        ){
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          rzOpenMobileMenu();
+
+          return;
+        }
+
+        if(
+          target.closest &&
+          target.closest("#rzMobileMenuClose")
+        ){
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          rzCloseMobileMenu();
+
+          return;
+        }
+
+      },
+      true
+    );
+
+    document.addEventListener(
+      "keydown",
+      function(e){
+
+        if(e.key === "Escape"){
+
+          rzCloseMobileMenu();
+
+        }
+
       }
-    });
+    );
 
-    window.addEventListener("resize",function(){
-      if(window.innerWidth > 900){
-        closeMenu();
-      }
-    });
+    window.rzOpenMobileMenu =
+      rzOpenMobileMenu;
 
-    closeMenu();
-
-    console.log("RIZORA hamburger touch fix active");
+    window.rzCloseMobileMenu =
+      rzCloseMobileMenu;
   }
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded",bootRizoraHamburgerFix);
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      rzInitMobileMenu
+    );
+
   }else{
-    bootRizoraHamburgerFix();
+
+    rzInitMobileMenu();
+
   }
+
 })();
 </script>
-<!-- /RIZORA_HAMBURGER_TOUCH_HOTFIX_V2 -->
+
+<!-- /RIZORA_MOBILE_MENU_REPLACEMENT -->
 </body>
 </html>
 
