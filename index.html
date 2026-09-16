@@ -9846,8 +9846,147 @@ function ensureStyles(){
 </script>
 
 <!-- /RIZORA_MENU_FUNCTIONAL_FIX -->
+<!-- RIZORA COMMAND CENTER BACK BUTTON START -->
+<script>
+(function(){
+
+  function rizoraIsSuperAdmin(){
+    try{
+      if(typeof window.RIZORA_IS_SUPER_ADMIN === "function"){
+        return !!window.RIZORA_IS_SUPER_ADMIN();
+      }
+
+      if(typeof currentUser !== "undefined" && currentUser){
+        return currentUser.role === "super_admin";
+      }
+
+      return false;
+    }catch(e){
+      return false;
+    }
+  }
+
+  function ensureCommandCenterButton(){
+    if(!rizoraIsSuperAdmin()) return;
+
+    var existing = document.getElementById("rizoraCommandCenterBack");
+
+    if(!existing){
+      existing = document.createElement("button");
+      existing.id = "rizoraCommandCenterBack";
+      existing.type = "button";
+      existing.textContent = "← Command Center";
+
+      existing.style.cssText = [
+        "position:fixed",
+        "top:76px",
+        "right:18px",
+        "z-index:99999",
+        "display:flex",
+        "align-items:center",
+        "justify-content:center",
+        "padding:11px 16px",
+        "border-radius:12px",
+        "border:1px solid rgba(255,255,255,.14)",
+        "background:rgba(20,16,35,.96)",
+        "color:#fff",
+        "font-weight:700",
+        "font-size:14px",
+        "cursor:pointer",
+        "box-shadow:0 10px 30px rgba(0,0,0,.35)",
+        "backdrop-filter:blur(12px)"
+      ].join(";");
+
+      existing.onclick = function(){
+        if(typeof showAdminDashboard === "function"){
+          showAdminDashboard();
+        }else if(typeof openBestDashboard === "function"){
+          openBestDashboard();
+        }
+      };
+
+      document.body.appendChild(existing);
+    }
+
+    existing.style.display = "flex";
+  }
+
+  function hideCommandCenterButton(){
+    var button = document.getElementById("rizoraCommandCenterBack");
+    if(button){
+      button.style.display = "none";
+    }
+  }
+
+  function hookDashboardFunctions(){
+
+    if(typeof window.showDashboard === "function" &&
+       !window.__rizoraShowDashboardHooked){
+
+      var originalShowDashboard = window.showDashboard;
+
+      window.showDashboard = function(){
+        var result = originalShowDashboard.apply(this, arguments);
+
+        setTimeout(function(){
+          ensureCommandCenterButton();
+        }, 100);
+
+        return result;
+      };
+
+      window.__rizoraShowDashboardHooked = true;
+    }
+
+    if(typeof window.showAdminDashboard === "function" &&
+       !window.__rizoraShowAdminDashboardHooked){
+
+      var originalShowAdminDashboard = window.showAdminDashboard;
+
+      window.showAdminDashboard = function(){
+        hideCommandCenterButton();
+
+        var result = originalShowAdminDashboard.apply(this, arguments);
+
+        setTimeout(function(){
+          hideCommandCenterButton();
+        }, 100);
+
+        return result;
+      };
+
+      window.__rizoraShowAdminDashboardHooked = true;
+    }
+  }
+
+  function start(){
+    hookDashboardFunctions();
+
+    setTimeout(function(){
+      hookDashboardFunctions();
+    },500);
+
+    setTimeout(function(){
+      hookDashboardFunctions();
+    },1500);
+
+    setTimeout(function(){
+      hookDashboardFunctions();
+    },3000);
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded",start);
+  }else{
+    start();
+  }
+
+})();
+</script>
+<!-- RIZORA COMMAND CENTER BACK BUTTON END -->
 </body>
 </html>
+
 
 
 
