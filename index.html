@@ -9313,7 +9313,2527 @@ function ensureStyles(){
 
 })();
 
-</script></body>
+</script><!-- ============================================================
+     RIZORA_HAMBURGER_MENU
+============================================================= -->
+
+<style id="RIZORA_HAMBURGER_STYLES">
+
+  #rzHamburgerButton{
+    position:fixed;
+    top:16px;
+    right:16px;
+    z-index:99999;
+
+    width:48px;
+    height:48px;
+
+    display:none;
+    align-items:center;
+    justify-content:center;
+
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:14px;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(127,74,255,.30),
+        rgba(30,15,55,.92)
+      );
+
+    color:#fff;
+    cursor:pointer;
+
+    box-shadow:
+      0 10px 35px rgba(0,0,0,.35),
+      0 0 25px rgba(126,72,255,.12);
+
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+
+    transition:
+      transform .2s ease,
+      background .2s ease;
+  }
+
+  #rzHamburgerButton:hover{
+    transform:translateY(-1px) scale(1.03);
+    background:
+      linear-gradient(
+        145deg,
+        rgba(145,82,255,.42),
+        rgba(30,15,55,.96)
+      );
+  }
+
+  #rzHamburgerButton:active{
+    transform:scale(.96);
+  }
+
+  #rzHamburgerButton span{
+    position:absolute;
+
+    width:22px;
+    height:2px;
+
+    border-radius:99px;
+
+    background:#fff;
+
+    transition:
+      transform .25s ease,
+      opacity .25s ease;
+  }
+
+  #rzHamburgerButton span:nth-child(1){
+    transform:translateY(-7px);
+  }
+
+  #rzHamburgerButton span:nth-child(2){
+    transform:translateY(0);
+  }
+
+  #rzHamburgerButton span:nth-child(3){
+    transform:translateY(7px);
+  }
+
+  #rzHamburgerButton.open span:nth-child(1){
+    transform:rotate(45deg);
+  }
+
+  #rzHamburgerButton.open span:nth-child(2){
+    opacity:0;
+  }
+
+  #rzHamburgerButton.open span:nth-child(3){
+    transform:rotate(-45deg);
+  }
+
+
+  #rzHamburgerOverlay{
+    position:fixed;
+    inset:0;
+    z-index:99990;
+
+    background:rgba(0,0,0,.62);
+
+    opacity:0;
+    pointer-events:none;
+
+    transition:opacity .25s ease;
+
+    backdrop-filter:blur(5px);
+    -webkit-backdrop-filter:blur(5px);
+  }
+
+  #rzHamburgerOverlay.open{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+
+  #rzHamburgerPanel{
+    position:fixed;
+    top:0;
+    right:0;
+
+    width:min(88vw,360px);
+    height:100dvh;
+
+    z-index:99991;
+
+    display:flex;
+    flex-direction:column;
+
+    padding:24px 18px;
+
+    box-sizing:border-box;
+
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba(125,72,255,.20),
+        transparent 38%
+      ),
+      linear-gradient(
+        180deg,
+        #100b1b 0%,
+        #08070d 100%
+      );
+
+    border-left:1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+      -20px 0 70px rgba(0,0,0,.50);
+
+    transform:translateX(105%);
+
+    transition:
+      transform .30s cubic-bezier(.2,.8,.2,1);
+
+    overflow-y:auto;
+  }
+
+  #rzHamburgerPanel.open{
+    transform:translateX(0);
+  }
+
+
+  .rz-menu-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:6px 4px 18px;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+
+  .rz-menu-brand{
+    display:flex;
+    align-items:center;
+    gap:11px;
+  }
+
+  .rz-menu-logo{
+    width:42px;
+    height:42px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:13px;
+
+    background:
+      linear-gradient(
+        145deg,
+        #8c4dff,
+        #4b1ca8
+      );
+
+    color:#fff;
+
+    font-size:18px;
+    font-weight:900;
+
+    box-shadow:
+      0 0 24px rgba(125,72,255,.25);
+  }
+
+  .rz-menu-brand-text{
+    display:grid;
+    gap:2px;
+  }
+
+  .rz-menu-brand-text strong{
+    color:#fff;
+    font-size:16px;
+    letter-spacing:.4px;
+  }
+
+  .rz-menu-brand-text span{
+    color:rgba(255,255,255,.45);
+    font-size:11px;
+  }
+
+
+  .rz-menu-close{
+    width:38px;
+    height:38px;
+
+    border:0;
+    border-radius:11px;
+
+    background:rgba(255,255,255,.06);
+
+    color:#fff;
+
+    cursor:pointer;
+
+    font-size:20px;
+
+    transition:
+      background .2s ease,
+      transform .2s ease;
+  }
+
+  .rz-menu-close:hover{
+    background:rgba(255,255,255,.11);
+    transform:rotate(5deg);
+  }
+
+
+  .rz-menu-section{
+    margin-top:20px;
+  }
+
+  .rz-menu-section-label{
+    padding:0 8px 8px;
+
+    color:rgba(255,255,255,.35);
+
+    font-size:10px;
+    font-weight:700;
+
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+  }
+
+
+  .rz-menu-list{
+    display:grid;
+    gap:7px;
+  }
+
+
+  .rz-menu-item{
+    width:100%;
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:13px 13px;
+
+    box-sizing:border-box;
+
+    border:1px solid transparent;
+    border-radius:14px;
+
+    background:rgba(255,255,255,.025);
+
+    color:#fff;
+
+    text-align:left;
+
+    font:inherit;
+
+    cursor:pointer;
+
+    transition:
+      background .18s ease,
+      border-color .18s ease,
+      transform .18s ease;
+  }
+
+  .rz-menu-item:hover{
+    transform:translateX(-2px);
+
+    background:
+      linear-gradient(
+        90deg,
+        rgba(126,72,255,.18),
+        rgba(255,255,255,.045)
+      );
+
+    border-color:rgba(145,85,255,.18);
+  }
+
+  .rz-menu-item-icon{
+    width:36px;
+    height:36px;
+
+    flex:none;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:10px;
+
+    background:rgba(126,72,255,.13);
+
+    font-size:17px;
+  }
+
+  .rz-menu-item-copy{
+    min-width:0;
+    display:grid;
+    gap:2px;
+  }
+
+  .rz-menu-item-copy strong{
+    font-size:13px;
+    font-weight:700;
+  }
+
+  .rz-menu-item-copy span{
+    color:rgba(255,255,255,.42);
+    font-size:10px;
+  }
+
+
+  .rz-menu-footer{
+    margin-top:auto;
+
+    padding-top:20px;
+  }
+
+  .rz-menu-footer-card{
+    padding:14px;
+
+    border:1px solid rgba(145,85,255,.14);
+    border-radius:16px;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(126,72,255,.10),
+        rgba(255,255,255,.025)
+      );
+  }
+
+  .rz-menu-footer-title{
+    color:#fff;
+
+    font-size:12px;
+    font-weight:700;
+  }
+
+  .rz-menu-footer-text{
+    margin-top:4px;
+
+    color:rgba(255,255,255,.42);
+
+    font-size:10px;
+    line-height:1.5;
+  }
+
+  .rz-menu-footer-badge{
+    display:inline-flex;
+
+    margin-top:10px;
+
+    padding:5px 8px;
+
+    border-radius:999px;
+
+    background:rgba(126,72,255,.13);
+
+    color:#c7aaff;
+
+    font-size:9px;
+    font-weight:700;
+
+    letter-spacing:.7px;
+    text-transform:uppercase;
+  }
+
+
+  @media(max-width:900px){
+
+    #rzHamburgerButton{
+      display:flex;
+    }
+
+    body.rz-menu-open{
+      overflow:hidden;
+    }
+
+    /*
+      Keep room for the hamburger button.
+      The existing RIZORA interface remains untouched.
+    */
+  }
+
+  @media(min-width:901px){
+
+    #rzHamburgerPanel,
+    #rzHamburgerOverlay{
+      display:none !important;
+    }
+
+  }
+
+</style>
+
+
+<button
+  id="rzHamburgerButton"
+  type="button"
+  aria-label="Open RIZORA menu"
+  aria-expanded="false"
+  onclick="window.rizoraToggleMenu()"
+>
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+
+
+<div
+  id="rzHamburgerOverlay"
+  onclick="window.rizoraCloseMenu()"
+></div>
+
+
+<aside
+  id="rzHamburgerPanel"
+  aria-label="RIZORA navigation menu"
+>
+
+  <div class="rz-menu-header">
+
+    <div class="rz-menu-brand">
+
+      <div class="rz-menu-logo">
+        R
+      </div>
+
+      <div class="rz-menu-brand-text">
+        <strong>RIZORA</strong>
+        <span>Create. Grow. Earn.</span>
+      </div>
+
+    </div>
+
+    <button
+      class="rz-menu-close"
+      type="button"
+      aria-label="Close menu"
+      onclick="window.rizoraCloseMenu()"
+    >
+      ×
+    </button>
+
+  </div>
+
+
+  <div class="rz-menu-section">
+
+    <div class="rz-menu-section-label">
+      Workspace
+    </div>
+
+    <div class="rz-menu-list">
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        onclick="window.rizoraMenuGo(['dashboard','home'])"
+      >
+        <div class="rz-menu-item-icon">
+          ◉
+        </div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Dashboard</strong>
+          <span>Your RIZORA home</span>
+        </div>
+      </button>
+
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        onclick="window.rizoraMenuGo(['tasks','creatorTasks'])"
+      >
+        <div class="rz-menu-item-icon">
+          ✓
+        </div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Tasks</strong>
+          <span>Complete creator tasks</span>
+        </div>
+      </button>
+
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        onclick="window.rizoraMenuGo(['creatorBoosts','boosts','rzCreateBoost'])"
+      >
+        <div class="rz-menu-item-icon">
+          ⚡
+        </div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Boost Center</strong>
+          <span>Grow your account</span>
+        </div>
+      </button>
+
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        onclick="window.rizoraMenuGo(['creatorGrowth','rzCreateCommunityTask'])"
+      >
+        <div class="rz-menu-item-icon">
+          ✦
+        </div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Creator Growth</strong>
+          <span>Create opportunities</span>
+        </div>
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div class="rz-menu-section">
+
+    <div class="rz-menu-section-label">
+      Community
+    </div>
+
+    <div class="rz-menu-list">
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        onclick="window.rizoraMenuGo(['ai','rizoraAI','aiSection'])"
+      >
+        <div class="rz-menu-item-icon">
+          ✨
+        </div>
+
+        <div class="rz-menu-item-copy">
+          <strong>RIZORA AI</strong>
+          <span>Your creator assistant</span>
+        </div>
+      </button>
+
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        onclick="window.rizoraMenuGo(['referrals','referral','referralSection'])"
+      >
+        <div class="rz-menu-item-icon">
+          ↗
+        </div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Referrals</strong>
+          <span>Invite and earn</span>
+        </div>
+      </button>
+
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        onclick="window.rizoraOpenHelpMenu()"
+      >
+        <div class="rz-menu-item-icon">
+          ?
+        </div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Help Center</strong>
+          <span>Get help from RIZORA</span>
+        </div>
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div class="rz-menu-footer">
+
+    <div class="rz-menu-footer-card">
+
+      <div class="rz-menu-footer-title">
+        RIZORA Creator Network
+      </div>
+
+      <div class="rz-menu-footer-text">
+        Build your audience, complete tasks,
+        earn points and grow.
+      </div>
+
+      <span class="rz-menu-footer-badge">
+        Creator Mode
+      </span>
+
+    </div>
+
+  </div>
+
+</aside>
+
+
+<script id="RIZORA_HAMBURGER_MENU">
+
+(function(){
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+
+  function openMenu(){
+
+    var button =
+      byId("rzHamburgerButton");
+
+    var overlay =
+      byId("rzHamburgerOverlay");
+
+    var panel =
+      byId("rzHamburgerPanel");
+
+    if(!button || !overlay || !panel){
+      return;
+    }
+
+    button.classList.add("open");
+    overlay.classList.add("open");
+    panel.classList.add("open");
+
+    button.setAttribute(
+      "aria-expanded",
+      "true"
+    );
+
+    document.body.classList.add(
+      "rz-menu-open"
+    );
+
+  }
+
+
+  function closeMenu(){
+
+    var button =
+      byId("rzHamburgerButton");
+
+    var overlay =
+      byId("rzHamburgerOverlay");
+
+    var panel =
+      byId("rzHamburgerPanel");
+
+    if(!button || !overlay || !panel){
+      return;
+    }
+
+    button.classList.remove("open");
+    overlay.classList.remove("open");
+    panel.classList.remove("open");
+
+    button.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+    document.body.classList.remove(
+      "rz-menu-open"
+    );
+
+  }
+
+
+  function toggleMenu(){
+
+    var panel =
+      byId("rzHamburgerPanel");
+
+    if(
+      panel &&
+      panel.classList.contains("open")
+    ){
+      closeMenu();
+    }else{
+      openMenu();
+    }
+
+  }
+
+
+  function findTarget(ids){
+
+    for(
+      var i = 0;
+      i < ids.length;
+      i++
+    ){
+
+      var el =
+        document.getElementById(
+          ids[i]
+        );
+
+      if(el){
+        return el;
+      }
+
+    }
+
+    return null;
+
+  }
+
+
+  function go(ids){
+
+    closeMenu();
+
+    var target =
+      findTarget(ids);
+
+    if(target){
+
+      setTimeout(
+        function(){
+
+          target.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+          });
+
+        },
+        120
+      );
+
+    }
+
+  }
+
+
+  function openHelp(){
+
+    closeMenu();
+
+    if(
+      typeof window.openRizoraHelpCenter ===
+      "function"
+    ){
+
+      window.openRizoraHelpCenter();
+
+      return;
+
+    }
+
+    var help =
+      findTarget([
+        "helpCenter",
+        "help",
+        "support",
+        "rizoraHelp"
+      ]);
+
+    if(help){
+
+      help.scrollIntoView({
+        behavior:"smooth",
+        block:"start"
+      });
+
+      return;
+
+    }
+
+    alert(
+      "RIZORA Help Center is loading."
+    );
+
+  }
+
+
+  window.rizoraToggleMenu =
+    toggleMenu;
+
+  window.rizoraCloseMenu =
+    closeMenu;
+
+  window.rizoraMenuGo =
+    go;
+
+  window.rizoraOpenHelpMenu =
+    openHelp;
+
+
+  document.addEventListener(
+    "keydown",
+    function(event){
+
+      if(event.key === "Escape"){
+        closeMenu();
+      }
+
+    }
+  );
+
+
+  window.addEventListener(
+    "resize",
+    function(){
+
+      if(window.innerWidth > 900){
+        closeMenu();
+      }
+
+    }
+  );
+
+})();
+
+</script>
+
+<!-- ============================================================
+     END RIZORA_HAMBURGER_MENU
+============================================================= -->
+<!-- ============================================================
+     RIZORA_HAMBURGER_MENU
+     MOBILE / ANDROID REPAIR
+============================================================= -->
+
+<style id="RIZORA_HAMBURGER_STYLES">
+
+  #rzHamburgerButton{
+    position:fixed;
+
+    /*
+      Keep the hamburger below the existing RIZORA header
+      instead of covering the app navigation.
+    */
+    top:72px;
+    right:14px;
+
+    z-index:99999;
+
+    width:46px;
+    height:46px;
+
+    display:none;
+    align-items:center;
+    justify-content:center;
+
+    box-sizing:border-box;
+
+    border:1px solid rgba(255,255,255,.13);
+    border-radius:13px;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(126,72,255,.38),
+        rgba(20,12,35,.96)
+      );
+
+    color:#fff;
+    cursor:pointer;
+
+    box-shadow:
+      0 10px 30px rgba(0,0,0,.35),
+      0 0 24px rgba(126,72,255,.14);
+
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+
+    transition:
+      transform .18s ease,
+      opacity .18s ease;
+  }
+
+  #rzHamburgerButton:hover{
+    transform:scale(1.04);
+  }
+
+  #rzHamburgerButton:active{
+    transform:scale(.95);
+  }
+
+  #rzHamburgerButton span{
+    position:absolute;
+
+    width:21px;
+    height:2px;
+
+    border-radius:99px;
+
+    background:#fff;
+
+    transition:
+      transform .22s ease,
+      opacity .18s ease;
+  }
+
+  #rzHamburgerButton span:nth-child(1){
+    transform:translateY(-6px);
+  }
+
+  #rzHamburgerButton span:nth-child(2){
+    transform:translateY(0);
+  }
+
+  #rzHamburgerButton span:nth-child(3){
+    transform:translateY(6px);
+  }
+
+  #rzHamburgerButton.open span:nth-child(1){
+    transform:rotate(45deg);
+  }
+
+  #rzHamburgerButton.open span:nth-child(2){
+    opacity:0;
+  }
+
+  #rzHamburgerButton.open span:nth-child(3){
+    transform:rotate(-45deg);
+  }
+
+
+  #rzHamburgerOverlay{
+    position:fixed;
+    inset:0;
+
+    z-index:99990;
+
+    background:rgba(0,0,0,.58);
+
+    opacity:0;
+    pointer-events:none;
+
+    transition:opacity .22s ease;
+
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+  }
+
+  #rzHamburgerOverlay.open{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+
+  #rzHamburgerPanel{
+
+    position:fixed;
+
+    top:0;
+    right:0;
+
+    width:min(86vw,340px);
+
+    height:100dvh;
+    height:100vh;
+
+    box-sizing:border-box;
+
+    z-index:99991;
+
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 22px)
+      16px
+      calc(env(safe-area-inset-bottom, 0px) + 18px);
+
+    display:flex;
+    flex-direction:column;
+
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba(126,72,255,.22),
+        transparent 40%
+      ),
+      linear-gradient(
+        180deg,
+        #110b1d 0%,
+        #08070d 100%
+      );
+
+    border-left:1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+      -18px 0 55px rgba(0,0,0,.55);
+
+    transform:translateX(105%);
+
+    transition:
+      transform .28s cubic-bezier(.2,.8,.2,1);
+
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  #rzHamburgerPanel.open{
+    transform:translateX(0);
+  }
+
+
+  .rz-menu-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    gap:10px;
+
+    padding:4px 2px 16px;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+
+
+  .rz-menu-brand{
+    display:flex;
+    align-items:center;
+
+    gap:10px;
+
+    min-width:0;
+  }
+
+
+  .rz-menu-logo{
+    width:40px;
+    height:40px;
+
+    flex:none;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:12px;
+
+    background:
+      linear-gradient(
+        145deg,
+        #8e51ff,
+        #4b1ba8
+      );
+
+    color:#fff;
+
+    font-weight:900;
+    font-size:17px;
+  }
+
+
+  .rz-menu-brand-text{
+    display:grid;
+    gap:2px;
+  }
+
+
+  .rz-menu-brand-text strong{
+    color:#fff;
+    font-size:15px;
+    letter-spacing:.35px;
+  }
+
+
+  .rz-menu-brand-text span{
+    color:rgba(255,255,255,.45);
+    font-size:10px;
+  }
+
+
+  .rz-menu-close{
+    width:38px;
+    height:38px;
+
+    flex:none;
+
+    border:0;
+    border-radius:11px;
+
+    background:rgba(255,255,255,.06);
+
+    color:#fff;
+
+    cursor:pointer;
+
+    font-size:21px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+
+  .rz-menu-section{
+    margin-top:18px;
+  }
+
+
+  .rz-menu-section-label{
+    padding:0 7px 8px;
+
+    color:rgba(255,255,255,.34);
+
+    font-size:10px;
+    font-weight:700;
+
+    letter-spacing:1.1px;
+    text-transform:uppercase;
+  }
+
+
+  .rz-menu-list{
+    display:grid;
+    gap:7px;
+  }
+
+
+  .rz-menu-item{
+    width:100%;
+
+    display:flex;
+    align-items:center;
+
+    gap:11px;
+
+    min-height:58px;
+
+    box-sizing:border-box;
+
+    padding:10px 11px;
+
+    border:1px solid rgba(255,255,255,.055);
+    border-radius:14px;
+
+    background:rgba(255,255,255,.025);
+
+    color:#fff;
+
+    text-align:left;
+
+    font:inherit;
+
+    cursor:pointer;
+
+    -webkit-tap-highlight-color:transparent;
+
+    touch-action:manipulation;
+  }
+
+
+  .rz-menu-item:active{
+    transform:scale(.985);
+
+    background:
+      rgba(126,72,255,.16);
+  }
+
+
+  .rz-menu-item-icon{
+    width:35px;
+    height:35px;
+
+    flex:none;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:10px;
+
+    background:rgba(126,72,255,.13);
+
+    color:#d6c2ff;
+
+    font-size:16px;
+  }
+
+
+  .rz-menu-item-copy{
+    min-width:0;
+
+    display:grid;
+    gap:2px;
+  }
+
+
+  .rz-menu-item-copy strong{
+    font-size:13px;
+    font-weight:700;
+  }
+
+
+  .rz-menu-item-copy span{
+    color:rgba(255,255,255,.42);
+
+    font-size:10px;
+  }
+
+
+  .rz-menu-footer{
+    margin-top:auto;
+
+    padding-top:18px;
+  }
+
+
+  .rz-menu-footer-card{
+    padding:13px;
+
+    border:1px solid rgba(126,72,255,.15);
+    border-radius:15px;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(126,72,255,.10),
+        rgba(255,255,255,.025)
+      );
+  }
+
+
+  .rz-menu-footer-title{
+    color:#fff;
+
+    font-size:12px;
+    font-weight:700;
+  }
+
+
+  .rz-menu-footer-text{
+    margin-top:4px;
+
+    color:rgba(255,255,255,.40);
+
+    font-size:10px;
+    line-height:1.45;
+  }
+
+
+  @media(max-width:900px){
+
+    #rzHamburgerButton{
+      display:flex;
+    }
+
+  }
+
+
+  @media(min-width:901px){
+
+    #rzHamburgerButton,
+    #rzHamburgerOverlay,
+    #rzHamburgerPanel{
+      display:none !important;
+    }
+
+  }
+
+</style>
+
+
+<button
+  id="rzHamburgerButton"
+  type="button"
+  aria-label="Open RIZORA menu"
+  aria-expanded="false"
+>
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+
+
+<div
+  id="rzHamburgerOverlay"
+></div>
+
+
+<aside
+  id="rzHamburgerPanel"
+  aria-label="RIZORA navigation menu"
+>
+
+  <div class="rz-menu-header">
+
+    <div class="rz-menu-brand">
+
+      <div class="rz-menu-logo">
+        R
+      </div>
+
+      <div class="rz-menu-brand-text">
+        <strong>RIZORA</strong>
+        <span>Create. Grow. Earn.</span>
+      </div>
+
+    </div>
+
+    <button
+      class="rz-menu-close"
+      type="button"
+      aria-label="Close menu"
+    >
+      ×
+    </button>
+
+  </div>
+
+
+  <div class="rz-menu-section">
+
+    <div class="rz-menu-section-label">
+      Workspace
+    </div>
+
+    <div class="rz-menu-list">
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        data-rz-menu="dashboard"
+      >
+        <div class="rz-menu-item-icon">⌂</div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Dashboard</strong>
+          <span>Your RIZORA home</span>
+        </div>
+      </button>
+
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        data-rz-menu="tasks"
+      >
+        <div class="rz-menu-item-icon">✓</div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Tasks</strong>
+          <span>Complete creator tasks</span>
+        </div>
+      </button>
+
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        data-rz-menu="boost"
+      >
+        <div class="rz-menu-item-icon">⚡</div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Boost Center</strong>
+          <span>Grow your account</span>
+        </div>
+      </button>
+
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        data-rz-menu="growth"
+      >
+        <div class="rz-menu-item-icon">✦</div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Creator Growth</strong>
+          <span>Create opportunities</span>
+        </div>
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div class="rz-menu-section">
+
+    <div class="rz-menu-section-label">
+      Community
+    </div>
+
+    <div class="rz-menu-list">
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        data-rz-menu="ai"
+      >
+        <div class="rz-menu-item-icon">✧</div>
+
+        <div class="rz-menu-item-copy">
+          <strong>RIZORA AI</strong>
+          <span>Your creator assistant</span>
+        </div>
+      </button>
+
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        data-rz-menu="referrals"
+      >
+        <div class="rz-menu-item-icon">↗</div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Referrals</strong>
+          <span>Invite and earn</span>
+        </div>
+      </button>
+
+
+      <button
+        class="rz-menu-item"
+        type="button"
+        data-rz-menu="help"
+      >
+        <div class="rz-menu-item-icon">?</div>
+
+        <div class="rz-menu-item-copy">
+          <strong>Help Center</strong>
+          <span>Get help from RIZORA</span>
+        </div>
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div class="rz-menu-footer">
+
+    <div class="rz-menu-footer-card">
+
+      <div class="rz-menu-footer-title">
+        RIZORA Creator Network
+      </div>
+
+      <div class="rz-menu-footer-text">
+        Build your audience, complete tasks,
+        earn points and grow.
+      </div>
+
+    </div>
+
+  </div>
+
+</aside>
+
+
+<script id="RIZORA_HAMBURGER_MENU">
+
+(function(){
+
+  var button =
+    document.getElementById("rzHamburgerButton");
+
+  var overlay =
+    document.getElementById("rzHamburgerOverlay");
+
+  var panel =
+    document.getElementById("rzHamburgerPanel");
+
+  if(!button || !overlay || !panel){
+    return;
+  }
+
+
+  function closeMenu(){
+
+    button.classList.remove("open");
+    overlay.classList.remove("open");
+    panel.classList.remove("open");
+
+    button.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+    document.body.classList.remove(
+      "rz-menu-open"
+    );
+
+  }
+
+
+  function openMenu(){
+
+    button.classList.add("open");
+    overlay.classList.add("open");
+    panel.classList.add("open");
+
+    button.setAttribute(
+      "aria-expanded",
+      "true"
+    );
+
+    document.body.classList.add(
+      "rz-menu-open"
+    );
+
+  }
+
+
+  function toggleMenu(){
+
+    if(panel.classList.contains("open")){
+      closeMenu();
+    }else{
+      openMenu();
+    }
+
+  }
+
+
+  function normalize(value){
+
+    return String(value || "")
+      .replace(/\s+/g," ")
+      .trim()
+      .toLowerCase();
+
+  }
+
+
+  function clickExistingText(names){
+
+    var wanted =
+      names.map(normalize);
+
+    var nodes =
+      document.querySelectorAll(
+        "a,button,[role='button'],[onclick]"
+      );
+
+    for(
+      var i = 0;
+      i < nodes.length;
+      i++
+    ){
+
+      var node =
+        nodes[i];
+
+      if(
+        node === button ||
+        panel.contains(node)
+      ){
+        continue;
+      }
+
+      var text =
+        normalize(
+          node.innerText ||
+          node.textContent
+        );
+
+      if(!text){
+        continue;
+      }
+
+      for(
+        var j = 0;
+        j < wanted.length;
+        j++
+      ){
+
+        if(
+          text === wanted[j] ||
+          text.indexOf(wanted[j]) !== -1
+        ){
+
+          try{
+            node.click();
+            return true;
+          }catch(error){}
+
+        }
+
+      }
+
+    }
+
+    return false;
+
+  }
+
+
+  function scrollToText(names){
+
+    var wanted =
+      names.map(normalize);
+
+    var nodes =
+      document.querySelectorAll(
+        "section,div,article,main,[id]"
+      );
+
+    for(
+      var i = 0;
+      i < nodes.length;
+      i++
+    ){
+
+      var node =
+        nodes[i];
+
+      if(panel.contains(node)){
+        continue;
+      }
+
+      var text =
+        normalize(
+          node.innerText ||
+          node.textContent
+        );
+
+      if(!text || text.length > 250){
+        continue;
+      }
+
+      for(
+        var j = 0;
+        j < wanted.length;
+        j++
+      ){
+
+        if(
+          text === wanted[j] ||
+          text.indexOf(wanted[j]) !== -1
+        ){
+
+          node.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+          });
+
+          return true;
+        }
+
+      }
+
+    }
+
+    return false;
+
+  }
+
+
+  function runGlobal(names){
+
+    for(
+      var i = 0;
+      i < names.length;
+      i++
+    ){
+
+      var fn =
+        window[names[i]];
+
+      if(
+        typeof fn === "function"
+      ){
+
+        try{
+          fn();
+          return true;
+        }catch(error){}
+
+      }
+
+    }
+
+    return false;
+
+  }
+
+
+  function go(type){
+
+    closeMenu();
+
+    var done = false;
+
+
+    if(type === "dashboard"){
+
+      done =
+        runGlobal([
+          "showDashboard",
+          "showHome",
+          "showLanding"
+        ]);
+
+      if(!done){
+        done =
+          clickExistingText([
+            "Dashboard",
+            "Home"
+          ]);
+      }
+
+      if(!done){
+        done =
+          scrollToText([
+            "Dashboard",
+            "Welcome back"
+          ]);
+      }
+
+    }
+
+
+    if(type === "tasks"){
+
+      done =
+        runGlobal([
+          "showTasks",
+          "showTaskSection",
+          "loadTasks",
+          "loadCreatorTaskFeed"
+        ]);
+
+      if(!done){
+        done =
+          clickExistingText([
+            "Tasks",
+            "Creator Tasks"
+          ]);
+      }
+
+      if(!done){
+        done =
+          scrollToText([
+            "Tasks",
+            "Available Tasks"
+          ]);
+      }
+
+    }
+
+
+    if(type === "boost"){
+
+      done =
+        clickExistingText([
+          "Boost Center",
+          "Boost",
+          "Creator Boosts"
+        ]);
+
+      if(!done){
+        done =
+          scrollToText([
+            "Boost Center",
+            "Boost your account"
+          ]);
+      }
+
+    }
+
+
+    if(type === "growth"){
+
+      done =
+        clickExistingText([
+          "Creator Growth",
+          "Create your own task",
+          "Create Task"
+        ]);
+
+      if(!done){
+        done =
+          scrollToText([
+            "Creator Growth",
+            "Create your own task"
+          ]);
+      }
+
+    }
+
+
+    if(type === "ai"){
+
+      done =
+        runGlobal([
+          "openRizoraAI",
+          "openAI",
+          "showAI"
+        ]);
+
+      if(!done){
+        done =
+          clickExistingText([
+            "RIZORA AI",
+            "AI Assistant",
+            "AI"
+          ]);
+      }
+
+      if(!done){
+        done =
+          scrollToText([
+            "RIZORA AI",
+            "AI Assistant"
+          ]);
+      }
+
+    }
+
+
+    if(type === "referrals"){
+
+      done =
+        clickExistingText([
+          "Referrals",
+          "Referral"
+        ]);
+
+      if(!done){
+        done =
+          scrollToText([
+            "Referrals",
+            "Referral"
+          ]);
+      }
+
+    }
+
+
+    if(type === "help"){
+
+      if(
+        typeof window.openRizoraHelpCenter ===
+        "function"
+      ){
+
+        try{
+
+          window.openRizoraHelpCenter();
+          done = true;
+
+        }catch(error){}
+
+      }
+
+      if(!done){
+        done =
+          clickExistingText([
+            "Help Center",
+            "Help",
+            "Support"
+          ]);
+      }
+
+      if(!done){
+        done =
+          scrollToText([
+            "Help Center",
+            "Support"
+          ]);
+      }
+
+    }
+
+  }
+
+
+  button.addEventListener(
+    "click",
+    function(event){
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      toggleMenu();
+
+    },
+    true
+  );
+
+
+  overlay.addEventListener(
+    "click",
+    function(){
+
+      closeMenu();
+
+    }
+  );
+
+
+  panel.querySelectorAll(
+    "[data-rz-menu]"
+  ).forEach(
+    function(item){
+
+      item.addEventListener(
+        "click",
+        function(event){
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          go(
+            item.getAttribute(
+              "data-rz-menu"
+            )
+          );
+
+        },
+        true
+      );
+
+    }
+  );
+
+
+  var close =
+    panel.querySelector(
+      ".rz-menu-close"
+    );
+
+  if(close){
+
+    close.addEventListener(
+      "click",
+      function(event){
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        closeMenu();
+
+      },
+      true
+    );
+
+  }
+
+
+  document.addEventListener(
+    "keydown",
+    function(event){
+
+      if(event.key === "Escape"){
+        closeMenu();
+      }
+
+    }
+  );
+
+
+  window.addEventListener(
+    "resize",
+    function(){
+
+      if(window.innerWidth > 900){
+        closeMenu();
+      }
+
+    }
+  );
+
+
+  window.rizoraToggleMenu =
+    toggleMenu;
+
+  window.rizoraCloseMenu =
+    closeMenu;
+
+})();
+
+</script>
+
+<!-- ============================================================
+     END RIZORA_HAMBURGER_MENU
+============================================================= -->
+<!-- RIZORA_HAMBURGER_TOUCH_HOTFIX_V2 -->
+<style id="rizora-hamburger-touch-fix">
+#rzHamburgerButton{
+  position:fixed !important;
+  top:calc(env(safe-area-inset-top,0px) + 76px) !important;
+  right:14px !important;
+  z-index:2147483647 !important;
+  width:52px !important;
+  height:52px !important;
+  min-width:52px !important;
+  min-height:52px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+  -webkit-tap-highlight-color:transparent !important;
+  cursor:pointer !important;
+}
+
+#rzHamburgerButton *{
+  pointer-events:none !important;
+}
+
+#rzHamburgerOverlay{
+  z-index:2147483645 !important;
+}
+
+#rzHamburgerPanel{
+  z-index:2147483646 !important;
+  pointer-events:auto !important;
+  touch-action:pan-y !important;
+}
+
+#rzHamburgerPanel [data-rz-menu]{
+  position:relative !important;
+  z-index:2147483647 !important;
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+  -webkit-tap-highlight-color:transparent !important;
+  cursor:pointer !important;
+}
+</style>
+
+<script>
+(function(){
+  "use strict";
+
+  function bootRizoraHamburgerFix(){
+
+    var button = document.getElementById("rzHamburgerButton");
+    var overlay = document.getElementById("rzHamburgerOverlay");
+    var panel = document.getElementById("rzHamburgerPanel");
+
+    if(!button || !panel){
+      return;
+    }
+
+    function closeMenu(){
+      try{
+        panel.style.display = "none";
+        panel.style.pointerEvents = "none";
+        panel.style.transform = "translateX(100%)";
+        panel.setAttribute("aria-hidden","true");
+
+        if(overlay){
+          overlay.style.display = "none";
+          overlay.style.opacity = "0";
+          overlay.style.pointerEvents = "none";
+        }
+
+        document.documentElement.classList.remove("rz-menu-open");
+        document.body.classList.remove("rz-menu-open");
+        document.body.style.overflow = "";
+      }catch(e){}
+    }
+
+    function openMenu(){
+      try{
+        panel.style.display = "block";
+        panel.style.visibility = "visible";
+        panel.style.opacity = "1";
+        panel.style.pointerEvents = "auto";
+        panel.style.transform = "translateX(0)";
+        panel.setAttribute("aria-hidden","false");
+
+        if(overlay){
+          overlay.style.display = "block";
+          overlay.style.visibility = "visible";
+          overlay.style.opacity = "1";
+          overlay.style.pointerEvents = "auto";
+        }
+
+        document.documentElement.classList.add("rz-menu-open");
+        document.body.classList.add("rz-menu-open");
+      }catch(e){}
+    }
+
+    function toggleMenu(){
+      var isOpen =
+        panel.getAttribute("aria-hidden") === "false" ||
+        panel.style.transform === "translateX(0px)" ||
+        panel.style.display === "block";
+
+      if(isOpen){
+        closeMenu();
+      }else{
+        openMenu();
+      }
+    }
+
+    /*
+      Clone the hamburger button.
+      This removes old/broken click listeners attached by earlier menu code.
+    */
+    var cleanButton = button.cloneNode(true);
+    button.parentNode.replaceChild(cleanButton,button);
+    button = cleanButton;
+
+    button.setAttribute("type","button");
+    button.setAttribute("aria-label","Open RIZORA menu");
+    button.setAttribute("role","button");
+    button.style.pointerEvents = "auto";
+    button.style.touchAction = "manipulation";
+
+    var lastTouch = 0;
+
+    button.addEventListener("pointerup",function(e){
+      e.preventDefault();
+      e.stopPropagation();
+
+      var now = Date.now();
+
+      if(now - lastTouch < 300){
+        return;
+      }
+
+      lastTouch = now;
+      toggleMenu();
+    },{passive:false});
+
+    button.addEventListener("click",function(e){
+      e.preventDefault();
+      e.stopPropagation();
+
+      var now = Date.now();
+
+      if(now - lastTouch < 500){
+        return;
+      }
+
+      lastTouch = now;
+      toggleMenu();
+    },{passive:false});
+
+    button.addEventListener("keydown",function(e){
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        toggleMenu();
+      }
+    });
+
+    if(overlay){
+      overlay.style.pointerEvents = "none";
+
+      overlay.addEventListener("pointerup",function(e){
+        e.preventDefault();
+        closeMenu();
+      },{passive:false});
+    }
+
+    function normalize(text){
+      return String(text || "")
+        .toLowerCase()
+        .replace(/\s+/g," ")
+        .trim();
+    }
+
+    function tryGlobal(names){
+      for(var i=0;i<names.length;i++){
+        try{
+          var fn = window[names[i]];
+          if(typeof fn === "function"){
+            fn();
+            return true;
+          }
+        }catch(e){}
+      }
+      return false;
+    }
+
+    function clickMatchingTarget(words){
+      var els = document.querySelectorAll(
+        'a,button,[role="button"],[data-section],[data-page],nav [href]'
+      );
+
+      var candidates = [];
+
+      for(var i=0;i<els.length;i++){
+        var el = els[i];
+
+        if(panel.contains(el)){
+          continue;
+        }
+
+        var txt = normalize(
+          (el.innerText || el.textContent || "") + " " +
+          (el.getAttribute("aria-label") || "") + " " +
+          (el.getAttribute("title") || "")
+        );
+
+        if(!txt){
+          continue;
+        }
+
+        for(var j=0;j<words.length;j++){
+          if(txt === normalize(words[j]) ||
+             txt.indexOf(normalize(words[j])) !== -1){
+            candidates.push(el);
+            break;
+          }
+        }
+      }
+
+      if(candidates.length){
+        try{
+          candidates[0].click();
+          return true;
+        }catch(e){}
+      }
+
+      return false;
+    }
+
+    function scrollToMatch(words){
+      var els = document.querySelectorAll(
+        "section,main,article,div,h1,h2,h3"
+      );
+
+      for(var i=0;i<els.length;i++){
+        var el = els[i];
+
+        var txt = normalize(
+          (el.innerText || el.textContent || "").slice(0,300)
+        );
+
+        for(var j=0;j<words.length;j++){
+          if(txt.indexOf(normalize(words[j])) !== -1){
+            try{
+              el.scrollIntoView({
+                behavior:"smooth",
+                block:"start"
+              });
+              return true;
+            }catch(e){}
+          }
+        }
+      }
+
+      return false;
+    }
+
+    function navigate(action){
+
+      closeMenu();
+
+      if(action === "dashboard"){
+        if(
+          tryGlobal([
+            "showDashboard",
+            "openDashboard",
+            "goDashboard",
+            "loadDashboard"
+          ])
+        ){
+          return;
+        }
+
+        if(clickMatchingTarget(["dashboard","home"])){
+          return;
+        }
+
+        window.scrollTo({
+          top:0,
+          behavior:"smooth"
+        });
+
+        return;
+      }
+
+      if(action === "tasks"){
+        if(
+          tryGlobal([
+            "showTasks",
+            "openTasks",
+            "goTasks",
+            "loadTasks"
+          ])
+        ){
+          return;
+        }
+
+        if(clickMatchingTarget(["tasks","task"])){
+          return;
+        }
+
+        scrollToMatch(["Tasks","Daily Tasks"]);
+        return;
+      }
+
+      if(action === "boost"){
+        if(
+          tryGlobal([
+            "openBoostCenter",
+            "showBoostCenter",
+            "openBoost",
+            "showBoosts",
+            "openCreatorBoost"
+          ])
+        ){
+          return;
+        }
+
+        if(clickMatchingTarget(["boost center","boost"])){
+          return;
+        }
+
+        scrollToMatch(["Boost Center","Boost"]);
+        return;
+      }
+
+      if(action === "growth"){
+        if(
+          tryGlobal([
+            "openCreatorGrowth",
+            "showCreatorGrowth",
+            "openGrowth",
+            "showGrowth"
+          ])
+        ){
+          return;
+        }
+
+        if(clickMatchingTarget([
+          "creator growth",
+          "growth",
+          "creator"
+        ])){
+          return;
+        }
+
+        scrollToMatch([
+          "Creator Growth",
+          "Growth"
+        ]);
+
+        return;
+      }
+
+      if(action === "ai"){
+        if(
+          tryGlobal([
+            "openRizoraAI",
+            "openRizoraAi",
+            "openAI",
+            "showRizoraAI",
+            "showAI"
+          ])
+        ){
+          return;
+        }
+
+        if(clickMatchingTarget([
+          "rizora ai",
+          "ai"
+        ])){
+          return;
+        }
+
+        scrollToMatch([
+          "RIZORA AI",
+          "Rizora AI"
+        ]);
+
+        return;
+      }
+
+      if(action === "referrals"){
+        if(
+          tryGlobal([
+            "openReferrals",
+            "showReferrals",
+            "goReferrals"
+          ])
+        ){
+          return;
+        }
+
+        if(clickMatchingTarget([
+          "referrals",
+          "referral"
+        ])){
+          return;
+        }
+
+        scrollToMatch([
+          "Referrals",
+          "Referral"
+        ]);
+
+        return;
+      }
+
+      if(action === "help"){
+        if(
+          tryGlobal([
+            "openHelpCenter",
+            "showHelpCenter",
+            "openHelp",
+            "showHelp",
+            "openSupport",
+            "showSupport"
+          ])
+        ){
+          return;
+        }
+
+        if(clickMatchingTarget([
+          "help center",
+          "help",
+          "support"
+        ])){
+          return;
+        }
+
+        scrollToMatch([
+          "Help Center",
+          "Customer Service",
+          "Support"
+        ]);
+
+        return;
+      }
+    }
+
+    /*
+      Direct handlers for every menu button.
+    */
+    var items = panel.querySelectorAll("[data-rz-menu]");
+
+    for(var i=0;i<items.length;i++){
+      (function(item){
+        item.addEventListener("pointerup",function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          navigate(item.getAttribute("data-rz-menu"));
+        },{passive:false});
+
+        item.addEventListener("click",function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          navigate(item.getAttribute("data-rz-menu"));
+        },{passive:false});
+
+      })(items[i]);
+    }
+
+    document.addEventListener("keydown",function(e){
+      if(e.key === "Escape"){
+        closeMenu();
+      }
+    });
+
+    window.addEventListener("resize",function(){
+      if(window.innerWidth > 900){
+        closeMenu();
+      }
+    });
+
+    closeMenu();
+
+    console.log("RIZORA hamburger touch fix active");
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded",bootRizoraHamburgerFix);
+  }else{
+    bootRizoraHamburgerFix();
+  }
+})();
+</script>
+<!-- /RIZORA_HAMBURGER_TOUCH_HOTFIX_V2 -->
+</body>
 </html>
 
 
