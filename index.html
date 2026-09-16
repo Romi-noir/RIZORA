@@ -9979,6 +9979,287 @@ function ensureStyles(){
 </script>
 
 <!-- /RIZORA_MENU_FUNCTIONAL_FIX -->
+<!-- RIZORA_MENU_AUTH_GATE -->
+
+<style id="rizora-menu-auth-gate-style">
+@media (max-width:900px){
+
+  body.rz-menu-locked [data-rz-menu],
+  body.rz-menu-locked #rzWorkingMenuPanel,
+  body.rz-menu-locked #rzWorkingMenuBackdrop{
+    display:none !important;
+  }
+
+}
+</style>
+
+<script>
+(function(){
+
+  var authConfirmed = false;
+  var checking = false;
+
+  function getMenuButtons(){
+
+    var found = [];
+
+    var els = document.querySelectorAll(
+      "button,a,[role='button'],div[tabindex]"
+    );
+
+    for(var i=0;i<els.length;i++){
+
+      var text = String(
+        els[i].innerText ||
+        els[i].textContent ||
+        els[i].getAttribute("aria-label") ||
+        els[i].getAttribute("title") ||
+        ""
+      ).replace(/\s+/g," ").trim().toLowerCase();
+
+      if(
+        text === "menu" ||
+        text === "menu ☰" ||
+        text === "☰ menu"
+      ){
+        found.push(els[i]);
+      }
+    }
+
+    return found;
+  }
+
+  function hideMenu(){
+
+    document.body.classList.add("rz-menu-locked");
+
+    var menus = getMenuButtons();
+
+    for(var i=0;i<menus.length;i++){
+
+      menus[i].style.setProperty(
+        "display",
+        "none",
+        "important"
+      );
+
+      menus[i].setAttribute(
+        "aria-hidden",
+        "true"
+      );
+    }
+
+    var panel =
+      document.getElementById("rzWorkingMenuPanel");
+
+    var backdrop =
+      document.getElementById("rzWorkingMenuBackdrop");
+
+    if(panel){
+      panel.style.display="none";
+    }
+
+    if(backdrop){
+      backdrop.style.display="none";
+    }
+  }
+
+  function showMenu(){
+
+    document.body.classList.remove("rz-menu-locked");
+
+    var menus = getMenuButtons();
+
+    for(var i=0;i<menus.length;i++){
+
+      menus[i].style.removeProperty("display");
+
+      menus[i].removeAttribute("aria-hidden");
+    }
+  }
+
+  async function checkEndpoint(url){
+
+    try{
+
+      var response = await fetch(
+        url,
+        {
+          method:"GET",
+          credentials:"include",
+          cache:"no-store",
+          headers:{
+            "Accept":"application/json"
+          }
+        }
+      );
+
+      if(!response.ok){
+        return false;
+      }
+
+      var data = await response.json();
+
+      /*
+        Accept the session only when the response
+        clearly represents an authenticated user.
+      */
+
+      if(
+        data &&
+        (
+          data.user ||
+          data.username ||
+          data.userId ||
+          data.id ||
+          data.authenticated === true ||
+          data.loggedIn === true ||
+          data.ok === true && (
+            data.user ||
+            data.username ||
+            data.userId
+          )
+        )
+      ){
+        return true;
+      }
+
+    }catch(e){}
+
+    return false;
+  }
+
+  async function checkAuth(){
+
+    if(checking){
+      return;
+    }
+
+    checking=true;
+
+    hideMenu();
+
+    /*
+      Try the common RIZORA authenticated-user endpoints.
+      The first successful authenticated response unlocks MENU.
+    */
+
+    var endpoints = [
+      "/api/me",
+      "/api/auth/me",
+      "/api/user/me",
+      "/api/session"
+    ];
+
+    for(var i=0;i<endpoints.length;i++){
+
+      if(await checkEndpoint(endpoints[i])){
+
+        authConfirmed=true;
+
+        showMenu();
+
+        checking=false;
+
+        console.log(
+          "RIZORA: authenticated — MENU unlocked."
+        );
+
+        return;
+      }
+    }
+
+    /*
+      Also support existing frontend auth state if
+      RIZORA already exposes one.
+    */
+
+    try{
+
+      if(
+        window.currentUser ||
+        window.currentUserData ||
+        window.rizoraUser ||
+        window.loggedInUser ||
+        window.RIZORA_AUTHENTICATED === true
+      ){
+
+        authConfirmed=true;
+        showMenu();
+
+        checking=false;
+
+        return;
+      }
+
+    }catch(e){}
+
+    authConfirmed=false;
+
+    hideMenu();
+
+    checking=false;
+
+    console.log(
+      "RIZORA: not authenticated — MENU hidden."
+    );
+  }
+
+  function start(){
+
+    /*
+      Hide immediately so the MENU never flashes
+      before authentication is checked.
+    */
+    hideMenu();
+
+    checkAuth();
+
+    /*
+      This also catches a user who logs in without
+      a full page reload.
+    */
+    setInterval(function(){
+
+      if(
+        !authConfirmed ||
+        document.hidden === false
+      ){
+        checkAuth();
+      }
+
+    },2000);
+
+    document.addEventListener(
+      "visibilitychange",
+      function(){
+
+        if(!document.hidden){
+          checkAuth();
+        }
+
+      }
+    );
+
+  }
+
+  if(document.readyState==="loading"){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      start
+    );
+
+  }else{
+
+    start();
+
+  }
+
+})();
+</script>
+
+<!-- /RIZORA_MENU_AUTH_GATE -->
 </body>
 </html>
 
