@@ -1,4 +1,4 @@
-// RIZORA Backend — Version 8.1.0
+﻿// RIZORA Backend — Version 8.1.0
 // Clean copy-paste version
 
 "use strict";
@@ -8,9 +8,23 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 require("dotenv").config();
+const { OAuth2Client } =
+  require("google-auth-library");
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";
+const GOOGLE_CLIENT_ID =
+  String(
+    process.env.GOOGLE_CLIENT_ID ||
+    ""
+  ).trim();
+
+const googleOAuthClient =
+  GOOGLE_CLIENT_ID
+    ? new OAuth2Client(
+        GOOGLE_CLIENT_ID
+      )
+    : null;
 
 const ROOT = __dirname;
 const DB_DIR = path.join(ROOT, "database");
@@ -74,6 +88,7 @@ function loadDB() {
     db.users ||= [];
     db.tasks ||= [];
     db.taskCompletions ||= [];
+    db.taskAttempts ||= [];
     db.auditLogs ||= [];
     db.referrals ||= [];
     db.sessions ||= [];
@@ -131,6 +146,51 @@ function uid(prefix = "") {
   );
 }
 
+function uniqueGoogleUsername(
+  db,
+  displayName,
+  email
+) {
+  const rawBase =
+    String(
+      displayName ||
+      String(email || "")
+        .split("@")[0] ||
+      "creator"
+    )
+      .toLowerCase()
+      .replace(/[^a-z0-9_.-]/g, "")
+      .slice(0, 24);
+
+  let base =
+    rawBase.length >= 3
+      ? rawBase
+      : "creator";
+
+  let username = base;
+
+  while(
+    db.users.some(
+      (user) =>
+        normalizeUsername(
+          user.username
+        ) === username
+    )
+  ){
+    username =
+      `${base}${crypto
+        .randomBytes(3)
+        .toString("hex")}`;
+
+    username =
+      username.slice(
+        0,
+        30
+      );
+  }
+
+  return username;
+}
 function normalizeUsername(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -1463,6 +1523,389 @@ async function handleRequest(
   // SIGNUP
   // ----------------------------------------------------------
 
+  // ----------------------------------------------------------
+  // GOOGLE AUTH CONFIG
+  // ----------------------------------------------------------
+
+  if (
+    method === "GET" &&
+    pathname === "/api/auth/google/config"
+  ) {
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        enabled:
+          Boolean(
+            GOOGLE_CLIENT_ID
+          ),
+        clientId:
+          GOOGLE_CLIENT_ID
+      }
+    );
+
+    return;
+  }
+  // ----------------------------------------------------------
+  // GOOGLE SIGN IN / SIGN UP
+  // ----------------------------------------------------------
+
+  if (
+    method === "POST" &&
+    pathname === "/api/auth/google"
+  ) {
+    let body;
+
+    try {
+      body =
+        await readBody(req);
+    } catch (error) {
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    if (
+      !GOOGLE_CLIENT_ID ||
+      !googleOAuthClient
+    ) {
+      sendError(
+        res,
+        503,
+        "Google sign-in is not configured yet."
+      );
+
+      return;
+    }
+
+    const credential =
+      String(
+        body.credential ||
+        ""
+      ).trim();
+
+    if (!credential) {
+      sendError(
+        res,
+        400,
+        "Google credential is required."
+      );
+
+      return;
+    }
+
+    let payload;
+
+    try {
+      const ticket =
+        await googleOAuthClient.verifyIdToken({
+          idToken:
+            credential,
+          audience:
+            GOOGLE_CLIENT_ID
+        });
+
+      payload =
+        ticket.getPayload();
+
+    } catch (error) {
+      console.error(
+        "Google token verification failed:",
+        error.message
+      );
+
+      sendError(
+        res,
+        401,
+        "Invalid Google sign-in credential."
+      );
+
+      return;
+    }
+
+    const googleSub =
+      String(
+        payload?.sub ||
+        ""
+      ).trim();
+
+    const googleEmail =
+      normalizeEmail(
+        payload?.email
+      );
+
+    const emailVerified =
+      payload?.email_verified === true;
+
+    const googleName =
+      cleanString(
+        payload?.name ||
+        googleEmail.split("@")[0] ||
+        "RIZORA Creator",
+        80
+      );
+
+    const issuer =
+      String(
+        payload?.iss ||
+        ""
+      );
+
+    if (
+      !googleSub ||
+      !googleEmail ||
+      !emailVerified ||
+      ![
+        "accounts.google.com",
+        "https://accounts.google.com"
+      ].includes(issuer)
+    ) {
+      sendError(
+        res,
+        401,
+        "Google account verification failed."
+      );
+
+      return;
+    }
+
+    if (
+      payload?.exp &&
+      Number(payload.exp) <
+      Math.floor(
+        Date.now() / 1000
+      )
+    ) {
+      sendError(
+        res,
+        401,
+        "Google sign-in credential has expired."
+      );
+
+      return;
+    }
+
+    const existingGoogleUser =
+      db.users.find(
+        (user) =>
+          String(
+            user.googleSub ||
+            ""
+          ) === googleSub
+      );
+
+    let user =
+      existingGoogleUser ||
+      db.users.find(
+        (item) =>
+          normalizeEmail(
+            item.email
+          ) === googleEmail
+      );
+
+    if(user){
+
+      if(
+        user.status !==
+        "active"
+      ){
+        sendError(
+          res,
+          403,
+          "This account is not active."
+        );
+
+        return;
+      }
+
+      if(
+        user.googleSub &&
+        user.googleSub !== googleSub
+      ){
+        sendError(
+          res,
+          409,
+          "This email is already linked to another Google account."
+        );
+
+        return;
+      }
+
+      if(
+        !user.googleSub &&
+        user.authProvider !==
+        "google"
+      ){
+        sendError(
+          res,
+          409,
+          "An RIZORA password account already uses this email. Sign in with your password first before linking Google."
+        );
+
+        return;
+      }
+
+      user.googleSub =
+        googleSub;
+
+      user.authProvider =
+        "google";
+
+      user.emailVerified =
+        true;
+
+      if(
+        !user.displayName
+      ){
+        user.displayName =
+          googleName;
+      }
+
+      user.lastLoginAt =
+        new Date().toISOString();
+
+    }else{
+
+      const username =
+        uniqueGoogleUsername(
+          db,
+          googleName,
+          googleEmail
+        );
+
+      user = {
+        id:
+          uid("user_"),
+
+        username,
+
+        displayName:
+          googleName,
+
+        email:
+          googleEmail,
+
+        passwordHash:
+          null,
+
+        authProvider:
+          "google",
+
+        googleSub:
+
+          googleSub,
+
+        emailVerified:
+          true,
+
+        role:
+          "user",
+
+        status:
+          "active",
+
+        points:
+          0,
+
+        referralCode:
+          randomReferralCode(
+            username
+          ),
+
+        referredBy:
+          null,
+
+        referralCount:
+          0,
+
+        createdAt:
+          new Date().toISOString(),
+
+        lastLoginAt:
+          new Date().toISOString()
+      };
+
+      db.users.push(
+        user
+      );
+
+      const referral =
+        applyReferral(
+          db,
+          user,
+          cleanString(
+            body.referralCode ||
+            "",
+            100
+          )
+        );
+
+      audit(
+        db,
+        "google_signup",
+        user,
+        {
+          email:
+            googleEmail,
+          referralApplied:
+            Boolean(referral)
+        }
+      );
+    }
+
+    if(
+      !existingGoogleUser
+    ){
+      audit(
+        db,
+        "google_login",
+        user,
+        {
+          googleSub:
+            googleSub
+        }
+      );
+    }
+
+    const token =
+      createSession(
+        db,
+        user.id
+      );
+
+    user.lastLoginAt =
+      new Date().toISOString();
+
+    saveDB(db);
+
+    setSessionCookie(
+      res,
+      token
+    );
+
+    sendJSON(
+      res,
+      200,
+      {
+        success:
+          true,
+
+        token,
+
+        user:
+          safeUser(
+            user
+          )
+      }
+    );
+
+    return;
+  }
   if (
     method === "POST" &&
     pathname === "/api/auth/signup"
@@ -1491,11 +1934,63 @@ async function handleRequest(
       normalizeEmail(
         body.email
       );
+    if (
+      !email ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+      sendError(
+        res,
+        400,
+        "A valid email address is required."
+      );
+
+      return;
+    }
 
     const password =
       String(
         body.password || ""
       );
+    const confirmPassword =
+      String(
+        body.confirmPassword ||
+        ""
+      );
+
+    if (!confirmPassword) {
+      sendError(
+        res,
+        400,
+        "Please confirm your password."
+      );
+
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      sendError(
+        res,
+        400,
+        "Passwords do not match."
+      );
+
+      return;
+    }
+
+    if (
+      password.length < 8 ||
+      !/[a-z]/.test(password) ||
+      !/[A-Z]/.test(password) ||
+      !/[0-9]/.test(password)
+    ) {
+      sendError(
+        res,
+        400,
+        "Password must be at least 8 characters and include uppercase, lowercase and a number."
+      );
+
+      return;
+    }
 
     const referralCode =
       cleanString(
@@ -2003,6 +2498,7 @@ if (method === "GET" && pathname === "/api/tasks") {
 
   db.tasks ||= [];
   db.taskCompletions ||= [];
+    db.taskAttempts ||= [];
   db.taskSeen ||= {};
   db.rizoraGeneratedHistory ||= {};
   db.rizoraGeneratedHistory[user.id] ||= [];
@@ -2051,6 +2547,150 @@ if (method === "GET" && pathname === "/api/tasks") {
    * If this user has no generated task waiting, create four.
    * History prevents reuse of the same action/platform pair.
    */
+  // ----------------------------------------------------------
+  // TASKS — START
+  // ----------------------------------------------------------
+
+  if (
+    method === "POST" &&
+    pathname === "/api/tasks/start"
+  ) {
+    const user =
+      getCurrentUser(
+        db,
+        req
+      );
+
+    if (!user) {
+      sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+
+      return;
+    }
+
+    let body;
+
+    try {
+      body = await readBody(req);
+    } catch (error) {
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    const taskId =
+      cleanString(
+        body.taskId ||
+        body.id,
+        100
+      );
+
+    if (!taskId) {
+      sendError(
+        res,
+        400,
+        "Task ID is required."
+      );
+
+      return;
+    }
+
+    const task =
+      db.tasks.find(
+        (item) =>
+          item.id === taskId &&
+          item.active !== false
+      );
+
+    if (!task) {
+      sendError(
+        res,
+        404,
+        "Task not found."
+      );
+
+      return;
+    }
+
+    const alreadyCompleted =
+      db.taskCompletions.some(
+        (completion) =>
+          completion.userId === user.id &&
+          completion.taskId === task.id
+      );
+
+    if (alreadyCompleted) {
+      sendError(
+        res,
+        409,
+        "Task already completed."
+      );
+
+      return;
+    }
+
+    db.taskAttempts ||= [];
+
+    const now =
+      new Date().toISOString();
+
+    const existing =
+      db.taskAttempts.find(
+        (item) =>
+          item.userId === user.id &&
+          item.taskId === task.id &&
+          item.status === "started"
+      );
+
+    if (existing) {
+      existing.startedAt =
+        existing.startedAt ||
+        now;
+
+      saveDB(db);
+
+      sendJSON(
+        res,
+        200,
+        {
+          success: true,
+          startedAt: existing.startedAt,
+          taskId: task.id
+        }
+      );
+
+      return;
+    }
+
+    db.taskAttempts.push({
+      id: uid("attempt_"),
+      userId: user.id,
+      taskId: task.id,
+      status: "started",
+      startedAt: now
+    });
+
+    saveDB(db);
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        startedAt: now,
+        taskId: task.id
+      }
+    );
+
+    return;
+  }
   if (!cooldown.active && generatedTasks.length === 0) {
 
     const actionPool = [
@@ -2262,7 +2902,53 @@ if (
           )
         );
 
-  const completion = {
+      db.taskAttempts ||= [];
+
+    const attempt = db.taskAttempts.find(
+      (item) =>
+        item.userId === user.id &&
+        item.taskId === task.id &&
+        item.status === "started"
+    );
+
+    if (!attempt) {
+      sendError(
+        res,
+        403,
+        "Start this task first."
+      );
+
+      return;
+    }
+
+    const startedAt = Number(attempt.startedAt || 0);
+    const elapsedMs = Date.now() - startedAt;
+    const REQUIRED_TASK_TIME_MS = 20 * 1000;
+
+    if (
+      !startedAt ||
+      elapsedMs < REQUIRED_TASK_TIME_MS
+    ) {
+      const remainingSeconds = Math.max(
+        1,
+        Math.ceil(
+          (REQUIRED_TASK_TIME_MS - elapsedMs) / 1000
+        )
+      );
+
+      sendError(
+        res,
+        403,
+        `Please complete the task before claiming the reward. ${remainingSeconds}s remaining.`
+      );
+
+      return;
+    }
+
+    attempt.status = "verified";
+    attempt.verifiedAt =
+      new Date().toISOString();
+const completion = {
     id:
       uid("completion_"),
     userId:
@@ -6063,6 +6749,9 @@ process.on(
     );
   }
 );
+
+
+
 
 
 

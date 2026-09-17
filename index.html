@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head><script>window.RIZORA_API_BASE="https://rizora-guse.onrender.com";</script>
 <meta charset="UTF-8">
@@ -1551,7 +1551,12 @@ text-transform:uppercase;
     transform:translateX(430px);
   }
 }
-</style></head>
+</style><script
+src="https://accounts.google.com/gsi/client"
+async
+defer
+></script>
+</head>
 
 <body><div id="rizoraFloatingProgress" class="rizora-floating-progress">
   <div class="rizora-floating-progress-track">
@@ -1790,6 +1795,24 @@ placeholder="Your name"
 </div>
 
 <div class="field">
+  <label for="signupEmail">
+    Email address
+    <span style="opacity:.5">required</span>
+  </label>
+
+  <input
+    id="signupEmail"
+    type="email"
+    required
+    autocomplete="email"
+    placeholder="you@example.com"
+  >
+
+  <small class="muted">
+    A valid email address is required to create a RIZORA account.
+  </small>
+</div>
+<div class="field">
 
 <label for="signupPassword">
 Password
@@ -1838,6 +1861,44 @@ Add your social media handle so creators can find you. You can skip this.
 </div>
 <div class="field">
 
+<label for="signupConfirmPassword">
+Confirm password
+</label>
+
+<div class="password-wrap">
+
+<input
+id="signupConfirmPassword"
+type="password"
+required
+minlength="8"
+maxlength="200"
+autocomplete="new-password"
+placeholder="Enter your password again"
+>
+
+<button
+type="button"
+class="password-toggle"
+onclick="toggleRizoraPassword('signupConfirmPassword', this)"
+aria-label="Show or hide confirm password"
+>
+Show
+</button>
+
+</div>
+
+<small
+id="signupPasswordMatch"
+class="muted"
+style="display:block;margin-top:7px;"
+>
+Re-enter the same password to continue.
+</small>
+
+</div>
+<div class="field">
+
 <label for="signupReferralCode">
 Referral code
 <span style="opacity:.5">optional</span>
@@ -1877,6 +1938,25 @@ Login
 
 </div>
 
+
+<div
+style="margin-top:14px;"
+>
+
+<div
+style="display:flex;align-items:center;gap:10px;margin:14px 0;color:rgba(255,255,255,.45);font-size:11px;"
+>
+<span style="height:1px;flex:1;background:rgba(255,255,255,.12);"></span>
+<span>OR</span>
+<span style="height:1px;flex:1;background:rgba(255,255,255,.12);"></span>
+</div>
+
+<div
+id="rizoraGoogleSignup"
+style="display:flex;justify-content:center;min-height:44px;"
+></div>
+
+</div>
 </form>
 
 <form
@@ -1950,6 +2030,25 @@ Sign up
 
 </div>
 
+
+<div
+style="margin-top:14px;"
+>
+
+<div
+style="display:flex;align-items:center;gap:10px;margin:14px 0;color:rgba(255,255,255,.45);font-size:11px;"
+>
+<span style="height:1px;flex:1;background:rgba(255,255,255,.12);"></span>
+<span>OR</span>
+<span style="height:1px;flex:1;background:rgba(255,255,255,.12);"></span>
+</div>
+
+<div
+id="rizoraGoogleLogin"
+style="display:flex;justify-content:center;min-height:44px;"
+></div>
+
+</div>
 </form>
 
 </div>
@@ -3820,6 +3919,51 @@ function updateHeader(){
 async function handleSignup(event){
 
   event.preventDefault();
+  const rizoraPassword =
+    $("signupPassword")
+      .value;
+
+  const rizoraConfirmPassword =
+    $("signupConfirmPassword")
+      .value;
+
+  if(
+    rizoraPassword.length < 8 ||
+    !/[a-z]/.test(rizoraPassword) ||
+    !/[A-Z]/.test(rizoraPassword) ||
+    !/[0-9]/.test(rizoraPassword)
+  ){
+
+    setAuthMessage(
+      "Password must be at least 8 characters and include uppercase, lowercase and a number."
+    );
+
+    return;
+  }
+
+  if(
+    rizoraPassword !==
+    rizoraConfirmPassword
+  ){
+
+    setAuthMessage(
+      "Passwords do not match."
+    );
+
+    $("signupPasswordMatch").textContent =
+      "Passwords do not match.";
+
+    $("signupPasswordMatch").style.color =
+      "#ff7070";
+
+    return;
+  }
+
+  $("signupPasswordMatch").textContent =
+    "Passwords match.";
+
+  $("signupPasswordMatch").style.color =
+    "#9dffbe";
 
   const submit =
     $("signupSubmit");
@@ -3847,15 +3991,23 @@ async function handleSignup(event){
                 $("signupUsername")
                   .value
                   .trim(),
-
               displayName:
                 $("signupDisplayName")
                   .value
                   .trim(),
 
-              password:
+              email:
+  $("signupEmail")
+    .value
+    .trim(),
+password:
                 $("signupPassword")
                   .value,
+
+              confirmPassword:
+                $("signupConfirmPassword")
+                  .value,
+
 
               referralCode:
                 $("signupReferralCode")
@@ -6219,7 +6371,7 @@ async function creatorAskAI(){
     const authToken =
       localStorage.getItem("rizoraToken") || "";
 
-    const response = await apiFetch("/api/ai/chat",{
+    const response = await apiapi("/api/ai/chat",{
       method:"POST",
       headers:{
         "Content-Type":"application/json",
@@ -6630,7 +6782,7 @@ document.addEventListener("pointerdown",function(e){
 
       const token = localStorage.getItem("rizoraToken") || "";
 
-      const response = await apiFetch("/api/ai/chat",{
+      const response = await apiapi("/api/ai/chat",{
         method:"POST",
         headers:{
           "Content-Type":"application/json",
@@ -6730,7 +6882,7 @@ document.addEventListener("pointerdown",function(e){
       const token =
         localStorage.getItem("rizoraToken") || "";
 
-      const response = await apiFetch("/api/ai/chat",{
+      const response = await apiapi("/api/ai/chat",{
         method:"POST",
         headers:{
           "Content-Type":"application/json",
@@ -9984,8 +10136,947 @@ function ensureStyles(){
 })();
 </script>
 <!-- RIZORA COMMAND CENTER BACK BUTTON END -->
+<style id="rizoraCommandCenterBackV3">
+#rizoraCommandCenterBackV3{
+  position:fixed;
+  top:72px;
+  right:16px;
+  z-index:999999;
+  display:none;
+  padding:11px 16px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(18,12,30,.96);
+  color:#fff;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+  box-shadow:0 12px 30px rgba(0,0,0,.35);
+}
+@media(max-width:760px){
+  #rizoraCommandCenterBackV3{
+    top:66px;
+    left:12px;
+    right:12px;
+    width:calc(100% - 24px);
+  }
+}
+</style>
+
+<script id="rizoraCommandCenterBackV3Script">
+(function(){
+
+  function rizoraSuperAdmin(){
+    try{
+      if(
+        typeof window.RIZORA_IS_SUPER_ADMIN === "function" &&
+        window.RIZORA_IS_SUPER_ADMIN()
+      ){
+        return true;
+      }
+
+      var user =
+        typeof currentUser !== "undefined"
+          ? currentUser
+          : null;
+
+      var username =
+        String(user && user.username || "").toLowerCase();
+
+      return !!user &&
+        (
+          user.role === "super_admin" ||
+          username === "romi" ||
+          username === "superadmin2"
+        );
+    }catch(error){
+      return false;
+    }
+  }
+
+  function syncCommandCenterButton(){
+
+    var dashboard =
+      document.getElementById("dashboard");
+
+    var adminDashboard =
+      document.getElementById("adminDashboard");
+
+    var button =
+      document.getElementById("rizoraCommandCenterBackV3");
+
+    if(!dashboard || !button){
+      return;
+    }
+
+    var creatorVisible =
+      !dashboard.classList.contains("hidden");
+
+    var adminVisible =
+      adminDashboard &&
+      !adminDashboard.classList.contains("hidden");
+
+    button.style.display =
+      rizoraSuperAdmin() &&
+      creatorVisible &&
+      !adminVisible
+        ? "flex"
+        : "none";
+  }
+
+  function install(){
+
+    var button =
+      document.getElementById("rizoraCommandCenterBackV3");
+
+    if(!button){
+
+      button =
+        document.createElement("button");
+
+      button.id =
+        "rizoraCommandCenterBackV3";
+
+      button.type =
+        "button";
+
+      button.textContent =
+        "Command Center";
+
+      button.addEventListener(
+        "click",
+        function(){
+
+          if(
+            typeof showAdminDashboard ===
+            "function"
+          ){
+            showAdminDashboard();
+          }else if(
+            typeof openBestDashboard ===
+            "function"
+          ){
+            openBestDashboard();
+          }
+        }
+      );
+
+      document.body.appendChild(button);
+    }
+
+    syncCommandCenterButton();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener(
+      "DOMContentLoaded",
+      install
+    );
+  }else{
+    install();
+  }
+
+  var observer =
+    new MutationObserver(
+      syncCommandCenterButton
+    );
+
+  function startObserver(){
+
+    if(!document.body){
+      return;
+    }
+
+    observer.observe(
+      document.body,
+      {
+        subtree:true,
+        attributes:true,
+        attributeFilter:["class"]
+      }
+    );
+
+    setInterval(
+      syncCommandCenterButton,
+      1000
+    );
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener(
+      "DOMContentLoaded",
+      startObserver
+    );
+  }else{
+    startObserver();
+  }
+
+})();
+</script>
+<script id="rizoraTaskVerificationV3">
+(function(){
+
+  window.completeTask = async function(taskId){
+
+    var storageKey =
+      "rizoraTaskAttempt:" + taskId;
+
+    var startedAt =
+      Number(
+        sessionStorage.getItem(storageKey) || 0
+      );
+
+    try{
+
+      if(!startedAt){
+
+        var started =
+          await api(
+            "/api/tasks/start",
+            {
+              method:"POST",
+              body:JSON.stringify({
+                taskId:taskId
+              })
+            }
+          );
+
+        var serverStarted =
+          Date.parse(
+            started.startedAt || ""
+          );
+
+        startedAt =
+          Number.isFinite(serverStarted)
+            ? serverStarted
+            : Date.now();
+
+        sessionStorage.setItem(
+          storageKey,
+          String(startedAt)
+        );
+
+        try{
+          var taskResult =
+            await api("/api/tasks");
+
+          var task =
+            (taskResult.tasks || [])
+              .find(function(item){
+                return item.id === taskId;
+              });
+
+          if(task && task.url){
+            window.open(
+              task.url,
+              "_blank",
+              "noopener,noreferrer"
+            );
+          }
+        }catch(error){}
+
+        if(
+          typeof showToast ===
+          "function"
+        ){
+          showToast(
+            "Task started. Complete it, then tap Complete again."
+          );
+        }
+
+        if(
+          typeof loadTasks ===
+          "function"
+        ){
+          await loadTasks();
+        }
+
+        return;
+      }
+
+      var elapsed =
+        Date.now() - startedAt;
+
+      var minimumMs =
+        20000;
+
+      if(elapsed < minimumMs){
+
+        var remaining =
+          Math.ceil(
+            (minimumMs - elapsed) / 1000
+          );
+
+        if(
+          typeof showToast ===
+          "function"
+        ){
+          showToast(
+            "Please complete the task first. " +
+            remaining +
+            " seconds remaining."
+          );
+        }
+
+        return;
+      }
+
+      var result =
+        await api(
+          "/api/tasks/complete",
+          {
+            method:"POST",
+            body:JSON.stringify({
+              taskId:taskId
+            })
+          }
+        );
+
+      sessionStorage.removeItem(
+        storageKey
+      );
+
+      currentUser =
+        result.user;
+
+      localStorage.setItem(
+        "rizoraUser",
+        JSON.stringify(
+          currentUser
+        )
+      );
+
+      if(
+        typeof renderUser ===
+        "function"
+      ){
+        renderUser();
+      }
+
+      if(
+        typeof showToast ===
+        "function"
+      ){
+        showToast(
+          "+" +
+          result.reward +
+          " RIZORA points earned."
+        );
+      }
+
+      if(
+        typeof refreshDashboard ===
+        "function"
+      ){
+        await refreshDashboard();
+      }else if(
+        typeof loadTasks ===
+        "function"
+      ){
+        await loadTasks();
+      }
+
+    }catch(error){
+
+      if(
+        typeof showToast ===
+        "function"
+      ){
+        showToast(
+          error.message
+        );
+      }
+    }
+  };
+
+})();
+</script>
+<script>
+/* RIZORA_TASK_START_GUARD_V4 */
+window.completeTask = async function(taskId){
+
+  try{
+
+    const start = await api(
+      "/api/tasks/start",
+      {
+        method:"POST",
+        body:JSON.stringify({
+          taskId: taskId
+        })
+      }
+    );
+
+    const startedAt =
+      Date.parse(
+        String(
+          start.startedAt || ""
+        )
+      );
+
+    if(
+      !startedAt ||
+      Number.isNaN(startedAt)
+    ){
+      throw new Error(
+        "Could not start this task."
+      );
+    }
+
+    const elapsed =
+      Date.now() -
+      startedAt;
+
+    const required =
+      20 * 1000;
+
+    if(elapsed < required){
+
+      let task = null;
+
+      try{
+
+        const taskData =
+          await api(
+            "/api/tasks"
+          );
+
+        task =
+          (taskData.tasks || [])
+            .find(
+              function(item){
+                return item.id === taskId;
+              }
+            );
+
+      }catch(_error){}
+
+      if(
+        task &&
+        task.url
+      ){
+        window.open(
+          task.url,
+          "_blank",
+          "noopener,noreferrer"
+        );
+      }
+
+      const remaining =
+        Math.max(
+          1,
+          Math.ceil(
+            (required - elapsed) /
+            1000
+          )
+        );
+
+      if(
+        typeof window.showToast ===
+        "function"
+      ){
+        window.showToast(
+          "Task started. Do the task, then come back in " +
+          remaining +
+          "s to claim your reward."
+        );
+      }
+
+      return;
+    }
+
+    const result =
+      await api(
+        "/api/tasks/complete",
+        {
+          method:"POST",
+          body:JSON.stringify({
+            taskId: taskId
+          })
+        }
+      );
+
+    if(
+      typeof window.showToast ===
+      "function"
+    ){
+      window.showToast(
+        "Task completed. +" +
+        Number(
+          result.reward || 0
+        ) +
+        " points."
+      );
+    }
+
+    if(
+      typeof window.loadTasks ===
+      "function"
+    ){
+      await window.loadTasks();
+    }
+
+    if(
+      typeof window.refreshUser ===
+      "function"
+    ){
+      await window.refreshUser();
+    }
+
+  }catch(error){
+
+    if(
+      typeof window.showToast ===
+      "function"
+    ){
+      window.showToast(
+        error.message ||
+        "Task could not be completed."
+      );
+    }else{
+      alert(
+        error.message ||
+        "Task could not be completed."
+      );
+    }
+  }
+};
+</script><script>
+function toggleRizoraPassword(
+  id,
+  button
+){
+
+  const input =
+    document.getElementById(id);
+
+  if(!input) return;
+
+  const showing =
+    input.type === "text";
+
+  input.type =
+    showing
+      ? "password"
+      : "text";
+
+  button.textContent =
+    showing
+      ? "Show"
+      : "Hide";
+}
+
+(function(){
+
+  function wirePasswordMatch(){
+
+    const password =
+      document.getElementById(
+        "signupPassword"
+      );
+
+    const confirm =
+      document.getElementById(
+        "signupConfirmPassword"
+      );
+
+    const message =
+      document.getElementById(
+        "signupPasswordMatch"
+      );
+
+    if(
+      !password ||
+      !confirm ||
+      !message
+    ){
+      return;
+    }
+
+    if(
+      confirm.dataset.rizoraMatchWired ===
+      "1"
+    ){
+      return;
+    }
+
+    confirm.dataset.rizoraMatchWired =
+      "1";
+
+    function update(){
+
+      if(!confirm.value){
+
+        message.textContent =
+          "Re-enter the same password to continue.";
+
+        message.style.color =
+          "";
+
+        return;
+      }
+
+      if(
+        password.value ===
+        confirm.value
+      ){
+
+        message.textContent =
+          "Passwords match.";
+
+        message.style.color =
+          "#9dffbe";
+
+      }else{
+
+        message.textContent =
+          "Passwords do not match.";
+
+        message.style.color =
+          "#ff7070";
+      }
+    }
+
+    password.addEventListener(
+      "input",
+      update
+    );
+
+    confirm.addEventListener(
+      "input",
+      update
+    );
+  }
+
+  if(
+    document.readyState ===
+    "loading"
+  ){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      wirePasswordMatch
+    );
+
+  }else{
+
+    wirePasswordMatch();
+  }
+
+  setInterval(
+    wirePasswordMatch,
+    1000
+  );
+
+})();
+</script>
+<script>
+/* RIZORA_GOOGLE_AUTH_V1 */
+
+async function handleRizoraGoogleCredential(
+  response
+){
+
+  try{
+
+    if(
+      !response ||
+      !response.credential
+    ){
+      throw new Error(
+        "Google did not return a valid credential."
+      );
+    }
+
+    setAuthMessage(
+      "Signing you in with Google...",
+      "success"
+    );
+
+    const referral =
+      document.getElementById(
+        "signupReferralCode"
+      )?.value
+      ?.trim() || "";
+
+    const result =
+      await api(
+        "/api/auth/google",
+        {
+          method:"POST",
+          body:
+            JSON.stringify({
+              credential:
+                response.credential,
+
+              referralCode:
+                referral
+            })
+        }
+      );
+
+    token =
+      result.token;
+
+    currentUser =
+      result.user;
+
+    localStorage.setItem(
+      "rizoraToken",
+      token
+    );
+
+    localStorage.setItem(
+      "rizoraUser",
+      JSON.stringify(
+        currentUser
+      )
+    );
+
+    sessionStorage.removeItem(
+      "rizoraReferralCode"
+    );
+
+    updateHeader();
+
+    if(
+      typeof openBestDashboard ===
+      "function"
+    ){
+      openBestDashboard();
+    }else{
+      showDashboard();
+    }
+
+    if(
+      typeof showToast ===
+      "function"
+    ){
+      showToast(
+        "Welcome to RIZORA 🚀"
+      );
+    }
+
+  }catch(error){
+
+    setAuthMessage(
+      error.message ||
+      "Google sign-in failed."
+    );
+  }
+}
+
+async function initRizoraGoogle(){
+
+  const signupBox =
+    document.getElementById(
+      "rizoraGoogleSignup"
+    );
+
+  const loginBox =
+    document.getElementById(
+      "rizoraGoogleLogin"
+    );
+
+  if(
+    !signupBox &&
+    !loginBox
+  ){
+    return;
+  }
+
+  try{
+
+    const config =
+      await api(
+        "/api/auth/google/config"
+      );
+
+    if(
+      !config ||
+      !config.enabled ||
+      !config.clientId
+    ){
+
+      const message =
+        document.createElement(
+          "div"
+        );
+
+      message.textContent =
+        "Google sign-in is being configured.";
+
+      message.style.cssText =
+        "font-size:12px;opacity:.55;text-align:center;padding:10px;";
+
+      if(signupBox){
+        signupBox.innerHTML = "";
+        signupBox.appendChild(
+          message.cloneNode(true)
+        );
+      }
+
+      if(loginBox){
+        loginBox.innerHTML = "";
+        loginBox.appendChild(
+          message
+        );
+      }
+
+      return;
+    }
+
+    if(
+      !window.google ||
+      !google.accounts ||
+      !google.accounts.id
+    ){
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id:
+        config.clientId,
+
+      callback:
+        handleRizoraGoogleCredential,
+
+      auto_select:
+        false,
+
+      cancel_on_tap_outside:
+        true,
+
+      context:
+        "signin"
+    });
+
+    if(signupBox){
+
+      signupBox.innerHTML = "";
+
+      google.accounts.id.renderButton(
+        signupBox,
+        {
+          type:
+            "standard",
+
+          theme:
+            "outline",
+
+          size:
+            "large",
+
+          text:
+            "signup_with",
+
+          shape:
+            "rectangular",
+
+          logo_alignment:
+            "left",
+
+          width:
+            Math.min(
+              380,
+              Math.max(
+                240,
+                signupBox.parentElement?.clientWidth ||
+                360
+              )
+            )
+        }
+      );
+    }
+
+    if(loginBox){
+
+      loginBox.innerHTML = "";
+
+      google.accounts.id.renderButton(
+        loginBox,
+        {
+          type:
+            "standard",
+
+          theme:
+            "outline",
+
+          size:
+            "large",
+
+          text:
+            "signin_with",
+
+          shape:
+            "rectangular",
+
+          logo_alignment:
+            "left",
+
+          width:
+            Math.min(
+              380,
+              Math.max(
+                240,
+                loginBox.parentElement?.clientWidth ||
+                360
+              )
+            )
+        }
+      );
+    }
+
+  }catch(error){
+
+    console.error(
+      "RIZORA Google:",
+      error
+    );
+  }
+}
+
+(function(){
+
+  let attempts = 0;
+
+  const timer =
+    setInterval(
+      function(){
+
+        attempts++;
+
+        if(
+          window.google &&
+          google.accounts &&
+          google.accounts.id
+        ){
+
+          clearInterval(timer);
+
+          initRizoraGoogle();
+
+          return;
+        }
+
+        if(
+          attempts >= 100
+        ){
+          clearInterval(timer);
+        }
+
+      },
+      100
+    );
+
+})();
+</script>
 </body>
 </html>
+
+
+
+
 
 
 
