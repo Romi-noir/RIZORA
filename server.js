@@ -210,11 +210,12 @@ function json(res, statusCode, data, extraHeaders = {}) {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
     "Access-Control-Allow-Origin":
-      process.env.RIZORA_ALLOWED_ORIGINS || "*",
+      "https://rizora.com.ng",
     "Access-Control-Allow-Headers":
       "Content-Type, Authorization",
     "Access-Control-Allow-Methods":
       "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Credentials": "true",
     ...extraHeaders
   });
 
@@ -1426,8 +1427,7 @@ function serveStatic(
         cacheControl,
 
       "Access-Control-Allow-Origin":
-        process.env.RIZORA_ALLOWED_ORIGINS ||
-        "*"
+        "https://rizora.com.ng"
     }
   );
 
@@ -1476,8 +1476,7 @@ async function handleRequest(
       204,
       {
         "Access-Control-Allow-Origin":
-          process.env.RIZORA_ALLOWED_ORIGINS ||
-          "*",
+          "https://rizora.com.ng",
 
         "Access-Control-Allow-Headers":
           "Content-Type, Authorization",

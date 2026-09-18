@@ -2967,7 +2967,7 @@ bring creators together through tasks, growth and rewards.
   </div>
 
   <div class="admin-tabs">
-    <button class="admin-tab active" onclick="creatorTab(this,'creatorOverview')">Overview</button>
+    <button class="admin-tab active" onclick="creatorTab(this,'creatorOverview')" id="creatorHomeBtn">Home</button>
     <button class="admin-tab" onclick="creatorTab(this,'creatorBoost')">🚀 Boost Studio</button>
 <button class="admin-tab" onclick="creatorTab(this,'creatorTasks')">📝 Tasks</button>
     <button class="admin-tab" onclick="creatorTab(this,'creatorTools')">✨ Content Tools</button>
@@ -4677,7 +4677,136 @@ async function completeTask(
   taskId
 ){
 
+  const storageKey =
+    "rizoraTaskAttempt:" +
+    taskId;
+
   try{
+
+    let startedAt =
+      Number(
+        sessionStorage.getItem(
+          storageKey
+        ) || 0
+      );
+
+    /*
+      First click starts the attempt.
+    */
+
+    if(!startedAt){
+
+      const started =
+        await api(
+          "/api/tasks/start",
+          {
+            method:"POST",
+            body:
+              JSON.stringify({
+                taskId
+              })
+          }
+        );
+
+      const serverStarted =
+        Date.parse(
+          started.startedAt || ""
+        );
+
+      startedAt =
+        Number.isFinite(
+          serverStarted
+        )
+          ? serverStarted
+          : Date.now();
+
+      sessionStorage.setItem(
+        storageKey,
+        String(startedAt)
+      );
+
+      /*
+        Open the actual task URL.
+      */
+
+      try{
+
+        const taskResult =
+          await api(
+            "/api/tasks"
+          );
+
+        const task =
+          (taskResult.tasks || [])
+            .find(
+              function(item){
+                return item.id === taskId;
+              }
+            );
+
+        if(
+          task &&
+          task.url
+        ){
+
+          window.open(
+            task.url,
+            "_blank",
+            "noopener,noreferrer"
+          );
+
+        }
+
+      }catch(error){}
+
+      showToast(
+        "Task started. Complete the task, then tap Complete again."
+      );
+
+      await loadTasks();
+
+      return;
+    }
+
+    /*
+      Minimum 20-second server-backed wait.
+    */
+
+    const elapsed =
+      Date.now() -
+      startedAt;
+
+    const minimumMs =
+      20000;
+
+    if(
+      elapsed <
+      minimumMs
+    ){
+
+      const remaining =
+        Math.max(
+          1,
+          Math.ceil(
+            (
+              minimumMs -
+              elapsed
+            ) / 1000
+          )
+        );
+
+      showToast(
+        "Please complete the task first. " +
+        remaining +
+        " seconds remaining."
+      );
+
+      return;
+    }
+
+    /*
+      Claim the reward.
+    */
 
     const result =
       await api(
@@ -4690,6 +4819,10 @@ async function completeTask(
             })
         }
       );
+
+    sessionStorage.removeItem(
+      storageKey
+    );
 
     currentUser =
       result.user;
@@ -4720,7 +4853,6 @@ async function completeTask(
 
   }
 }
-
 async function runCreatorTool(
   endpoint
 ){
@@ -7051,8 +7183,8 @@ document.addEventListener("pointerdown",function(e){
     username === "romi" ||
     username === "superadmin2"
   );
-})();
-</script>
+  }
+})();</script>
 <script id="RIZORA_FINAL_AI_HANDLER">
 (function(){
 
@@ -9587,15 +9719,308 @@ function ensureStyles(){
   }
 }
 
+
+
+
+/* RIZORA_REAL_MENU_DESKTOP_LAYOUT */
+
 @media (min-width:901px){
 
-  #rzWorkingMenuPanel,
+  /*
+     Use the EXISTING RIZORA MENU button.
+     No new button is created.
+  */
+
+  button.mobile-menu{
+
+    display:inline-flex !important;
+    visibility:visible !important;
+    pointer-events:auto !important;
+    touch-action:manipulation !important;
+    cursor:pointer !important;
+
+  }
+
+  /*
+     Desktop version of the SAME real menu panel.
+  */
+
+  #rzWorkingMenuPanel{
+
+    display:none;
+
+    position:fixed;
+
+    top:72px;
+    right:20px;
+
+    width:350px;
+
+    max-width:
+      calc(100vw - 40px);
+
+    max-height:
+      calc(100vh - 92px);
+
+    overflow-y:auto;
+
+    box-sizing:border-box;
+
+    padding:70px 16px 22px;
+
+    background:#100b18;
+
+    border:
+      1px solid
+      rgba(255,255,255,.10);
+
+    border-radius:18px;
+
+    box-shadow:
+      0 24px 70px
+      rgba(0,0,0,.45);
+
+    z-index:2147483646;
+
+  }
+
   #rzWorkingMenuBackdrop{
-    display:none !important;
+
+    display:none;
+
+    position:fixed;
+
+    inset:0;
+
+    background:
+      rgba(0,0,0,.38);
+
+    z-index:2147483645;
+
+    pointer-events:none;
+
+  }
+
+  #rzWorkingMenuClose{
+
+    position:absolute;
+
+    top:16px;
+    right:16px;
+
+    width:44px;
+    height:44px;
+
+    border:0;
+
+    border-radius:12px;
+
+    background:
+      rgba(255,255,255,.08);
+
+    color:#fff;
+
+    font-size:24px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    pointer-events:auto !important;
+
+    touch-action:manipulation;
+
+  }
+
+  #rzWorkingMenuPanelTitle{
+
+    margin:
+      0
+      0
+      20px;
+
+    color:#fff;
+
+    font-size:22px;
+
+    font-weight:800;
+
+  }
+
+  #rzWorkingMenuPanel
+  .rzWorkingMenuItem{
+
+    width:100%;
+
+    min-height:54px;
+
+    margin:
+      0
+      0
+      10px;
+
+    padding:
+      0
+      16px;
+
+    border:
+      1px solid
+      rgba(255,255,255,.08);
+
+    border-radius:13px;
+
+    background:
+      rgba(255,255,255,.045);
+
+    color:#fff;
+
+    text-align:left;
+
+    font:inherit;
+
+    font-size:14px;
+
+    font-weight:700;
+
+    pointer-events:auto !important;
+
+    touch-action:manipulation;
+
+    cursor:pointer;
+
+  }
+
+  #rzWorkingMenuPanel
+  .rzWorkingMenuItem:hover{
+
+    background:
+      rgba(126,76,255,.18);
+
+    border-color:
+      rgba(180,130,255,.35);
+
+  }
+
+  #rzWorkingMenuPanel
+  .rzWorkingMenuItem:active{
+
+    background:
+      rgba(126,76,255,.28);
+
+    transform:
+      scale(.985);
+
   }
 
 }
 
+/* RIZORA_REAL_MENU_DESKTOP_STABLE_V2 */
+
+@media (min-width:901px){
+
+  button.mobile-menu{
+
+    display:inline-flex !important;
+    visibility:visible !important;
+
+    position:static !important;
+
+    pointer-events:auto !important;
+    touch-action:manipulation !important;
+
+    cursor:pointer !important;
+
+  }
+
+  #rzWorkingMenuPanel{
+
+    position:fixed !important;
+
+    top:74px !important;
+    right:22px !important;
+
+    width:350px !important;
+    max-width:
+      calc(100vw - 44px) !important;
+
+    max-height:
+      calc(100vh - 96px) !important;
+
+    overflow-y:auto !important;
+
+    box-sizing:border-box !important;
+
+    padding:
+      70px 16px 22px !important;
+
+    background:#100b18 !important;
+
+    border:
+      1px solid
+      rgba(255,255,255,.10) !important;
+
+    border-radius:18px !important;
+
+    box-shadow:
+      0 24px 70px
+      rgba(0,0,0,.45) !important;
+
+    z-index:2147483646 !important;
+
+  }
+
+  #rzWorkingMenuBackdrop{
+
+    position:fixed !important;
+
+    inset:0 !important;
+
+    background:
+      rgba(0,0,0,.38) !important;
+
+    z-index:2147483645 !important;
+
+    pointer-events:none !important;
+
+  }
+
+  #rzWorkingMenuClose{
+
+    position:absolute !important;
+
+    top:14px !important;
+    right:14px !important;
+
+    width:44px !important;
+    height:44px !important;
+
+    pointer-events:auto !important;
+
+    touch-action:manipulation !important;
+
+    cursor:pointer !important;
+
+  }
+
+  #rzWorkingMenuPanel
+  .rzWorkingMenuItem{
+
+    width:100% !important;
+
+    min-height:54px !important;
+
+    margin:
+      0 0 10px !important;
+
+    pointer-events:auto !important;
+
+    touch-action:manipulation !important;
+
+    cursor:pointer !important;
+
+  }
+
+}
 </style>
 
 <div id="rzWorkingMenuBackdrop"></div>
@@ -9646,331 +10071,453 @@ function ensureStyles(){
     Profile
   </button>
 
-  <button class="rzWorkingMenuItem" data-rz-go="settings" type="button">
+    <button
+    class="rzWorkingMenuItem"
+    data-rz-go="ai"
+    type="button"
+    aria-label="Open RIZORA AI"
+  >
+    ✦ RIZORA AI
+  </button>
+<button class="rzWorkingMenuItem" data-rz-go="settings" type="button">
     Settings
   </button>
 
 </div>
 
-<script>
+
+<script id="rizoraRealMenuControllerV2">
 (function(){
+
+  "use strict";
+
+  function getPanel(){
+    return document.getElementById(
+      "rzWorkingMenuPanel"
+    );
+  }
+
+  function getBackdrop(){
+    return document.getElementById(
+      "rzWorkingMenuBackdrop"
+    );
+  }
+
+  function isOpen(){
+
+    const panel =
+      getPanel();
+
+    if(!panel){
+      return false;
+    }
+
+    return (
+      panel.style.display === "block" ||
+      panel.getAttribute("aria-hidden") === "false"
+    );
+
+  }
 
   function openMenu(){
 
-    var panel =
-      document.getElementById("rzWorkingMenuPanel");
+    const panel =
+      getPanel();
 
-    var backdrop =
-      document.getElementById("rzWorkingMenuBackdrop");
+    const backdrop =
+      getBackdrop();
 
     if(!panel){
       return;
     }
 
-    panel.style.display="block";
-    panel.setAttribute("aria-hidden","false");
+    panel.style.setProperty(
+      "display",
+      "block",
+      "important"
+    );
+
+    panel.setAttribute(
+      "aria-hidden",
+      "false"
+    );
 
     if(backdrop){
-      backdrop.style.display="block";
+
+      backdrop.style.setProperty(
+        "display",
+        "block",
+        "important"
+      );
+
     }
 
-    document.body.style.overflow="hidden";
+    document.body.style.overflow =
+      "hidden";
+
   }
 
   function closeMenu(){
 
-    var panel =
-      document.getElementById("rzWorkingMenuPanel");
+    const panel =
+      getPanel();
 
-    var backdrop =
-      document.getElementById("rzWorkingMenuBackdrop");
+    const backdrop =
+      getBackdrop();
 
     if(panel){
-      panel.style.display="none";
-      panel.setAttribute("aria-hidden","true");
+
+      panel.style.setProperty(
+        "display",
+        "none",
+        "important"
+      );
+
+      panel.setAttribute(
+        "aria-hidden",
+        "true"
+      );
+
     }
 
     if(backdrop){
-      backdrop.style.display="none";
+
+      backdrop.style.setProperty(
+        "display",
+        "none",
+        "important"
+      );
+
     }
 
-    document.body.style.overflow="";
+    document.body.style.overflow =
+      "";
+
   }
 
-  function runFeature(action){
+  /*
+    Make ALL existing code paths use this
+    real menu controller.
+  */
+
+  window.toggleMobileMenu =
+    function(){
+
+      if(isOpen()){
+        closeMenu();
+      }else{
+        openMenu();
+      }
+
+    };
+
+  window.closeMobileMenu =
+    function(){
+
+      closeMenu();
+
+      /*
+        Keep the old desktopNav state clean too.
+      */
+
+      const nav =
+        document.getElementById(
+          "desktopNav"
+        );
+
+      if(nav){
+
+        nav.classList.remove(
+          "mobile-open"
+        );
+
+      }
+
+    };
+
+  function runFeature(
+    action
+  ){
 
     closeMenu();
 
-    /*
-      These IDs and functions come directly from the
-      RIZORA source you inspected.
-    */
+    if(action === "boost"){
 
-    if(action==="boost"){
-
-      creatorTab(null,"creatorBoost");
-      return;
-    }
-
-    if(action==="content"){
-
-      creatorTab(null,"creatorTools");
-      return;
-    }
-
-    if(action==="analytics"){
-
-      creatorTab(null,"creatorAnalytics");
-      return;
-    }
-
-    if(action==="leaderboard"){
-
-      creatorTab(null,"creatorLeaderboard");
-      return;
-    }
-
-    if(action==="community"){
-
-      creatorTab(null,"creatorCommunity");
-      return;
-    }
-
-    if(action==="experiments"){
-
-      creatorTab(null,"creatorExperiments");
-      return;
-    }
-
-    if(action==="history"){
-
-      creatorTab(null,"creatorHistory");
-      return;
-    }
-
-    if(action==="profile"){
-
-      creatorTab(null,"creatorProfile");
-      return;
-    }
-
-    if(action==="settings"){
-
-      creatorTab(null,"creatorSettings");
-      return;
-    }
-
-    if(action==="tasks"){
-
-      /*
-        Tasks is the actual main dashboard section:
-        <section id="tasks" class="tasks">
-      */
-
-      try{
-
-        showDashboard();
-
-      }catch(e){}
-
-      try{
-
-        loadTasks();
-
-      }catch(e){}
-
-      setTimeout(function(){
-
-        var tasks =
-          document.getElementById("tasks");
-
-        if(tasks){
-
-          tasks.scrollIntoView({
-            behavior:"smooth",
-            block:"start"
-          });
-
-        }
-
-      },100);
-
-      return;
-    }
-  }
-
-  function findOriginalMenu(){
-
-    var elements =
-      document.querySelectorAll(
-        "button,a,[role='button'],div[tabindex]"
+      creatorTab(
+        null,
+        "creatorBoost"
       );
 
-    for(var i=0;i<elements.length;i++){
-
-      if(
-        elements[i].closest &&
-        elements[i].closest(
-          "#rzWorkingMenuPanel"
-        )
-      ){
-        continue;
-      }
-
-      var text=String(
-        elements[i].innerText ||
-        elements[i].textContent ||
-        elements[i].getAttribute("aria-label") ||
-        elements[i].getAttribute("title") ||
-        ""
-      )
-      .replace(/\s+/g," ")
-      .trim()
-      .toLowerCase();
-
-      if(
-        text==="menu" ||
-        text==="menu ☰" ||
-        text==="☰ menu"
-      ){
-
-        return elements[i];
-
-      }
+      return;
     }
 
-    return null;
+    if(action === "tasks"){
+
+      showDashboard();
+
+      setTimeout(
+        function(){
+
+          const tasks =
+            document.getElementById(
+              "tasks"
+            );
+
+          if(tasks){
+
+            tasks.scrollIntoView({
+              behavior:
+                "smooth",
+              block:
+                "start"
+            });
+
+          }
+
+        },
+        120
+      );
+
+      return;
+    }
+
+    if(action === "content"){
+
+      creatorTab(
+        null,
+        "creatorTools"
+      );
+
+      return;
+    }
+
+    if(action === "analytics"){
+
+      creatorTab(
+        null,
+        "creatorAnalytics"
+      );
+
+      return;
+    }
+
+    if(action === "leaderboard"){
+
+      creatorTab(
+        null,
+        "creatorLeaderboard"
+      );
+
+      return;
+    }
+
+    if(action === "community"){
+
+      creatorTab(
+        null,
+        "creatorCommunity"
+      );
+
+      return;
+    }
+
+    if(action === "experiments"){
+
+      creatorTab(
+        null,
+        "creatorExperiments"
+      );
+
+      return;
+    }
+
+    if(action === "history"){
+
+      creatorTab(
+        null,
+        "creatorHistory"
+      );
+
+      return;
+    }
+
+    if(action === "profile"){
+
+      creatorTab(
+        null,
+        "creatorProfile"
+      );
+
+      return;
+    }
+
+    if(action === "ai"){
+
+      if(
+        typeof token ===
+        "undefined" ||
+        !token
+      ){
+
+        showLogin();
+
+        return;
+
+      }
+
+      showDashboard();
+
+      setTimeout(
+        function(){
+
+          if(
+            typeof creatorAskAI ===
+            "function"
+          ){
+
+            creatorAskAI();
+
+            return;
+
+          }
+
+          const trigger =
+            Array.from(
+              document.querySelectorAll(
+                "[onclick]"
+              )
+            ).find(
+              function(el){
+
+                return String(
+                  el.getAttribute(
+                    "onclick"
+                  ) || ""
+                ).includes(
+                  "creatorAskAI"
+                );
+
+              }
+            );
+
+          if(trigger){
+            trigger.click();
+          }
+
+        },
+        250
+      );
+
+      return;
+    }
+
+    if(action === "settings"){
+
+      creatorTab(
+        null,
+        "creatorSettings"
+      );
+
+      return;
+    }
+
   }
 
   function install(){
 
-    var originalMenu =
-      findOriginalMenu();
+    const panel =
+      getPanel();
 
-    if(!originalMenu){
+    const backdrop =
+      getBackdrop();
 
-      console.warn(
-        "RIZORA MENU button not found."
-      );
-
+    if(
+      !panel ||
+      panel.dataset
+        .rizoraMenuV2 ===
+      "1"
+    ){
       return;
     }
 
-    originalMenu.style.pointerEvents="auto";
-    originalMenu.style.touchAction="manipulation";
+    panel.dataset
+      .rizoraMenuV2 =
+      "1";
 
-    document.addEventListener(
-      "pointerup",
-      function(event){
+    /*
+      One delegated click handler for all
+      11 real menu items + close button.
+    */
 
-        var target=event.target;
-
-        if(
-          target===originalMenu ||
-          (
-            target.closest &&
-            target.closest(
-              "button,a,[role='button'],div[tabindex]"
-            )===originalMenu
-          )
-        ){
-
-          event.preventDefault();
-          event.stopImmediatePropagation();
-
-          openMenu();
-
-        }
-
-      },
-      true
-    );
-
-    document.addEventListener(
+    panel.addEventListener(
       "click",
       function(event){
 
-        var target=event.target;
-
-        if(
-          target===originalMenu ||
-          (
-            target.closest &&
-            target.closest(
-              "button,a,[role='button'],div[tabindex]"
-            )===originalMenu
-          )
-        ){
-
-          event.preventDefault();
-          event.stopImmediatePropagation();
-
-          openMenu();
-
-        }
-
-      },
-      true
-    );
-
-    document.addEventListener(
-      "pointerup",
-      function(event){
-
-        var target=event.target;
-
-        if(
-          target.closest &&
-          target.closest(
+        const closeButton =
+          event.target.closest(
             "#rzWorkingMenuClose"
-          )
-        ){
+          );
+
+        if(closeButton){
 
           event.preventDefault();
-          event.stopImmediatePropagation();
+          event.stopPropagation();
 
           closeMenu();
 
           return;
         }
 
-        if(
-          target.id==="rzWorkingMenuBackdrop"
-        ){
+        const item =
+          event.target.closest(
+            ".rzWorkingMenuItem"
+          );
 
-          closeMenu();
-
+        if(!item){
           return;
         }
 
-        var item =
-          target.closest &&
-          target.closest(
-            "[data-rz-go]"
+        const action =
+          item.getAttribute(
+            "data-rz-go"
           );
 
-        if(item){
-
-          event.preventDefault();
-          event.stopImmediatePropagation();
-
-          runFeature(
-            item.getAttribute(
-              "data-rz-go"
-            )
-          );
-
+        if(!action){
+          return;
         }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        runFeature(
+          action
+        );
 
       },
-      true
+      false
     );
+
+    if(backdrop){
+
+      backdrop.addEventListener(
+        "click",
+        function(){
+
+          closeMenu();
+
+        }
+      );
+
+    }
 
     document.addEventListener(
       "keydown",
       function(event){
 
-        if(event.key==="Escape"){
+        if(
+          event.key ===
+          "Escape"
+        ){
 
           closeMenu();
 
@@ -9981,7 +10528,10 @@ function ensureStyles(){
 
   }
 
-  if(document.readyState==="loading"){
+  if(
+    document.readyState ===
+    "loading"
+  ){
 
     document.addEventListener(
       "DOMContentLoaded",
@@ -9998,650 +10548,10 @@ function ensureStyles(){
 </script>
 
 <!-- /RIZORA_MENU_FUNCTIONAL_FIX -->
-<!-- RIZORA COMMAND CENTER BACK BUTTON START -->
+
+
+
 <script>
-(function(){
-
-  function rizoraIsSuperAdmin(){
-    try{
-      if(typeof window.RIZORA_IS_SUPER_ADMIN === "function"){
-        return !!window.RIZORA_IS_SUPER_ADMIN();
-      }
-
-      if(typeof currentUser !== "undefined" && currentUser){
-        return currentUser.role === "super_admin";
-      }
-
-      return false;
-    }catch(e){
-      return false;
-    }
-  }
-
-  function ensureCommandCenterButton(){
-    if(!rizoraIsSuperAdmin()) return;
-
-    var existing = document.getElementById("rizoraCommandCenterBack");
-
-    if(!existing){
-      existing = document.createElement("button");
-      existing.id = "rizoraCommandCenterBack";
-      existing.type = "button";
-      existing.textContent = "← Command Center";
-
-      existing.style.cssText = [
-        "position:fixed",
-        "top:76px",
-        "right:18px",
-        "z-index:99999",
-        "display:flex",
-        "align-items:center",
-        "justify-content:center",
-        "padding:11px 16px",
-        "border-radius:12px",
-        "border:1px solid rgba(255,255,255,.14)",
-        "background:rgba(20,16,35,.96)",
-        "color:#fff",
-        "font-weight:700",
-        "font-size:14px",
-        "cursor:pointer",
-        "box-shadow:0 10px 30px rgba(0,0,0,.35)",
-        "backdrop-filter:blur(12px)"
-      ].join(";");
-
-      existing.onclick = function(){
-        if(typeof showAdminDashboard === "function"){
-          showAdminDashboard();
-        }else if(typeof openBestDashboard === "function"){
-          openBestDashboard();
-        }
-      };
-
-      document.body.appendChild(existing);
-    }
-
-    existing.style.display = "flex";
-  }
-
-  function hideCommandCenterButton(){
-    var button = document.getElementById("rizoraCommandCenterBack");
-    if(button){
-      button.style.display = "none";
-    }
-  }
-
-  function hookDashboardFunctions(){
-
-    if(typeof window.showDashboard === "function" &&
-       !window.__rizoraShowDashboardHooked){
-
-      var originalShowDashboard = window.showDashboard;
-
-      window.showDashboard = function(){
-        var result = originalShowDashboard.apply(this, arguments);
-
-        setTimeout(function(){
-          ensureCommandCenterButton();
-        }, 100);
-
-        return result;
-      };
-
-      window.__rizoraShowDashboardHooked = true;
-    }
-
-    if(typeof window.showAdminDashboard === "function" &&
-       !window.__rizoraShowAdminDashboardHooked){
-
-      var originalShowAdminDashboard = window.showAdminDashboard;
-
-      window.showAdminDashboard = function(){
-        hideCommandCenterButton();
-
-        var result = originalShowAdminDashboard.apply(this, arguments);
-
-        setTimeout(function(){
-          hideCommandCenterButton();
-        }, 100);
-
-        return result;
-      };
-
-      window.__rizoraShowAdminDashboardHooked = true;
-    }
-  }
-
-  function start(){
-    hookDashboardFunctions();
-
-    setTimeout(function(){
-      hookDashboardFunctions();
-    },500);
-
-    setTimeout(function(){
-      hookDashboardFunctions();
-    },1500);
-
-    setTimeout(function(){
-      hookDashboardFunctions();
-    },3000);
-  }
-
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded",start);
-  }else{
-    start();
-  }
-
-})();
-</script>
-<!-- RIZORA COMMAND CENTER BACK BUTTON END -->
-<style id="rizoraCommandCenterBackV3">
-#rizoraCommandCenterBackV3{
-  position:fixed;
-  top:72px;
-  right:16px;
-  z-index:999999;
-  display:none;
-  padding:11px 16px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.16);
-  background:rgba(18,12,30,.96);
-  color:#fff;
-  font-weight:700;
-  font-size:14px;
-  cursor:pointer;
-  box-shadow:0 12px 30px rgba(0,0,0,.35);
-}
-@media(max-width:760px){
-  #rizoraCommandCenterBackV3{
-    top:66px;
-    left:12px;
-    right:12px;
-    width:calc(100% - 24px);
-  }
-}
-</style>
-
-<script id="rizoraCommandCenterBackV3Script">
-(function(){
-
-  function rizoraSuperAdmin(){
-    try{
-      if(
-        typeof window.RIZORA_IS_SUPER_ADMIN === "function" &&
-        window.RIZORA_IS_SUPER_ADMIN()
-      ){
-        return true;
-      }
-
-      var user =
-        typeof currentUser !== "undefined"
-          ? currentUser
-          : null;
-
-      var username =
-        String(user && user.username || "").toLowerCase();
-
-      return !!user &&
-        (
-          user.role === "super_admin" ||
-          username === "romi" ||
-          username === "superadmin2"
-        );
-    }catch(error){
-      return false;
-    }
-  }
-
-  function syncCommandCenterButton(){
-
-    var dashboard =
-      document.getElementById("dashboard");
-
-    var adminDashboard =
-      document.getElementById("adminDashboard");
-
-    var button =
-      document.getElementById("rizoraCommandCenterBackV3");
-
-    if(!dashboard || !button){
-      return;
-    }
-
-    var creatorVisible =
-      !dashboard.classList.contains("hidden");
-
-    var adminVisible =
-      adminDashboard &&
-      !adminDashboard.classList.contains("hidden");
-
-    button.style.display =
-      rizoraSuperAdmin() &&
-      creatorVisible &&
-      !adminVisible
-        ? "flex"
-        : "none";
-  }
-
-  function install(){
-
-    var button =
-      document.getElementById("rizoraCommandCenterBackV3");
-
-    if(!button){
-
-      button =
-        document.createElement("button");
-
-      button.id =
-        "rizoraCommandCenterBackV3";
-
-      button.type =
-        "button";
-
-      button.textContent =
-        "Command Center";
-
-      button.addEventListener(
-        "click",
-        function(){
-
-          if(
-            typeof showAdminDashboard ===
-            "function"
-          ){
-            showAdminDashboard();
-          }else if(
-            typeof openBestDashboard ===
-            "function"
-          ){
-            openBestDashboard();
-          }
-        }
-      );
-
-      document.body.appendChild(button);
-    }
-
-    syncCommandCenterButton();
-  }
-
-  if(document.readyState === "loading"){
-    document.addEventListener(
-      "DOMContentLoaded",
-      install
-    );
-  }else{
-    install();
-  }
-
-  var observer =
-    new MutationObserver(
-      syncCommandCenterButton
-    );
-
-  function startObserver(){
-
-    if(!document.body){
-      return;
-    }
-
-    observer.observe(
-      document.body,
-      {
-        subtree:true,
-        attributes:true,
-        attributeFilter:["class"]
-      }
-    );
-
-    setInterval(
-      syncCommandCenterButton,
-      1000
-    );
-  }
-
-  if(document.readyState === "loading"){
-    document.addEventListener(
-      "DOMContentLoaded",
-      startObserver
-    );
-  }else{
-    startObserver();
-  }
-
-})();
-</script>
-<script id="rizoraTaskVerificationV3">
-(function(){
-
-  window.completeTask = async function(taskId){
-
-    var storageKey =
-      "rizoraTaskAttempt:" + taskId;
-
-    var startedAt =
-      Number(
-        sessionStorage.getItem(storageKey) || 0
-      );
-
-    try{
-
-      if(!startedAt){
-
-        var started =
-          await api(
-            "/api/tasks/start",
-            {
-              method:"POST",
-              body:JSON.stringify({
-                taskId:taskId
-              })
-            }
-          );
-
-        var serverStarted =
-          Date.parse(
-            started.startedAt || ""
-          );
-
-        startedAt =
-          Number.isFinite(serverStarted)
-            ? serverStarted
-            : Date.now();
-
-        sessionStorage.setItem(
-          storageKey,
-          String(startedAt)
-        );
-
-        try{
-          var taskResult =
-            await api("/api/tasks");
-
-          var task =
-            (taskResult.tasks || [])
-              .find(function(item){
-                return item.id === taskId;
-              });
-
-          if(task && task.url){
-            window.open(
-              task.url,
-              "_blank",
-              "noopener,noreferrer"
-            );
-          }
-        }catch(error){}
-
-        if(
-          typeof showToast ===
-          "function"
-        ){
-          showToast(
-            "Task started. Complete it, then tap Complete again."
-          );
-        }
-
-        if(
-          typeof loadTasks ===
-          "function"
-        ){
-          await loadTasks();
-        }
-
-        return;
-      }
-
-      var elapsed =
-        Date.now() - startedAt;
-
-      var minimumMs =
-        20000;
-
-      if(elapsed < minimumMs){
-
-        var remaining =
-          Math.ceil(
-            (minimumMs - elapsed) / 1000
-          );
-
-        if(
-          typeof showToast ===
-          "function"
-        ){
-          showToast(
-            "Please complete the task first. " +
-            remaining +
-            " seconds remaining."
-          );
-        }
-
-        return;
-      }
-
-      var result =
-        await api(
-          "/api/tasks/complete",
-          {
-            method:"POST",
-            body:JSON.stringify({
-              taskId:taskId
-            })
-          }
-        );
-
-      sessionStorage.removeItem(
-        storageKey
-      );
-
-      currentUser =
-        result.user;
-
-      localStorage.setItem(
-        "rizoraUser",
-        JSON.stringify(
-          currentUser
-        )
-      );
-
-      if(
-        typeof renderUser ===
-        "function"
-      ){
-        renderUser();
-      }
-
-      if(
-        typeof showToast ===
-        "function"
-      ){
-        showToast(
-          "+" +
-          result.reward +
-          " RIZORA points earned."
-        );
-      }
-
-      if(
-        typeof refreshDashboard ===
-        "function"
-      ){
-        await refreshDashboard();
-      }else if(
-        typeof loadTasks ===
-        "function"
-      ){
-        await loadTasks();
-      }
-
-    }catch(error){
-
-      if(
-        typeof showToast ===
-        "function"
-      ){
-        showToast(
-          error.message
-        );
-      }
-    }
-  };
-
-})();
-</script>
-<script>
-/* RIZORA_TASK_START_GUARD_V4 */
-window.completeTask = async function(taskId){
-
-  try{
-
-    const start = await api(
-      "/api/tasks/start",
-      {
-        method:"POST",
-        body:JSON.stringify({
-          taskId: taskId
-        })
-      }
-    );
-
-    const startedAt =
-      Date.parse(
-        String(
-          start.startedAt || ""
-        )
-      );
-
-    if(
-      !startedAt ||
-      Number.isNaN(startedAt)
-    ){
-      throw new Error(
-        "Could not start this task."
-      );
-    }
-
-    const elapsed =
-      Date.now() -
-      startedAt;
-
-    const required =
-      20 * 1000;
-
-    if(elapsed < required){
-
-      let task = null;
-
-      try{
-
-        const taskData =
-          await api(
-            "/api/tasks"
-          );
-
-        task =
-          (taskData.tasks || [])
-            .find(
-              function(item){
-                return item.id === taskId;
-              }
-            );
-
-      }catch(_error){}
-
-      if(
-        task &&
-        task.url
-      ){
-        window.open(
-          task.url,
-          "_blank",
-          "noopener,noreferrer"
-        );
-      }
-
-      const remaining =
-        Math.max(
-          1,
-          Math.ceil(
-            (required - elapsed) /
-            1000
-          )
-        );
-
-      if(
-        typeof window.showToast ===
-        "function"
-      ){
-        window.showToast(
-          "Task started. Do the task, then come back in " +
-          remaining +
-          "s to claim your reward."
-        );
-      }
-
-      return;
-    }
-
-    const result =
-      await api(
-        "/api/tasks/complete",
-        {
-          method:"POST",
-          body:JSON.stringify({
-            taskId: taskId
-          })
-        }
-      );
-
-    if(
-      typeof window.showToast ===
-      "function"
-    ){
-      window.showToast(
-        "Task completed. +" +
-        Number(
-          result.reward || 0
-        ) +
-        " points."
-      );
-    }
-
-    if(
-      typeof window.loadTasks ===
-      "function"
-    ){
-      await window.loadTasks();
-    }
-
-    if(
-      typeof window.refreshUser ===
-      "function"
-    ){
-      await window.refreshUser();
-    }
-
-  }catch(error){
-
-    if(
-      typeof window.showToast ===
-      "function"
-    ){
-      window.showToast(
-        error.message ||
-        "Task could not be completed."
-      );
-    }else{
-      alert(
-        error.message ||
-        "Task could not be completed."
-      );
-    }
-  }
-};
-</script><script>
 function toggleRizoraPassword(
   id,
   button
@@ -11071,8 +10981,97 @@ async function initRizoraGoogle(){
 
 })();
 </script>
+<style id="rizoraDesktopExistingMenuV1">
+/* RIZORA_DESKTOP_EXISTING_MENU_V1 */
+
+/*
+   Reveal the EXISTING RIZORA MENU button on laptop.
+   No new button is created.
+*/
+
+@media (min-width:769px){
+
+  button.mobile-menu{
+
+    display:inline-flex !important;
+    visibility:visible !important;
+
+    position:static !important;
+
+    top:auto !important;
+    right:auto !important;
+    left:auto !important;
+    bottom:auto !important;
+
+    pointer-events:auto !important;
+    touch-action:manipulation !important;
+
+    cursor:pointer !important;
+
+  }
+
+}
+
+</style>
+
+
+
+
+<script id="RIZORA_HOME_BOOTSTRAP_V2">
+(function () {
+  function activateHome() {
+    var btn = document.getElementById("creatorHomeBtn");
+
+    if (!btn) return;
+
+    btn.textContent = "Home";
+    btn.setAttribute("aria-label", "Home");
+    btn.title = "Creator Home";
+
+    var logout = document.getElementById("logoutNav");
+    var loginForm = document.getElementById("loginForm");
+
+    var loggedIn =
+      logout &&
+      getComputedStyle(logout).display !== "none" &&
+      !logout.classList.contains("hidden") &&
+      loginForm &&
+      getComputedStyle(loginForm).display === "none";
+
+    if (!loggedIn) return;
+
+    try {
+      if (typeof window.creatorTab === "function") {
+        window.creatorTab(btn, "creatorOverview");
+      }
+    } catch (e) {
+      console.warn("RIZORA Home activation failed:", e);
+    }
+
+    window.scrollTo(0, 0);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(activateHome, 300);
+    setTimeout(activateHome, 1000);
+    setTimeout(activateHome, 2000);
+  });
+
+  setInterval(activateHome, 1500);
+})();
+</script>
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
 
 
 
