@@ -283,14 +283,14 @@ function setSessionCookie(res, token) {
     "Set-Cookie",
     `rizora_session=${encodeURIComponent(token)}; HttpOnly; Path=/; Max-Age=${
       SESSION_TTL_MS / 1000
-    }; SameSite=Lax`
+    }; SameSite=None; Secure`
   );
 }
 
 function clearSessionCookie(res) {
   res.setHeader(
     "Set-Cookie",
-    "rizora_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax"
+    "rizora_session=; HttpOnly; Path=/; Max-Age=0; SameSite=None; Secure"
   );
 }
 
