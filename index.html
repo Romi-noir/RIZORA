@@ -9451,128 +9451,83 @@ function ensureStyles(){
   async function checkRealRizoraSession(){
 
     if(checking){
-      return false;
+      return authenticated;
     }
 
     checking=true;
 
-    var token=getToken();
-
-    /*
-      No token = definitely logged out.
-    */
-    if(!token){
-
-      authenticated=false;
-      hideMenu();
-      checking=false;
-
-      return false;
-    }
-
     try{
 
-      var response=await fetch(
+      /*
+        RIZORA authentication is session-cookie based.
+
+        Do NOT require a separate local token here.
+        The backend /api/auth/me response is the authority.
+      */
+
+      var response = await fetch(
         getApiBase()+"/api/auth/me",
         {
           method:"GET",
           cache:"no-store",
           credentials:"include",
           headers:{
-            "Accept":"application/json",
-            "Authorization":"Bearer "+token
+            "Accept":"application/json"
           }
         }
       );
 
-      if(!response.ok){
+      authenticated = response.ok;
 
-        authenticated=false;
-        hideMenu();
-
-        checking=false;
-
-        return false;
-      }
-
-      var data=await response.json();
-
-      /*
-        This is the REAL endpoint used by RIZORA.
-      */
-      if(
-        data &&
-        data.user
-      ){
-
-        authenticated=true;
+      if(authenticated){
         showMenu();
-
-        checking=false;
-
-        console.log(
-          "RIZORA MENU unlocked for authenticated user"
-        );
-
-        return true;
+      }else{
+        hideMenu();
       }
+
+      checking=false;
+
+      return authenticated;
 
     }catch(error){
 
-      console.error(
+      console.warn(
         "RIZORA MENU auth check failed:",
         error
       );
 
+      authenticated=false;
+
+      hideMenu();
+
+      checking=false;
+
+      return false;
     }
-
-    authenticated=false;
-    hideMenu();
-
-    checking=false;
-
-    return false;
   }
 
   function watchLoginState(){
 
-    /*
-      Check immediately.
-    */
     hideMenu();
+
+    /*
+      Check the real backend session immediately.
+    */
     checkRealRizoraSession();
 
     /*
-      Login in RIZORA can happen without a full page reload.
-      Watch the token until it appears.
+      Keep the menu synchronized with the real
+      authenticated session even when login happens
+      without a page reload.
     */
-    var lastToken=getToken();
-
     setInterval(function(){
 
-      var currentToken=getToken();
+      checkRealRizoraSession();
 
-      if(currentToken !== lastToken){
-
-        lastToken=currentToken;
-
-        checkRealRizoraSession();
-
-        return;
-      }
-
-      /*
-        Revalidate the real session periodically.
-      */
-      if(currentToken){
-
-        checkRealRizoraSession();
-      }
-
-    },1500);
+    },2000);
 
     /*
-      Re-check whenever the page becomes active again.
+      Re-check when the page becomes active.
     */
     document.addEventListener(
       "visibilitychange",
@@ -9588,14 +9543,14 @@ function ensureStyles(){
     );
 
     /*
-      Also expose this so existing login code can
-      unlock MENU immediately after successful login.
+      Existing login code can refresh menu auth
+      immediately after successful login.
     */
     window.rizoraRefreshMenuAuth =
       checkRealRizoraSession;
   }
 
-  if(document.readyState==="loading"){
+    if(document.readyState==="loading"){
 
     document.addEventListener(
       "DOMContentLoaded",
