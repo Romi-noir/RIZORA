@@ -10867,6 +10867,214 @@ async function initRizoraGoogle(){
 })();
 </script>
 
+
+<script id="RIZORA_MENU_FEATURE_REPAIR_V1">
+(function(){
+
+  function closeRealMenu(){
+
+    var panel =
+      document.getElementById("rzWorkingMenuPanel");
+
+    var backdrop =
+      document.getElementById("rzWorkingMenuBackdrop");
+
+    if(panel){
+      panel.style.display = "none";
+      panel.setAttribute(
+        "aria-hidden",
+        "true"
+      );
+    }
+
+    if(backdrop){
+      backdrop.style.display = "none";
+    }
+
+    document.body.style.overflow = "";
+  }
+
+  function findCreatorTab(label){
+
+    var buttons =
+      Array.from(
+        document.querySelectorAll(
+          ".admin-tab"
+        )
+      );
+
+    return buttons.find(function(btn){
+      return (
+        (btn.textContent || "")
+          .trim()
+          .toLowerCase() ===
+        label.toLowerCase()
+      );
+    }) || null;
+  }
+
+  function openTasks(){
+
+    closeRealMenu();
+
+    try{
+      if(
+        typeof window.showCreatorWorkspace ===
+        "function"
+      ){
+        window.showCreatorWorkspace();
+      }
+    }catch(e){}
+
+    setTimeout(function(){
+
+      var tab =
+        findCreatorTab("Tasks");
+
+      if(
+        tab &&
+        typeof window.creatorTab ===
+        "function"
+      ){
+        window.creatorTab(
+          tab,
+          "creatorTasks"
+        );
+      }
+
+      var panel =
+        document.getElementById(
+          "creatorTasks"
+        );
+
+      if(panel){
+
+        panel.classList.remove(
+          "hidden"
+        );
+
+        panel.style.display = "";
+
+        panel.scrollIntoView({
+          behavior:"smooth",
+          block:"start"
+        });
+      }
+
+    },80);
+  }
+
+  function openAI(){
+
+    closeRealMenu();
+
+    try{
+      if(
+        typeof window.showCreatorWorkspace ===
+        "function"
+      ){
+        window.showCreatorWorkspace();
+      }
+    }catch(e){}
+
+    setTimeout(function(){
+
+      try{
+        if(
+          typeof window.creatorAskAI ===
+          "function"
+        ){
+          window.creatorAskAI();
+        }
+      }catch(e){}
+
+      setTimeout(function(){
+
+        var input =
+          document.getElementById(
+            "creatorAIInput"
+          );
+
+        if(
+          input &&
+          !input.offsetParent
+        ){
+
+          var toolsTab =
+            findCreatorTab(
+              "Content Tools"
+            );
+
+          if(
+            toolsTab &&
+            typeof window.creatorTab ===
+            "function"
+          ){
+            window.creatorTab(
+              toolsTab,
+              "creatorTools"
+            );
+          }
+        }
+
+        if(input){
+
+          input.scrollIntoView({
+            behavior:"smooth",
+            block:"center"
+          });
+
+          try{
+            input.focus();
+          }catch(e){}
+        }
+
+      },200);
+
+    },80);
+  }
+
+  document.addEventListener(
+    "click",
+    function(event){
+
+      var item =
+        event.target.closest(
+          "#rzWorkingMenuPanel .rzWorkingMenuItem"
+        );
+
+      if(!item){
+        return;
+      }
+
+      var action =
+        item.getAttribute(
+          "data-rz-go"
+        );
+
+      if(action !== "tasks" &&
+         action !== "ai"){
+        return;
+      }
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      if(action === "tasks"){
+        openTasks();
+      }
+
+      if(action === "ai"){
+        openAI();
+      }
+
+    },
+    true
+  );
+
+})();
+</script>
+
 </body>
 </html>
 
