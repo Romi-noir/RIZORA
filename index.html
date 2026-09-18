@@ -9456,6 +9456,8 @@ function ensureStyles(){
 
     checking=true;
 
+    var token=getToken();
+
     try{
 
       /*
@@ -9471,9 +9473,10 @@ function ensureStyles(){
           method:"GET",
           cache:"no-store",
           credentials:"include",
-          headers:{
-            "Accept":"application/json"
-          }
+          headers:Object.assign(
+            {"Accept":"application/json"},
+            token ? {"Authorization":"Bearer "+token} : {}
+          )
         }
       );
 
