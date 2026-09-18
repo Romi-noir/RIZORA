@@ -9327,244 +9327,92 @@ function ensureStyles(){
 
 <style id="rizora-menu-auth-gate-style">
 @media (max-width:900px){
-
   body.rz-menu-auth-locked #rzWorkingMenuPanel,
   body.rz-menu-auth-locked #rzWorkingMenuBackdrop{
     display:none !important;
   }
-
-  body.rz-menu-auth-locked [aria-label="Open menu"],
-  body.rz-menu-auth-locked [title="Menu"]{
-    display:none !important;
-  }
-
 }
 </style>
 
-<script>
+<script id="rizora-menu-auth-gate-fixed-v5">
 (function(){
 
-  var authenticated = false;
-  var checking = false;
+  function isAuthenticated(){
 
-  function getToken(){
+    var token =
+      localStorage.getItem("rizoraToken");
 
-    return (
-      localStorage.getItem("rizoraToken") ||
-      ""
-    ).trim();
+    var logout =
+      document.getElementById("logoutNav");
 
+    var logoutVisible =
+      !!logout &&
+      getComputedStyle(logout).display !== "none" &&
+      !logout.classList.contains("hidden");
+
+    return !!token || logoutVisible;
   }
 
-  function getApiBase(){
+  function syncMenuAuth(){
 
-    return (
-      window.RIZORA_API_BASE ||
-      "https://rizora-guse.onrender.com"
-    ).replace(/\/$/,"");
+    var ok = isAuthenticated();
 
-  }
-
-  function findMenuButtons(){
-
-    var result = [];
-
-    var elements = document.querySelectorAll(
-      "button,a,[role='button'],div[tabindex]"
+    document.body.classList.toggle(
+      "rz-menu-auth-locked",
+      !ok
     );
 
-    for(var i=0;i<elements.length;i++){
-
-      var text = String(
-        elements[i].innerText ||
-        elements[i].textContent ||
-        elements[i].getAttribute("aria-label") ||
-        elements[i].getAttribute("title") ||
-        ""
-      ).replace(/\s+/g," ").trim().toLowerCase();
-
-      if(
-        text === "menu" ||
-        text === "menu ☰" ||
-        text === "☰ menu"
-      ){
-        result.push(elements[i]);
-      }
-    }
-
-    return result;
-  }
-
-  function hideMenu(){
-
-    document.body.classList.add(
-      "rz-menu-auth-locked"
-    );
-
-    var menus = findMenuButtons();
-
-    for(var i=0;i<menus.length;i++){
-
-      menus[i].style.setProperty(
-        "display",
-        "none",
-        "important"
-      );
-
-    }
-
-    var panel =
-      document.getElementById("rzWorkingMenuPanel");
-
-    var backdrop =
-      document.getElementById("rzWorkingMenuBackdrop");
-
-    if(panel){
-      panel.style.display = "none";
-    }
-
-    if(backdrop){
-      backdrop.style.display = "none";
-    }
-  }
-
-  function showMenu(){
-
-    document.body.classList.remove(
-      "rz-menu-auth-locked"
-    );
-
-    var menus = findMenuButtons();
-
-    for(var i=0;i<menus.length;i++){
-
-      menus[i].style.removeProperty(
-        "display"
-      );
-
-      menus[i].removeAttribute(
-        "aria-hidden"
-      );
-    }
-  }
-
-  async function checkRealRizoraSession(){
-
-    if(checking){
-      return authenticated;
-    }
-
-    checking=true;
-
-    var token=getToken();
-
-    try{
-
-      /*
-        RIZORA authentication is session-cookie based.
-
-        Do NOT require a separate local token here.
-        The backend /api/auth/me response is the authority.
-      */
-
-      var response = await fetch(
-        getApiBase()+"/api/auth/me",
-        {
-          method:"GET",
-          cache:"no-store",
-          credentials:"include",
-          headers:Object.assign(
-            {"Accept":"application/json"},
-            token ? {"Authorization":"Bearer "+token} : {}
-          )
-        }
-      );
-
-      authenticated = response.ok;
-
-      if(authenticated){
-        showMenu();
-      }else{
-        hideMenu();
-      }
-
-      checking=false;
-
-      return authenticated;
-
-    }catch(error){
-
-      console.warn(
-        "RIZORA MENU auth check failed:",
-        error
-      );
-
-      authenticated=false;
-
-      hideMenu();
-
-      checking=false;
-
-      return false;
-    }
-  }
-
-  function watchLoginState(){
-
-    hideMenu();
+    window.rizoraMenuAuthenticated = ok;
 
     /*
-      Check the real backend session immediately.
+      The login flow already stores rizoraToken.
+      Do NOT call /api/auth/me here.
+      Backend feature requests still perform
+      their own real authorization.
     */
-    checkRealRizoraSession();
 
-    /*
-      Keep the menu synchronized with the real
-      authenticated session even when login happens
-      without a page reload.
-    */
-    setInterval(function(){
-
-      checkRealRizoraSession();
-
-    },2000);
-
-    /*
-      Re-check when the page becomes active.
-    */
-    document.addEventListener(
-      "visibilitychange",
-      function(){
-
-        if(!document.hidden){
-
-          checkRealRizoraSession();
-
-        }
-
-      }
-    );
-
-    /*
-      Existing login code can refresh menu auth
-      immediately after successful login.
-    */
-    window.rizoraRefreshMenuAuth =
-      checkRealRizoraSession;
+    return ok;
   }
 
-    if(document.readyState==="loading"){
+  window.rizoraRefreshMenuAuth =
+    syncMenuAuth;
+
+  if(document.readyState === "loading"){
 
     document.addEventListener(
       "DOMContentLoaded",
-      watchLoginState
+      function(){
+        syncMenuAuth();
+
+        setTimeout(
+          syncMenuAuth,
+          250
+        );
+
+        setTimeout(
+          syncMenuAuth,
+          1000
+        );
+      }
     );
 
   }else{
 
-    watchLoginState();
+    syncMenuAuth();
 
   }
+
+  setInterval(
+    syncMenuAuth,
+    1000
+  );
+
+  window.addEventListener(
+    "storage",
+    function(){
+      syncMenuAuth();
+    }
+  );
 
 })();
 </script>
