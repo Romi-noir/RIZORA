@@ -4043,6 +4043,11 @@ password:
     updateHeader();
 
     openBestDashboard();
+    setTimeout(function(){
+      if(typeof window.rizoraForceHome === "function"){
+        window.rizoraForceHome();
+      }
+    }, 350);
 
     showToast(
       "Welcome to RIZORA 🚀"
@@ -4122,6 +4127,11 @@ async function handleLogin(event){
     updateHeader();
 
     openBestDashboard();
+    setTimeout(function(){
+      if(typeof window.rizoraForceHome === "function"){
+        window.rizoraForceHome();
+      }
+    }, 350);
 
     showToast(
       isSuperAdmin()
@@ -6626,6 +6636,11 @@ async function startup(){
       updateHeader();
 
       openBestDashboard();
+    setTimeout(function(){
+      if(typeof window.rizoraForceHome === "function"){
+        window.rizoraForceHome();
+      }
+    }, 350);
 
     }catch{
 
@@ -10560,6 +10575,11 @@ async function handleRizoraGoogleCredential(
       "function"
     ){
       openBestDashboard();
+    setTimeout(function(){
+      if(typeof window.rizoraForceHome === "function"){
+        window.rizoraForceHome();
+      }
+    }, 350);
     }else{
       showDashboard();
     }
@@ -11076,35 +11096,45 @@ async function initRizoraGoogle(){
 </script>
 
 
-<script id="RIZORA_HOME_LANDING_REPAIR_V1">
+
+<script id="RIZORA_HOME_LANDING_REPAIR_V2">
 (function(){
 
-  function showRealCreatorHome(){
+  window.rizoraForceHome = function(){
 
-    try{
+    var attempts = 0;
 
-      if(
-        typeof window.showCreatorWorkspace ===
-        "function"
-      ){
-        window.showCreatorWorkspace();
-      }
+    function force(){
 
-    }catch(e){}
-
-    setTimeout(function(){
+      attempts++;
 
       try{
 
-        var buttons =
+        if(
+          typeof window.showCreatorWorkspace ===
+          "function"
+        ){
+          window.showCreatorWorkspace();
+        }
+
+      }catch(e){}
+
+      try{
+
+        var overview =
+          document.getElementById(
+            "creatorOverview"
+          );
+
+        var tabs =
           Array.from(
             document.querySelectorAll(
               ".admin-tab"
             )
           );
 
-        var homeButton =
-          buttons.find(function(btn){
+        var homeTab =
+          tabs.find(function(btn){
 
             return (
               (btn.textContent || "")
@@ -11116,122 +11146,64 @@ async function initRizoraGoogle(){
           }) || null;
 
         if(
-          homeButton &&
+          homeTab &&
           typeof window.creatorTab ===
           "function"
         ){
 
-          window.creatorTab(
-            homeButton,
-            "creatorOverview"
+          try{
+            window.creatorTab(
+              homeTab,
+              "creatorOverview"
+            );
+          }catch(e){}
+
+        }
+
+        if(overview){
+
+          overview.classList.remove(
+            "hidden"
           );
+
+          overview.style.display =
+            "block";
+
+          overview.style.visibility =
+            "visible";
+
+          overview.style.opacity =
+            "1";
+
+          overview.setAttribute(
+            "aria-hidden",
+            "false"
+          );
+
+          return true;
 
         }
 
       }catch(e){}
 
-      var overview =
-        document.getElementById(
-          "creatorOverview"
+      if(attempts < 20){
+
+        setTimeout(
+          force,
+          100
         );
-
-      if(overview){
-
-        overview.classList.remove(
-          "hidden"
-        );
-
-        overview.style.display = "";
-
-        overview.style.visibility =
-          "visible";
-
-        overview.style.opacity =
-          "1";
 
       }
 
-    },180);
-
-  }
-
-  function installWrapper(){
-
-    if(
-      window.__RIZORA_HOME_LANDING_WRAPPED__
-    ){
-      return true;
-    }
-
-    if(
-      typeof window.openBestDashboard !==
-      "function"
-    ){
       return false;
+
     }
 
-    var original =
-      window.openBestDashboard;
+    force();
 
-    window.openBestDashboard =
-      function(){
-
-        var result;
-
-        try{
-          result =
-            original.apply(
-              this,
-              arguments
-            );
-        }catch(e){}
-
-        setTimeout(
-          showRealCreatorHome,
-          250
-        );
-
-        return result;
-
-      };
-
-    window.__RIZORA_HOME_LANDING_WRAPPED__ =
-      true;
-
-    return true;
-
-  }
-
-  if(!installWrapper()){
-
-    var tries = 0;
-
-    var timer =
-      setInterval(
-        function(){
-
-          tries++;
-
-          if(installWrapper() ||
-             tries > 40){
-
-            clearInterval(timer);
-
-          }
-
-        },
-        100
-      );
-
-  }
-
-  window.addEventListener(
-    "rz-home-after-login",
-    showRealCreatorHome
-  );
+  };
 
 })();
-
 </script>
 
 </body>
