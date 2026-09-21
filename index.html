@@ -2916,6 +2916,58 @@ still opens the corresponding content.
 }
 </style>
 
+
+<style id="RIZORA_PRIMARY_ACTIONS_V4">
+/* RIZORA PRIMARY ACTIONS V4 */
+
+.landing-actions,
+.landing-actions a,
+.landing-actions button,
+#loginNav,
+#signupNav {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.landing-actions {
+  position: relative !important;
+  z-index: 2147483640 !important;
+}
+
+.landing-actions a,
+.landing-actions button {
+  position: relative !important;
+  z-index: 2147483647 !important;
+}
+
+/* Hash targets must override .hidden */
+#loginForm:target,
+#signupForm:target,
+#about:target {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Make the active destination usable */
+#loginForm:target input,
+#loginForm:target button,
+#signupForm:target input,
+#signupForm:target button,
+#signupForm:target select,
+#signupForm:target textarea {
+  pointer-events: auto !important;
+}
+
+body:has(#loginForm:target) #landing,
+body:has(#signupForm:target) #landing,
+body:has(#about:target) #landing {
+  display: none !important;
+}
+</style>
+
 </head>
 
 <body><div id="rizoraFloatingProgress" class="rizora-floating-progress">
@@ -2952,13 +3004,13 @@ still opens the corresponding content.
 
 <a href="#about" onclick="showAbout();return false">About</a>
 
-<button id="loginNav" onclick="showLogin()">
+<a id="loginNav" href="#loginForm">
 Login
-</button>
+</a>
 
-<button id="signupNav" class="btn" onclick="showSignup()">
+<a id="signupNav" class="btn" href="#signupForm">
 Sign up
-</button>
+</a>
 
 <button
 id="dashboardNav"
@@ -3015,7 +3067,7 @@ creator-focused tools.
 
 <a
   class="btn"
-  href="/join"
+  href="#signupForm"
   aria-label="Join RIZORA"
   onclick="if(typeof showSignup==='function'){showSignup();return false;}"
 >
@@ -13602,6 +13654,175 @@ async function initRizoraGoogle(){
   window.addEventListener("click", clickCapture, true);
 
   console.log("RIZORA_TOUCH_CAPTURE_V3 active");
+})();
+</script>
+
+
+<script id="RIZORA_PRIMARY_ACTIONS_V4_SCRIPT">
+(() => {
+  if (window.__RIZORA_PRIMARY_ACTIONS_V4) return;
+  window.__RIZORA_PRIMARY_ACTIONS_V4 = true;
+
+  function openTarget(id) {
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    target.classList.remove("hidden");
+
+    target.style.setProperty("display", "block", "important");
+    target.style.setProperty("visibility", "visible", "important");
+    target.style.setProperty("opacity", "1", "important");
+    target.style.setProperty("pointer-events", "auto", "important");
+
+    const landing = document.getElementById("landing");
+    if (landing) {
+      landing.style.setProperty("display", "none", "important");
+    }
+
+    setTimeout(() => {
+      try {
+        target.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      } catch (_) {
+        try { target.scrollIntoView(); } catch (_) {}
+      }
+    }, 30);
+  }
+
+  function routePrimary(el, event) {
+    if (!el) return false;
+
+    const text = (el.innerText || el.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+    let target = null;
+
+    if (
+      text === "login" ||
+      text === "login to rizora" ||
+      text === "log in"
+    ) {
+      target = "loginForm";
+    }
+
+    if (
+      text === "sign up" ||
+      text === "signup" ||
+      text === "join rizora" ||
+      text.includes("join rizora")
+    ) {
+      target = "signupForm";
+    }
+
+    if (!target) return false;
+
+    if (event && event.cancelable) {
+      event.preventDefault();
+    }
+
+    if (event) {
+      event.stopPropagation();
+    }
+
+    try {
+      history.pushState(null, "", "#" + target);
+    } catch (_) {
+      location.hash = target;
+    }
+
+    openTarget(target);
+    return true;
+  }
+
+  function handleHash() {
+    const hash = (location.hash || "").replace(/^#/, "");
+
+    if (
+      hash === "loginForm" ||
+      hash === "signupForm" ||
+      hash === "about"
+    ) {
+      openTarget(hash);
+    }
+  }
+
+  /* Old /join URLs are now converted into the signup screen */
+  function handleLegacyRoutes() {
+    const path = (location.pathname || "").replace(/\/+$/, "");
+
+    if (path === "/join" || path === "/signup") {
+      try {
+        history.replaceState(null, "", "/#signupForm");
+      } catch (_) {
+        location.hash = "signupForm";
+      }
+
+      openTarget("signupForm");
+    }
+
+    if (path === "/login") {
+      try {
+        history.replaceState(null, "", "/#loginForm");
+      } catch (_) {
+        location.hash = "loginForm";
+      }
+
+      openTarget("loginForm");
+    }
+  }
+
+  /* Works even when buttons are dynamically rendered */
+  function delegated(e) {
+    const el =
+      e.target instanceof Element
+        ? e.target.closest("a, button")
+        : null;
+
+    if (!el) return;
+
+    const text = (el.innerText || el.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+    const primary =
+      text === "login" ||
+      text === "login to rizora" ||
+      text === "log in" ||
+      text === "sign up" ||
+      text === "signup" ||
+      text === "join rizora" ||
+      text.includes("join rizora");
+
+    if (!primary) return;
+
+    /*
+      Let normal external links like Follow @romi.noir
+      continue normally.
+    */
+    routePrimary(el, e);
+  }
+
+  document.addEventListener("click", delegated, true);
+  document.addEventListener("pointerup", delegated, true);
+
+  window.addEventListener("hashchange", handleHash);
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      handleLegacyRoutes();
+      handleHash();
+    });
+  } else {
+    handleLegacyRoutes();
+    handleHash();
+  }
+
+  console.log("RIZORA_PRIMARY_ACTIONS_V4 active");
 })();
 </script>
 

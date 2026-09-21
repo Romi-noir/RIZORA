@@ -1,4 +1,30 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/join",
+      "destination": "/"
+    },
+    {
+      "source": "/join/",
+      "destination": "/"
+    },
+    {
+      "source": "/signup",
+      "destination": "/"
+    },
+    {
+      "source": "/signup/",
+      "destination": "/"
+    },
+    {
+      "source": "/login",
+      "destination": "/"
+    },
+    {
+      "source": "/login/",
+      "destination": "/"
+    }
+  ]
 }
