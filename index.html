@@ -2569,6 +2569,81 @@ textarea:focus{
 
 </style>
 
+
+<style id="RIZORA_AI_UI_V3">
+
+.ai-box{
+  display:grid;
+  gap:12px;
+  padding-top:4px;
+}
+
+.ai-input{
+  width:100% !important;
+  min-height:145px !important;
+  padding:16px !important;
+  border-radius:17px !important;
+  resize:vertical;
+  line-height:1.6 !important;
+}
+
+.ai-reply{
+  min-height:100px;
+  padding:17px !important;
+  border-radius:18px !important;
+  border:1px solid rgba(167,139,250,.18) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139,92,246,.12),
+      rgba(255,255,255,.025)
+    ) !important;
+  color:#eee9fa !important;
+  white-space:pre-wrap !important;
+  overflow-wrap:anywhere !important;
+  line-height:1.65 !important;
+}
+
+.ai-reply::before{
+  content:"RIZORA AI";
+  display:block;
+  margin-bottom:9px;
+  color:#bda9ff;
+  font-size:.68rem;
+  font-weight:900;
+  letter-spacing:.15em;
+}
+
+.ai-reply.rz-ai-loading{
+  color:#b5adbf !important;
+}
+
+.ai-reply.rz-ai-error{
+  color:#fecdd3 !important;
+  border-color:rgba(251,113,133,.28) !important;
+  background:rgba(127,29,29,.12) !important;
+}
+
+.ai-box .btn[aria-busy="true"]{
+  opacity:.68;
+  cursor:wait;
+}
+
+@media(max-width:560px){
+
+  .ai-input{
+    min-height:125px !important;
+    font-size:16px !important;
+  }
+
+  .ai-box .btn{
+    width:100%;
+  }
+
+}
+
+</style>
+
 </head>
 
 <body><div id="rizoraFloatingProgress" class="rizora-floating-progress">
@@ -7929,70 +8004,210 @@ document.addEventListener("pointerdown",function(e){
 </script><script id="rizora-real-ai">
 (function(){
 
-  async function askRizoraAI(){
+  
+async function askRizoraAI(){
 
-    const input = document.getElementById("aiPrompt");
-    const output = document.getElementById("aiReply");
-    const button = document.getElementById("rizoraAskAIButton");
+  const input =
+    document.getElementById("aiPrompt");
 
-    if(!input || !output){
-      console.error("RIZORA AI UI missing.");
-      return;
+  const replyBox =
+    document.getElementById("aiReply");
+
+  if(!input || !replyBox){
+    console.error("RIZORA AI UI is missing.");
+    return;
+  }
+
+  const message =
+    String(input.value || "").trim();
+
+  if(!message){
+    showToast("Type something for RIZORA AI first.");
+    input.focus();
+    return;
+  }
+
+  if(window.RIZORA_AI_BUSY){
+    return;
+  }
+
+  window.RIZORA_AI_BUSY = true;
+
+  const submit =
+    document.querySelector(
+      'button[onclick="askRizoraAI()"]'
+    );
+
+  const originalText =
+    submit
+      ? submit.textContent
+      : "Ask RIZORA AI";
+
+  if(submit){
+    submit.disabled = true;
+    submit.setAttribute("aria-busy","true");
+    submit.textContent = "RIZORA AI is thinking...";
+  }
+
+  replyBox.classList.add("rz-ai-loading");
+  replyBox.classList.remove("rz-ai-error");
+  replyBox.textContent = "RIZORA AI is thinking...";
+
+  const controller =
+    new AbortController();
+
+  const timeout =
+    setTimeout(function(){
+      controller.abort();
+    },45000);
+
+  try{
+
+    const base =
+      String(
+        window.RIZORA_API_BASE || ""
+      ).replace(/\/+$/,"");
+
+    const url =
+      base
+        ? base + "/api/ai/chat"
+        : "/api/ai/chat";
+
+    const headers = {
+      "Content-Type":"application/json"
+    };
+
+    const savedToken =
+      localStorage.getItem("rizoraToken") || "";
+
+    if(savedToken){
+      headers.Authorization =
+        "Bearer " + savedToken;
     }
 
-    const message = input.value.trim();
+    const response =
+      await fetch(
+        url,
+        {
+          method:"POST",
+          headers,
+          credentials:"include",
+          signal:controller.signal,
+          body:JSON.stringify({
+            message:message
+          })
+        }
+      );
 
-    if(!message){
-      output.textContent = "Ask RIZORA AI something first.";
-      return;
+    const data =
+      await response
+        .json()
+        .catch(function(){
+          return {};
+        });
+
+    if(!response.ok){
+
+      if(response.status === 401){
+
+        throw new Error(
+          "Your RIZORA session has expired. Please log in again."
+        );
+      }
+
+      if(response.status === 429){
+
+        throw new Error(
+          "RIZORA AI is temporarily rate-limited. Try again shortly."
+        );
+      }
+
+      throw new Error(
+        data.error ||
+        data.message ||
+        ("RIZORA AI request failed (" +
+          response.status +
+          ").")
+      );
     }
 
-    if(button){
-      button.disabled = true;
-      button.textContent = "RIZORA AI is thinking...";
+    const reply =
+      String(
+        data.reply ||
+        data.message ||
+        data.content ||
+        ""
+      ).trim();
+
+    if(!reply){
+
+      throw new Error(
+        "RIZORA AI returned an empty response."
+      );
     }
 
-    output.textContent = "RIZORA AI is thinking...";
+    replyBox.textContent = reply;
+
+    replyBox.classList.remove(
+      "rz-ai-loading",
+      "rz-ai-error"
+    );
+
+  }catch(error){
+
+    let messageText =
+      String(
+        error &&
+        error.message
+          ? error.message
+          : "RIZORA AI could not respond."
+      );
+
+    if(
+      error &&
+      error.name === "AbortError"
+    ){
+
+      messageText =
+        "RIZORA AI took too long to respond. Try again.";
+    }
+
+    replyBox.textContent =
+      messageText;
+
+    replyBox.classList.remove(
+      "rz-ai-loading"
+    );
+
+    replyBox.classList.add(
+      "rz-ai-error"
+    );
 
     try{
+      showToast(messageText);
+    }catch(e){}
 
-      const token = localStorage.getItem("rizoraToken") || "";
+  }finally{
 
-      const response = await apiapi("/api/ai/chat",{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          ...(token ? {Authorization:"Bearer " + token} : {})
-        },
-        body:JSON.stringify({
-          message: message
-        })
-      });
+    clearTimeout(timeout);
 
-      const data = await response.json().catch(() => ({}));
+    window.RIZORA_AI_BUSY = false;
 
-      if(!response.ok){
-        throw new Error(data.error || "RIZORA AI request failed.");
-      }
+    if(submit){
 
-      output.textContent = data.reply || "RIZORA AI returned no response.";
+      submit.disabled = false;
 
-    }catch(error){
+      submit.removeAttribute(
+        "aria-busy"
+      );
 
-      console.error("RIZORA AI ERROR:",error);
-
-      output.textContent =
-        "RIZORA AI error: " + error.message;
-
-    }finally{
-
-      if(button){
-        button.disabled = false;
-        button.textContent = "✦ Ask RIZORA AI";
-      }
-
+      submit.textContent =
+        originalText;
     }
+
   }
+}
+
 
   window.askRizoraAI = askRizoraAI;
 
@@ -12338,6 +12553,182 @@ async function initRizoraGoogle(){
     }
 
   });
+
+})();
+</script>
+
+
+<script id="RIZORA_AI_UI_JS_V3">
+(function(){
+
+  function mountRizoraAI(){
+
+    const home =
+      document.getElementById(
+        "creatorOverview"
+      );
+
+    if(!home){
+      return;
+    }
+
+    if(
+      document.getElementById(
+        "rzHomeAiCard"
+      )
+    ){
+      return;
+    }
+
+    if(
+      document.getElementById(
+        "aiPrompt"
+      )
+    ){
+      return;
+    }
+
+    const card =
+      document.createElement("div");
+
+    card.id =
+      "rzHomeAiCard";
+
+    card.className =
+      "card";
+
+    card.style.marginTop =
+      "16px";
+
+    card.innerHTML = [
+      '<div class="card-top">',
+        '<div>',
+          '<div class="eyebrow">RIZORA AI</div>',
+          '<h2>Your creator intelligence</h2>',
+          '<p class="card-description">',
+            'Ask RIZORA AI for ideas, hooks, captions, growth plans, profile advice or boost strategy.',
+          '</p>',
+        '</div>',
+        '<div class="dashboard-icon">AI</div>',
+      '</div>',
+
+      '<div class="ai-box">',
+
+        '<textarea',
+          ' id="aiPrompt"',
+          ' class="ai-input"',
+          ' placeholder="Ask RIZORA AI anything about your content or growth..."',
+        '></textarea>',
+
+        '<button',
+          ' type="button"',
+          ' class="btn"',
+          ' onclick="askRizoraAI()"',
+        '>',
+          '✦ Ask RIZORA AI',
+        '</button>',
+
+        '<div',
+          ' id="aiReply"',
+          ' class="ai-reply"',
+          ' aria-live="polite"',
+        '>',
+          'RIZORA AI is ready.',
+        '</div>',
+
+      '</div>'
+    ].join("");
+
+    home.appendChild(card);
+
+    wireKeyboard();
+
+  }
+
+  function wireKeyboard(){
+
+    const input =
+      document.getElementById(
+        "aiPrompt"
+      );
+
+    if(
+      !input ||
+      input.dataset.rizoraAiReady
+    ){
+      return;
+    }
+
+    input.dataset.rizoraAiReady =
+      "1";
+
+    input.addEventListener(
+      "keydown",
+      function(event){
+
+        if(
+          (event.ctrlKey || event.metaKey) &&
+          event.key === "Enter"
+        ){
+
+          event.preventDefault();
+
+          if(
+            typeof window.askRizoraAI ===
+            "function"
+          ){
+            window.askRizoraAI();
+          }
+
+        }
+
+      }
+    );
+
+  }
+
+  function init(){
+
+    mountRizoraAI();
+    wireKeyboard();
+
+  }
+
+  if(
+    document.readyState ===
+    "loading"
+  ){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      init,
+      {once:true}
+    );
+
+  }else{
+
+    init();
+
+  }
+
+  if(window.MutationObserver){
+
+    const observer =
+      new MutationObserver(function(){
+
+        init();
+
+      });
+
+    observer.observe(
+      document.body,
+      {
+        childList:true,
+        subtree:true
+      }
+    );
+
+  }
 
 })();
 </script>
