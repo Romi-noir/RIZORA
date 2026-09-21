@@ -5344,6 +5344,7 @@ password:
 }
 
 
+
 async function handleLogin(e){
 
   if(e){
@@ -5387,6 +5388,7 @@ async function handleLogin(e){
     );
 
     return;
+
   }
 
   const username =
@@ -5407,8 +5409,8 @@ async function handleLogin(e){
     );
 
     usernameInput.focus();
-
     return;
+
   }
 
   if(!password){
@@ -5419,8 +5421,8 @@ async function handleLogin(e){
     );
 
     passwordInput.focus();
-
     return;
+
   }
 
   const oldText =
@@ -5433,7 +5435,6 @@ async function handleLogin(e){
     if(submit){
 
       submit.disabled = true;
-
       submit.textContent =
         "Logging in...";
 
@@ -5449,7 +5450,7 @@ async function handleLogin(e){
         window.RIZORA_API_BASE ||
         "https://rizora-guse.onrender.com"
       ).replace(
-        /\/+$/,
+        /\\/+$/,
         ""
       );
 
@@ -5458,18 +5459,14 @@ async function handleLogin(e){
         base +
         "/api/auth/login",
         {
-          method: "POST",
-
-          headers: {
+          method:"POST",
+          headers:{
             "Content-Type":
               "application/json"
           },
-
-          credentials: "include",
-
-          cache: "no-store",
-
-          body: JSON.stringify({
+          credentials:"include",
+          cache:"no-store",
+          body:JSON.stringify({
             username,
             password
           })
@@ -5510,7 +5507,7 @@ async function handleLogin(e){
 
     /*
     ========================================================
-    STORE AUTHENTICATED SESSION
+    SAVE AUTH SESSION
     ========================================================
     */
 
@@ -5544,26 +5541,163 @@ async function handleLogin(e){
     window.currentUser =
       data.user;
 
+    /*
+    ========================================================
+    UPDATE UI IMMEDIATELY
+    ========================================================
+    */
+
+    try{
+
+      if(
+        typeof window.updateHeader ===
+        "function"
+      ){
+
+        window.updateHeader();
+
+      }
+
+    }catch(e){}
+
     setAuthMessage(
-      "Login successful. Opening your RIZORA workspace...",
+      "Login successful. Opening RIZORA...",
       "success"
     );
 
     /*
     ========================================================
-    DO NOT CALL THE OLD COMPETING DASHBOARD FUNCTIONS HERE.
-    RELOAD AND LET THE NORMAL RIZORA AUTH BOOT HANDLE IT.
+    DO NOT RELOAD THE PAGE.
+    ROUTE DIRECTLY INSIDE THE SPA.
     ========================================================
     */
 
-    setTimeout(
-      function(){
+    let routed = false;
 
-        window.location.reload();
+    try{
 
-      },
-      150
-    );
+      if(
+        typeof window.openBestDashboard ===
+        "function"
+      ){
+
+        await window.openBestDashboard();
+
+        routed = true;
+
+      }
+
+    }catch(routeError){
+
+      console.warn(
+        "openBestDashboard routing failed:",
+        routeError
+      );
+
+    }
+
+    /*
+    Fallback for normal creators.
+    */
+
+    if(
+      !routed &&
+      typeof window.showCreatorWorkspace ===
+      "function"
+    ){
+
+      try{
+
+        window.showCreatorWorkspace();
+
+        routed = true;
+
+      }catch(e){}
+
+    }
+
+    /*
+    Fallback: find a visible Command Center control
+    for super admins.
+    */
+
+    if(!routed){
+
+      const role =
+        String(
+          data.user.role || ""
+        ).toLowerCase();
+
+      const userName =
+        String(
+          data.user.username || ""
+        ).toLowerCase();
+
+      const superAdmin =
+        role === "super_admin" ||
+        userName === "romi" ||
+        userName === "superadmin2";
+
+      if(superAdmin){
+
+        try{
+
+          const controls =
+            Array.from(
+              document.querySelectorAll(
+                "button,a,[role='button']"
+              )
+            );
+
+          const commandCenter =
+            controls.find(function(el){
+
+              return /commands*center/i.test(
+                String(
+                  el.textContent || ""
+                )
+              );
+
+            });
+
+          if(commandCenter){
+
+            commandCenter.click();
+            routed = true;
+
+          }
+
+        }catch(e){}
+
+      }
+
+    }
+
+    /*
+    Final fallback: reload only if the SPA
+    genuinely failed to change views.
+    */
+
+    if(!routed){
+
+      setTimeout(
+        function(){
+
+          window.location.reload();
+
+        },
+        500
+      );
+
+    }
+
+    if(submit){
+
+      submit.disabled = false;
+      submit.textContent =
+        oldText;
+
+    }
 
   }catch(error){
 
@@ -5585,14 +5719,15 @@ async function handleLogin(e){
     if(submit){
 
       submit.disabled = false;
-
       submit.textContent =
         oldText;
 
     }
 
   }
+
 }
+
 
 
 async function logoutUser(){
