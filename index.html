@@ -2806,23 +2806,16 @@ textarea:focus{
 </script>
 
 
+
 <style id="RIZORA_CTA_TOUCH_FIX_V1_CSS">
 
 .landing-actions,
-.landing-actions .btn,
-.landing-actions button,
-.landing-actions a{
+.landing-actions .btn{
   position:relative !important;
   z-index:2001 !important;
   pointer-events:auto !important;
   touch-action:manipulation !important;
-  -webkit-user-select:none !important;
-  user-select:none !important;
   -webkit-tap-highlight-color:transparent !important;
-}
-
-.landing-actions{
-  isolation:isolate !important;
 }
 
 .landing-actions .btn{
@@ -2836,7 +2829,7 @@ textarea:focus{
     position:relative !important;
     z-index:2001 !important;
     display:flex !important;
-    width:100% !important;
+    flex-wrap:wrap !important;
     gap:12px !important;
   }
 
@@ -2846,7 +2839,6 @@ textarea:focus{
     min-height:50px !important;
     touch-action:manipulation !important;
     pointer-events:auto !important;
-    flex:0 0 auto !important;
   }
 
 }
@@ -13319,6 +13311,7 @@ async function initRizoraGoogle(){
 </script>
 
 
+
 <script id="RIZORA_CTA_TOUCH_FIX_V1">
 (function(){
 
@@ -13332,6 +13325,7 @@ async function initRizoraGoogle(){
     }
 
     var now = Date.now();
+
     var label =
       String(
         button.textContent || ""
@@ -13344,15 +13338,20 @@ async function initRizoraGoogle(){
       label === lastAction &&
       now - lastTime < 800
     ){
+
       return;
+
     }
 
     lastAction = label;
     lastTime = now;
 
     /*
-    JOIN
+    ========================================================
+    JOIN RIZORA
+    ========================================================
     */
+
     if(
       label.indexOf("join rizora") !== -1
     ){
@@ -13362,11 +13361,15 @@ async function initRizoraGoogle(){
       );
 
       return;
+
     }
 
     /*
-    LOGIN
+    ========================================================
+    LOGIN — USE EXISTING HOMEPAGE MODAL
+    ========================================================
     */
+
     if(
       label === "login"
     ){
@@ -13386,18 +13389,81 @@ async function initRizoraGoogle(){
 
         }
 
-      }catch(e){}
+      }catch(error){
 
-      window.location.assign(
-        "/login"
+        console.warn(
+          "RIZORA login modal error:",
+          error
+        );
+
+      }
+
+      /*
+      Fallback: find an existing element that
+      already knows how to open loginModal.
+      */
+
+      try{
+
+        var loginTrigger =
+          document.querySelector(
+            '[onclick*="loginModal"]'
+          );
+
+        if(loginTrigger){
+
+          loginTrigger.click();
+
+          return;
+
+        }
+
+      }catch(error){}
+
+      /*
+      Last fallback: find the modal itself
+      and make it visible.
+      */
+
+      try{
+
+        var loginModal =
+          document.getElementById(
+            "loginModal"
+          );
+
+        if(loginModal){
+
+          loginModal.classList.remove(
+            "hidden"
+          );
+
+          loginModal.style.display =
+            "flex";
+
+          document.body.style.overflow =
+            "hidden";
+
+          return;
+
+        }
+
+      }catch(error){}
+
+      console.error(
+        "RIZORA login modal could not be opened."
       );
 
       return;
+
     }
 
     /*
+    ========================================================
     MEET ROMI
+    ========================================================
     */
+
     if(
       label.indexOf("meet romi") !== -1
     ){
@@ -13417,140 +13483,56 @@ async function initRizoraGoogle(){
 
         }
 
-      }catch(e){}
+      }catch(error){}
+
+      try{
+
+        var romiTrigger =
+          document.querySelector(
+            '[onclick*="roMiModal"]'
+          );
+
+        if(romiTrigger){
+
+          romiTrigger.click();
+
+          return;
+
+        }
+
+      }catch(error){}
 
       return;
+
     }
 
   }
 
-  function findCTA(event){
-
-    var target =
-      event.target;
+  function getCTA(event){
 
     if(
-      !target ||
-      !target.closest
+      !event ||
+      !event.target ||
+      !event.target.closest
     ){
+
       return null;
+
     }
 
-    var button =
-      target.closest(
+    return event.target.closest(
+      ".landing-actions .btn"
+    );
+
+  }
+
+  function hardenButtons(){
+
+    document
+      .querySelectorAll(
         ".landing-actions .btn"
-      );
-
-    if(!button){
-      return null;
-    }
-
-    return button;
-  }
-
-  function install(){
-
-    if(
-      document.documentElement
-        .dataset
-        .rizoraCtaTouchFix === "1"
-    ){
-      return;
-    }
-
-    document.documentElement
-      .dataset
-      .rizoraCtaTouchFix = "1";
-
-    /*
-    POINTER DEVICES
-    */
-    document.addEventListener(
-      "pointerup",
-      function(event){
-
-        var button =
-          findCTA(event);
-
-        if(!button){
-          return;
-        }
-
-        event.preventDefault();
-        event.stopImmediatePropagation();
-
-        runCTA(button);
-
-      },
-      true
-    );
-
-    /*
-    TOUCH DEVICES WITHOUT POINTER EVENTS
-    */
-    document.addEventListener(
-      "touchend",
-      function(event){
-
-        if(
-          window.PointerEvent
-        ){
-          return;
-        }
-
-        var button =
-          findCTA(event);
-
-        if(!button){
-          return;
-        }
-
-        event.preventDefault();
-        event.stopImmediatePropagation();
-
-        runCTA(button);
-
-      },
-      {
-        capture:true,
-        passive:false
-      }
-    );
-
-    /*
-    NORMAL MOUSE CLICK FALLBACK
-    */
-    document.addEventListener(
-      "click",
-      function(event){
-
-        var button =
-          findCTA(event);
-
-        if(!button){
-          return;
-        }
-
-        event.preventDefault();
-        event.stopImmediatePropagation();
-
-        runCTA(button);
-
-      },
-      true
-    );
-
-    /*
-    FORCE SAFE HIT AREAS
-    */
-    function harden(){
-
-      var buttons =
-        document.querySelectorAll(
-          ".landing-actions .btn"
-        );
-
-      buttons.forEach(function(button){
+      )
+      .forEach(function(button){
 
         button.style.pointerEvents =
           "auto";
@@ -13571,16 +13553,115 @@ async function initRizoraGoogle(){
 
       });
 
-    }
+  }
 
-    harden();
+  function install(){
 
     if(
-      window.MutationObserver
+      document.documentElement.dataset
+        .rizoraCtaModalFix === "1"
     ){
 
+      return;
+
+    }
+
+    document.documentElement.dataset
+      .rizoraCtaModalFix = "1";
+
+    /*
+    POINTER / TOUCH
+    */
+
+    document.addEventListener(
+      "pointerup",
+      function(event){
+
+        var button =
+          getCTA(event);
+
+        if(!button){
+
+          return;
+
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        runCTA(button);
+
+      },
+      true
+    );
+
+    /*
+    Safari / older touch fallback
+    */
+
+    document.addEventListener(
+      "touchend",
+      function(event){
+
+        if(window.PointerEvent){
+
+          return;
+
+        }
+
+        var button =
+          getCTA(event);
+
+        if(!button){
+
+          return;
+
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        runCTA(button);
+
+      },
+      {
+        capture:true,
+        passive:false
+      }
+    );
+
+    /*
+    Mouse / keyboard fallback
+    */
+
+    document.addEventListener(
+      "click",
+      function(event){
+
+        var button =
+          getCTA(event);
+
+        if(!button){
+
+          return;
+
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        runCTA(button);
+
+      },
+      true
+    );
+
+    hardenButtons();
+
+    if(window.MutationObserver){
+
       new MutationObserver(
-        harden
+        hardenButtons
       ).observe(
         document.body,
         {
@@ -13592,7 +13673,7 @@ async function initRizoraGoogle(){
     }
 
     console.log(
-      "RIZORA CTA touch fix active."
+      "RIZORA CTA modal/touch repair active."
     );
 
   }
