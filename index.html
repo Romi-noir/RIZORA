@@ -12733,6 +12733,644 @@ async function initRizoraGoogle(){
 })();
 </script>
 
+
+<script id="RIZORA_LOGIN_ROUTING_V1">
+(function(){
+
+  const API_BASE =
+    "https://rizora-guse.onrender.com";
+
+  window.RIZORA_API_BASE = API_BASE;
+
+  /*
+  ----------------------------------------------------------
+  ROUTE RELATIVE /api/* REQUESTS TO RIZORA BACKEND
+  ----------------------------------------------------------
+  */
+  try{
+
+    if(!window.__RIZORA_FETCH_ROUTED__){
+
+      const nativeFetch =
+        window.fetch.bind(window);
+
+      window.fetch =
+        function(input, init){
+
+          try{
+
+            let url = "";
+
+            if(typeof input === "string"){
+              url = input;
+            }else if(
+              input &&
+              typeof input.url === "string"
+            ){
+              url = input.url;
+            }
+
+            if(
+              url &&
+              (
+                url.indexOf("/api/") === 0 ||
+                url.indexOf(
+                  window.location.origin + "/api/"
+                ) === 0
+              )
+            ){
+
+              const path =
+                url.indexOf("/api/") === 0
+                  ? url
+                  : new URL(url).pathname +
+                    new URL(url).search;
+
+              const target =
+                API_BASE +
+                path;
+
+              if(typeof input === "string"){
+
+                input = target;
+
+              }else{
+
+                try{
+
+                  input =
+                    new Request(
+                      target,
+                      input
+                    );
+
+                }catch(e){
+
+                  input = target;
+
+                }
+
+              }
+
+            }
+
+          }catch(e){
+
+            console.warn(
+              "RIZORA API routing fallback:",
+              e
+            );
+
+          }
+
+          return nativeFetch(
+            input,
+            init
+          );
+
+        };
+
+      window.__RIZORA_FETCH_ROUTED__ = true;
+
+    }
+
+  }catch(e){
+
+    console.warn(
+      "RIZORA fetch router failed:",
+      e
+    );
+
+  }
+
+  /*
+  ----------------------------------------------------------
+  HELPERS
+  ----------------------------------------------------------
+  */
+  function findLoginForm(){
+
+    return (
+      document.getElementById("loginForm") ||
+      document.querySelector(
+        'form[id*="login" i]'
+      ) ||
+      document.querySelector(
+        'form'
+      )
+    );
+
+  }
+
+  function findField(
+    form,
+    selectors
+  ){
+
+    for(
+      const selector of selectors
+    ){
+
+      const el =
+        form.querySelector(selector);
+
+      if(el){
+        return el;
+      }
+
+    }
+
+    return null;
+
+  }
+
+  function showMessage(
+    message,
+    success
+  ){
+
+    try{
+
+      if(
+        typeof window.setAuthMessage ===
+        "function"
+      ){
+
+        window.setAuthMessage(
+          message,
+          success
+            ? "success"
+            : undefined
+        );
+
+      }
+
+    }catch(e){}
+
+    const candidates = [
+      document.getElementById(
+        "authMessage"
+      ),
+      document.getElementById(
+        "loginMessage"
+      ),
+      document.querySelector(
+        '[role="alert"]'
+      )
+    ];
+
+    for(
+      const el of candidates
+    ){
+
+      if(el){
+
+        el.textContent = message;
+
+        if(success){
+          el.classList.remove("error");
+        }
+
+        break;
+      }
+
+    }
+
+  }
+
+  /*
+  ----------------------------------------------------------
+  REAL DIRECT LOGIN
+  ----------------------------------------------------------
+  */
+  async function performLogin(
+    form,
+    event
+  ){
+
+    if(event){
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if(
+        typeof event.stopImmediatePropagation ===
+        "function"
+      ){
+
+        event.stopImmediatePropagation();
+
+      }
+
+    }
+
+    const usernameInput =
+      findField(
+        form,
+        [
+          "#loginUsername",
+          "#username",
+          "#loginEmail",
+          'input[name="username"]',
+          'input[name="email"]',
+          'input[type="email"]',
+          'input[type="text"]'
+        ]
+      );
+
+    const passwordInput =
+      findField(
+        form,
+        [
+          "#loginPassword",
+          "#password",
+          'input[name="password"]',
+          'input[type="password"]'
+        ]
+      );
+
+    if(
+      !usernameInput ||
+      !passwordInput
+    ){
+
+      console.error(
+        "RIZORA login fields not found."
+      );
+
+      showMessage(
+        "Login form is unavailable. Please refresh.",
+        false
+      );
+
+      return;
+
+    }
+
+    const username =
+      String(
+        usernameInput.value || ""
+      ).trim();
+
+    const password =
+      String(
+        passwordInput.value || ""
+      );
+
+    if(!username){
+
+      showMessage(
+        "Enter your username or email.",
+        false
+      );
+
+      usernameInput.focus();
+      return;
+
+    }
+
+    if(!password){
+
+      showMessage(
+        "Enter your password.",
+        false
+      );
+
+      passwordInput.focus();
+      return;
+
+    }
+
+    const submit =
+      form.querySelector(
+        "#loginSubmit"
+      ) ||
+      form.querySelector(
+        'button[type="submit"]'
+      ) ||
+      form.querySelector(
+        "button"
+      );
+
+    const originalText =
+      submit
+        ? submit.textContent
+        : "Log in";
+
+    try{
+
+      if(submit){
+
+        submit.disabled = true;
+        submit.textContent =
+          "Logging in...";
+
+      }
+
+      showMessage(
+        "Logging in...",
+        true
+      );
+
+      const response =
+        await fetch(
+          API_BASE +
+          "/api/auth/login",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              username:
+                username,
+              password:
+                password
+            })
+          }
+        );
+
+      const data =
+        await response
+          .json()
+          .catch(function(){
+            return {};
+          });
+
+      if(!response.ok){
+
+        throw new Error(
+          data.error ||
+          data.message ||
+          (
+            "Login failed (" +
+            response.status +
+            ")."
+          )
+        );
+
+      }
+
+      if(!data.token || !data.user){
+
+        throw new Error(
+          "RIZORA returned an invalid login response."
+        );
+
+      }
+
+      /*
+      --------------------------------------------------------
+      SAVE SESSION
+      --------------------------------------------------------
+      */
+      localStorage.setItem(
+        "rizoraToken",
+        data.token
+      );
+
+      localStorage.setItem(
+        "rizoraUser",
+        JSON.stringify(
+          data.user
+        )
+      );
+
+      sessionStorage.setItem(
+        "rizoraToken",
+        data.token
+      );
+
+      sessionStorage.setItem(
+        "rizoraUser",
+        JSON.stringify(
+          data.user
+        )
+      );
+
+      /*
+      Some older RIZORA functions use globals.
+      */
+      try{
+        window.token =
+          data.token;
+      }catch(e){}
+
+      try{
+        window.currentUser =
+          data.user;
+      }catch(e){}
+
+      showMessage(
+        "Login successful.",
+        true
+      );
+
+      /*
+      --------------------------------------------------------
+      UPDATE HEADER / DASHBOARD
+      --------------------------------------------------------
+      */
+      try{
+
+        if(
+          typeof window.updateHeader ===
+          "function"
+        ){
+
+          window.updateHeader();
+
+        }
+
+      }catch(e){}
+
+      try{
+
+        if(
+          typeof window.openBestDashboard ===
+          "function"
+        ){
+
+          await window.openBestDashboard();
+
+        }else if(
+          typeof window.showCreatorWorkspace ===
+          "function"
+        ){
+
+          window.showCreatorWorkspace();
+
+        }
+
+      }catch(e){
+
+        console.warn(
+          "Dashboard routing warning:",
+          e
+        );
+
+      }
+
+      /*
+      If the old SPA state still points at login,
+      reload once after the token is stored.
+      */
+      setTimeout(
+        function(){
+
+          const formsStillVisible =
+            document.getElementById(
+              "loginForm"
+            );
+
+          const creatorVisible =
+            document.getElementById(
+              "creatorOverview"
+            );
+
+          const adminVisible =
+            document.querySelector(
+              '[id*="admin" i]'
+            );
+
+          if(
+            formsStillVisible &&
+            !creatorVisible &&
+            !adminVisible
+          ){
+
+            window.location.reload();
+
+          }
+
+        },
+        350
+      );
+
+    }catch(error){
+
+      console.error(
+        "RIZORA login error:",
+        error
+      );
+
+      showMessage(
+        String(
+          error &&
+          error.message
+            ? error.message
+            : "Login failed."
+        ),
+        false
+      );
+
+    }finally{
+
+      if(submit){
+
+        submit.disabled = false;
+        submit.textContent =
+          originalText;
+
+      }
+
+    }
+
+  }
+
+  /*
+  ----------------------------------------------------------
+  INSTALL LOGIN INTERCEPTOR
+  ----------------------------------------------------------
+  */
+  function installLogin(){
+
+    const form =
+      findLoginForm();
+
+    if(
+      !form ||
+      form.dataset.rizoraLoginRouting ===
+        "1"
+    ){
+
+      return;
+
+    }
+
+    form.dataset.rizoraLoginRouting =
+      "1";
+
+    /*
+    Capture phase ensures this executes
+    before old submit listeners.
+    */
+    form.addEventListener(
+      "submit",
+      function(event){
+
+        performLogin(
+          form,
+          event
+        );
+
+      },
+      true
+    );
+
+    console.log(
+      "RIZORA login routing active."
+    );
+
+  }
+
+  /*
+  The app is dynamic, so keep checking
+  until the form exists.
+  */
+  if(
+    document.readyState ===
+    "loading"
+  ){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      installLogin,
+      { once:true }
+    );
+
+  }else{
+
+    installLogin();
+
+  }
+
+  if(window.MutationObserver){
+
+    const observer =
+      new MutationObserver(
+        function(){
+
+          installLogin();
+
+        }
+      );
+
+    observer.observe(
+      document.documentElement,
+      {
+        childList:true,
+        subtree:true
+      }
+    );
+
+  }
+
+})();
+</script>
+
 </body>
 </html>
 
