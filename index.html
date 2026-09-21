@@ -2863,6 +2863,59 @@ still opens the corresponding content.
 
 </style>
 
+
+<style id="RIZORA_TOUCH_CAPTURE_V3">
+/* ===== RIZORA TOUCH CTA REPAIR V3 ===== */
+
+.landing {
+  position: relative !important;
+  z-index: 2147483000 !important;
+}
+
+.landing-inner {
+  position: relative !important;
+  z-index: 2147483001 !important;
+  isolation: isolate !important;
+}
+
+.landing-actions {
+  position: relative !important;
+  z-index: 2147483640 !important;
+  isolation: isolate !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+}
+
+.landing-actions a,
+.landing-actions button {
+  position: relative !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  min-height: 48px !important;
+}
+
+.landing::before,
+.landing::after,
+.landing-inner::before,
+.landing-inner::after {
+  pointer-events: none !important;
+}
+
+/* Prevent decorative/glow layers from stealing hero taps */
+.landing .glow,
+.landing .orb,
+.landing .blob,
+.landing .grid,
+.landing .noise,
+.landing .particles,
+.landing .background,
+.landing .backdrop {
+  pointer-events: none !important;
+}
+</style>
+
 </head>
 
 <body><div id="rizoraFloatingProgress" class="rizora-floating-progress">
@@ -13337,6 +13390,220 @@ async function initRizoraGoogle(){
 </script>
 
 
+
+
+<script id="RIZORA_TOUCH_CAPTURE_V3">
+(() => {
+  if (window.__RIZORA_TOUCH_CAPTURE_V3) return;
+  window.__RIZORA_TOUCH_CAPTURE_V3 = true;
+
+  let startX = 0;
+  let startY = 0;
+  let startTime = 0;
+  let lastHandled = 0;
+
+  function getPoint(e) {
+    if (e.changedTouches && e.changedTouches.length) {
+      return {
+        x: e.changedTouches[0].clientX,
+        y: e.changedTouches[0].clientY
+      };
+    }
+
+    return {
+      x: Number(e.clientX || 0),
+      y: Number(e.clientY || 0)
+    };
+  }
+
+  function getCTAAtPoint(x, y) {
+    const links = Array.from(
+      document.querySelectorAll(".landing-actions a, .landing-actions button")
+    );
+
+    return links.find(el => {
+      const r = el.getBoundingClientRect();
+      return (
+        x >= r.left &&
+        x <= r.right &&
+        y >= r.top &&
+        y <= r.bottom &&
+        r.width > 0 &&
+        r.height > 0
+      );
+    }) || null;
+  }
+
+  function routeCTA(el, e) {
+    if (!el) return false;
+
+    const text = (el.innerText || el.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+    const now = Date.now();
+
+    if (now - lastHandled < 700) return true;
+
+    /*
+      If the real interactive element itself received the event,
+      let its native/browser behavior work normally.
+    */
+    const actualTarget =
+      e.target instanceof Element
+        ? e.target.closest(".landing-actions a, .landing-actions button")
+        : null;
+
+    if (actualTarget === el) {
+      return false;
+    }
+
+    lastHandled = now;
+
+    if (text.includes("join rizora")) {
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      window.location.assign("/join");
+      return true;
+    }
+
+    if (text === "login" || text.includes("login")) {
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+
+      const form = document.getElementById("loginForm");
+
+      if (typeof window.showLogin === "function") {
+        try {
+          window.showLogin();
+          return true;
+        } catch (_) {}
+      }
+
+      if (form) {
+        form.classList.remove("hidden");
+        form.style.setProperty("display", "block", "important");
+        form.style.setProperty("visibility", "visible", "important");
+        form.style.setProperty("opacity", "1", "important");
+        form.style.setProperty("pointer-events", "auto", "important");
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      try {
+        history.pushState(null, "", "#loginForm");
+      } catch (_) {
+        location.hash = "loginForm";
+      }
+
+      const landing = document.getElementById("landing");
+      if (landing) {
+        landing.style.setProperty("display", "none", "important");
+      }
+
+      return true;
+    }
+
+    if (text.includes("meet romi")) {
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+
+      if (typeof window.showAbout === "function") {
+        try {
+          window.showAbout();
+          return true;
+        } catch (_) {}
+      }
+
+      const about = document.getElementById("about");
+
+      if (about) {
+        about.classList.remove("hidden");
+        about.style.setProperty("display", "block", "important");
+        about.style.setProperty("visibility", "visible", "important");
+        about.style.setProperty("opacity", "1", "important");
+        about.style.setProperty("pointer-events", "auto", "important");
+        about.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      try {
+        history.pushState(null, "", "#about");
+      } catch (_) {
+        location.hash = "about";
+      }
+
+      const landing = document.getElementById("landing");
+      if (landing) {
+        landing.style.setProperty("display", "none", "important");
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  function pointerDown(e) {
+    const p = getPoint(e);
+    startX = p.x;
+    startY = p.y;
+    startTime = Date.now();
+  }
+
+  function pointerUp(e) {
+    const p = getPoint(e);
+
+    const dx = Math.abs(p.x - startX);
+    const dy = Math.abs(p.y - startY);
+    const elapsed = Date.now() - startTime;
+
+    /* Ignore scrolling/swiping */
+    if (dx > 14 || dy > 14 || elapsed > 1600) return;
+
+    const cta = getCTAAtPoint(p.x, p.y);
+    if (!cta) return;
+
+    routeCTA(cta, e);
+  }
+
+  function clickCapture(e) {
+    const p = getPoint(e);
+    const cta = getCTAAtPoint(p.x, p.y);
+
+    if (!cta) return;
+
+    /*
+      Only take over when the event target is NOT already
+      the real CTA. This protects normal native clicks.
+    */
+    const actualTarget =
+      e.target instanceof Element
+        ? e.target.closest(".landing-actions a, .landing-actions button")
+        : null;
+
+    if (actualTarget === cta) return;
+
+    routeCTA(cta, e);
+  }
+
+  window.addEventListener("pointerdown", pointerDown, true);
+  window.addEventListener("pointerup", pointerUp, true);
+
+  window.addEventListener("touchstart", pointerDown, {
+    capture: true,
+    passive: true
+  });
+
+  window.addEventListener("touchend", pointerUp, {
+    capture: true,
+    passive: false
+  });
+
+  window.addEventListener("click", clickCapture, true);
+
+  console.log("RIZORA_TOUCH_CAPTURE_V3 active");
+})();
+</script>
 
 </body>
 </html>
