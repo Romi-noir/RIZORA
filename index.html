@@ -3703,77 +3703,108 @@ function openBestDashboard(){
 
   var user =
     (typeof getUser === "function")
-      ? (getUser() || {})
-      : (
-          typeof currentUser !== "undefined"
-            ? (currentUser || {})
-            : {}
-        );
+      ? getUser()
+      : null;
 
-  var sessionToken =
-    (typeof token !== "undefined")
-      ? token
-      : localStorage.getItem("rizoraToken") || "";
+  if(!user){
 
-  if(!sessionToken || !user){
-    if(typeof showLogin === "function"){
+    if(
+      typeof showLogin ===
+      "function"
+    ){
       showLogin();
     }
-    return;
-  }
-
-  if(isSuperAdmin()){
-
-    if(typeof showAdminDashboard === "function"){
-      showAdminDashboard();
-      return;
-    }
-
-    var adminPanel =
-      document.getElementById("adminDashboard");
-
-    if(adminPanel){
-
-      if(typeof hideAll === "function"){
-        hideAll();
-      }
-
-      adminPanel.classList.remove("hidden");
-
-      var welcome =
-        document.getElementById("adminWelcome");
-
-      if(welcome){
-        welcome.textContent =
-          "Welcome, " +
-          (user.displayName || user.username || "Super Admin") +
-          ".";
-      }
-
-      if(typeof loadAdminDashboard === "function"){
-        loadAdminDashboard();
-      }
-
-      window.scrollTo({
-        top:0,
-        behavior:"smooth"
-      });
-
-      return;
-    }
-
-    if(typeof showToast === "function"){
-      showToast(
-        "Command Center panel could not be found."
-      );
-    }
 
     return;
   }
 
-  if(typeof showDashboard === "function"){
-    showDashboard();
-  }
+  //
+  // HOME IS THE MAIN POST-LOGIN DASHBOARD
+  // FOR ALL USERS, INCLUDING SUPER ADMINS.
+  //
+
+  try{
+
+    if(
+      typeof showCreatorWorkspace ===
+      "function"
+    ){
+      showCreatorWorkspace();
+    }
+
+  }catch(e){}
+
+  //
+  // Activate Creator Home / Overview.
+  //
+
+  setTimeout(function(){
+
+    try{
+
+      var tabs =
+        Array.from(
+          document.querySelectorAll(
+            ".admin-tab"
+          )
+        );
+
+      var homeTab =
+        tabs.find(function(btn){
+
+          return (
+            (btn.textContent || "")
+              .trim()
+              .toLowerCase() ===
+            "overview"
+          );
+
+        }) || null;
+
+      if(
+        homeTab &&
+        typeof creatorTab ===
+        "function"
+      ){
+
+        creatorTab(
+          homeTab,
+          "creatorOverview"
+        );
+
+      }
+
+      var home =
+        document.getElementById(
+          "creatorOverview"
+        );
+
+      if(home){
+
+        home.classList.remove(
+          "hidden"
+        );
+
+        home.style.display =
+          "block";
+
+        home.style.visibility =
+          "visible";
+
+        home.style.opacity =
+          "1";
+
+        home.setAttribute(
+          "aria-hidden",
+          "false"
+        );
+
+      }
+
+    }catch(e){}
+
+  },180);
+
 }
 
 function openCreatorDashboard(){
@@ -4043,11 +4074,6 @@ password:
     updateHeader();
 
     openBestDashboard();
-    setTimeout(function(){
-      if(typeof window.rizoraForceHome === "function"){
-        window.rizoraForceHome();
-      }
-    }, 350);
 
     showToast(
       "Welcome to RIZORA 🚀"
@@ -4127,11 +4153,6 @@ async function handleLogin(event){
     updateHeader();
 
     openBestDashboard();
-    setTimeout(function(){
-      if(typeof window.rizoraForceHome === "function"){
-        window.rizoraForceHome();
-      }
-    }, 350);
 
     showToast(
       isSuperAdmin()
@@ -6636,11 +6657,6 @@ async function startup(){
       updateHeader();
 
       openBestDashboard();
-    setTimeout(function(){
-      if(typeof window.rizoraForceHome === "function"){
-        window.rizoraForceHome();
-      }
-    }, 350);
 
     }catch{
 
@@ -10575,11 +10591,6 @@ async function handleRizoraGoogleCredential(
       "function"
     ){
       openBestDashboard();
-    setTimeout(function(){
-      if(typeof window.rizoraForceHome === "function"){
-        window.rizoraForceHome();
-      }
-    }, 350);
     }else{
       showDashboard();
     }
@@ -11096,115 +11107,6 @@ async function initRizoraGoogle(){
 </script>
 
 
-
-<script id="RIZORA_HOME_LANDING_REPAIR_V2">
-(function(){
-
-  window.rizoraForceHome = function(){
-
-    var attempts = 0;
-
-    function force(){
-
-      attempts++;
-
-      try{
-
-        if(
-          typeof window.showCreatorWorkspace ===
-          "function"
-        ){
-          window.showCreatorWorkspace();
-        }
-
-      }catch(e){}
-
-      try{
-
-        var overview =
-          document.getElementById(
-            "creatorOverview"
-          );
-
-        var tabs =
-          Array.from(
-            document.querySelectorAll(
-              ".admin-tab"
-            )
-          );
-
-        var homeTab =
-          tabs.find(function(btn){
-
-            return (
-              (btn.textContent || "")
-                .trim()
-                .toLowerCase() ===
-              "overview"
-            );
-
-          }) || null;
-
-        if(
-          homeTab &&
-          typeof window.creatorTab ===
-          "function"
-        ){
-
-          try{
-            window.creatorTab(
-              homeTab,
-              "creatorOverview"
-            );
-          }catch(e){}
-
-        }
-
-        if(overview){
-
-          overview.classList.remove(
-            "hidden"
-          );
-
-          overview.style.display =
-            "block";
-
-          overview.style.visibility =
-            "visible";
-
-          overview.style.opacity =
-            "1";
-
-          overview.setAttribute(
-            "aria-hidden",
-            "false"
-          );
-
-          return true;
-
-        }
-
-      }catch(e){}
-
-      if(attempts < 20){
-
-        setTimeout(
-          force,
-          100
-        );
-
-      }
-
-      return false;
-
-    }
-
-    force();
-
-  };
-
-})();
-</script>
 
 </body>
 </html>
