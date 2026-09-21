@@ -2644,6 +2644,167 @@ textarea:focus{
 
 </style>
 
+
+<link
+  id="RIZORA_PRECONNECT_RENDER"
+  rel="preconnect"
+  href="https://rizora-guse.onrender.com"
+  crossorigin
+>
+<link
+  id="RIZORA_DNS_RENDER"
+  rel="dns-prefetch"
+  href="//rizora-guse.onrender.com"
+>
+
+<script id="RIZORA_PERFORMANCE_V1">
+(function(){
+
+  const API_BASE =
+    "https://rizora-guse.onrender.com";
+
+  window.RIZORA_API_BASE =
+    API_BASE;
+
+  if(
+    window.__RIZORA_BACKEND_WARMUP_STARTED__
+  ){
+    return;
+  }
+
+  window.__RIZORA_BACKEND_WARMUP_STARTED__ =
+    true;
+
+  let warmed = false;
+
+  function warmBackend(){
+
+    if(warmed){
+      return;
+    }
+
+    warmed = true;
+
+    try{
+
+      /*
+      Fire-and-forget request.
+      It intentionally does NOT block page rendering.
+      Its main purpose is waking the Render service
+      before the user needs login/API data.
+      */
+      fetch(
+        API_BASE + "/",
+        {
+          method:"GET",
+          mode:"cors",
+          credentials:"omit",
+          cache:"no-store",
+          keepalive:true
+        }
+      ).catch(function(){});
+
+    }catch(e){}
+
+  }
+
+  /*
+  Start immediately after the page becomes interactive.
+  */
+  if(
+    document.readyState ===
+    "loading"
+  ){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      function(){
+
+        setTimeout(
+          warmBackend,
+          0
+        );
+
+      },
+      {once:true}
+    );
+
+  }else{
+
+    setTimeout(
+      warmBackend,
+      0
+    );
+
+  }
+
+  /*
+  Also warm the backend immediately when
+  the user starts interacting with login.
+  */
+  document.addEventListener(
+    "focusin",
+    function(event){
+
+      try{
+
+        const form =
+          document.getElementById(
+            "loginForm"
+          );
+
+        if(
+          form &&
+          form.contains(
+            event.target
+          )
+        ){
+
+          warmBackend();
+
+        }
+
+      }catch(e){}
+
+    },
+    {
+      passive:true
+    }
+  );
+
+  document.addEventListener(
+    "pointerdown",
+    function(event){
+
+      try{
+
+        const form =
+          document.getElementById(
+            "loginForm"
+          );
+
+        if(
+          form &&
+          form.contains(
+            event.target
+          )
+        ){
+
+          warmBackend();
+
+        }
+
+      }catch(e){}
+
+    },
+    {
+      passive:true
+    }
+  );
+
+})();
+</script>
+
 </head>
 
 <body><div id="rizoraFloatingProgress" class="rizora-floating-progress">
