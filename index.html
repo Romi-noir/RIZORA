@@ -1,8 +1,9 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
-<head><script>window.RIZORA_API_BASE="https://rizora-guse.onrender.com";</script>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<script>window.RIZORA_API_BASE="https://rizora-guse.onrender.com";</script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>RIZORA — Creator Growth Platform</title>
 <meta name="description" content="RIZORA is a creator growth platform for creators, missions, rewards and creator tools.">
 <meta name="theme-color" content="#080611">
@@ -1556,6 +1557,1018 @@ src="https://accounts.google.com/gsi/client"
 async
 defer
 ></script>
+
+<style id="RIZORA_CINEMATIC_UI_V2">
+
+:root{
+  --rz-bg:#07050d;
+  --rz-bg-2:#0b0714;
+  --rz-panel:rgba(18,12,30,.82);
+  --rz-panel-strong:rgba(22,14,38,.94);
+  --rz-panel-soft:rgba(255,255,255,.035);
+  --rz-line:rgba(255,255,255,.075);
+  --rz-line-strong:rgba(167,139,250,.24);
+  --rz-text:#f7f4ff;
+  --rz-muted:#9d96b0;
+  --rz-purple:#8b5cf6;
+  --rz-purple-2:#a78bfa;
+  --rz-purple-3:#c4b5fd;
+  --rz-violet-glow:rgba(139,92,246,.32);
+  --rz-shadow:0 24px 80px rgba(0,0,0,.42);
+  --rz-radius:24px;
+  --rz-radius-sm:16px;
+  --rz-max:1480px;
+}
+
+html{
+  width:100%;
+  min-width:0 !important;
+  max-width:100%;
+  overflow-x:hidden !important;
+  scroll-behavior:smooth;
+  background:var(--rz-bg);
+}
+
+body{
+  width:100%;
+  min-width:0 !important;
+  max-width:100%;
+  overflow-x:hidden !important;
+  margin:0;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(139,92,246,.16), transparent 28%),
+    radial-gradient(circle at 88% 7%, rgba(124,58,237,.13), transparent 25%),
+    radial-gradient(circle at 50% 100%, rgba(91,33,182,.08), transparent 34%),
+    var(--rz-bg);
+  color:var(--rz-text);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-3;
+  opacity:.26;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:42px 42px;
+  mask-image:linear-gradient(to bottom, black, transparent 75%);
+}
+
+body::after{
+  content:"";
+  position:fixed;
+  width:520px;
+  height:520px;
+  left:50%;
+  top:14%;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:rgba(124,58,237,.16);
+  filter:blur(110px);
+  pointer-events:none;
+  z-index:-4;
+}
+
+*,
+*::before,
+*::after{
+  box-sizing:border-box;
+  min-width:0;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe{
+  max-width:100%;
+}
+
+button,
+input,
+select,
+textarea{
+  max-width:100%;
+  font:inherit;
+}
+
+button,
+a{
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+button{
+  cursor:pointer;
+}
+
+input,
+select,
+textarea{
+  min-width:0;
+}
+
+textarea{
+  resize:vertical;
+}
+
+table{
+  max-width:100%;
+}
+
+table{
+  border-collapse:collapse;
+}
+
+.hidden{
+  display:none !important;
+}
+
+section,
+header,
+main,
+aside,
+nav,
+footer,
+article,
+div{
+  min-width:0;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+header{
+  position:sticky !important;
+  top:0;
+  z-index:1000;
+  background:rgba(7,5,13,.74) !important;
+  border-bottom:1px solid rgba(255,255,255,.07) !important;
+  backdrop-filter:blur(22px) saturate(150%);
+  -webkit-backdrop-filter:blur(22px) saturate(150%);
+}
+
+.header-inner{
+  width:min(100% - 28px, var(--rz-max)) !important;
+  min-height:72px;
+  margin:0 auto;
+  display:flex !important;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+
+.brand{
+  display:inline-flex !important;
+  align-items:center;
+  gap:11px;
+  color:#fff !important;
+  text-decoration:none !important;
+  font-weight:900 !important;
+  letter-spacing:-.04em;
+  font-size:1.08rem;
+}
+
+.brand-mark{
+  width:38px !important;
+  height:38px !important;
+  display:grid !important;
+  place-items:center;
+  border-radius:13px !important;
+  color:white !important;
+  background:
+    radial-gradient(circle at 30% 20%, #c4b5fd, #8b5cf6 48%, #4c1d95 100%) !important;
+  box-shadow:
+    0 10px 30px rgba(139,92,246,.36),
+    inset 0 1px 0 rgba(255,255,255,.28);
+}
+
+#desktopNav{
+  display:flex !important;
+  align-items:center;
+  justify-content:flex-end;
+  gap:7px;
+  min-width:0;
+}
+
+#desktopNav a,
+#desktopNav button{
+  min-height:40px;
+  border:1px solid transparent;
+  border-radius:13px;
+  padding:9px 13px;
+  background:transparent;
+  color:#c9c3d7;
+  text-decoration:none;
+  transition:
+    background .2s ease,
+    border-color .2s ease,
+    color .2s ease,
+    transform .2s ease;
+}
+
+#desktopNav a:hover,
+#desktopNav button:hover{
+  color:#fff;
+  background:rgba(255,255,255,.05);
+  border-color:rgba(255,255,255,.08);
+  transform:translateY(-1px);
+}
+
+#desktopNav .btn{
+  color:#fff !important;
+  border-color:rgba(167,139,250,.28) !important;
+  background:
+    linear-gradient(135deg,#9b6cff,#6d3be8) !important;
+  box-shadow:0 12px 28px rgba(109,59,232,.25);
+}
+
+/* =========================================================
+   PUBLIC LANDING
+   ========================================================= */
+
+#landing{
+  position:relative;
+  min-height:calc(100svh - 72px);
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+}
+
+#landing::before{
+  content:"";
+  position:absolute;
+  width:min(54vw,680px);
+  height:min(54vw,680px);
+  right:-16%;
+  top:6%;
+  border-radius:50%;
+  background:rgba(139,92,246,.16);
+  filter:blur(90px);
+  pointer-events:none;
+}
+
+.landing-inner{
+  width:min(100% - 32px, 1220px) !important;
+  margin:0 auto !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);
+  gap:clamp(28px,6vw,90px);
+  align-items:center;
+  padding:clamp(55px,8vw,110px) 0;
+}
+
+.hero-label,
+.hero-kicker,
+.eyebrow,
+.card-kicker{
+  color:#b9a9ff !important;
+  font-weight:850 !important;
+  font-size:.74rem !important;
+  letter-spacing:.16em !important;
+  text-transform:uppercase !important;
+}
+
+#landing h1{
+  margin:12px 0 18px !important;
+  max-width:850px;
+  font-size:clamp(3.2rem,8vw,7.8rem) !important;
+  line-height:.9 !important;
+  letter-spacing:-.075em !important;
+  font-weight:950 !important;
+}
+
+#landing h1 span{
+  background:linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #d8ccff 32%,
+    #9b76ff 68%,
+    #6d35e8 100%
+  );
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+.hero-text,
+.hero-subtitle,
+.subtitle{
+  color:var(--rz-muted) !important;
+  max-width:720px;
+  line-height:1.7 !important;
+}
+
+.landing-actions{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:10px !important;
+  margin-top:26px !important;
+}
+
+.btn{
+  border-radius:14px !important;
+  min-height:44px;
+  padding:10px 16px !important;
+  border:1px solid rgba(167,139,250,.23) !important;
+  color:white !important;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(155,108,255,.98),
+      rgba(93,43,206,.98)
+    ) !important;
+  box-shadow:
+    0 13px 34px rgba(91,33,182,.24),
+    inset 0 1px 0 rgba(255,255,255,.16);
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    filter .2s ease;
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+  filter:brightness(1.06);
+  box-shadow:
+    0 18px 40px rgba(91,33,182,.32),
+    inset 0 1px 0 rgba(255,255,255,.2);
+}
+
+.btn.secondary{
+  background:rgba(255,255,255,.045) !important;
+  border-color:rgba(255,255,255,.09) !important;
+  box-shadow:none !important;
+}
+
+.hero-mini-grid,
+.landing-stats,
+.hero-stats,
+.hero-features,
+.stats,
+.premium-stats{
+  display:grid !important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));
+  gap:12px;
+}
+
+.hero-mini,
+.stat,
+.premium-stat{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.06),
+      rgba(255,255,255,.025)
+    ) !important;
+  border:1px solid rgba(255,255,255,.075) !important;
+  border-radius:20px !important;
+  box-shadow:var(--rz-shadow);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+/* =========================================================
+   ALL APP SURFACES
+   ========================================================= */
+
+#dashboard,
+#creatorStudio,
+#adminDashboard,
+#about,
+.auth-wrap{
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+}
+
+.dashboard-shell,
+.creator-shell,
+.admin-shell,
+.app-shell,
+.main,
+.admin-main{
+  width:min(100% - 32px, var(--rz-max)) !important;
+  max-width:var(--rz-max) !important;
+  margin:0 auto !important;
+  min-width:0 !important;
+}
+
+.dashboard-shell,
+.admin-shell{
+  padding:30px 0 100px;
+}
+
+.dashboard-hero,
+.dashboard-hero-card,
+.creator-hero,
+.admin-hero{
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(167,139,250,.14) !important;
+  border-radius:30px !important;
+  background:
+    radial-gradient(circle at 95% 10%, rgba(139,92,246,.20), transparent 28%),
+    linear-gradient(
+      145deg,
+      rgba(26,17,44,.96),
+      rgba(13,9,23,.92)
+    ) !important;
+  box-shadow:
+    0 28px 90px rgba(0,0,0,.38),
+    inset 0 1px 0 rgba(255,255,255,.07);
+}
+
+.dashboard-hero::after,
+.creator-hero::after,
+.admin-hero::after{
+  content:"";
+  position:absolute;
+  width:300px;
+  height:300px;
+  right:-130px;
+  top:-130px;
+  border-radius:50%;
+  border:1px solid rgba(196,181,253,.14);
+  box-shadow:
+    0 0 0 35px rgba(139,92,246,.035),
+    0 0 0 75px rgba(139,92,246,.018);
+  pointer-events:none;
+}
+
+.dashboard-grid,
+.grid,
+.creator-grid,
+.admin-grid,
+.dashboard-layout,
+.content-grid{
+  display:grid !important;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:16px;
+  min-width:0;
+}
+
+.dashboard-grid > *,
+.grid > *,
+.creator-grid > *,
+.admin-grid > *,
+.dashboard-layout > *,
+.content-grid > *{
+  min-width:0;
+}
+
+.dashboard-grid > :not(.full-width),
+.grid > :not(.full-width){
+  grid-column:span 6;
+}
+
+.dashboard-card,
+.card,
+.dashboard-panel,
+.admin-panel,
+.auth-card,
+.premium-stat,
+.stat{
+  min-width:0 !important;
+  overflow:hidden !important;
+  border:1px solid rgba(255,255,255,.07) !important;
+  border-radius:var(--rz-radius) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.055),
+      rgba(255,255,255,.018)
+    ) !important;
+  box-shadow:
+    0 20px 70px rgba(0,0,0,.23),
+    inset 0 1px 0 rgba(255,255,255,.035);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+.dashboard-card:hover,
+.card:hover,
+.premium-stat:hover,
+.stat:hover{
+  border-color:rgba(167,139,250,.15) !important;
+}
+
+.card-heading,
+.card-top,
+.topline{
+  min-width:0 !important;
+}
+
+h1,
+h2,
+h3,
+p{
+  overflow-wrap:anywhere;
+}
+
+h1{
+  letter-spacing:-.05em;
+}
+
+h2{
+  letter-spacing:-.03em;
+}
+
+/* =========================================================
+   CREATOR TAB SYSTEM
+   ========================================================= */
+
+.admin-tabs{
+  position:sticky !important;
+  top:76px;
+  z-index:80;
+  width:100%;
+  display:flex !important;
+  gap:8px !important;
+  align-items:center;
+  overflow-x:auto !important;
+  overflow-y:hidden;
+  padding:8px !important;
+  margin:14px 0 18px !important;
+  scrollbar-width:none;
+  border:1px solid rgba(255,255,255,.075) !important;
+  background:rgba(10,7,17,.74) !important;
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-radius:18px !important;
+}
+
+.admin-tabs::-webkit-scrollbar{
+  display:none;
+}
+
+.admin-tab{
+  flex:0 0 auto !important;
+  white-space:nowrap !important;
+  min-height:42px;
+  border:1px solid transparent !important;
+  border-radius:12px !important;
+  background:transparent !important;
+  color:#a9a2b7 !important;
+  padding:9px 13px !important;
+}
+
+.admin-tab:hover{
+  color:#fff !important;
+  background:rgba(255,255,255,.05) !important;
+}
+
+.admin-tab.active{
+  color:#fff !important;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(139,92,246,.34),
+      rgba(109,59,232,.16)
+    ) !important;
+  border-color:rgba(167,139,250,.22) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.admin-panel.active,
+.section.active{
+  animation:rzPanelIn .35s ease both;
+}
+
+@keyframes rzPanelIn{
+  from{
+    opacity:0;
+    transform:translateY(10px);
+  }
+  to{
+    opacity:1;
+    transform:none;
+  }
+}
+
+/* =========================================================
+   FORMS
+   ========================================================= */
+
+.field,
+.form-group,
+.input-group{
+  min-width:0 !important;
+}
+
+.field input,
+.field select,
+.field textarea,
+input,
+select,
+textarea{
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  border-radius:14px !important;
+  border:1px solid rgba(255,255,255,.09) !important;
+  background:rgba(255,255,255,.045) !important;
+  color:#fff !important;
+  outline:none !important;
+}
+
+input,
+select{
+  min-height:46px;
+}
+
+textarea{
+  min-height:120px;
+  line-height:1.55;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+  border-color:rgba(167,139,250,.52) !important;
+  box-shadow:
+    0 0 0 4px rgba(139,92,246,.10),
+    0 14px 35px rgba(0,0,0,.16);
+}
+
+/* =========================================================
+   TABLES / ADMIN DATA
+   ========================================================= */
+
+#adminDashboard table,
+.admin-panel table{
+  width:100%;
+  max-width:100%;
+}
+
+#adminDashboard .table-wrap,
+.admin-panel .table-wrap{
+  width:100%;
+  max-width:100%;
+  overflow-x:auto !important;
+  -webkit-overflow-scrolling:touch;
+}
+
+#adminDashboard table{
+  display:block;
+  overflow-x:auto;
+  white-space:nowrap;
+}
+
+#adminDashboard td,
+#adminDashboard th{
+  min-width:120px;
+}
+
+/* =========================================================
+   TASKS
+   ========================================================= */
+
+.tasks,
+.task-list,
+#tasks{
+  width:100%;
+  min-width:0;
+}
+
+.task{
+  min-width:0 !important;
+  width:100%;
+  border-radius:17px !important;
+  border:1px solid rgba(255,255,255,.065) !important;
+  background:rgba(255,255,255,.026) !important;
+  margin-bottom:10px !important;
+}
+
+.task-top,
+.task-actions{
+  min-width:0 !important;
+}
+
+.task-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.reward{
+  white-space:nowrap;
+  color:#c4b5fd !important;
+}
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+
+.auth-wrap{
+  min-height:calc(100svh - 72px);
+  display:grid;
+  place-items:center;
+  padding:30px 16px 80px;
+}
+
+.auth-card{
+  width:min(100%,510px) !important;
+  padding:clamp(22px,5vw,42px) !important;
+  box-shadow:
+    0 36px 100px rgba(0,0,0,.40),
+    0 0 70px rgba(109,59,232,.10);
+}
+
+.auth-icon{
+  width:54px !important;
+  height:54px !important;
+  border-radius:17px !important;
+  display:grid !important;
+  place-items:center !important;
+  background:linear-gradient(135deg,#b9a0ff,#6d35e8) !important;
+  box-shadow:0 18px 40px rgba(109,59,232,.26);
+}
+
+/* =========================================================
+   MOBILE BOTTOM DOCK
+   ========================================================= */
+
+#rzMobileDock{
+  display:none;
+}
+
+@media (max-width: 900px){
+
+  .landing-inner{
+    grid-template-columns:1fr !important;
+    width:min(100% - 26px, 760px) !important;
+  }
+
+  #landing h1{
+    font-size:clamp(3rem,14vw,5.6rem) !important;
+  }
+
+  .dashboard-grid,
+  .grid,
+  .creator-grid,
+  .admin-grid,
+  .dashboard-layout,
+  .content-grid{
+    grid-template-columns:1fr !important;
+  }
+
+  .dashboard-grid > *,
+  .grid > *{
+    grid-column:auto !important;
+  }
+
+  .dashboard-shell,
+  .admin-shell,
+  .creator-shell,
+  .main,
+  .admin-main{
+    width:min(100% - 20px, 860px) !important;
+  }
+
+  .admin-tabs{
+    top:71px;
+  }
+
+  .dashboard-hero,
+  .dashboard-hero-card,
+  .creator-hero,
+  .admin-hero{
+    border-radius:24px !important;
+  }
+
+  .premium-stats,
+  .stats{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+
+  #rzMobileDock{
+    position:fixed;
+    left:10px;
+    right:10px;
+    bottom:calc(10px + env(safe-area-inset-bottom));
+    z-index:1500;
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:4px;
+    padding:7px;
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:20px;
+    background:rgba(10,7,18,.80);
+    backdrop-filter:blur(24px) saturate(160%);
+    -webkit-backdrop-filter:blur(24px) saturate(160%);
+    box-shadow:
+      0 22px 60px rgba(0,0,0,.48),
+      inset 0 1px 0 rgba(255,255,255,.06);
+  }
+
+  #rzMobileDock button{
+    min-height:46px;
+    border:0;
+    border-radius:14px;
+    background:transparent;
+    color:#aaa3b7;
+    font-size:.68rem;
+    font-weight:800;
+    letter-spacing:.04em;
+  }
+
+  #rzMobileDock button:active,
+  #rzMobileDock button.rz-dock-active{
+    color:#fff;
+    background:
+      linear-gradient(
+        135deg,
+        rgba(139,92,246,.36),
+        rgba(109,59,232,.16)
+      );
+  }
+
+  body{
+    padding-bottom:88px;
+  }
+
+  .mobile-menu{
+    display:inline-flex !important;
+    align-items:center;
+    justify-content:center;
+    min-width:42px;
+    min-height:42px;
+    padding:0 11px !important;
+    border-radius:12px !important;
+    border:1px solid rgba(255,255,255,.09) !important;
+    background:rgba(255,255,255,.045) !important;
+    color:#fff !important;
+  }
+
+  #desktopNav{
+    max-width:calc(100vw - 24px);
+  }
+
+  #desktopNav.mobile-open{
+    position:absolute !important;
+    top:68px;
+    left:10px;
+    right:10px;
+    display:grid !important;
+    padding:10px !important;
+    gap:6px !important;
+    border:1px solid rgba(255,255,255,.09) !important;
+    border-radius:18px !important;
+    background:rgba(10,7,18,.96) !important;
+    box-shadow:0 25px 70px rgba(0,0,0,.45);
+    backdrop-filter:blur(26px);
+  }
+
+  #desktopNav.mobile-open a,
+  #desktopNav.mobile-open button{
+    width:100%;
+    justify-content:flex-start;
+    text-align:left;
+    min-height:46px;
+  }
+
+  input,
+  select,
+  textarea{
+    font-size:16px !important;
+  }
+
+}
+
+@media (max-width: 560px){
+
+  .header-inner{
+    min-height:64px;
+    width:min(100% - 18px, 700px) !important;
+  }
+
+  .brand-mark{
+    width:34px !important;
+    height:34px !important;
+    border-radius:11px !important;
+  }
+
+  .dashboard-shell,
+  .admin-shell,
+  .creator-shell,
+  .main,
+  .admin-main{
+    width:calc(100% - 14px) !important;
+  }
+
+  .dashboard-shell,
+  .admin-shell{
+    padding-top:16px;
+  }
+
+  .landing-inner{
+    width:calc(100% - 20px) !important;
+    padding:42px 0 90px !important;
+  }
+
+  #landing h1{
+    font-size:clamp(2.9rem,16.5vw,4.7rem) !important;
+    line-height:.92 !important;
+  }
+
+  .premium-stats,
+  .stats{
+    grid-template-columns:1fr 1fr !important;
+    gap:9px !important;
+  }
+
+  .dashboard-card,
+  .card,
+  .premium-stat,
+  .stat{
+    border-radius:19px !important;
+  }
+
+  .premium-stat{
+    padding:14px !important;
+  }
+
+  .stat-value,
+  .premium-stat .stat-value{
+    font-size:1.5rem !important;
+  }
+
+  .dashboard-hero{
+    padding:20px !important;
+  }
+
+  .admin-tabs{
+    top:65px;
+    margin-top:10px !important;
+    border-radius:15px !important;
+  }
+
+  .admin-tab{
+    min-height:39px;
+    padding:8px 11px !important;
+    font-size:.78rem !important;
+  }
+
+  .task-actions .btn,
+  .task-actions a,
+  .creator-actions .btn{
+    flex:1 1 100%;
+    width:100%;
+  }
+
+  .landing-actions .btn{
+    width:100%;
+  }
+
+  .auth-card{
+    padding:20px !important;
+    border-radius:21px !important;
+  }
+
+  .topline{
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:flex-start !important;
+    gap:10px !important;
+  }
+
+  .topline .status,
+  .topline .status-pill{
+    width:100%;
+  }
+
+}
+
+@media (prefers-reduced-motion:reduce){
+
+  *,
+  *::before,
+  *::after{
+    scroll-behavior:auto !important;
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+  }
+
+}
+
+</style>
+
 </head>
 
 <body><div id="rizoraFloatingProgress" class="rizora-floating-progress">
@@ -11107,6 +12120,227 @@ async function initRizoraGoogle(){
 </script>
 
 
+
+
+<script id="RIZORA_CINEMATIC_UI_JS_V2">
+(function(){
+
+  function ready(fn){
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", fn, {once:true});
+    }else{
+      fn();
+    }
+  }
+
+  ready(function(){
+
+    document.body.classList.add("rz-next-ui");
+
+    //
+    // Kill accidental horizontal overflow.
+    //
+    document.documentElement.style.overflowX = "hidden";
+    document.body.style.overflowX = "hidden";
+
+    //
+    // Mobile creator dock.
+    //
+    if(!document.getElementById("rzMobileDock")){
+
+      var dock = document.createElement("div");
+      dock.id = "rzMobileDock";
+
+      dock.innerHTML =
+        '<button type="button" data-rz-target="home">HOME</button>' +
+        '<button type="button" data-rz-target="boost">BOOST</button>' +
+        '<button type="button" data-rz-target="tasks">TASKS</button>' +
+        '<button type="button" data-rz-target="lab">LAB</button>' +
+        '<button type="button" data-rz-target="me">ME</button>';
+
+      document.body.appendChild(dock);
+
+      function callFirst(names){
+        for(var i=0;i<names.length;i++){
+          try{
+            if(typeof window[names[i]] === "function"){
+              window[names[i]]();
+              return true;
+            }
+          }catch(e){}
+        }
+        return false;
+      }
+
+      dock.querySelectorAll("button").forEach(function(btn){
+
+        btn.addEventListener("click", function(){
+
+          var target = btn.getAttribute("data-rz-target");
+
+          dock.querySelectorAll("button").forEach(function(x){
+            x.classList.remove("rz-dock-active");
+          });
+
+          btn.classList.add("rz-dock-active");
+
+          if(target === "home"){
+            callFirst([
+              "showCreatorWorkspace",
+              "showDashboard"
+            ]);
+
+            setTimeout(function(){
+              try{
+                var h =
+                  document.getElementById("creatorHomeBtn") ||
+                  document.querySelector('[onclick*="creatorOverview"]');
+
+                if(h) h.click();
+              }catch(e){}
+            },80);
+          }
+
+          if(target === "boost"){
+            var b =
+              document.querySelector('[onclick*="creatorBoost"]') ||
+              document.querySelector('[onclick*="boost"]');
+
+            if(b){
+              try{ b.click(); return; }catch(e){}
+            }
+
+            callFirst(["showBoost","openBoost"]);
+          }
+
+          if(target === "tasks"){
+            var t =
+              document.querySelector('[onclick*="creatorTasks"]') ||
+              document.querySelector('[onclick*="tasks"]');
+
+            if(t){
+              try{ t.click(); return; }catch(e){}
+            }
+          }
+
+          if(target === "lab"){
+            var l =
+              document.querySelector('[onclick*="creatorTools"]') ||
+              document.querySelector('[onclick*="tools"]');
+
+            if(l){
+              try{ l.click(); return; }catch(e){}
+            }
+          }
+
+          if(target === "me"){
+
+            var m =
+              document.querySelector('[onclick*="creatorAnalytics"]') ||
+              document.querySelector('[onclick*="creatorLeaderboard"]');
+
+            if(m){
+              try{ m.click(); return; }catch(e){}
+            }
+
+            window.scrollTo({
+              top:document.body.scrollHeight,
+              behavior:"smooth"
+            });
+          }
+
+        });
+
+      });
+
+    }
+
+    //
+    // Make oversized tables/cards safe.
+    //
+    document.querySelectorAll("table").forEach(function(table){
+
+      if(
+        table.parentElement &&
+        !table.parentElement.classList.contains("rz-table-scroll")
+      ){
+
+        var wrap = document.createElement("div");
+
+        wrap.className = "rz-table-scroll";
+
+        wrap.style.width = "100%";
+        wrap.style.maxWidth = "100%";
+        wrap.style.overflowX = "auto";
+        wrap.style.webkitOverflowScrolling = "touch";
+
+        table.parentElement.insertBefore(
+          wrap,
+          table
+        );
+
+        wrap.appendChild(table);
+
+      }
+
+    });
+
+    //
+    // Prevent accidental fixed-width elements from forcing
+    // the phone into desktop-width layout.
+    //
+    document.querySelectorAll("*").forEach(function(el){
+
+      try{
+
+        var cs = getComputedStyle(el);
+
+        if(
+          cs.width &&
+          cs.width.indexOf("px") !== -1 &&
+          parseFloat(cs.width) > window.innerWidth + 40
+        ){
+          el.style.maxWidth = "100%";
+        }
+
+        if(
+          cs.minWidth &&
+          cs.minWidth !== "0px" &&
+          parseFloat(cs.minWidth) > window.innerWidth
+        ){
+          el.style.minWidth = "0";
+        }
+
+      }catch(e){}
+
+    });
+
+    //
+    // Re-run safety when the app injects dashboard/admin content.
+    //
+    if(window.MutationObserver){
+
+      var observer = new MutationObserver(function(){
+
+        document.querySelectorAll(
+          "input,select,textarea,button,.card,.dashboard-card,.task"
+        ).forEach(function(el){
+          el.style.maxWidth = "100%";
+        });
+
+      });
+
+      observer.observe(document.body,{
+        childList:true,
+        subtree:true
+      });
+
+    }
+
+  });
+
+})();
+</script>
 
 </body>
 </html>
