@@ -2805,6 +2805,54 @@ textarea:focus{
 })();
 </script>
 
+
+<style id="RIZORA_CTA_TOUCH_FIX_V1_CSS">
+
+.landing-actions,
+.landing-actions .btn,
+.landing-actions button,
+.landing-actions a{
+  position:relative !important;
+  z-index:2001 !important;
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
+
+.landing-actions{
+  isolation:isolate !important;
+}
+
+.landing-actions .btn{
+  min-height:47px !important;
+  cursor:pointer !important;
+}
+
+@media(max-width:768px){
+
+  .landing-actions{
+    position:relative !important;
+    z-index:2001 !important;
+    display:flex !important;
+    width:100% !important;
+    gap:12px !important;
+  }
+
+  .landing-actions .btn{
+    position:relative !important;
+    z-index:2002 !important;
+    min-height:50px !important;
+    touch-action:manipulation !important;
+    pointer-events:auto !important;
+    flex:0 0 auto !important;
+  }
+
+}
+
+</style>
+
 </head>
 
 <body><div id="rizoraFloatingProgress" class="rizora-floating-progress">
@@ -13264,6 +13312,305 @@ async function initRizoraGoogle(){
         subtree:true
       }
     );
+
+  }
+
+})();
+</script>
+
+
+<script id="RIZORA_CTA_TOUCH_FIX_V1">
+(function(){
+
+  var lastAction = "";
+  var lastTime = 0;
+
+  function runCTA(button){
+
+    if(!button){
+      return;
+    }
+
+    var now = Date.now();
+    var label =
+      String(
+        button.textContent || ""
+      )
+      .replace(/\\s+/g," ")
+      .trim()
+      .toLowerCase();
+
+    if(
+      label === lastAction &&
+      now - lastTime < 800
+    ){
+      return;
+    }
+
+    lastAction = label;
+    lastTime = now;
+
+    /*
+    JOIN
+    */
+    if(
+      label.indexOf("join rizora") !== -1
+    ){
+
+      window.location.assign(
+        "/join"
+      );
+
+      return;
+    }
+
+    /*
+    LOGIN
+    */
+    if(
+      label === "login"
+    ){
+
+      try{
+
+        if(
+          typeof window.openModal ===
+          "function"
+        ){
+
+          window.openModal(
+            "loginModal"
+          );
+
+          return;
+
+        }
+
+      }catch(e){}
+
+      window.location.assign(
+        "/login"
+      );
+
+      return;
+    }
+
+    /*
+    MEET ROMI
+    */
+    if(
+      label.indexOf("meet romi") !== -1
+    ){
+
+      try{
+
+        if(
+          typeof window.openModal ===
+          "function"
+        ){
+
+          window.openModal(
+            "roMiModal"
+          );
+
+          return;
+
+        }
+
+      }catch(e){}
+
+      return;
+    }
+
+  }
+
+  function findCTA(event){
+
+    var target =
+      event.target;
+
+    if(
+      !target ||
+      !target.closest
+    ){
+      return null;
+    }
+
+    var button =
+      target.closest(
+        ".landing-actions .btn"
+      );
+
+    if(!button){
+      return null;
+    }
+
+    return button;
+  }
+
+  function install(){
+
+    if(
+      document.documentElement
+        .dataset
+        .rizoraCtaTouchFix === "1"
+    ){
+      return;
+    }
+
+    document.documentElement
+      .dataset
+      .rizoraCtaTouchFix = "1";
+
+    /*
+    POINTER DEVICES
+    */
+    document.addEventListener(
+      "pointerup",
+      function(event){
+
+        var button =
+          findCTA(event);
+
+        if(!button){
+          return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        runCTA(button);
+
+      },
+      true
+    );
+
+    /*
+    TOUCH DEVICES WITHOUT POINTER EVENTS
+    */
+    document.addEventListener(
+      "touchend",
+      function(event){
+
+        if(
+          window.PointerEvent
+        ){
+          return;
+        }
+
+        var button =
+          findCTA(event);
+
+        if(!button){
+          return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        runCTA(button);
+
+      },
+      {
+        capture:true,
+        passive:false
+      }
+    );
+
+    /*
+    NORMAL MOUSE CLICK FALLBACK
+    */
+    document.addEventListener(
+      "click",
+      function(event){
+
+        var button =
+          findCTA(event);
+
+        if(!button){
+          return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        runCTA(button);
+
+      },
+      true
+    );
+
+    /*
+    FORCE SAFE HIT AREAS
+    */
+    function harden(){
+
+      var buttons =
+        document.querySelectorAll(
+          ".landing-actions .btn"
+        );
+
+      buttons.forEach(function(button){
+
+        button.style.pointerEvents =
+          "auto";
+
+        button.style.touchAction =
+          "manipulation";
+
+        button.style.position =
+          "relative";
+
+        button.style.zIndex =
+          "2002";
+
+        button.setAttribute(
+          "data-rizora-cta",
+          "1"
+        );
+
+      });
+
+    }
+
+    harden();
+
+    if(
+      window.MutationObserver
+    ){
+
+      new MutationObserver(
+        harden
+      ).observe(
+        document.body,
+        {
+          childList:true,
+          subtree:true
+        }
+      );
+
+    }
+
+    console.log(
+      "RIZORA CTA touch fix active."
+    );
+
+  }
+
+  if(
+    document.readyState ===
+    "loading"
+  ){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      install,
+      {once:true}
+    );
+
+  }else{
+
+    install();
 
   }
 
