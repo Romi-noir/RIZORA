@@ -1,4 +1,4 @@
-﻿// RIZORA Backend — Version 8.1.0
+// RIZORA Backend — Version 8.1.0
 // Clean copy-paste version
 
 "use strict";
@@ -310,18 +310,32 @@ function safeUser(user) {
     referredBy: user.referredBy || null,
     referralCount: Number(user.referralCount || 0),
     createdAt: user.createdAt || null,
-    lastLoginAt: user.lastLoginAt || null
+    lastLoginAt: user.lastLoginAt || null,
+
+    avatarUrl: user.avatarUrl || "",
+
+    verified:
+      user.verified === true ||
+      user.verificationStatus === "verified",
+
+    verificationStatus:
+      user.verificationStatus || "unverified",
+
+    verificationType:
+      user.verificationType || null,
+
+    official:
+      user.official === true,
+
+    accountType:
+      user.accountType || null
   };
 }
-
 function isSuperAdmin(user) {
-  if (!user) return false;
-
-  return (
+  return !!(
+    user &&
     user.role === "super_admin" &&
-    SUPER_ADMINS.has(
-      normalizeUsername(user.username)
-    )
+    user.status === "active"
   );
 }
 
@@ -1456,6 +1470,1429 @@ async function handleRequest(
   req,
   res
 ) {
+
+  /* ============================================================
+     RIZORA_VERIFICATION_V2
+  ============================================================ */
+
+  const rzVerificationDb =
+    loadDB();
+
+  const rzVerificationMethod =
+    req.method;
+
+  const rzVerificationPath =
+    new URL(
+      req.url,
+      "http://rizora.local"
+    ).pathname;
+
+
+  if (
+    rzVerificationMethod === "GET" &&
+    /* ============================================================
+   RIZORA_VERIFICATION_ROUTER_FINAL
+   Full user + super-admin verification system
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/verification/me"
+) {
+
+  const verificationUser =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!verificationUser) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
+
+  db.verificationRequests =
+    Array.isArray(
+      db.verificationRequests
+    )
+      ? db.verificationRequests
+      : [];
+
+  const isSuperAdmin =
+    verificationUser.role === "super_admin" &&
+    SUPER_ADMINS.has(
+      normalizeUsername(
+        verificationUser.username
+      )
+    );
+
+  if (isSuperAdmin) {
+
+    if (
+      verificationUser.verificationStatus !==
+      "verified"
+    ) {
+      verificationUser.verificationStatus =
+        "verified";
+
+      verificationUser.verified = true;
+
+      verificationUser.verifiedAt =
+        verificationUser.verifiedAt ||
+        new Date().toISOString();
+
+      saveDB(db);
+    }
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        status: "verified",
+        verified: true,
+        request: null
+      }
+    );
+
+    return;
+  }
+
+  const ownRequest =
+    db.verificationRequests
+      .slice()
+      .reverse()
+      .find(
+        item =>
+          item.userId ===
+          verificationUser.id
+      ) || null;
+
+  const status =
+    verificationUser.verificationStatus ===
+    "verified"
+      ? "verified"
+      : (
+          ownRequest?.status ||
+          verificationUser.verificationStatus ||
+          "not_submitted"
+        );
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      status,
+      verified:
+        status === "verified",
+      request:
+        ownRequest
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   APPLY FOR VERIFICATION
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/verification/apply"
+) {
+
+  const verificationUser =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!verificationUser) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
+
+  db.verificationRequests =
+    Array.isArray(
+      db.verificationRequests
+    )
+      ? db.verificationRequests
+      : [];
+
+  const normalizedUsername =
+    normalizeUsername(
+      verificationUser.username
+    );
+
+  const isSuperAdmin =
+    verificationUser.role === "super_admin" &&
+    SUPER_ADMINS.has(
+      normalizedUsername
+    );
+
+  if (isSuperAdmin) {
+
+    verificationUser.verificationStatus =
+      "verified";
+
+    verificationUser.verified =
+      true;
+
+    verificationUser.verifiedAt =
+      verificationUser.verifiedAt ||
+      new Date().toISOString();
+
+    saveDB(db);
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        status: "verified",
+        message:
+          "Super Admin verification is already active."
+      }
+    );
+
+    return;
+  }
+
+  let body;
+
+  try {
+
+    body =
+      await readBody(req);
+
+  } catch (error) {
+
+    sendError(
+      res,
+      400,
+      error.message ||
+      "Invalid request body."
+    );
+
+    return;
+  }
+
+  const reason =
+    cleanString(
+      body.reason,
+      1500
+    ).trim();
+
+  const proofUrl =
+    cleanString(
+      body.proofUrl ||
+      body.proof ||
+      body.url,
+      500
+    ).trim();
+
+  if (reason.length < 10) {
+
+    sendError(
+      res,
+      400,
+      "Please provide at least a short explanation for verification."
+    );
+
+    return;
+  }
+
+  if (reason.length > 1500) {
+
+    sendError(
+      res,
+      400,
+      "Verification explanation is too long."
+    );
+
+    return;
+  }
+
+  let parsedUrl;
+
+  try {
+
+    parsedUrl =
+      new URL(
+        proofUrl
+      );
+
+  } catch {
+
+    sendError(
+      res,
+      400,
+      "Please provide a valid public proof URL."
+    );
+
+    return;
+  }
+
+  if (
+    ![
+      "http:",
+      "https:"
+    ].includes(
+      parsedUrl.protocol
+    )
+  ) {
+
+    sendError(
+      res,
+      400,
+      "Proof URL must use http or https."
+    );
+
+    return;
+  }
+
+  const existingPending =
+    db.verificationRequests.find(
+      item =>
+        item.userId ===
+        verificationUser.id &&
+        item.status ===
+        "pending"
+    );
+
+  if (existingPending) {
+
+    sendJSON(
+      res,
+      409,
+      {
+        success: false,
+        status: "pending",
+        message:
+          "Your verification request is already under review.",
+        request:
+          existingPending
+      }
+    );
+
+    return;
+  }
+
+  if (
+    verificationUser.verificationStatus ===
+    "verified"
+  ) {
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        status: "verified",
+        verified: true,
+        message:
+          "Your account is already verified."
+      }
+    );
+
+    return;
+  }
+
+  const now =
+    new Date().toISOString();
+
+  const request = {
+    id: uid("verification_"),
+
+    userId:
+      verificationUser.id,
+
+    username:
+      verificationUser.username,
+
+    displayName:
+      verificationUser.displayName ||
+      verificationUser.username,
+
+    reason,
+
+    proofUrl,
+
+    status:
+      "pending",
+
+    createdAt:
+      now,
+
+    updatedAt:
+      now,
+
+    reviewedAt:
+      null,
+
+    reviewedBy:
+      null
+  };
+
+  db.verificationRequests.push(
+    request
+  );
+
+  verificationUser.verificationStatus =
+    "pending";
+
+  verificationUser.verified =
+    false;
+
+  verificationUser.updatedAt =
+    now;
+
+  audit(
+    db,
+    "verification_request",
+    verificationUser,
+    {
+      requestId:
+        request.id
+    }
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    201,
+    {
+      success: true,
+      status: "pending",
+      message:
+        "Verification request submitted successfully.",
+      request
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   PUBLIC USER VERIFICATION LOOKUP
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname.startsWith(
+    "/api/verification/user/"
+  )
+) {
+
+  const username =
+    decodeURIComponent(
+      pathname.slice(
+        "/api/verification/user/".length
+      )
+    ).trim();
+
+  const targetUser =
+    db.users.find(
+      item =>
+        normalizeUsername(
+          item.username
+        ) ===
+        normalizeUsername(
+          username
+        )
+    );
+
+  if (!targetUser) {
+
+    sendError(
+      res,
+      404,
+      "User not found."
+    );
+
+    return;
+  }
+
+  const verified =
+    targetUser.verified === true ||
+    targetUser.verificationStatus ===
+      "verified";
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      username:
+        targetUser.username,
+      displayName:
+        targetUser.displayName ||
+        targetUser.username,
+      verified,
+      status:
+        verified
+          ? "verified"
+          : "not_verified"
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   SUPER ADMIN — VERIFICATION QUEUE
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname ===
+    "/api/superadmin/verification/requests"
+) {
+
+  const adminUser =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!adminUser) {
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+  }
+
+  const isAllowed =
+    adminUser.role ===
+      "super_admin" &&
+    SUPER_ADMINS.has(
+      normalizeUsername(
+        adminUser.username
+      )
+    );
+
+  if (!isAllowed) {
+
+    sendError(
+      res,
+      403,
+      "Super Admin access required."
+    );
+
+    return;
+  }
+
+  db.verificationRequests =
+    Array.isArray(
+      db.verificationRequests
+    )
+      ? db.verificationRequests
+      : [];
+
+  const requests =
+    db.verificationRequests
+      .slice()
+      .reverse()
+      .map(
+        request => {
+
+          const user =
+            db.users.find(
+              item =>
+                item.id ===
+                request.userId
+            ) || null;
+
+          return {
+            ...request,
+
+            username:
+              user?.username ||
+              request.username,
+
+            displayName:
+              user?.displayName ||
+              request.displayName,
+
+            user:
+              user
+                ? safeUser(user)
+                : null
+          };
+
+        }
+      );
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      requests
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   SUPER ADMIN — VERIFY / REJECT / REVOKE
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname ===
+    "/api/superadmin/verification/action"
+) {
+
+  const adminUser =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!adminUser) {
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+  }
+
+  const isAllowed =
+    adminUser.role ===
+      "super_admin" &&
+    SUPER_ADMINS.has(
+      normalizeUsername(
+        adminUser.username
+      )
+    );
+
+  if (!isAllowed) {
+
+    sendError(
+      res,
+      403,
+      "Super Admin access required."
+    );
+
+    return;
+  }
+
+  let body;
+
+  try {
+
+    body =
+      await readBody(req);
+
+  } catch (error) {
+
+    sendError(
+      res,
+      400,
+      error.message ||
+      "Invalid request body."
+    );
+
+    return;
+  }
+
+  const requestId =
+    cleanString(
+      body.requestId,
+      200
+    ).trim();
+
+  const action =
+    cleanString(
+      body.action,
+      30
+    ).toLowerCase().trim();
+
+  if (!requestId) {
+
+    sendError(
+      res,
+      400,
+      "Verification request ID is required."
+    );
+
+    return;
+  }
+
+  if (
+    ![
+      "approve",
+      "verify",
+      "reject",
+      "revoke"
+    ].includes(
+      action
+    )
+  ) {
+
+    sendError(
+      res,
+      400,
+      "Invalid verification action."
+    );
+
+    return;
+  }
+
+  db.verificationRequests =
+    Array.isArray(
+      db.verificationRequests
+    )
+      ? db.verificationRequests
+      : [];
+
+  const request =
+    db.verificationRequests.find(
+      item =>
+        item.id ===
+        requestId
+    );
+
+  if (!request) {
+
+    sendError(
+      res,
+      404,
+      "Verification request not found."
+    );
+
+    return;
+  }
+
+  const targetUser =
+    db.users.find(
+      item =>
+        item.id ===
+        request.userId
+    );
+
+  if (!targetUser) {
+
+    sendError(
+      res,
+      404,
+      "Verification user no longer exists."
+    );
+
+    return;
+  }
+
+  const now =
+    new Date().toISOString();
+
+  if (
+    action === "approve" ||
+    action === "verify"
+  ) {
+
+    request.status =
+      "verified";
+
+    request.updatedAt =
+      now;
+
+    request.reviewedAt =
+      now;
+
+    request.reviewedBy =
+      adminUser.username;
+
+    targetUser.verified =
+      true;
+
+    targetUser.verificationStatus =
+      "verified";
+
+    targetUser.verifiedAt =
+      now;
+
+  } else if (
+    action === "reject"
+  ) {
+
+    request.status =
+      "rejected";
+
+    request.updatedAt =
+      now;
+
+    request.reviewedAt =
+      now;
+
+    request.reviewedBy =
+      adminUser.username;
+
+    targetUser.verified =
+      false;
+
+    targetUser.verificationStatus =
+      "rejected";
+
+  } else {
+
+    request.status =
+      "revoked";
+
+    request.updatedAt =
+      now;
+
+    request.reviewedAt =
+      now;
+
+    request.reviewedBy =
+      adminUser.username;
+
+    targetUser.verified =
+      false;
+
+    targetUser.verificationStatus =
+      "revoked";
+
+  }
+
+  targetUser.updatedAt =
+    now;
+
+  audit(
+    db,
+    "verification_action",
+    adminUser,
+    {
+      requestId,
+      action,
+      targetUserId:
+        targetUser.id,
+      targetUsername:
+        targetUser.username
+    }
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      message:
+        action === "approve" ||
+        action === "verify"
+          ? "Account verified successfully."
+          : action === "reject"
+            ? "Verification request rejected."
+            : "Verification revoked.",
+      action,
+      request,
+      user:
+        safeUser(
+          targetUser
+        )
+    }
+  );
+
+  return;
+}
+
+rzVerificationPath === "/api/verification/me"
+  ) {
+
+    const user =
+      getCurrentUser(
+        rzVerificationDb,
+        req
+      );
+
+    if (!user) {
+
+      sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+
+      return;
+    }
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+
+        verification: {
+
+          status:
+            user.verificationStatus ||
+            "unverified",
+
+          verified:
+            user.verified === true ||
+            user.verificationStatus === "verified",
+
+          verifiedAt:
+            user.verifiedAt ||
+            null,
+
+          submittedAt:
+            user.verificationSubmittedAt ||
+            null
+        }
+      }
+    );
+
+    return;
+  }
+
+
+  if (
+    rzVerificationMethod === "POST" &&
+    rzVerificationPath === "/api/verification/request"
+  ) {
+
+    const user =
+      getCurrentUser(
+        rzVerificationDb,
+        req
+      );
+
+    if (!user) {
+
+      sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+
+      return;
+    }
+
+    if (
+      user.verified === true ||
+      user.verificationStatus === "verified"
+    ) {
+
+      sendError(
+        res,
+        400,
+        "Your account is already verified."
+      );
+
+      return;
+    }
+
+    rzVerificationDb.verificationRequests ||=
+      [];
+
+    const alreadyPending =
+      rzVerificationDb.verificationRequests.some(
+        item =>
+          item.userId === user.id &&
+          item.status === "pending"
+      );
+
+    if (alreadyPending) {
+
+      sendError(
+        res,
+        400,
+        "Your verification request is already under review."
+      );
+
+      return;
+    }
+
+    let body = {};
+
+    try {
+
+      body =
+        await readBody(req);
+
+    } catch (error) {
+
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    user.verificationStatus =
+      "pending";
+
+    user.verificationSubmittedAt =
+      new Date().toISOString();
+
+    rzVerificationDb.verificationRequests.push({
+
+      id:
+        "verification_" +
+        Date.now().toString(36),
+
+      userId:
+        user.id,
+
+      status:
+        "pending",
+
+      note:
+        cleanString(
+          body.note,
+          1000
+        ),
+
+      createdAt:
+        new Date().toISOString()
+    });
+
+    saveDB(
+      rzVerificationDb
+    );
+
+    sendJSON(
+      res,
+      201,
+      {
+        success: true,
+        status: "pending"
+      }
+    );
+
+    return;
+  }
+
+
+  if (
+    rzVerificationMethod === "GET" &&
+    rzVerificationPath === "/api/superadmin/verification"
+  ) {
+
+    const admin =
+      getCurrentUser(
+        rzVerificationDb,
+        req
+      );
+
+    if (
+      !isSuperAdmin(admin)
+    ) {
+
+      sendError(
+        res,
+        403,
+        "Super admin access required."
+      );
+
+      return;
+    }
+
+    rzVerificationDb.verificationRequests ||=
+      [];
+
+    const requests =
+      rzVerificationDb.verificationRequests
+        .slice()
+        .reverse()
+        .slice(0, 200)
+        .map(
+          item => {
+
+            const target =
+              rzVerificationDb.users.find(
+                user =>
+                  user.id ===
+                  item.userId
+              );
+
+            return {
+              ...item,
+
+              user:
+                target
+                  ? safeUser(target)
+                  : null
+            };
+          }
+        );
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        requests
+      }
+    );
+
+    return;
+  }
+
+
+  if (
+    rzVerificationMethod === "POST" &&
+    rzVerificationPath === "/api/superadmin/verification/grant"
+  ) {
+
+    const admin =
+      getCurrentUser(
+        rzVerificationDb,
+        req
+      );
+
+    if (
+      !isSuperAdmin(admin)
+    ) {
+
+      sendError(
+        res,
+        403,
+        "Super admin access required."
+      );
+
+      return;
+    }
+
+    let body = {};
+
+    try {
+
+      body =
+        await readBody(req);
+
+    } catch (error) {
+
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    const userId =
+      String(
+        body.userId ||
+        ""
+      ).trim();
+
+    const username =
+      String(
+        body.username ||
+        ""
+      ).trim()
+      .toLowerCase();
+
+    const target =
+      rzVerificationDb.users.find(
+        user => {
+
+          const byId =
+            userId &&
+            user.id === userId;
+
+          const byUsername =
+            username &&
+            String(
+              user.username ||
+              ""
+            )
+            .toLowerCase() ===
+            username;
+
+          return !!(
+            byId ||
+            byUsername
+          );
+        }
+      );
+
+    if (!target) {
+
+      sendError(
+        res,
+        404,
+        "User not found."
+      );
+
+      return;
+    }
+
+    target.verified =
+      true;
+
+    target.verificationStatus =
+      "verified";
+
+    target.verificationType =
+      target.official === true
+        ? "official"
+        : "staff_granted";
+
+    target.verifiedAt =
+      new Date().toISOString();
+
+    rzVerificationDb.verificationRequests ||=
+      [];
+
+    for (
+      const request
+      of rzVerificationDb.verificationRequests
+    ) {
+
+      if (
+        request.userId === target.id &&
+        request.status === "pending"
+      ) {
+
+        request.status =
+          "verified";
+
+        request.reviewedAt =
+          new Date().toISOString();
+
+        request.reviewedBy =
+          admin.id;
+      }
+    }
+
+    rzVerificationDb.notifications ||=
+      [];
+
+    if (
+      target.official !== true
+    ) {
+
+      rzVerificationDb.notifications.push({
+
+        id:
+          "notif_" +
+          Date.now().toString(36),
+
+        userId:
+          target.id,
+
+        fromUserId:
+          admin.id,
+
+        type:
+          "verification",
+
+        text:
+          "Your account is now verified.",
+
+        read:
+          false,
+
+        createdAt:
+          new Date().toISOString()
+      });
+    }
+
+    audit(
+      rzVerificationDb,
+      "verification_granted",
+      admin,
+      {
+        targetUserId:
+          target.id
+      }
+    );
+
+    saveDB(
+      rzVerificationDb
+    );
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+
+        user:
+          safeUser(
+            target
+          )
+      }
+    );
+
+    return;
+  }
+
+
+  if (
+    rzVerificationMethod === "POST" &&
+    rzVerificationPath === "/api/superadmin/verification/revoke"
+  ) {
+
+    const admin =
+      getCurrentUser(
+        rzVerificationDb,
+        req
+      );
+
+    if (
+      !isSuperAdmin(admin)
+    ) {
+
+      sendError(
+        res,
+        403,
+        "Super admin access required."
+      );
+
+      return;
+    }
+
+    let body = {};
+
+    try {
+
+      body =
+        await readBody(req);
+
+    } catch (error) {
+
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    const userId =
+      String(
+        body.userId ||
+        ""
+      ).trim();
+
+    const username =
+      String(
+        body.username ||
+        ""
+      ).trim()
+      .toLowerCase();
+
+    const target =
+      rzVerificationDb.users.find(
+        user => {
+
+          const byId =
+            userId &&
+            user.id === userId;
+
+          const byUsername =
+            username &&
+            String(
+              user.username ||
+              ""
+            )
+            .toLowerCase() ===
+            username;
+
+          return !!(
+            byId ||
+            byUsername
+          );
+        }
+      );
+
+    if (!target) {
+
+      sendError(
+        res,
+        404,
+        "User not found."
+      );
+
+      return;
+    }
+
+    if (
+      target.official === true
+    ) {
+
+      sendError(
+        res,
+        400,
+        "Official RIZORA verification cannot be revoked."
+      );
+
+      return;
+    }
+
+    target.verified =
+      false;
+
+    target.verificationStatus =
+      "unverified";
+
+    target.verificationType =
+      null;
+
+    target.verifiedAt =
+      null;
+
+    audit(
+      rzVerificationDb,
+      "verification_revoked",
+      admin,
+      {
+        targetUserId:
+          target.id
+      }
+    );
+
+    saveDB(
+      rzVerificationDb
+    );
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        verified: false
+      }
+    );
+
+    return;
+  }
+
+
   const url =
     new URL(
       req.url,
@@ -3707,234 +5144,274 @@ if (
 ============================================================ */
 
 if (
-  method === "POST" &&
-  pathname === "/api/ai/chat"
-) {
+    method === "POST" &&
+    pathname === "/api/ai/chat"
+  ) {
 
-  const user =
-    getCurrentUser(db, req);
+    const user =
+      getCurrentUser(
+        db,
+        req
+      );
 
-  const authenticated =
-    !!user;
+    if (!user) {
+      return sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+    }
 
-  let body = {};
+    const rateKey =
+      req.socket.remoteAddress ||
+      user.id;
 
-  try {
-    body =
-      await readBody(req);
-  } catch (error) {
-    sendError(
-      res,
-      400,
-      error.message
-    );
-    return;
+    if (
+      !checkRateLimit(
+        aiRateLimits,
+        rateKey,
+        10 * 60 * 1000,
+        20
+      )
+    ) {
+      return sendError(
+        res,
+        429,
+        "RIZORA AI is taking a short break. Try again in a few minutes."
+      );
+    }
+
+    let body;
+
+    try {
+      body =
+        await readBody(req);
+    } catch (error) {
+      return sendError(
+        res,
+        400,
+        error.message
+      );
+    }
+
+    const message =
+      String(
+        body.message || ""
+      )
+      .trim()
+      .slice(0,4000);
+
+    if (!message) {
+      return sendError(
+        res,
+        400,
+        "Ask RIZORA AI something first."
+      );
+    }
+
+    const groqKey =
+      String(
+        process.env.GROQ_API_KEY || ""
+      ).trim();
+
+    if (!groqKey) {
+      return sendJSON(
+        res,
+        503,
+        {
+          success:false,
+          provider:"groq",
+          code:"GROQ_API_KEY_MISSING",
+          error:
+            "RIZORA AI is not configured. Add GROQ_API_KEY to the RIZORA backend."
+        }
+      );
+    }
+
+    const model =
+      String(
+        process.env.GROQ_MODEL ||
+        "openai/gpt-oss-120b"
+      ).trim();
+
+    const systemPrompt =
+      "You are RIZORA AI, the built-in creator-growth assistant for RIZORA. " +
+      "Help creators with content ideas, hooks, captions, social growth, " +
+      "profile improvement, branding, analytics, boost strategy, tasks and " +
+      "practical next steps. Be concise, useful, modern and natural. " +
+      "Never claim to have performed an external social action. " +
+      "Never request passwords, API keys or sensitive credentials.";
+
+    try {
+
+      const response =
+        await fetch(
+          "https://api.groq.com/openai/v1/chat/completions",
+          {
+            method:"POST",
+
+            headers:{
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${groqKey}`
+            },
+
+            body:
+              JSON.stringify({
+                model,
+
+                messages:[
+                  {
+                    role:"system",
+                    content:systemPrompt
+                  },
+                  {
+                    role:"user",
+                    content:message
+                  }
+                ],
+
+                temperature:0.7,
+                max_tokens:1200
+              })
+          }
+        );
+
+      const data =
+        await response
+          .json()
+          .catch(() => ({}));
+
+      if (!response.ok) {
+
+        console.error(
+          "RIZORA GROQ ERROR",
+          {
+            status:response.status,
+            model,
+            error:data?.error || null
+          }
+        );
+
+        if (response.status === 401) {
+          return sendJSON(
+            res,
+            502,
+            {
+              success:false,
+              provider:"groq",
+              code:"GROQ_AUTH_INVALID",
+              error:
+                "Groq rejected the API key. Check GROQ_API_KEY on Render."
+            }
+          );
+        }
+
+        if (response.status === 403) {
+          return sendJSON(
+            res,
+            502,
+            {
+              success:false,
+              provider:"groq",
+              code:"GROQ_ACCESS_DENIED",
+              error:
+                "Groq denied this request. Check the API key and account access."
+            }
+          );
+        }
+
+        if (response.status === 429) {
+          return sendJSON(
+            res,
+            429,
+            {
+              success:false,
+              provider:"groq",
+              code:"GROQ_RATE_LIMIT",
+              error:
+                "RIZORA AI is temporarily rate-limited. Try again shortly."
+            }
+          );
+        }
+
+        return sendJSON(
+          res,
+          502,
+          {
+            success:false,
+            provider:"groq",
+            code:"GROQ_PROVIDER_ERROR",
+            error:
+              "RIZORA AI is temporarily unavailable."
+          }
+        );
+      }
+
+      const reply =
+        data?.choices?.[0]?.message?.content ||
+        "RIZORA AI returned no text.";
+
+      return sendJSON(
+        res,
+        200,
+        {
+          success:true,
+          provider:"groq",
+          model,
+          reply
+        }
+      );
+
+    } catch (error) {
+
+      console.error(
+        "RIZORA GROQ NETWORK ERROR",
+        error
+      );
+
+      return sendJSON(
+        res,
+        502,
+        {
+          success:false,
+          provider:"groq",
+          code:"GROQ_NETWORK_ERROR",
+          error:
+            "RIZORA AI could not reach Groq."
+        }
+      );
+    }
   }
 
-  const message =
-    cleanString(
-      body.message,
-      4000
-    );
+  if (
+    method === "GET" &&
+    pathname === "/api/ai/status"
+  ) {
 
-  if (!message) {
-    sendError(
-      res,
-      400,
-      "Message required."
-    );
-    return;
-  }
-
-  const apiKey =
-    authenticated
-      ? String(
-          process.env.GROQ_API_KEY || ""
-        ).trim()
-      : "";
-
-  function localAIRizoraReply(text) {
-
-    const q =
-      String(text || "").toLowerCase();
-
-    if(q.includes("caption")){
-      return "RIZORA AI: Give me your topic and vibe and I’ll build a stronger caption.";
-    }
-
-    if(q.includes("hook")){
-      return "RIZORA AI: Start with a short curiosity hook, then deliver the value immediately.";
-    }
-
-    if(
-      q.includes("growth") ||
-      q.includes("followers") ||
-      q.includes("views")
-    ){
-      return "RIZORA AI: Focus on a clear niche, stronger hooks, consistency and content that holds attention.";
-    }
-
-    if(
-      q.includes("idea") ||
-      q.includes("content")
-    ){
-      return "RIZORA AI: Try a behind-the-scenes post, reaction, tutorial, story, transformation or opinion-led post.";
-    }
-
-    if(q.includes("boost")){
-      return "RIZORA AI: Pick one clear action, set the reward, add the target URL and keep the task easy to complete.";
-    }
-
-    if(q.includes("bio") || q.includes("profile")){
-      return "RIZORA AI: Make your bio instantly say who you are, what you create and why someone should follow you.";
-    }
-
-    if(
-      q.includes("who created rizora") ||
-      q.includes("who made rizora") ||
-      q.includes("creator of rizora") ||
-      q.includes("founder of rizora") ||
-      q.includes("who is behind rizora") ||
-      q.includes("about rizora") ||
-      q.includes("tell me about rizora") ||
-      q.includes("what is rizora") ||
-      q.includes("what's rizora") ||
-      q.includes("what is rizora ai")
-    ){
-      return "RIZORA was created by RoMi, a member and founder of the Royal Saents Group. TikTok: @romi.noir. Create. Grow. Earn. Explore RIZORA: https://rizora.com.ng/";
-    }
-
-    return "I’m not sure about that yet.";
-  }
-
-  if(!apiKey){
-
-    sendJSON(
+    return sendJSON(
       res,
       200,
       {
         success:true,
-        mode:"local",
-        reply:localAIRizoraReply(message)
+        provider:"groq",
+        configured:
+          Boolean(
+            String(
+              process.env.GROQ_API_KEY || ""
+            ).trim()
+          ),
+        model:
+          String(
+            process.env.GROQ_MODEL ||
+            "openai/gpt-oss-120b"
+          ).trim()
       }
     );
-
-    return;
   }
 
-  try {
-
-    const model = "openai/gpt-oss-20b";
-
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + apiKey
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are the official RIZORA AI. Answer the user's actual question directly, naturally, accurately, and conversationally. Never begin every answer with a generic RIZORA introduction. RIZORA is a creator growth platform built to help creators CREATE, GROW and EARN through creator tools, missions and tasks, rewards, referrals, community features, analytics, and related creator-growth features. RIZORA is NOT a digital marketplace, ecommerce platform, or marketplace for buying and selling digital goods or services. Never invent RIZORA features or describe it as something it is not. When the user asks 'What is RIZORA?', explain that creator-growth purpose first. When the user asks who created RIZORA, answer that RoMi created it and that RoMi is a member and founder of the Royal Saents Group; you may mention @romi.noir when relevant. Mention the RIZORA website https://rizora.com.ng/ only when relevant or requested. For normal questions, answer only what was asked. Do not append founder information, TikTok handles, website links, slogans, or promotional text to unrelated answers. Never request passwords, API keys, tokens, or secrets."
-            },
-            {
-              role: "user",
-              content: message
-            }
-          ],
-          max_completion_tokens: 2048
-        })
-      }
-    );
-
-    const data = await response.json().catch(function () {
-      return {};
-    });
-
-    if (!response.ok) {
-      console.error(
-        "GROQ AI ERROR:",
-        response.status,
-        data
-      );
-
-      sendJSON(
-        res,
-        500,
-        {
-          success: false,
-          mode: "groq_error",
-          error:
-            data?.error?.message ||
-            "Groq AI request failed."
-        }
-      );
-
-      return;
-    }
-
-    const reply =
-      data?.choices?.[0]?.message?.content?.trim() || "";
-
-    if (!reply) {
-      console.error(
-        "GROQ AI EMPTY RESPONSE:",
-        data
-      );
-
-      sendJSON(
-        res,
-        500,
-        {
-          success: false,
-          mode: "groq_error",
-          error: "Groq returned an empty response."
-        }
-      );
-
-      return;
-    }
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        mode: "groq",
-        reply
-      }
-    );
-
-  } catch (error) {
-
-    console.error(
-      "GROQ AI PROVIDER ERROR:",
-      error
-    );
-
-    sendJSON(
-      res,
-      500,
-      {
-        success: false,
-        mode: "groq_error",
-        error:
-          error?.message ||
-          "Unable to reach the AI provider."
-      }
-    );
-
-  }
-
-  return;
-}/* ============================================================
-   SEARCH ENGINE
-============================================================ */
 
 if (
   method === "GET" &&
@@ -6533,6 +8010,59 @@ async function requestHandler(
   req,
   res
 ) {
+
+  // ============================================================
+  // RIZORA CORS COMPATIBILITY
+  // ============================================================
+
+  const RIZORA_ALLOWED_ORIGINS = new Set([
+    "https://rizora.com.ng",
+    "https://www.rizora.com.ng",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500"
+  ]);
+
+  const rizoraOrigin = req.headers.origin;
+
+  if (
+    rizoraOrigin &&
+    RIZORA_ALLOWED_ORIGINS.has(rizoraOrigin)
+  ) {
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      rizoraOrigin
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Credentials",
+      "true"
+    );
+  }
+
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS"
+  );
+
+  res.setHeader(
+    "Vary",
+    "Origin"
+  );
+
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
   try {
 
     await handleRequest(

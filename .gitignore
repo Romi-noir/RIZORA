@@ -1,2 +1,19 @@
 .env
 node_modules/
+.vercel
+.env*
+
+# RIZORA local backups / repair artifacts
+.rizora-*/
+*.before-*.js
+*.before-*.html
+*.before-*.json
+*.backup*
+index.before-*
+index.html.*
+server.before-*
+sw.before-*
+manifest.before-*
+www/*.before-*
+assets/*.backup.*
+database/db.before-*.json
