@@ -1490,839 +1490,7 @@ async function handleRequest(
 
   if (
     rzVerificationMethod === "GET" &&
-    /* ============================================================
-   RIZORA_VERIFICATION_ROUTER_FINAL
-   Full user + super-admin verification system
-============================================================ */
-
-if (
-  method === "GET" &&
-  pathname === "/api/verification/me"
-) {
-
-  const verificationUser =
-    getCurrentUser(
-      db,
-      req
-    );
-
-  if (!verificationUser) {
-    sendError(
-      res,
-      401,
-      "Authentication required."
-    );
-    return;
-  }
-
-  db.verificationRequests =
-    Array.isArray(
-      db.verificationRequests
-    )
-      ? db.verificationRequests
-      : [];
-
-  const isSuperAdmin =
-    verificationUser.role === "super_admin" &&
-    SUPER_ADMINS.has(
-      normalizeUsername(
-        verificationUser.username
-      )
-    );
-
-  if (isSuperAdmin) {
-
-    if (
-      verificationUser.verificationStatus !==
-      "verified"
-    ) {
-      verificationUser.verificationStatus =
-        "verified";
-
-      verificationUser.verified = true;
-
-      verificationUser.verifiedAt =
-        verificationUser.verifiedAt ||
-        new Date().toISOString();
-
-      saveDB(db);
-    }
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        status: "verified",
-        verified: true,
-        request: null
-      }
-    );
-
-    return;
-  }
-
-  const ownRequest =
-    db.verificationRequests
-      .slice()
-      .reverse()
-      .find(
-        item =>
-          item.userId ===
-          verificationUser.id
-      ) || null;
-
-  const status =
-    verificationUser.verificationStatus ===
-    "verified"
-      ? "verified"
-      : (
-          ownRequest?.status ||
-          verificationUser.verificationStatus ||
-          "not_submitted"
-        );
-
-  sendJSON(
-    res,
-    200,
-    {
-      success: true,
-      status,
-      verified:
-        status === "verified",
-      request:
-        ownRequest
-    }
-  );
-
-  return;
-}
-
-
-/* ============================================================
-   APPLY FOR VERIFICATION
-============================================================ */
-
-if (
-  method === "POST" &&
-  pathname === "/api/verification/apply"
-) {
-
-  const verificationUser =
-    getCurrentUser(
-      db,
-      req
-    );
-
-  if (!verificationUser) {
-    sendError(
-      res,
-      401,
-      "Authentication required."
-    );
-    return;
-  }
-
-  db.verificationRequests =
-    Array.isArray(
-      db.verificationRequests
-    )
-      ? db.verificationRequests
-      : [];
-
-  const normalizedUsername =
-    normalizeUsername(
-      verificationUser.username
-    );
-
-  const isSuperAdmin =
-    verificationUser.role === "super_admin" &&
-    SUPER_ADMINS.has(
-      normalizedUsername
-    );
-
-  if (isSuperAdmin) {
-
-    verificationUser.verificationStatus =
-      "verified";
-
-    verificationUser.verified =
-      true;
-
-    verificationUser.verifiedAt =
-      verificationUser.verifiedAt ||
-      new Date().toISOString();
-
-    saveDB(db);
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        status: "verified",
-        message:
-          "Super Admin verification is already active."
-      }
-    );
-
-    return;
-  }
-
-  let body;
-
-  try {
-
-    body =
-      await readBody(req);
-
-  } catch (error) {
-
-    sendError(
-      res,
-      400,
-      error.message ||
-      "Invalid request body."
-    );
-
-    return;
-  }
-
-  const reason =
-    cleanString(
-      body.reason,
-      1500
-    ).trim();
-
-  const proofUrl =
-    cleanString(
-      body.proofUrl ||
-      body.proof ||
-      body.url,
-      500
-    ).trim();
-
-  if (reason.length < 10) {
-
-    sendError(
-      res,
-      400,
-      "Please provide at least a short explanation for verification."
-    );
-
-    return;
-  }
-
-  if (reason.length > 1500) {
-
-    sendError(
-      res,
-      400,
-      "Verification explanation is too long."
-    );
-
-    return;
-  }
-
-  let parsedUrl;
-
-  try {
-
-    parsedUrl =
-      new URL(
-        proofUrl
-      );
-
-  } catch {
-
-    sendError(
-      res,
-      400,
-      "Please provide a valid public proof URL."
-    );
-
-    return;
-  }
-
-  if (
-    ![
-      "http:",
-      "https:"
-    ].includes(
-      parsedUrl.protocol
-    )
-  ) {
-
-    sendError(
-      res,
-      400,
-      "Proof URL must use http or https."
-    );
-
-    return;
-  }
-
-  const existingPending =
-    db.verificationRequests.find(
-      item =>
-        item.userId ===
-        verificationUser.id &&
-        item.status ===
-        "pending"
-    );
-
-  if (existingPending) {
-
-    sendJSON(
-      res,
-      409,
-      {
-        success: false,
-        status: "pending",
-        message:
-          "Your verification request is already under review.",
-        request:
-          existingPending
-      }
-    );
-
-    return;
-  }
-
-  if (
-    verificationUser.verificationStatus ===
-    "verified"
-  ) {
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        status: "verified",
-        verified: true,
-        message:
-          "Your account is already verified."
-      }
-    );
-
-    return;
-  }
-
-  const now =
-    new Date().toISOString();
-
-  const request = {
-    id: uid("verification_"),
-
-    userId:
-      verificationUser.id,
-
-    username:
-      verificationUser.username,
-
-    displayName:
-      verificationUser.displayName ||
-      verificationUser.username,
-
-    reason,
-
-    proofUrl,
-
-    status:
-      "pending",
-
-    createdAt:
-      now,
-
-    updatedAt:
-      now,
-
-    reviewedAt:
-      null,
-
-    reviewedBy:
-      null
-  };
-
-  db.verificationRequests.push(
-    request
-  );
-
-  verificationUser.verificationStatus =
-    "pending";
-
-  verificationUser.verified =
-    false;
-
-  verificationUser.updatedAt =
-    now;
-
-  audit(
-    db,
-    "verification_request",
-    verificationUser,
-    {
-      requestId:
-        request.id
-    }
-  );
-
-  saveDB(db);
-
-  sendJSON(
-    res,
-    201,
-    {
-      success: true,
-      status: "pending",
-      message:
-        "Verification request submitted successfully.",
-      request
-    }
-  );
-
-  return;
-}
-
-
-/* ============================================================
-   PUBLIC USER VERIFICATION LOOKUP
-============================================================ */
-
-if (
-  method === "GET" &&
-  pathname.startsWith(
-    "/api/verification/user/"
-  )
-) {
-
-  const username =
-    decodeURIComponent(
-      pathname.slice(
-        "/api/verification/user/".length
-      )
-    ).trim();
-
-  const targetUser =
-    db.users.find(
-      item =>
-        normalizeUsername(
-          item.username
-        ) ===
-        normalizeUsername(
-          username
-        )
-    );
-
-  if (!targetUser) {
-
-    sendError(
-      res,
-      404,
-      "User not found."
-    );
-
-    return;
-  }
-
-  const verified =
-    targetUser.verified === true ||
-    targetUser.verificationStatus ===
-      "verified";
-
-  sendJSON(
-    res,
-    200,
-    {
-      success: true,
-      username:
-        targetUser.username,
-      displayName:
-        targetUser.displayName ||
-        targetUser.username,
-      verified,
-      status:
-        verified
-          ? "verified"
-          : "not_verified"
-    }
-  );
-
-  return;
-}
-
-
-/* ============================================================
-   SUPER ADMIN — VERIFICATION QUEUE
-============================================================ */
-
-if (
-  method === "GET" &&
-  pathname ===
-    "/api/superadmin/verification/requests"
-) {
-
-  const adminUser =
-    getCurrentUser(
-      db,
-      req
-    );
-
-  if (!adminUser) {
-
-    sendError(
-      res,
-      401,
-      "Authentication required."
-    );
-
-    return;
-  }
-
-  const isAllowed =
-    adminUser.role ===
-      "super_admin" &&
-    SUPER_ADMINS.has(
-      normalizeUsername(
-        adminUser.username
-      )
-    );
-
-  if (!isAllowed) {
-
-    sendError(
-      res,
-      403,
-      "Super Admin access required."
-    );
-
-    return;
-  }
-
-  db.verificationRequests =
-    Array.isArray(
-      db.verificationRequests
-    )
-      ? db.verificationRequests
-      : [];
-
-  const requests =
-    db.verificationRequests
-      .slice()
-      .reverse()
-      .map(
-        request => {
-
-          const user =
-            db.users.find(
-              item =>
-                item.id ===
-                request.userId
-            ) || null;
-
-          return {
-            ...request,
-
-            username:
-              user?.username ||
-              request.username,
-
-            displayName:
-              user?.displayName ||
-              request.displayName,
-
-            user:
-              user
-                ? safeUser(user)
-                : null
-          };
-
-        }
-      );
-
-  sendJSON(
-    res,
-    200,
-    {
-      success: true,
-      requests
-    }
-  );
-
-  return;
-}
-
-
-/* ============================================================
-   SUPER ADMIN — VERIFY / REJECT / REVOKE
-============================================================ */
-
-if (
-  method === "POST" &&
-  pathname ===
-    "/api/superadmin/verification/action"
-) {
-
-  const adminUser =
-    getCurrentUser(
-      db,
-      req
-    );
-
-  if (!adminUser) {
-
-    sendError(
-      res,
-      401,
-      "Authentication required."
-    );
-
-    return;
-  }
-
-  const isAllowed =
-    adminUser.role ===
-      "super_admin" &&
-    SUPER_ADMINS.has(
-      normalizeUsername(
-        adminUser.username
-      )
-    );
-
-  if (!isAllowed) {
-
-    sendError(
-      res,
-      403,
-      "Super Admin access required."
-    );
-
-    return;
-  }
-
-  let body;
-
-  try {
-
-    body =
-      await readBody(req);
-
-  } catch (error) {
-
-    sendError(
-      res,
-      400,
-      error.message ||
-      "Invalid request body."
-    );
-
-    return;
-  }
-
-  const requestId =
-    cleanString(
-      body.requestId,
-      200
-    ).trim();
-
-  const action =
-    cleanString(
-      body.action,
-      30
-    ).toLowerCase().trim();
-
-  if (!requestId) {
-
-    sendError(
-      res,
-      400,
-      "Verification request ID is required."
-    );
-
-    return;
-  }
-
-  if (
-    ![
-      "approve",
-      "verify",
-      "reject",
-      "revoke"
-    ].includes(
-      action
-    )
-  ) {
-
-    sendError(
-      res,
-      400,
-      "Invalid verification action."
-    );
-
-    return;
-  }
-
-  db.verificationRequests =
-    Array.isArray(
-      db.verificationRequests
-    )
-      ? db.verificationRequests
-      : [];
-
-  const request =
-    db.verificationRequests.find(
-      item =>
-        item.id ===
-        requestId
-    );
-
-  if (!request) {
-
-    sendError(
-      res,
-      404,
-      "Verification request not found."
-    );
-
-    return;
-  }
-
-  const targetUser =
-    db.users.find(
-      item =>
-        item.id ===
-        request.userId
-    );
-
-  if (!targetUser) {
-
-    sendError(
-      res,
-      404,
-      "Verification user no longer exists."
-    );
-
-    return;
-  }
-
-  const now =
-    new Date().toISOString();
-
-  if (
-    action === "approve" ||
-    action === "verify"
-  ) {
-
-    request.status =
-      "verified";
-
-    request.updatedAt =
-      now;
-
-    request.reviewedAt =
-      now;
-
-    request.reviewedBy =
-      adminUser.username;
-
-    targetUser.verified =
-      true;
-
-    targetUser.verificationStatus =
-      "verified";
-
-    targetUser.verifiedAt =
-      now;
-
-  } else if (
-    action === "reject"
-  ) {
-
-    request.status =
-      "rejected";
-
-    request.updatedAt =
-      now;
-
-    request.reviewedAt =
-      now;
-
-    request.reviewedBy =
-      adminUser.username;
-
-    targetUser.verified =
-      false;
-
-    targetUser.verificationStatus =
-      "rejected";
-
-  } else {
-
-    request.status =
-      "revoked";
-
-    request.updatedAt =
-      now;
-
-    request.reviewedAt =
-      now;
-
-    request.reviewedBy =
-      adminUser.username;
-
-    targetUser.verified =
-      false;
-
-    targetUser.verificationStatus =
-      "revoked";
-
-  }
-
-  targetUser.updatedAt =
-    now;
-
-  audit(
-    db,
-    "verification_action",
-    adminUser,
-    {
-      requestId,
-      action,
-      targetUserId:
-        targetUser.id,
-      targetUsername:
-        targetUser.username
-    }
-  );
-
-  saveDB(db);
-
-  sendJSON(
-    res,
-    200,
-    {
-      success: true,
-      message:
-        action === "approve" ||
-        action === "verify"
-          ? "Account verified successfully."
-          : action === "reject"
-            ? "Verification request rejected."
-            : "Verification revoked.",
-      action,
-      request,
-      user:
-        safeUser(
-          targetUser
-        )
-    }
-  );
-
-  return;
-}
-
-rzVerificationPath === "/api/verification/me"
+    rzVerificationPath === "/api/verification/me"
   ) {
 
     const user =
@@ -7991,7 +7159,794 @@ if (
 }
 
   // ----------------------------------------------------------
-  // STATIC FRONTEND
+  /* ============================================================
+   RIZORA VERIFICATION ROUTES
+   Inserted immediately before STATIC FRONTEND
+============================================================ */
+
+
+/* ------------------------------------------------------------
+   VERIFICATION — MY STATUS
+------------------------------------------------------------ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/verification/me"
+) {
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!user) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
+
+  db.verificationRequests ||= [];
+
+  const username =
+    normalizeUsername(
+      user.username
+    );
+
+  const isSuperAdmin =
+    user.role === "super_admin" &&
+    SUPER_ADMINS.has(
+      username
+    );
+
+  if (isSuperAdmin) {
+
+    user.verified = true;
+
+    user.verificationStatus =
+      "verified";
+
+    user.verifiedAt =
+      user.verifiedAt ||
+      new Date().toISOString();
+
+    saveDB(db);
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        status: "verified",
+        verified: true,
+        request: null
+      }
+    );
+
+    return;
+  }
+
+  const request =
+    db.verificationRequests
+      .slice()
+      .reverse()
+      .find(
+        item =>
+          item.userId ===
+          user.id
+      ) || null;
+
+  let status =
+    request?.status ||
+    user.verificationStatus ||
+    "not_submitted";
+
+  if (
+    user.verified === true
+  ) {
+    status = "verified";
+  }
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      status,
+      verified:
+        status === "verified",
+      request
+    }
+  );
+
+  return;
+}
+
+
+/* ------------------------------------------------------------
+   VERIFICATION — APPLY
+------------------------------------------------------------ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/verification/apply"
+) {
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!user) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
+
+  db.verificationRequests ||= [];
+
+  const username =
+    normalizeUsername(
+      user.username
+    );
+
+  if (
+    user.role === "super_admin" &&
+    SUPER_ADMINS.has(username)
+  ) {
+
+    user.verified = true;
+
+    user.verificationStatus =
+      "verified";
+
+    user.verifiedAt =
+      user.verifiedAt ||
+      new Date().toISOString();
+
+    saveDB(db);
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        status: "verified",
+        message:
+          "Super Admin verification is already active."
+      }
+    );
+
+    return;
+  }
+
+  let body;
+
+  try {
+
+    body =
+      await readBody(req);
+
+  } catch (error) {
+
+    sendError(
+      res,
+      400,
+      error.message ||
+      "Invalid request body."
+    );
+
+    return;
+  }
+
+  const reason =
+    cleanString(
+      body.reason || "",
+      1500
+    ).trim();
+
+  const proofUrl =
+    cleanString(
+      body.proofUrl ||
+      body.proof ||
+      body.url ||
+      "",
+      500
+    ).trim();
+
+  if (
+    reason.length < 10
+  ) {
+
+    sendError(
+      res,
+      400,
+      "Please provide more information about your creator identity."
+    );
+
+    return;
+  }
+
+  if (!proofUrl) {
+
+    sendError(
+      res,
+      400,
+      "A public proof URL is required."
+    );
+
+    return;
+  }
+
+  try {
+
+    const parsed =
+      new URL(
+        proofUrl
+      );
+
+    if (
+      ![
+        "http:",
+        "https:"
+      ].includes(
+        parsed.protocol
+      )
+    ) {
+      throw new Error();
+    }
+
+  } catch {
+
+    sendError(
+      res,
+      400,
+      "Proof URL must be a valid http or https URL."
+    );
+
+    return;
+  }
+
+  const pending =
+    db.verificationRequests.find(
+      item =>
+        item.userId ===
+        user.id &&
+        item.status ===
+        "pending"
+    );
+
+  if (pending) {
+
+    sendJSON(
+      res,
+      409,
+      {
+        success: false,
+        status: "pending",
+        message:
+          "Your verification request is already under review.",
+        request: pending
+      }
+    );
+
+    return;
+  }
+
+  if (
+    user.verified === true ||
+    user.verificationStatus ===
+      "verified"
+  ) {
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        status: "verified",
+        message:
+          "Your account is already verified."
+      }
+    );
+
+    return;
+  }
+
+  const now =
+    new Date().toISOString();
+
+  const request = {
+    id:
+      "verification_" +
+      Date.now().toString(36) +
+      "_" +
+      Math.random()
+        .toString(36)
+        .slice(2, 9),
+
+    userId:
+      user.id,
+
+    username:
+      user.username,
+
+    displayName:
+      user.displayName ||
+      user.username,
+
+    reason,
+
+    proofUrl,
+
+    status:
+      "pending",
+
+    createdAt:
+      now,
+
+    updatedAt:
+      now,
+
+    reviewedAt:
+      null,
+
+    reviewedBy:
+      null
+  };
+
+  db.verificationRequests.push(
+    request
+  );
+
+  user.verificationStatus =
+    "pending";
+
+  user.verified =
+    false;
+
+  user.updatedAt =
+    now;
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    201,
+    {
+      success: true,
+      status: "pending",
+      message:
+        "Verification request submitted successfully.",
+      request
+    }
+  );
+
+  return;
+}
+
+
+/* ------------------------------------------------------------
+   VERIFICATION — PUBLIC USER STATUS
+------------------------------------------------------------ */
+
+if (
+  method === "GET" &&
+  pathname.startsWith(
+    "/api/verification/user/"
+  )
+) {
+
+  const username =
+    decodeURIComponent(
+      pathname.slice(
+        "/api/verification/user/".length
+      )
+    ).trim();
+
+  const target =
+    db.users.find(
+      item =>
+        normalizeUsername(
+          item.username
+        ) ===
+        normalizeUsername(
+          username
+        )
+    );
+
+  if (!target) {
+
+    sendError(
+      res,
+      404,
+      "User not found."
+    );
+
+    return;
+  }
+
+  const verified =
+    target.verified === true ||
+    target.verificationStatus ===
+      "verified";
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      username:
+        target.username,
+
+      displayName:
+        target.displayName ||
+        target.username,
+
+      verified,
+
+      status:
+        verified
+          ? "verified"
+          : "not_verified"
+    }
+  );
+
+  return;
+}
+
+
+/* ------------------------------------------------------------
+   SUPER ADMIN — VERIFICATION QUEUE
+------------------------------------------------------------ */
+
+if (
+  method === "GET" &&
+  pathname ===
+    "/api/superadmin/verification/requests"
+) {
+
+  const admin =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!admin) {
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+  }
+
+  const allowed =
+    admin.role ===
+      "super_admin" &&
+    SUPER_ADMINS.has(
+      normalizeUsername(
+        admin.username
+      )
+    );
+
+  if (!allowed) {
+
+    sendError(
+      res,
+      403,
+      "Super Admin access required."
+    );
+
+    return;
+  }
+
+  db.verificationRequests ||= [];
+
+  const requests =
+    db.verificationRequests
+      .slice()
+      .reverse()
+      .map(
+        item => {
+
+          const target =
+            db.users.find(
+              user =>
+                user.id ===
+                item.userId
+            );
+
+          return {
+            id:
+              item.id,
+
+            userId:
+              item.userId,
+
+            username:
+              target?.username ||
+              item.username,
+
+            displayName:
+              target?.displayName ||
+              item.displayName,
+
+            reason:
+              item.reason,
+
+            proofUrl:
+              item.proofUrl,
+
+            status:
+              item.status,
+
+            createdAt:
+              item.createdAt,
+
+            updatedAt:
+              item.updatedAt,
+
+            reviewedAt:
+              item.reviewedAt,
+
+            reviewedBy:
+              item.reviewedBy
+          };
+
+        }
+      );
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      requests
+    }
+  );
+
+  return;
+}
+
+
+/* ------------------------------------------------------------
+   SUPER ADMIN — VERIFICATION ACTION
+------------------------------------------------------------ */
+
+if (
+  method === "POST" &&
+  pathname ===
+    "/api/superadmin/verification/action"
+) {
+
+  const admin =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!admin) {
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+  }
+
+  const allowed =
+    admin.role ===
+      "super_admin" &&
+    SUPER_ADMINS.has(
+      normalizeUsername(
+        admin.username
+      )
+    );
+
+  if (!allowed) {
+
+    sendError(
+      res,
+      403,
+      "Super Admin access required."
+    );
+
+    return;
+  }
+
+  let body;
+
+  try {
+
+    body =
+      await readBody(req);
+
+  } catch (error) {
+
+    sendError(
+      res,
+      400,
+      error.message ||
+      "Invalid request body."
+    );
+
+    return;
+  }
+
+  const requestId =
+    cleanString(
+      body.requestId || "",
+      200
+    ).trim();
+
+  const action =
+    cleanString(
+      body.action || "",
+      40
+    ).toLowerCase()
+     .trim();
+
+  if (!requestId) {
+
+    sendError(
+      res,
+      400,
+      "Verification request ID is required."
+    );
+
+    return;
+  }
+
+  if (
+    ![
+      "approve",
+      "verify",
+      "reject",
+      "revoke"
+    ].includes(action)
+  ) {
+
+    sendError(
+      res,
+      400,
+      "Invalid verification action."
+    );
+
+    return;
+  }
+
+  db.verificationRequests ||= [];
+
+  const request =
+    db.verificationRequests.find(
+      item =>
+        item.id ===
+        requestId
+    );
+
+  if (!request) {
+
+    sendError(
+      res,
+      404,
+      "Verification request not found."
+    );
+
+    return;
+  }
+
+  const target =
+    db.users.find(
+      user =>
+        user.id ===
+        request.userId
+    );
+
+  if (!target) {
+
+    sendError(
+      res,
+      404,
+      "Verification user not found."
+    );
+
+    return;
+  }
+
+  const now =
+    new Date().toISOString();
+
+  if (
+    action === "approve" ||
+    action === "verify"
+  ) {
+
+    request.status =
+      "verified";
+
+    target.verified =
+      true;
+
+    target.verificationStatus =
+      "verified";
+
+    target.verifiedAt =
+      now;
+
+  } else if (
+    action === "reject"
+  ) {
+
+    request.status =
+      "rejected";
+
+    target.verified =
+      false;
+
+    target.verificationStatus =
+      "rejected";
+
+  } else {
+
+    request.status =
+      "revoked";
+
+    target.verified =
+      false;
+
+    target.verificationStatus =
+      "revoked";
+
+  }
+
+  request.updatedAt =
+    now;
+
+  request.reviewedAt =
+    now;
+
+  request.reviewedBy =
+    admin.username;
+
+  target.updatedAt =
+    now;
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+
+      action,
+
+      message:
+        action === "approve" ||
+        action === "verify"
+          ? "Account verified successfully."
+          : action === "reject"
+            ? "Verification request rejected."
+            : "Verification revoked."
+    }
+  );
+
+  return;
+}
+
+// STATIC FRONTEND
   // ----------------------------------------------------------
 
   serveStatic(
