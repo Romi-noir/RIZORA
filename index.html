@@ -13731,5 +13731,1578 @@ document.addEventListener(
 })();
 
 </script>
+
+
+<!-- RIZORA EXPERIENCE PURGE V6 -->
+<script id="RIZORA_EXPERIENCE_PURGE_V6_SCRIPT">
+﻿(function () {
+  "use strict";
+
+  if (window.RIZORA_EXPERIENCE_PURGE_V6) {
+    return;
+  }
+
+  window.RIZORA_EXPERIENCE_PURGE_V6 = true;
+
+  var STYLE_ID = "RIZORA_EXPERIENCE_PURGE_V6_STYLE";
+  var DRAWER_ID = "rzCleanMobileDrawerV6";
+  var HUB_ID = "rzCleanHubV6";
+  var ROMI_ID = "rzCleanMeetRomiV6";
+  var HAMBURGER_ID = "rzCleanHamburgerV6";
+
+  function loggedIn() {
+    try {
+      return (
+        typeof state !== "undefined" &&
+        state &&
+        !!state.user
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function safe(fn) {
+    try {
+      if (typeof fn === "function") {
+        return fn.apply(
+          null,
+          Array.prototype.slice.call(arguments, 1)
+        );
+      }
+    } catch (e) {}
+
+    return null;
+  }
+
+  function ensureStyle() {
+    if (document.getElementById(STYLE_ID)) {
+      return;
+    }
+
+    var style = document.createElement("style");
+    style.id = STYLE_ID;
+
+    style.textContent = `
+/* ============================================================
+   RIZORA EXPERIENCE PURGE V6
+============================================================ */
+
+#mobileMenu,
+.mobile-menu,
+#rzRizoraMobileDrawerV5,
+#rzCompleteFab,
+#rzProductHub,
+.rz-runtime-launch,
+.rz-id-launchers,
+[data-rz-hub-launch],
+[data-rz-hub-nav],
+#rzCompleteExperienceOverlay,
+#rzCompleteMeetModal,
+#rizoraMeetRomiModalV2 {
+  display:none !important;
+}
+
+[data-view="verification"] {
+  display:none !important;
+}
+
+/* ============================================================
+   CLEAN HAMBURGER
+============================================================ */
+
+#${HAMBURGER_ID} {
+  display:none;
+}
+
+@media (max-width:900px) {
+  #${HAMBURGER_ID} {
+    display:flex !important;
+    position:fixed !important;
+    top:10px !important;
+    right:10px !important;
+    width:44px !important;
+    height:44px !important;
+    padding:0 !important;
+    margin:0 !important;
+    align-items:center !important;
+    justify-content:center !important;
+    flex-direction:column !important;
+    gap:5px !important;
+    z-index:2147483647 !important;
+    border:1px solid rgba(255,255,255,.12) !important;
+    border-radius:14px !important;
+    background:rgba(13,10,23,.96) !important;
+    box-shadow:0 12px 35px rgba(0,0,0,.45) !important;
+    color:#fff !important;
+    cursor:pointer !important;
+  }
+
+  #${HAMBURGER_ID} span {
+    display:block !important;
+    width:19px !important;
+    height:2px !important;
+    border-radius:99px !important;
+    background:#fff !important;
+  }
+
+  .navright {
+    padding-right:55px !important;
+  }
+
+  .navright > .btn {
+    display:none !important;
+  }
+
+  .navlinks {
+    display:none !important;
+  }
+}
+
+/* ============================================================
+   CLEAN MOBILE DRAWER
+============================================================ */
+
+#${DRAWER_ID} {
+  display:none !important;
+}
+
+#${DRAWER_ID}.open {
+  display:flex !important;
+  flex-direction:column !important;
+  position:fixed !important;
+  top:64px !important;
+  left:8px !important;
+  right:8px !important;
+  width:auto !important;
+  max-height:calc(100dvh - 74px) !important;
+  overflow-y:auto !important;
+  z-index:2147483646 !important;
+  padding:12px !important;
+  gap:7px !important;
+  border:1px solid rgba(255,255,255,.11) !important;
+  border-radius:20px !important;
+  background:rgba(8,6,17,.985) !important;
+  box-shadow:0 30px 90px rgba(0,0,0,.68) !important;
+  backdrop-filter:blur(25px) !important;
+  -webkit-backdrop-filter:blur(25px) !important;
+}
+
+#${DRAWER_ID} button {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  width:100% !important;
+  min-height:48px !important;
+  padding:13px 15px !important;
+  border:1px solid rgba(255,255,255,.07) !important;
+  border-radius:13px !important;
+  background:rgba(255,255,255,.045) !important;
+  color:#fff !important;
+  font:inherit !important;
+  font-weight:700 !important;
+  cursor:pointer !important;
+}
+
+#${DRAWER_ID} button:hover {
+  background:rgba(154,108,255,.13) !important;
+  border-color:rgba(154,108,255,.30) !important;
+}
+
+#${DRAWER_ID} .rz-v6-title {
+  padding:4px 7px 8px !important;
+  font-size:11px !important;
+  font-weight:900 !important;
+  letter-spacing:.17em !important;
+  text-transform:uppercase !important;
+  color:rgba(255,255,255,.46) !important;
+}
+
+#${DRAWER_ID} .rz-v6-line {
+  height:1px !important;
+  margin:2px 0 !important;
+  background:rgba(255,255,255,.07) !important;
+}
+
+/* ============================================================
+   CLEAN HUB
+============================================================ */
+
+#${HUB_ID} {
+  position:fixed !important;
+  inset:0 !important;
+  z-index:2147483000 !important;
+  display:none !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:16px !important;
+  background:rgba(3,2,10,.83) !important;
+  backdrop-filter:blur(18px) !important;
+  -webkit-backdrop-filter:blur(18px) !important;
+}
+
+#${HUB_ID}.open {
+  display:flex !important;
+}
+
+#${HUB_ID} .rz-v6-hub-card {
+  width:min(900px,100%) !important;
+  max-height:min(860px,calc(100dvh - 32px)) !important;
+  overflow:auto !important;
+  padding:24px !important;
+  border:1px solid rgba(255,255,255,.11) !important;
+  border-radius:26px !important;
+  background:linear-gradient(150deg,#171022,#090711 78%) !important;
+  box-shadow:0 35px 120px rgba(0,0,0,.64) !important;
+  color:#fff !important;
+}
+
+#${HUB_ID} .rz-v6-hub-head {
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:space-between !important;
+  gap:18px !important;
+  margin-bottom:20px !important;
+}
+
+#${HUB_ID} .rz-v6-eyebrow {
+  font-size:11px !important;
+  font-weight:900 !important;
+  letter-spacing:.16em !important;
+  text-transform:uppercase !important;
+  opacity:.48 !important;
+}
+
+#${HUB_ID} h2 {
+  margin:7px 0 7px !important;
+  font-size:clamp(26px,5vw,40px) !important;
+  letter-spacing:-.04em !important;
+}
+
+#${HUB_ID} p {
+  margin:0 !important;
+  color:rgba(255,255,255,.62) !important;
+  line-height:1.65 !important;
+}
+
+#${HUB_ID} .rz-v6-close {
+  width:42px !important;
+  height:42px !important;
+  flex:0 0 auto !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  border-radius:50% !important;
+  background:rgba(255,255,255,.05) !important;
+  color:#fff !important;
+  font-size:20px !important;
+  cursor:pointer !important;
+}
+
+#${HUB_ID} .rz-v6-grid {
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:11px !important;
+}
+
+#${HUB_ID} .rz-v6-feature {
+  min-height:108px !important;
+  padding:16px !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  border-radius:17px !important;
+  background:rgba(255,255,255,.035) !important;
+  color:#fff !important;
+  text-align:left !important;
+  cursor:pointer !important;
+}
+
+#${HUB_ID} .rz-v6-feature strong {
+  display:block !important;
+  font-size:14px !important;
+  margin-bottom:6px !important;
+}
+
+#${HUB_ID} .rz-v6-feature span {
+  display:block !important;
+  font-size:12px !important;
+  line-height:1.5 !important;
+  color:rgba(255,255,255,.53) !important;
+}
+
+#${HUB_ID} .rz-v6-feature.primary {
+  background:linear-gradient(
+    135deg,
+    rgba(126,71,230,.28),
+    rgba(213,91,255,.10)
+  ) !important;
+  border-color:rgba(166,111,255,.24) !important;
+}
+
+#${HUB_ID} .rz-v6-account {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  margin-top:14px !important;
+  padding:14px !important;
+  border-radius:16px !important;
+  background:rgba(255,255,255,.035) !important;
+  border:1px solid rgba(255,255,255,.07) !important;
+}
+
+#${HUB_ID} .rz-v6-logo {
+  width:52px !important;
+  height:52px !important;
+  border-radius:16px !important;
+  object-fit:cover !important;
+  border:1px solid rgba(255,255,255,.13) !important;
+}
+
+/* ============================================================
+   CLEAN MEET ROMI
+============================================================ */
+
+#${ROMI_ID} {
+  position:fixed !important;
+  inset:0 !important;
+  z-index:2147483500 !important;
+  display:none !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:15px !important;
+  background:rgba(3,2,10,.83) !important;
+  backdrop-filter:blur(18px) !important;
+  -webkit-backdrop-filter:blur(18px) !important;
+}
+
+#${ROMI_ID}.open {
+  display:flex !important;
+}
+
+#${ROMI_ID} .rz-v6-romi-card {
+  width:min(540px,100%) !important;
+  max-height:calc(100dvh - 30px) !important;
+  overflow:auto !important;
+  padding:27px !important;
+  border:1px solid rgba(255,255,255,.11) !important;
+  border-radius:27px !important;
+  background:linear-gradient(150deg,#191026,#090710 78%) !important;
+  box-shadow:0 35px 120px rgba(0,0,0,.65) !important;
+  color:#fff !important;
+  text-align:center !important;
+}
+
+#${ROMI_ID} .rz-v6-romi-logo {
+  width:108px !important;
+  height:108px !important;
+  display:block !important;
+  margin:0 auto 18px !important;
+  object-fit:cover !important;
+  border-radius:28px !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  box-shadow:0 18px 50px rgba(111,66,232,.35) !important;
+}
+
+#${ROMI_ID} h2 {
+  margin:0 !important;
+  font-size:32px !important;
+  letter-spacing:-.04em !important;
+}
+
+#${ROMI_ID} .rz-v6-handle {
+  margin-top:6px !important;
+  color:rgba(255,255,255,.55) !important;
+}
+
+#${ROMI_ID} .rz-v6-bio {
+  margin:18px auto 22px !important;
+  max-width:470px !important;
+  line-height:1.7 !important;
+  color:rgba(255,255,255,.72) !important;
+}
+
+#${ROMI_ID} .rz-v6-actions {
+  display:flex !important;
+  justify-content:center !important;
+  flex-wrap:wrap !important;
+  gap:10px !important;
+}
+
+#${ROMI_ID} .rz-v6-action {
+  min-height:46px !important;
+  padding:0 17px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border-radius:14px !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  background:rgba(255,255,255,.05) !important;
+  color:#fff !important;
+  font:inherit !important;
+  font-weight:700 !important;
+  text-decoration:none !important;
+  cursor:pointer !important;
+}
+
+#${ROMI_ID} .rz-v6-action.primary {
+  background:linear-gradient(135deg,#7b38ed,#c45cff) !important;
+  border-color:transparent !important;
+}
+
+@media (max-width:700px) {
+  #${HUB_ID} .rz-v6-grid {
+    grid-template-columns:1fr !important;
+  }
+
+  #${HUB_ID} .rz-v6-hub-card {
+    padding:18px !important;
+    border-radius:22px !important;
+  }
+
+  #${ROMI_ID} .rz-v6-romi-card {
+    padding:21px !important;
+    border-radius:22px !important;
+  }
+}
+`;
+
+    document.head.appendChild(style);
+  }
+
+  function cleanLegacyNodes() {
+    var selectors = [
+      "#rzRizoraMobileDrawerV5",
+      "#rzCompleteFab",
+      "#rzProductHub",
+      ".rz-runtime-launch",
+      ".rz-id-launchers",
+      "[data-rz-hub-launch]",
+      "[data-rz-hub-nav]",
+      "#rzCompleteExperienceOverlay",
+      "#rzCompleteMeetModal",
+      "#rizoraMeetRomiModalV2"
+    ];
+
+    selectors.forEach(function (selector) {
+      document.querySelectorAll(selector).forEach(function (el) {
+        el.style.setProperty(
+          "display",
+          "none",
+          "important"
+        );
+      });
+    });
+
+    document.querySelectorAll(
+      ".mobile-menu"
+    ).forEach(function (el) {
+      if (el.id !== DRAWER_ID) {
+        el.style.setProperty(
+          "display",
+          "none",
+          "important"
+        );
+      }
+    });
+
+    document.querySelectorAll(
+      "#rzHamburgerButton,.menuBtn,[data-rizora-menu]"
+    ).forEach(function (el) {
+      el.style.setProperty(
+        "display",
+        "none",
+        "important"
+      );
+    });
+  }
+
+  function syncVerification() {
+    var guest = !loggedIn();
+
+    document.querySelectorAll(
+      '[data-view="verification"]'
+    ).forEach(function (el) {
+      el.style.setProperty(
+        "display",
+        "none",
+        "important"
+      );
+    });
+
+    var verificationSection =
+      document.getElementById(
+        "verification"
+      );
+
+    if (verificationSection) {
+      if (guest) {
+        verificationSection.style.setProperty(
+          "display",
+          "none",
+          "important"
+        );
+      } else {
+        verificationSection.style.removeProperty(
+          "display"
+        );
+      }
+    }
+
+    var launcherParent =
+      document.querySelector(
+        ".rz-id-launchers"
+      );
+
+    if (launcherParent) {
+      launcherParent.style.setProperty(
+        "display",
+        "none",
+        "important"
+      );
+    }
+
+    var modal =
+      document.getElementById(
+        "rzVerificationModal"
+      );
+
+    if (guest && modal) {
+      modal.classList.remove("open");
+      modal.setAttribute(
+        "aria-hidden",
+        "true"
+      );
+    }
+  }
+
+  function createHamburger() {
+    var existing =
+      document.getElementById(
+        HAMBURGER_ID
+      );
+
+    if (existing) {
+      return existing;
+    }
+
+    var button =
+      document.createElement("button");
+
+    button.id =
+      HAMBURGER_ID;
+
+    button.type =
+      "button";
+
+    button.setAttribute(
+      "aria-label",
+      "Open RIZORA menu"
+    );
+
+    button.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+    button.innerHTML =
+      "<span></span>" +
+      "<span></span>" +
+      "<span></span>";
+
+    button.addEventListener(
+      "click",
+      function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleDrawer();
+      }
+    );
+
+    document.body.appendChild(
+      button
+    );
+
+    return button;
+  }
+
+  function addDrawerButton(
+    parent,
+    label,
+    fn
+  ) {
+    var button =
+      document.createElement("button");
+
+    button.type =
+      "button";
+
+    button.textContent =
+      label;
+
+    button.addEventListener(
+      "click",
+      function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        closeDrawer();
+
+        setTimeout(
+          function () {
+            try {
+              fn();
+            } catch (e) {}
+          },
+          25
+        );
+      }
+    );
+
+    parent.appendChild(
+      button
+    );
+  }
+
+  function buildDrawer() {
+    var drawer =
+      document.getElementById(
+        DRAWER_ID
+      );
+
+    if (drawer) {
+      return drawer;
+    }
+
+    drawer =
+      document.createElement("div");
+
+    drawer.id =
+      DRAWER_ID;
+
+    drawer.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+    var title =
+      document.createElement("div");
+
+    title.className =
+      "rz-v6-title";
+
+    title.textContent =
+      "RIZORA";
+
+    drawer.appendChild(
+      title
+    );
+
+    addDrawerButton(
+      drawer,
+      "Home",
+      function () {
+        if (loggedIn()) {
+          safe(window.navigate, "home");
+        } else {
+          safe(window.openAuth, "login");
+        }
+      }
+    );
+
+    addDrawerButton(
+      drawer,
+      "Missions",
+      function () {
+        if (loggedIn()) {
+          safe(window.navigate, "missions");
+        } else {
+          safe(window.openAuth, "login");
+        }
+      }
+    );
+
+    addDrawerButton(
+      drawer,
+      "Studio",
+      function () {
+        if (loggedIn()) {
+          safe(window.navigate, "studio");
+        } else {
+          safe(window.openAuth, "login");
+        }
+      }
+    );
+
+    addDrawerButton(
+      drawer,
+      "RIZORA AI",
+      function () {
+        if (loggedIn()) {
+          safe(window.navigate, "ai");
+        } else {
+          safe(window.openAuth, "login");
+        }
+      }
+    );
+
+    addDrawerButton(
+      drawer,
+      "Profile",
+      function () {
+        if (loggedIn()) {
+          safe(window.navigate, "profile");
+        } else {
+          safe(window.openAuth, "login");
+        }
+      }
+    );
+
+    var line =
+      document.createElement("div");
+
+    line.className =
+      "rz-v6-line";
+
+    drawer.appendChild(
+      line
+    );
+
+    addDrawerButton(
+      drawer,
+      "RIZORA Hub",
+      function () {
+        openHub();
+      }
+    );
+
+    addDrawerButton(
+      drawer,
+      "Meet RoMi",
+      function () {
+        openMeetRomi();
+      }
+    );
+
+    addDrawerButton(
+      drawer,
+      "Verification",
+      function () {
+        if (!loggedIn()) {
+          safe(
+            window.openAuth,
+            "login"
+          );
+          return;
+        }
+
+        safe(
+          window.navigate,
+          "verification"
+        );
+      }
+    );
+
+    addDrawerButton(
+      drawer,
+      "Install RIZORA",
+      function () {
+        safe(
+          window.installRIZORA
+        );
+      }
+    );
+
+    var line2 =
+      document.createElement("div");
+
+    line2.className =
+      "rz-v6-line";
+
+    drawer.appendChild(
+      line2
+    );
+
+    addDrawerButton(
+      drawer,
+      "Log in",
+      function () {
+        safe(
+          window.openAuth,
+          "login"
+        );
+      }
+    );
+
+    addDrawerButton(
+      drawer,
+      "Join RIZORA",
+      function () {
+        safe(
+          window.openAuth,
+          "signup"
+        );
+      }
+    );
+
+    addDrawerButton(
+      drawer,
+      "Log out",
+      function () {
+        safe(
+          window.logout
+        );
+      }
+    );
+
+    document.body.appendChild(
+      drawer
+    );
+
+    return drawer;
+  }
+
+  function refreshDrawer() {
+    var drawer =
+      document.getElementById(
+        DRAWER_ID
+      );
+
+    if (!drawer) {
+      return;
+    }
+
+    drawer.querySelectorAll(
+      "button"
+    ).forEach(function (button) {
+
+      var text =
+        (button.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      if (
+        text === "Log in" ||
+        text === "Join RIZORA"
+      ) {
+        button.style.display =
+          loggedIn()
+            ? "none"
+            : "flex";
+      }
+
+      if (
+        text === "Log out" ||
+        text === "Profile" ||
+        text === "Missions" ||
+        text === "Studio" ||
+        text === "RIZORA AI"
+      ) {
+        if (
+          text === "Log out"
+        ) {
+          button.style.display =
+            loggedIn()
+              ? "flex"
+              : "none";
+        } else {
+          button.style.display =
+            "flex";
+        }
+      }
+
+      if (
+        text === "Verification"
+      ) {
+        button.style.display =
+          loggedIn()
+            ? "flex"
+            : "none";
+      }
+    });
+  }
+
+  function openDrawer() {
+    var drawer =
+      buildDrawer();
+
+    cleanLegacyNodes();
+    refreshDrawer();
+
+    drawer.classList.add(
+      "open"
+    );
+
+    drawer.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+    document.documentElement.style.overflow =
+      "hidden";
+
+    var button =
+      document.getElementById(
+        HAMBURGER_ID
+      );
+
+    if (button) {
+      button.setAttribute(
+        "aria-expanded",
+        "true"
+      );
+
+      button.setAttribute(
+        "aria-label",
+        "Close RIZORA menu"
+      );
+    }
+  }
+
+  function closeDrawer() {
+    var drawer =
+      document.getElementById(
+        DRAWER_ID
+      );
+
+    if (drawer) {
+      drawer.classList.remove(
+        "open"
+      );
+
+      drawer.setAttribute(
+        "aria-hidden",
+        "true"
+      );
+    }
+
+    document.documentElement.style.overflow =
+      "";
+
+    var button =
+      document.getElementById(
+        HAMBURGER_ID
+      );
+
+    if (button) {
+      button.setAttribute(
+        "aria-expanded",
+        "false"
+      );
+
+      button.setAttribute(
+        "aria-label",
+        "Open RIZORA menu"
+      );
+    }
+  }
+
+  function toggleDrawer() {
+    var drawer =
+      document.getElementById(
+        DRAWER_ID
+      );
+
+    if (
+      drawer &&
+      drawer.classList.contains(
+        "open"
+      )
+    ) {
+      closeDrawer();
+    } else {
+      openDrawer();
+    }
+  }
+
+  function openMeetRomi() {
+    var old1 =
+      document.getElementById(
+        "rzCompleteMeetModal"
+      );
+
+    var old2 =
+      document.getElementById(
+        "rizoraMeetRomiModalV2"
+      );
+
+    if (old1) {
+      old1.remove();
+    }
+
+    if (old2) {
+      old2.remove();
+    }
+
+    var modal =
+      document.getElementById(
+        ROMI_ID
+      );
+
+    if (!modal) {
+      modal =
+        document.createElement(
+          "div"
+        );
+
+      modal.id =
+        ROMI_ID;
+
+      modal.innerHTML =
+        '<div class="rz-v6-romi-card">' +
+          '<img ' +
+            'class="rz-v6-romi-logo" ' +
+            'src="/rizora-cover.png" ' +
+            'alt="RIZORA logo"' +
+          '>' +
+          '<div class="rz-v6-eyebrow">' +
+            'THE CREATOR BEHIND RIZORA' +
+          '</div>' +
+          '<h2>RoMi</h2>' +
+          '<div class="rz-v6-handle">@romi</div>' +
+          '<div class="rz-v6-bio">' +
+            'Artist. Developer. Creator. Builder. ' +
+            'Creator of RIZORA.' +
+          '</div>' +
+          '<div class="rz-v6-actions">' +
+            '<a ' +
+              'class="rz-v6-action primary" ' +
+              'href="https://www.tiktok.com/@romi.noir" ' +
+              'target="_blank" ' +
+              'rel="noopener noreferrer"' +
+            '>' +
+              'Visit @romi.noir' +
+            '</a>' +
+            '<button ' +
+              'type="button" ' +
+              'class="rz-v6-action" ' +
+              'data-rz-v6-close-romi' +
+            '>' +
+              'Close' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(
+        modal
+      );
+
+      modal.addEventListener(
+        "click",
+        function (event) {
+
+          if (
+            event.target === modal ||
+            (
+              event.target.closest &&
+              event.target.closest(
+                "[data-rz-v6-close-romi]"
+              )
+            )
+          ) {
+            modal.classList.remove(
+              "open"
+            );
+          }
+        }
+      );
+    }
+
+    modal.classList.add(
+      "open"
+    );
+  }
+
+  function closeHub() {
+    var hub =
+      document.getElementById(
+        HUB_ID
+      );
+
+    if (hub) {
+      hub.classList.remove(
+        "open"
+      );
+    }
+  }
+
+  function hubNavigation(
+    view
+  ) {
+    closeHub();
+
+    setTimeout(
+      function () {
+        if (
+          [
+            "home",
+            "missions",
+            "studio",
+            "ai",
+            "profile",
+            "referrals",
+            "support",
+            "verification"
+          ].indexOf(view) !== -1 &&
+          !loggedIn()
+        ) {
+          safe(
+            window.openAuth,
+            "login"
+          );
+          return;
+        }
+
+        safe(
+          window.navigate,
+          view
+        );
+      },
+      25
+    );
+  }
+
+  function addFeature(
+    parent,
+    title,
+    description,
+    view,
+    primary
+  ) {
+    var button =
+      document.createElement(
+        "button"
+      );
+
+    button.type =
+      "button";
+
+    button.className =
+      "rz-v6-feature" +
+      (
+        primary
+          ? " primary"
+          : ""
+      );
+
+    button.innerHTML =
+      "<strong>" +
+      title +
+      "</strong>" +
+      "<span>" +
+      description +
+      "</span>";
+
+    button.addEventListener(
+      "click",
+      function () {
+        if (
+          view === "meet"
+        ) {
+          closeHub();
+          openMeetRomi();
+          return;
+        }
+
+        if (
+          view === "install"
+        ) {
+          closeHub();
+          safe(
+            window.installRIZORA
+          );
+          return;
+        }
+
+        hubNavigation(
+          view
+        );
+      }
+    );
+
+    parent.appendChild(
+      button
+    );
+  }
+
+  function openHub() {
+    closeDrawer();
+
+    var hub =
+      document.getElementById(
+        HUB_ID
+      );
+
+    if (!hub) {
+      hub =
+        document.createElement(
+          "div"
+        );
+
+      hub.id =
+        HUB_ID;
+
+      hub.innerHTML =
+        '<div class="rz-v6-hub-card">' +
+          '<div class="rz-v6-hub-head">' +
+            '<div>' +
+              '<div class="rz-v6-eyebrow">' +
+                'RIZORA CREATOR OS' +
+              '</div>' +
+              '<h2>RIZORA Hub</h2>' +
+              '<p>' +
+                'Your clean launchpad for the RIZORA ecosystem.' +
+              '</p>' +
+            '</div>' +
+            '<button ' +
+              'type="button" ' +
+              'class="rz-v6-close" ' +
+              'data-rz-v6-close-hub' +
+            '>' +
+              '×' +
+            '</button>' +
+          '</div>' +
+
+          '<div ' +
+            'class="rz-v6-grid" ' +
+            'id="rzV6HubGrid"' +
+          '></div>' +
+
+          '<div class="rz-v6-account">' +
+            '<img ' +
+              'class="rz-v6-logo" ' +
+              'src="/rizora-cover.png" ' +
+              'alt="RIZORA"' +
+            '>' +
+            '<div style="flex:1;min-width:0">' +
+              '<strong>RIZORA</strong>' +
+              '<div style="margin-top:4px;color:rgba(255,255,255,.55);font-size:12px">' +
+                'Create. Grow. Earn.' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+        '</div>';
+
+      document.body.appendChild(
+        hub
+      );
+
+      hub.addEventListener(
+        "click",
+        function (event) {
+          if (
+            event.target === hub ||
+            (
+              event.target.closest &&
+              event.target.closest(
+                "[data-rz-v6-close-hub]"
+              )
+            )
+          ) {
+            closeHub();
+          }
+        }
+      );
+
+      var grid =
+        document.getElementById(
+          "rzV6HubGrid"
+        );
+
+      addFeature(
+        grid,
+        "Home",
+        "Your main RIZORA workspace.",
+        "home",
+        true
+      );
+
+      addFeature(
+        grid,
+        "Identity / Profile",
+        "Creator profile and public presence.",
+        "profile",
+        true
+      );
+
+      addFeature(
+        grid,
+        "Missions",
+        "Complete growth actions and earn points.",
+        "missions",
+        false
+      );
+
+      addFeature(
+        grid,
+        "Studio",
+        "Creator analysis, ideas and growth tools.",
+        "studio",
+        false
+      );
+
+      addFeature(
+        grid,
+        "RIZORA AI",
+        "Contextual creator intelligence.",
+        "ai",
+        true
+      );
+
+      addFeature(
+        grid,
+        "Referrals",
+        "Invite creators and track rewards.",
+        "referrals",
+        false
+      );
+
+      addFeature(
+        grid,
+        "Help Center",
+        "Send support messages to RIZORA.",
+        "support",
+        false
+      );
+
+      addFeature(
+        grid,
+        "Verification",
+        "Available after you sign in.",
+        "verification",
+        false
+      );
+
+      addFeature(
+        grid,
+        "Meet RoMi",
+        "Meet the creator behind RIZORA.",
+        "meet",
+        true
+      );
+
+      addFeature(
+        grid,
+        "Install RIZORA",
+        "Install RIZORA on your device.",
+        "install",
+        false
+      );
+    }
+
+    hub.classList.add(
+      "open"
+    );
+
+    hub.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+  }
+
+  function createDesktopHubButton() {
+    var nav =
+      document.querySelector(
+        ".navright"
+      );
+
+    if (!nav) {
+      return;
+    }
+
+    var existing =
+      document.getElementById(
+        "rzV6DesktopHub"
+      );
+
+    if (existing) {
+      return;
+    }
+
+    var button =
+      document.createElement(
+        "button"
+      );
+
+    button.id =
+      "rzV6DesktopHub";
+
+    button.type =
+      "button";
+
+    button.className =
+      "btn ghost";
+
+    button.textContent =
+      "RIZORA Hub";
+
+    button.addEventListener(
+      "click",
+      function () {
+        openHub();
+      }
+    );
+
+    nav.insertBefore(
+      button,
+      nav.firstChild
+    );
+  }
+
+  function interceptClicks() {
+    document.addEventListener(
+      "click",
+      function (event) {
+
+        var target =
+          event.target;
+
+        if (
+          !target ||
+          !target.closest
+        ) {
+          return;
+        }
+
+        var text =
+          (target.textContent || "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        if (
+          text === "Meet RoMi"
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          openMeetRomi();
+          return;
+        }
+
+        if (
+          text === "RIZORA Hub" ||
+          text === "Hub"
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          openHub();
+          return;
+        }
+
+        var verification =
+          target.closest(
+            '[data-view="verification"]'
+          );
+
+        if (verification) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+
+          if (!loggedIn()) {
+            safe(
+              window.openAuth,
+              "login"
+            );
+          } else {
+            safe(
+              window.navigate,
+              "verification"
+            );
+          }
+        }
+      },
+      true
+    );
+
+    document.addEventListener(
+      "keydown",
+      function (event) {
+        if (event.key === "Escape") {
+          closeDrawer();
+          closeHub();
+
+          var romi =
+            document.getElementById(
+              ROMI_ID
+            );
+
+          if (romi) {
+            romi.classList.remove(
+              "open"
+            );
+          }
+        }
+      },
+      true
+    );
+  }
+
+  function sync() {
+    ensureStyle();
+    cleanLegacyNodes();
+    syncVerification();
+    createHamburger();
+    buildDrawer();
+    createDesktopHubButton();
+    refreshDrawer();
+
+    var button =
+      document.getElementById(
+        HAMBURGER_ID
+      );
+
+    if (button) {
+      button.style.display =
+        window.innerWidth <= 900
+          ? "flex"
+          : "none";
+    }
+  }
+
+  window.rizoraCleanHubV6 =
+    openHub;
+
+  window.rizoraCleanMeetRomiV6 =
+    openMeetRomi;
+
+  window.rizoraCleanMobileV6 =
+    openDrawer;
+
+  function start() {
+    sync();
+    interceptClicks();
+
+    new MutationObserver(
+      function () {
+        sync();
+      }
+    ).observe(
+      document.body,
+      {
+        childList:true,
+        subtree:true
+      }
+    );
+
+    window.addEventListener(
+      "resize",
+      sync,
+      { passive:true }
+    );
+  }
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+    document.addEventListener(
+      "DOMContentLoaded",
+      start,
+      { once:true }
+    );
+  } else {
+    start();
+  }
+
+})();
+
+</script>
 </body>
 </html>
