@@ -11993,5 +11993,397 @@ document.addEventListener(
 
 })();
 </script>
+
+
+<!-- RIZORA MEET ROMI V2 -->
+<script id="RIZORA_MEET_ROMI_V2_SCRIPT">
+﻿(function () {
+  "use strict";
+
+  if (window.RIZORA_MEET_ROMI_V2) {
+    return;
+  }
+
+  window.RIZORA_MEET_ROMI_V2 = true;
+
+  var MODAL_ID = "rizoraMeetRomiModalV2";
+  var STYLE_ID = "rizoraMeetRomiStyleV2";
+
+  function esc(value) {
+    value = value == null ? "" : String(value);
+
+    if (typeof window.escapeHtml === "function") {
+      try {
+        return window.escapeHtml(value);
+      } catch (e) {}
+    }
+
+    return value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function ensureStyle() {
+    if (document.getElementById(STYLE_ID)) {
+      return;
+    }
+
+    var style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = [
+      "#rizoraMeetRomiModalV2{",
+      "position:fixed;",
+      "inset:0;",
+      "z-index:2147483000;",
+      "display:none;",
+      "align-items:center;",
+      "justify-content:center;",
+      "padding:20px;",
+      "background:rgba(3,2,12,.82);",
+      "backdrop-filter:blur(18px);",
+      "-webkit-backdrop-filter:blur(18px);",
+      "}",
+
+      "#rizoraMeetRomiModalV2.rzmr-open{display:flex;}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-card{",
+      "width:min(560px,100%);",
+      "max-height:min(760px,calc(100vh - 40px));",
+      "overflow:auto;",
+      "border:1px solid rgba(255,255,255,.10);",
+      "border-radius:28px;",
+      "background:linear-gradient(180deg,rgba(30,18,55,.98),rgba(10,8,22,.98));",
+      "box-shadow:0 30px 100px rgba(0,0,0,.55);",
+      "padding:28px;",
+      "position:relative;",
+      "color:#fff;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-close{",
+      "position:absolute;",
+      "right:16px;",
+      "top:16px;",
+      "width:40px;",
+      "height:40px;",
+      "border-radius:50%;",
+      "border:1px solid rgba(255,255,255,.10);",
+      "background:rgba(255,255,255,.06);",
+      "color:#fff;",
+      "font-size:20px;",
+      "cursor:pointer;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-avatar{",
+      "width:88px;",
+      "height:88px;",
+      "border-radius:28px;",
+      "display:grid;",
+      "place-items:center;",
+      "margin-bottom:18px;",
+      "background:radial-gradient(circle at 30% 20%,#b46cff,#6f22c9 45%,#21083f 100%);",
+      "border:1px solid rgba(255,255,255,.14);",
+      "font-size:30px;",
+      "font-weight:800;",
+      "letter-spacing:.04em;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-kicker{",
+      "font-size:12px;",
+      "text-transform:uppercase;",
+      "letter-spacing:.16em;",
+      "opacity:.62;",
+      "margin-bottom:8px;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 h2{",
+      "margin:0;",
+      "font-size:32px;",
+      "line-height:1.05;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-handle{",
+      "margin-top:8px;",
+      "opacity:.72;",
+      "font-size:15px;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-bio{",
+      "margin:18px 0 20px;",
+      "font-size:16px;",
+      "line-height:1.7;",
+      "opacity:.88;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-tags{",
+      "display:flex;",
+      "flex-wrap:wrap;",
+      "gap:8px;",
+      "margin-bottom:22px;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-tag{",
+      "padding:8px 11px;",
+      "border-radius:999px;",
+      "background:rgba(255,255,255,.06);",
+      "border:1px solid rgba(255,255,255,.08);",
+      "font-size:12px;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-actions{",
+      "display:flex;",
+      "flex-wrap:wrap;",
+      "gap:10px;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-btn{",
+      "display:inline-flex;",
+      "align-items:center;",
+      "justify-content:center;",
+      "gap:8px;",
+      "min-height:46px;",
+      "padding:0 17px;",
+      "border-radius:14px;",
+      "border:1px solid rgba(255,255,255,.10);",
+      "background:rgba(255,255,255,.06);",
+      "color:#fff;",
+      "text-decoration:none;",
+      "cursor:pointer;",
+      "font:inherit;",
+      "font-weight:700;",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-primary{",
+      "background:linear-gradient(135deg,#8b3dff,#6820c9);",
+      "border-color:rgba(255,255,255,.18);",
+      "}",
+
+      "#rizoraMeetRomiModalV2 .rzmr-note{",
+      "margin-top:18px;",
+      "padding:13px 14px;",
+      "border-radius:14px;",
+      "background:rgba(255,255,255,.035);",
+      "border:1px solid rgba(255,255,255,.06);",
+      "font-size:12px;",
+      "line-height:1.6;",
+      "opacity:.65;",
+      "}",
+
+      "@media(max-width:560px){",
+      "#rizoraMeetRomiModalV2{padding:10px;}",
+      "#rizoraMeetRomiModalV2 .rzmr-card{padding:22px;border-radius:24px;}",
+      "#rizoraMeetRomiModalV2 h2{font-size:28px;}",
+      "#rizoraMeetRomiModalV2 .rzmr-actions{flex-direction:column;}",
+      "#rizoraMeetRomiModalV2 .rzmr-btn{width:100%;}",
+      "}"
+    ].join("");
+
+    document.head.appendChild(style);
+  }
+
+  function getModal() {
+    var existing = document.getElementById(MODAL_ID);
+    if (existing) {
+      return existing;
+    }
+
+    ensureStyle();
+
+    var wrap = document.createElement("div");
+    wrap.id = MODAL_ID;
+    wrap.setAttribute("aria-hidden", "true");
+
+    wrap.innerHTML = [
+      "<div class='rzmr-card' role='dialog' aria-modal='true' aria-label='Meet RoMi'>",
+        "<button class='rzmr-close' type='button' data-rzmr-close aria-label='Close'>×</button>",
+        "<div class='rzmr-avatar'>R</div>",
+        "<div class='rzmr-kicker'>THE CREATOR BEHIND RIZORA</div>",
+        "<h2>RoMi</h2>",
+        "<div class='rzmr-handle'>@romi</div>",
+        "<div class='rzmr-bio'>",
+          "Artist. Developer. Creator. Builder. Creator of RIZORA.",
+          " RoMi is building RIZORA as a creator ecosystem for identity, growth, tools, intelligence and opportunities.",
+        "</div>",
+        "<div class='rzmr-tags'>",
+          "<span class='rzmr-tag'>Artist</span>",
+          "<span class='rzmr-tag'>Developer</span>",
+          "<span class='rzmr-tag'>Creator</span>",
+          "<span class='rzmr-tag'>Builder</span>",
+        "</div>",
+        "<div class='rzmr-actions'>",
+          "<a class='rzmr-btn rzmr-primary' href='https://www.tiktok.com/@romi.noir' target='_blank' rel='noopener noreferrer'>",
+            "Visit @romi.noir",
+          "</a>",
+          "<button class='rzmr-btn' type='button' data-rzmr-hub>Open RIZORA Hub</button>",
+          "<button class='rzmr-btn' type='button' data-rzmr-close>Close</button>",
+        "</div>",
+        "<div class='rzmr-note'>",
+          "RIZORA is being built by RoMi as a web-first creator platform.",
+        "</div>",
+      "</div>"
+    ].join("");
+
+    document.body.appendChild(wrap);
+
+    wrap.addEventListener("click", function (event) {
+      if (event.target === wrap) {
+        closeMeetRomi();
+      }
+    });
+
+    return wrap;
+  }
+
+  function openMeetRomi() {
+    var modal = getModal();
+
+    modal.classList.add("rzmr-open");
+    modal.setAttribute("aria-hidden", "false");
+
+    document.documentElement.style.overflow = "hidden";
+
+    var closeButton = modal.querySelector("[data-rzmr-close]");
+    if (closeButton) {
+      setTimeout(function () {
+        try {
+          closeButton.focus();
+        } catch (e) {}
+      }, 20);
+    }
+  }
+
+  function closeMeetRomi() {
+    var modal = document.getElementById(MODAL_ID);
+
+    if (modal) {
+      modal.classList.remove("rzmr-open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    document.documentElement.style.overflow = "";
+  }
+
+  function goToHub() {
+    closeMeetRomi();
+
+    if (typeof window.openRizoraUniverse === "function") {
+      try {
+        window.openRizoraUniverse();
+        return;
+      } catch (e) {}
+    }
+
+    var hubButton = document.querySelector(
+      "[data-rizora-hub], #rzRizoraHubLauncher, [data-rizora-open-hub]"
+    );
+
+    if (hubButton) {
+      try {
+        hubButton.click();
+        return;
+      } catch (e) {}
+    }
+
+    if (typeof window.toast === "function") {
+      window.toast("RIZORA Hub is available from the main navigation.");
+    }
+  }
+
+  function decorateButtons() {
+    var candidates = document.querySelectorAll(
+      "button, a, [role='button'], [tabindex]"
+    );
+
+    for (var i = 0; i < candidates.length; i++) {
+      var el = candidates[i];
+      if (!el || !el.textContent) {
+        continue;
+      }
+
+      var text = el.textContent.replace(/\s+/g, " ").trim();
+
+      if (
+        text === "Meet RoMi" ||
+        text === "Meet RoMi ↗" ||
+        text === "Meet RoMi →"
+      ) {
+        el.setAttribute("data-rizora-meet-romi", "true");
+        el.setAttribute("aria-haspopup", "dialog");
+      }
+    }
+  }
+
+  window.meetRomi = openMeetRomi;
+  window.openMeetRomi = openMeetRomi;
+  window.closeMeetRomi = closeMeetRomi;
+
+  document.addEventListener(
+    "click",
+    function (event) {
+      var target = event.target;
+
+      if (!target || !target.closest) {
+        return;
+      }
+
+      var close = target.closest("[data-rzmr-close]");
+      if (close) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeMeetRomi();
+        return;
+      }
+
+      var hub = target.closest("[data-rzmr-hub]");
+      if (hub) {
+        event.preventDefault();
+        event.stopPropagation();
+        goToHub();
+        return;
+      }
+
+      var meet = target.closest("[data-rizora-meet-romi]");
+      if (meet) {
+        event.preventDefault();
+        event.stopPropagation();
+        openMeetRomi();
+      }
+    },
+    true
+  );
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+      if (event.key === "Escape") {
+        closeMeetRomi();
+      }
+    },
+    true
+  );
+
+  var observer = new MutationObserver(function () {
+    decorateButtons();
+  });
+
+  function start() {
+    decorateButtons();
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
+})();
+
+</script>
 </body>
 </html>
