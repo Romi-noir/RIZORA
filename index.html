@@ -2426,6 +2426,794 @@ function profileView() {
   `);
 }
 
+
+async function renderCreatorProfileV3() {
+
+  showLoading("Opening creator profile...");
+
+  const results = await Promise.allSettled([
+    api("/api/creator/profile"),
+    api("/api/creator/analytics"),
+    api("/api/verification/me")
+  ]);
+
+  const profileResult =
+    results[0] &&
+    results[0].status === "fulfilled"
+      ? results[0].value || {}
+      : {};
+
+  const analyticsResult =
+    results[1] &&
+    results[1].status === "fulfilled"
+      ? results[1].value || {}
+      : {};
+
+  const verificationResult =
+    results[2] &&
+    results[2].status === "fulfilled"
+      ? results[2].value || {}
+      : {};
+
+  const p =
+    profileResult.profile || {};
+
+  const a =
+    analyticsResult || {};
+
+  const u =
+    state.user || {};
+
+  const verified =
+    verificationResult.verified === true ||
+    verificationResult.isVerified === true ||
+    verificationResult.status === "verified" ||
+    verificationResult.verificationStatus === "verified" ||
+    p.verified === true ||
+    p.isVerified === true ||
+    u.verified === true ||
+    u.isVerified === true;
+
+  const name =
+    p.displayName ||
+    p.display_name ||
+    p.name ||
+    u.displayName ||
+    u.display_name ||
+    u.name ||
+    u.username ||
+    "RIZORA Creator";
+
+  const username =
+    p.username ||
+    p.handle ||
+    u.username ||
+    "";
+
+  const bio =
+    p.bio ||
+    p.description ||
+    "Build your identity. Grow your presence.";
+
+  const category =
+    p.category ||
+    p.niche ||
+    p.creatorType ||
+    "";
+
+  const followersRaw =
+    p.followers ??
+    p.followersCount ??
+    p.followerCount ??
+    a.followers ??
+    a.followersCount ??
+    a.followerCount ??
+    u.followers ??
+    u.followersCount;
+
+  const likesRaw =
+    p.likes ??
+    p.likesCount ??
+    p.totalLikes ??
+    p.likesReceived ??
+    a.likes ??
+    a.likesCount ??
+    a.totalLikes ??
+    a.likesReceived ??
+    u.likes ??
+    u.likesCount;
+
+  const followingRaw =
+    p.following ??
+    p.followingCount ??
+    a.following ??
+    a.followingCount ??
+    u.following ??
+    u.followingCount;
+
+  const followers =
+    Number.isFinite(Number(followersRaw))
+      ? Number(followersRaw)
+      : null;
+
+  const likes =
+    Number.isFinite(Number(likesRaw))
+      ? Number(likesRaw)
+      : null;
+
+  const following =
+    Number.isFinite(Number(followingRaw))
+      ? Number(followingRaw)
+      : null;
+
+  const postsRaw =
+    a.totalPosts ??
+    a.posts ??
+    p.totalPosts ??
+    p.postCount;
+
+  const videosRaw =
+    a.totalVideos ??
+    a.videos ??
+    p.totalVideos ??
+    p.videoCount;
+
+  const seriesRaw =
+    a.totalSeries ??
+    a.series ??
+    p.totalSeries ??
+    p.seriesCount;
+
+  const posts =
+    Number.isFinite(Number(postsRaw))
+      ? Number(postsRaw)
+      : null;
+
+  const videos =
+    Number.isFinite(Number(videosRaw))
+      ? Number(videosRaw)
+      : null;
+
+  const series =
+    Number.isFinite(Number(seriesRaw))
+      ? Number(seriesRaw)
+      : null;
+
+  const avatar =
+    p.avatarUrl ||
+    p.avatar ||
+    p.photoURL ||
+    p.photoUrl ||
+    u.avatarUrl ||
+    u.avatar ||
+    u.photoURL ||
+    "";
+
+  function numberText(value) {
+    return value === null
+      ? "—"
+      : Number(value).toLocaleString();
+  }
+
+  function getInitials() {
+
+    const source =
+      String(
+        name ||
+        username ||
+        "RIZORA"
+      ).trim();
+
+    const parts =
+      source.split(/\s+/);
+
+    if (parts.length > 1) {
+
+      return (
+        parts[0].charAt(0) +
+        parts[1].charAt(0)
+      ).toUpperCase();
+
+    }
+
+    return source
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
+  function nextThreshold(value, thresholds) {
+
+    if (value === null) {
+      return null;
+    }
+
+    for (const threshold of thresholds) {
+
+      if (value < threshold) {
+        return threshold;
+      }
+
+    }
+
+    return null;
+  }
+
+  function progressValue(value, thresholds) {
+
+    if (value === null) {
+      return 0;
+    }
+
+    const next =
+      nextThreshold(
+        value,
+        thresholds
+      );
+
+    if (next === null) {
+      return 100;
+    }
+
+    const index =
+      thresholds.indexOf(next);
+
+    const previous =
+      index <= 0
+        ? 0
+        : thresholds[index - 1];
+
+    const span =
+      next - previous;
+
+    if (!span) {
+      return 0;
+    }
+
+    return Math.max(
+      0,
+      Math.min(
+        100,
+        ((value - previous) / span) * 100
+      )
+    );
+  }
+
+  const followerThresholds = [
+    100,
+    250,
+    500,
+    1000,
+    2500,
+    5000,
+    10000
+  ];
+
+  const likeThresholds = [
+    500,
+    2500,
+    10000,
+    50000
+  ];
+
+  const nextFollowers =
+    nextThreshold(
+      followers,
+      followerThresholds
+    );
+
+  const nextLikes =
+    nextThreshold(
+      likes,
+      likeThresholds
+    );
+
+  const followerProgress =
+    progressValue(
+      followers,
+      followerThresholds
+    );
+
+  const likeProgress =
+    progressValue(
+      likes,
+      likeThresholds
+    );
+
+  const avatarMarkup =
+    avatar
+      ? `
+        <img
+          src="${escapeHtml(avatar)}"
+          alt="${escapeHtml(name)} profile picture"
+          loading="lazy"
+        >
+      `
+      : `
+        <span class="rz-profile-avatar-fallback-v2">
+          ${escapeHtml(getInitials())}
+        </span>
+      `;
+
+  const badgeMarkup =
+    verified
+      ? `
+        <span
+          class="rz-verified-badge rz-verified-sm"
+          data-rz-verified="true"
+          aria-label="Verified"
+        ></span>
+      `
+      : "";
+
+  const socials = [];
+
+  const tiktok =
+    p.tiktok ||
+    p.tiktokUrl ||
+    p.socialLinks?.tiktok ||
+    "";
+
+  const instagram =
+    p.instagram ||
+    p.instagramUrl ||
+    p.socialLinks?.instagram ||
+    "";
+
+  const xUrl =
+    p.twitter ||
+    p.twitterUrl ||
+    p.xUrl ||
+    p.socialLinks?.twitter ||
+    p.socialLinks?.x ||
+    "";
+
+  const website =
+    p.website ||
+    p.websiteUrl ||
+    p.socialLinks?.website ||
+    "";
+
+  if (tiktok) {
+    socials.push(`
+      <a
+        class="rz-profile-link-v2"
+        href="${escapeHtml(tiktok)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        TikTok
+      </a>
+    `);
+  }
+
+  if (instagram) {
+    socials.push(`
+      <a
+        class="rz-profile-link-v2"
+        href="${escapeHtml(instagram)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Instagram
+      </a>
+    `);
+  }
+
+  if (xUrl) {
+    socials.push(`
+      <a
+        class="rz-profile-link-v2"
+        href="${escapeHtml(xUrl)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        X
+      </a>
+    `);
+  }
+
+  if (website) {
+    socials.push(`
+      <a
+        class="rz-profile-link-v2"
+        href="${escapeHtml(website)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Website
+      </a>
+    `);
+  }
+
+  document.getElementById("app").innerHTML = shell(`
+    <main class="page">
+      <div class="shell">
+
+        <div class="section-title">
+
+          <div>
+            <div class="eyebrow">
+              RIZORA IDENTITY
+            </div>
+
+            <h2 style="margin-top:12px">
+              Your creator profile
+            </h2>
+
+            <p>
+              Identity, audience signals and creator progression.
+            </p>
+          </div>
+
+          <button
+            class="btn ghost"
+            onclick="navigate('studio')"
+          >
+            Edit profile
+          </button>
+
+        </div>
+
+        <section
+          id="rzCreatorProfileV3"
+          class="rz-creator-profile-v2"
+        >
+
+          <div class="rz-profile-head-v2">
+
+            <div class="rz-profile-avatar-v2">
+              ${avatarMarkup}
+            </div>
+
+            <div>
+
+              <div class="rz-profile-name-row-v2">
+
+                <h2 class="rz-profile-name-v2">
+                  ${escapeHtml(name)}
+                </h2>
+
+                ${badgeMarkup}
+
+              </div>
+
+              <div class="rz-profile-username-v2">
+                ${
+                  username
+                    ? "@" +
+                      escapeHtml(
+                        String(username)
+                          .replace(/^@/, "")
+                      )
+                    : ""
+                }
+              </div>
+
+              ${
+                category
+                  ? `
+                    <div class="rz-profile-category-v2">
+                      ${escapeHtml(category)}
+                    </div>
+                  `
+                  : ""
+              }
+
+            </div>
+
+          </div>
+
+          <p class="rz-profile-bio-v2">
+            ${escapeHtml(bio)}
+          </p>
+
+          <div class="rz-profile-stats-v2">
+
+            <div class="rz-profile-stat-v2">
+              <span class="rz-profile-stat-value-v2">
+                ${numberText(followers)}
+              </span>
+              <span class="rz-profile-stat-label-v2">
+                Followers
+              </span>
+            </div>
+
+            <div class="rz-profile-stat-v2">
+              <span class="rz-profile-stat-value-v2">
+                ${numberText(likes)}
+              </span>
+              <span class="rz-profile-stat-label-v2">
+                Likes
+              </span>
+            </div>
+
+            <div class="rz-profile-stat-v2">
+              <span class="rz-profile-stat-value-v2">
+                ${numberText(following)}
+              </span>
+              <span class="rz-profile-stat-label-v2">
+                Following
+              </span>
+            </div>
+
+          </div>
+
+          <div class="rz-profile-actions-v2">
+
+            <button
+              type="button"
+              class="rz-profile-primary-v2"
+              onclick="toast('Follow another creator from their profile.')"
+            >
+              Follow
+            </button>
+
+            <button
+              type="button"
+              onclick="toast('Messaging becomes available from another creator profile.')"
+            >
+              Message
+            </button>
+
+            <button
+              type="button"
+              onclick="toast('Collaboration becomes available from another creator profile.')"
+            >
+              Collaborate
+            </button>
+
+          </div>
+
+          ${
+            socials.length
+              ? `
+                <div class="rz-profile-links-v2">
+                  ${socials.join("")}
+                </div>
+              `
+              : ""
+          }
+
+          <div class="rz-profile-unlock-v2">
+
+            <div class="rz-profile-unlock-title-v2">
+              Follower progression
+            </div>
+
+            <div class="rz-profile-unlock-text-v2">
+              ${
+                followers === null
+                  ? "Live follower analytics are not available yet."
+                  : nextFollowers === null
+                    ? "All current follower milestones reached."
+                    : `${nextFollowers.toLocaleString()} followers is the next creator milestone. ${
+                        (nextFollowers - followers).toLocaleString()
+                      } remaining.`
+              }
+            </div>
+
+            <div class="rz-profile-progress-v2">
+              <div
+                class="rz-profile-progress-bar-v2"
+                style="width:${followerProgress}%"
+              ></div>
+            </div>
+
+          </div>
+
+          <div class="rz-profile-unlock-v2">
+
+            <div class="rz-profile-unlock-title-v2">
+              Like progression
+            </div>
+
+            <div class="rz-profile-unlock-text-v2">
+              ${
+                likes === null
+                  ? "Live like analytics are not available yet."
+                  : nextLikes === null
+                    ? "All current like milestones reached."
+                    : `${nextLikes.toLocaleString()} likes is the next creator milestone. ${
+                        (nextLikes - likes).toLocaleString()
+                      } remaining.`
+              }
+            </div>
+
+            <div class="rz-profile-progress-v2">
+              <div
+                class="rz-profile-progress-bar-v2"
+                style="width:${likeProgress}%"
+              ></div>
+            </div>
+
+          </div>
+
+          <div class="rz-profile-tabs-v2">
+
+            <button
+              type="button"
+              class="rz-profile-tab-v2 is-active"
+              data-rz-v3-tab="posts"
+            >
+              Posts
+            </button>
+
+            <button
+              type="button"
+              class="rz-profile-tab-v2"
+              data-rz-v3-tab="videos"
+            >
+              Videos
+            </button>
+
+            <button
+              type="button"
+              class="rz-profile-tab-v2"
+              data-rz-v3-tab="series"
+            >
+              Series
+            </button>
+
+            <button
+              type="button"
+              class="rz-profile-tab-v2"
+              data-rz-v3-tab="about"
+            >
+              About
+            </button>
+
+          </div>
+
+          <div
+            class="rz-profile-tab-panel-v2"
+            data-rz-v3-panel="posts"
+          >
+            <div class="rz-profile-empty-v2">
+              ${
+                posts !== null && posts > 0
+                  ? `${posts.toLocaleString()} creator posts are connected to your profile data.`
+                  : "No published posts on this profile yet."
+              }
+            </div>
+          </div>
+
+          <div
+            class="rz-profile-tab-panel-v2"
+            data-rz-v3-panel="videos"
+            hidden
+          >
+            <div class="rz-profile-empty-v2">
+              ${
+                videos !== null && videos > 0
+                  ? `${videos.toLocaleString()} creator videos are connected to your profile data.`
+                  : "No published videos on this profile yet."
+              }
+            </div>
+          </div>
+
+          <div
+            class="rz-profile-tab-panel-v2"
+            data-rz-v3-panel="series"
+            hidden
+          >
+            <div class="rz-profile-empty-v2">
+              ${
+                series !== null && series > 0
+                  ? `${series.toLocaleString()} creator series are connected to your profile data.`
+                  : "No creator series published yet."
+              }
+            </div>
+          </div>
+
+          <div
+            class="rz-profile-tab-panel-v2"
+            data-rz-v3-panel="about"
+            hidden
+          >
+            <div class="rz-profile-empty-v2">
+              ${escapeHtml(bio)}
+            </div>
+          </div>
+
+        </section>
+
+        <div
+          class="grid grid-3"
+          style="margin-top:16px"
+        >
+
+          <div class="card">
+            <div class="kpi">
+              ${numberText(posts)}
+            </div>
+            <div class="kpi-label">
+              Posts
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="kpi">
+              ${
+                a.averageScore ??
+                "—"
+              }
+            </div>
+            <div class="kpi-label">
+              Average creator score
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="kpi">
+              ${
+                a.bestScore ??
+                "—"
+              }
+            </div>
+            <div class="kpi-label">
+              Best creator score
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  `);
+
+  document
+    .querySelectorAll("[data-rz-v3-tab]")
+    .forEach(function(tab) {
+
+      tab.addEventListener(
+        "click",
+        function() {
+
+          const target =
+            tab.getAttribute(
+              "data-rz-v3-tab"
+            );
+
+          document
+            .querySelectorAll("[data-rz-v3-tab]")
+            .forEach(function(item) {
+
+              item.classList.toggle(
+                "is-active",
+                item === tab
+              );
+
+            });
+
+          document
+            .querySelectorAll("[data-rz-v3-panel]")
+            .forEach(function(panel) {
+
+              panel.hidden =
+                panel.getAttribute(
+                  "data-rz-v3-panel"
+                ) !== target;
+
+            });
+
+        }
+      );
+
+    });
+
+  if (
+    verified &&
+    window.RIZORA &&
+    typeof window.RIZORA.markVerified === "function"
+  ) {
+    window.RIZORA.markVerified(
+      document.getElementById("rzCreatorProfileV3"),
+      "sm"
+    );
+  }
+
+}
+
 async function navigate(view) {
   state.view = view;
   window.scrollTo({top:0,behavior:"instant"});
@@ -2482,6 +3270,9 @@ async function navigate(view) {
   }
 
   if (view === "profile") {
+    renderCreatorProfileV3();
+    return;
+
     document.getElementById("app").innerHTML = profileView();
     return;
   }
@@ -8585,6 +9376,10 @@ document.addEventListener(
     }
 
     function buildProfile() {
+        if (!document.querySelector("[data-rizora-profile-host]")) {
+            return;
+        }
+
         if (document.getElementById("rzCreatorProfileV2")) {
             return;
         }
