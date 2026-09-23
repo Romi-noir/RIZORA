@@ -2029,6 +2029,8 @@ div {
 }
 
 </style>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -15567,6 +15569,834 @@ document.addEventListener(
   } else {
     boot();
   }
+})();
+</script>
+
+<script id="RIZORA_IDENTITY_GOOGLE_OFFICIAL_V1">
+(function () {
+  "use strict";
+
+  if (window.__RIZORA_IDENTITY_GOOGLE_OFFICIAL_V1__) {
+    return;
+  }
+
+  window.__RIZORA_IDENTITY_GOOGLE_OFFICIAL_V1__ = true;
+
+  var STYLE_ID =
+    "rzIdentityGoogleOfficialStyleV1";
+
+  function installStyles() {
+
+    if (document.getElementById(STYLE_ID)) {
+      return;
+    }
+
+    var style =
+      document.createElement("style");
+
+    style.id =
+      STYLE_ID;
+
+    style.textContent = `
+      .rz-google-wrap {
+        width: 100%;
+        margin: 14px 0 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .rz-google-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 2px 0;
+        color: rgba(238,233,255,.46);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .18em;
+      }
+
+      .rz-google-divider::before,
+      .rz-google-divider::after {
+        content: "";
+        height: 1px;
+        flex: 1;
+        background: rgba(180,145,255,.12);
+      }
+
+      .rz-google-button {
+        min-height: 42px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
+
+      .rz-official-strip {
+        margin-top: 22px;
+        padding: 18px;
+        border-radius: 22px;
+        background:
+          linear-gradient(
+            145deg,
+            rgba(27,19,55,.96),
+            rgba(10,8,22,.98)
+          );
+        border: 1px solid rgba(182,146,255,.16);
+        box-shadow:
+          0 20px 60px rgba(0,0,0,.25),
+          inset 0 1px 0 rgba(255,255,255,.035);
+      }
+
+      .rz-official-strip-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+
+      .rz-official-strip-title {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        color: rgba(236,229,255,.62);
+      }
+
+      .rz-official-grid {
+        display: grid;
+        grid-template-columns:
+          repeat(2,minmax(0,1fr));
+        gap: 12px;
+      }
+
+      .rz-official-card {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        min-width: 0;
+        padding: 14px;
+        border-radius: 18px;
+        background:
+          linear-gradient(
+            150deg,
+            rgba(36,25,70,.9),
+            rgba(14,10,28,.98)
+          );
+        border: 1px solid rgba(182,146,255,.14);
+      }
+
+      .rz-official-avatar {
+        width: 46px;
+        height: 46px;
+        flex: 0 0 46px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #120d22;
+        border: 1px solid rgba(190,155,255,.22);
+      }
+
+      .rz-verified-seal-v1 {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 16px;
+        background: #7448ff;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 900;
+        line-height: 1;
+        box-shadow:
+          0 0 0 2px rgba(116,72,255,.12);
+      }
+
+      .rz-official-name-row {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+      }
+
+      .rz-official-name {
+        font-weight: 800;
+        color: #faf7ff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .rz-official-handle {
+        margin-top: 2px;
+        color: rgba(238,233,255,.5);
+        font-size: 12px;
+      }
+
+      .rz-official-type {
+        margin-top: 5px;
+        color: rgba(238,233,255,.64);
+        font-size: 11px;
+      }
+
+      @media(max-width:700px) {
+        .rz-official-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  function getApi() {
+    return (
+      typeof window.api === "function"
+        ? window.api
+        : async function (path, options) {
+            var base =
+              window.RIZORA_API_BASE ||
+              "https://rizora-guse.onrender.com";
+
+            var response =
+              await fetch(
+                base + path,
+                Object.assign(
+                  {
+                    credentials: "include"
+                  },
+                  options || {}
+                )
+              );
+
+            var data =
+              await response.json()
+                .catch(function () {
+                  return {};
+                });
+
+            if (!response.ok) {
+              throw new Error(
+                data.error ||
+                data.message ||
+                "Request failed."
+              );
+            }
+
+            return data;
+          }
+    );
+  }
+
+  async function loadGoogleConfig() {
+
+    var api =
+      getApi();
+
+    try {
+
+      var config =
+        await api(
+          "/api/auth/google/config",
+          {
+            method: "GET"
+          }
+        );
+
+      if (
+        !config ||
+        !config.enabled ||
+        !config.clientId
+      ) {
+        return null;
+      }
+
+      return config.clientId;
+
+    } catch (error) {
+
+      console.warn(
+        "RIZORA Google config unavailable:",
+        error
+      );
+
+      return null;
+    }
+  }
+
+  function injectGoogleContainers() {
+
+    [
+      ["loginForm","login"],
+      ["signupForm","signup"]
+    ].forEach(function (item) {
+
+      var form =
+        document.getElementById(
+          item[0]
+        );
+
+      if (!form) {
+        return;
+      }
+
+      var id =
+        "rzGoogleAuth_" +
+        item[1];
+
+      if (document.getElementById(id)) {
+        return;
+      }
+
+      var wrap =
+        document.createElement("div");
+
+      wrap.className =
+        "rz-google-wrap";
+
+      wrap.id =
+        id;
+
+      wrap.innerHTML = `
+        <div class="rz-google-divider">
+          <span>or continue with</span>
+        </div>
+        <div
+          class="rz-google-button"
+          id="${id}_button"
+        ></div>
+      `;
+
+      form.insertBefore(
+        wrap,
+        form.firstChild
+      );
+    });
+  }
+
+  async function finishGoogleLogin(result) {
+
+    if (!result || !result.user) {
+      throw new Error(
+        "Google sign-in returned no RIZORA account."
+      );
+    }
+
+    try {
+
+      if (result.token) {
+        localStorage.setItem(
+          "rizoraToken",
+          result.token
+        );
+
+        localStorage.setItem(
+          "rizoraUser",
+          JSON.stringify(
+            result.user
+          )
+        );
+
+        window.token =
+          result.token;
+
+        window.currentUser =
+          result.user;
+      }
+
+    } catch (_) {}
+
+    if (
+      window.state &&
+      typeof window.state === "object"
+    ) {
+      window.state.user =
+        result.user;
+    }
+
+    if (
+      typeof window.refreshMe ===
+      "function"
+    ) {
+      try {
+        await window.refreshMe();
+      } catch (_) {}
+    }
+
+    if (
+      typeof window.closeAuth ===
+      "function"
+    ) {
+      try {
+        window.closeAuth();
+      } catch (_) {}
+    }
+
+    if (
+      typeof window.navigate ===
+      "function"
+    ) {
+      try {
+        await window.navigate("home");
+        return;
+      } catch (_) {}
+    }
+
+    window.location.reload();
+  }
+
+  async function handleGoogleCredential(
+    response
+  ) {
+
+    if (
+      !response ||
+      !response.credential
+    ) {
+      return;
+    }
+
+    try {
+
+      var api =
+        getApi();
+
+      var result =
+        await api(
+          "/api/auth/google",
+          {
+            method: "POST",
+            body:
+              JSON.stringify({
+                credential:
+                  response.credential
+              })
+          }
+        );
+
+      await finishGoogleLogin(
+        result
+      );
+
+    } catch (error) {
+
+      if (
+        typeof window.toast ===
+        "function"
+      ) {
+        window.toast(
+          error.message ||
+          "Google sign-in failed."
+        );
+      } else if (
+        typeof window.showToast ===
+        "function"
+      ) {
+        window.showToast(
+          error.message ||
+          "Google sign-in failed."
+        );
+      } else {
+        alert(
+          error.message ||
+          "Google sign-in failed."
+        );
+      }
+    }
+  }
+
+  function renderGoogleButtons(
+    clientId
+  ) {
+
+    if (
+      !clientId ||
+      !window.google ||
+      !google.accounts ||
+      !google.accounts.id
+    ) {
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback:
+        handleGoogleCredential,
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+
+    [
+      "rzGoogleAuth_login_button",
+      "rzGoogleAuth_signup_button"
+    ].forEach(function (id) {
+
+      var target =
+        document.getElementById(id);
+
+      if (!target) {
+        return;
+      }
+
+      if (target.dataset.rendered) {
+        return;
+      }
+
+      target.innerHTML = "";
+
+      google.accounts.id.renderButton(
+        target,
+        {
+          type: "standard",
+          theme: "filled_black",
+          size: "large",
+          text: "continue_with",
+          shape: "rectangular",
+          logo_alignment: "left",
+          width: 400
+        }
+      );
+
+      target.dataset.rendered =
+        "1";
+    });
+  }
+
+  async function bootGoogleAuth() {
+
+    injectGoogleContainers();
+
+    var clientId =
+      await loadGoogleConfig();
+
+    if (!clientId) {
+      return;
+    }
+
+    var attempts = 0;
+
+    function attempt() {
+
+      attempts += 1;
+
+      if (
+        window.google &&
+        google.accounts &&
+        google.accounts.id
+      ) {
+        renderGoogleButtons(
+          clientId
+        );
+        return;
+      }
+
+      if (attempts < 30) {
+        setTimeout(
+          attempt,
+          250
+        );
+      }
+    }
+
+    attempt();
+  }
+
+  async function refreshGoogleUI() {
+    try {
+      injectGoogleContainers();
+      var clientId =
+        await loadGoogleConfig();
+
+      if (clientId) {
+        var tries = 0;
+
+        (function waitForGsi() {
+          tries++;
+
+          if (
+            window.google &&
+            google.accounts &&
+            google.accounts.id
+          ) {
+            renderGoogleButtons(
+              clientId
+            );
+            return;
+          }
+
+          if (tries < 20) {
+            setTimeout(
+              waitForGsi,
+              250
+            );
+          }
+        })();
+      }
+    } catch (_) {}
+  }
+
+  function injectOfficialStrip() {
+
+    var hub =
+      document.getElementById(
+        "rzCleanHubV6"
+      );
+
+    if (!hub) {
+      return;
+    }
+
+    if (
+      document.getElementById(
+        "rzOfficialStripV1"
+      )
+    ) {
+      return;
+    }
+
+    var strip =
+      document.createElement("section");
+
+    strip.id =
+      "rzOfficialStripV1";
+
+    strip.className =
+      "rz-official-strip";
+
+    strip.innerHTML = `
+      <div class="rz-official-strip-head">
+        <div>
+          <div class="rz-official-strip-title">
+            Official RIZORA identities
+          </div>
+          <div class="muted" style="margin-top:5px">
+            Verified platform accounts.
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="rz-official-grid"
+        id="rzOfficialGridV1"
+      ></div>
+    `;
+
+    hub.appendChild(strip);
+
+    loadOfficialProfiles();
+  }
+
+  async function loadOfficialProfiles() {
+
+    var grid =
+      document.getElementById(
+        "rzOfficialGridV1"
+      );
+
+    if (!grid) {
+      return;
+    }
+
+    try {
+
+      var api =
+        getApi();
+
+      var result =
+        await api(
+          "/api/official/profiles",
+          {
+            method: "GET"
+          }
+        );
+
+      var profiles =
+        Array.isArray(result.profiles)
+          ? result.profiles
+          : [];
+
+      grid.innerHTML =
+        profiles.map(function (profile) {
+
+          var display =
+            String(
+              profile.displayName ||
+              profile.username ||
+              "Official"
+            );
+
+          var handle =
+            "@" +
+            String(
+              profile.publicUsername ||
+              profile.username ||
+              ""
+            );
+
+          var kind =
+            profile.accountType ===
+            "platform"
+              ? "Official platform account"
+              : "Official creator account";
+
+          var id =
+            String(
+              profile.id ||
+              ""
+            );
+
+          var action =
+            id ===
+            "official_romi"
+              ? "onclick='rzOpenOfficialRomiV1()'"
+              : "";
+
+          return `
+            <article
+              class="rz-official-card"
+              ${action}
+            >
+              <img
+                class="rz-official-avatar"
+                src="${profile.avatarUrl || "/rizora-cover.png"}"
+                alt="${display}"
+              >
+
+              <div style="min-width:0">
+                <div class="rz-official-name-row">
+                  <span
+                    class="rz-official-name"
+                  >
+                    ${escapeSafe(display)}
+                  </span>
+
+                  <span
+                    class="rz-verified-seal-v1"
+                    aria-label="Verified"
+                    title="Verified"
+                  >
+                    ✓
+                  </span>
+                </div>
+
+                <div class="rz-official-handle">
+                  ${escapeSafe(handle)}
+                </div>
+
+                <div class="rz-official-type">
+                  ${escapeSafe(kind)}
+                </div>
+              </div>
+            </article>
+          `;
+        }).join("");
+
+    } catch (error) {
+
+      console.warn(
+        "Official profiles unavailable:",
+        error
+      );
+    }
+  }
+
+  function escapeSafe(value) {
+    return String(value || "")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#39;");
+  }
+
+  window.rzOpenOfficialRomiV1 =
+    function () {
+
+      if (
+        typeof window.meetRomi ===
+        "function"
+      ) {
+        window.meetRomi();
+        return;
+      }
+
+      var modal =
+        document.getElementById(
+          "rzCleanMeetRomiV6"
+        );
+
+      if (modal) {
+        modal.classList.add(
+          "open"
+        );
+      }
+    };
+
+  function observeApp() {
+
+    if (!document.body) {
+      return;
+    }
+
+    var observer =
+      new MutationObserver(
+        function () {
+          injectGoogleContainers();
+          injectOfficialStrip();
+        }
+      );
+
+    observer.observe(
+      document.body,
+      {
+        childList: true,
+        subtree: true
+      }
+    );
+  }
+
+  function boot() {
+
+    installStyles();
+
+    injectGoogleContainers();
+
+    bootGoogleAuth();
+
+    setTimeout(
+      refreshGoogleUI,
+      500
+    );
+
+    setTimeout(
+      refreshGoogleUI,
+      1500
+    );
+
+    injectOfficialStrip();
+
+    observeApp();
+  }
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      boot,
+      { once:true }
+    );
+
+  } else {
+
+    boot();
+  }
+
 })();
 </script>
 </body>

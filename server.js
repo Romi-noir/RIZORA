@@ -4413,41 +4413,20 @@ if (
     try {
 
       const response =
-        await fetch(
-          "https://api.groq.com/openai/v1/chat/completions",
-          {
-            method:"POST",
-
-            headers:{
-              "Content-Type":
-                "application/json",
-
-              Authorization:
-                `Bearer ${groqKey}`
-            },
-
-            body:
-              JSON.stringify({
-                model,
-
-                messages:[
-                  {
-                    role:"system",
-                    content:systemPrompt
-                  },
-                  {
-                    role:"user",
-                    content:message
-                  }
-                ],
-
-                temperature:0.7,
-                max_tokens:1200
-              })
-          }
-        );
-
-      const data =
+await rizoraGroqCompletion({
+  apiKey: groqKey,
+  model,
+  messages: [
+    {
+      role: "system",
+      content: systemPrompt
+    },
+    {
+      role: "user",
+      content: message
+    }
+  ]
+});const data =
         await response
           .json()
           .catch(() => ({}));
@@ -8968,6 +8947,42 @@ if(
 
 }
 
+/* ============================================================
+   OFFICIAL VERIFIED PROFILES
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/official/profiles"
+) {
+
+  const officialDb =
+    loadDB();
+
+  officialDb.officialProfiles ||=
+    [];
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      profiles:
+        officialDb
+          .officialProfiles
+          .filter(
+            profile =>
+              profile &&
+              profile.verified === true
+          )
+          .map(profile => ({
+            ...profile
+          }))
+    }
+  );
+
+  return;
+}
 // STATIC FRONTEND
   // ----------------------------------------------------------
 
@@ -9075,10 +9090,205 @@ async function requestHandler(
 // INITIAL SEEDING
 // ============================================================
 
+/* ============================================================
+   RIZORA OFFICIAL VERIFIED IDENTITIES V1
+============================================================ */
+
+function seedRizoraOfficialIdentities(db) {
+
+  db.officialProfiles ||= [];
+
+  const romiUser =
+    db.users.find(
+      user =>
+        normalizeUsername(user.username) === "romi"
+    );
+
+  if (romiUser) {
+
+    romiUser.displayName =
+      romiUser.displayName ||
+      "RoMi";
+
+    romiUser.publicUsername =
+      "romi.noir";
+
+    romiUser.socialHandle =
+      "romi.noir";
+
+    romiUser.verified = true;
+
+    romiUser.verificationStatus =
+      "verified";
+
+    romiUser.verificationType =
+      "official_creator";
+
+    romiUser.official = true;
+
+    romiUser.accountType =
+      "creator";
+
+    romiUser.avatarUrl =
+      romiUser.avatarUrl ||
+      "/rizora-cover.png";
+  }
+
+  const profiles = [
+    {
+      id: "official_rizora",
+      username: "rizora",
+      displayName: "RIZORA",
+      publicUsername: "rizora",
+      bio:
+        "Creator growth. Content. Community. AI. Built for creators.",
+      avatarUrl: "/rizora-cover.png",
+      verified: true,
+      verificationStatus: "verified",
+      verificationType: "official_platform",
+      official: true,
+      accountType: "platform",
+      links: {
+        website: "https://rizora.com.ng/",
+        tiktok:
+          "https://www.tiktok.com/@official_rizora.hq",
+        instagram:
+          "https://www.instagram.com/rizora.hq",
+        x:
+          "https://x.com/Rizora_hq"
+      }
+    },
+    {
+      id: "official_romi",
+      username: "romi.noir",
+      displayName: "RoMi",
+      publicUsername: "romi.noir",
+      bio:
+        "Artist. Developer. Creator. Builder. Creator of RIZORA.",
+      avatarUrl: "/rizora-cover.png",
+      verified: true,
+      verificationStatus: "verified",
+      verificationType: "official_creator",
+      official: true,
+      accountType: "creator",
+      links: {
+        tiktok:
+          "https://www.tiktok.com/@romi.noir",
+        website:
+          "https://rizora.com.ng/"
+      },
+      userId:
+        romiUser
+          ? romiUser.id
+          : null
+    }
+  ];
+
+  for (const profile of profiles) {
+
+    const existing =
+      db.officialProfiles.find(
+        item =>
+          item.id === profile.id
+      );
+
+    if (existing) {
+      Object.assign(
+        existing,
+        profile
+      );
+    } else {
+      db.officialProfiles.push({
+        ...profile,
+        createdAt:
+          new Date().toISOString(),
+        updatedAt:
+          new Date().toISOString()
+      });
+    }
+  }
+
+  return db;
+}
+
+/* ============================================================
+   RIZORA GROQ RESILIENT COMPLETION V1
+============================================================ */
+
+async function rizoraGroqCompletion(options) {
+
+  const apiKey =
+    String(options.apiKey || "").trim();
+
+  const primaryModel =
+    String(
+      options.model ||
+      "openai/gpt-oss-120b"
+    ).trim();
+
+  const messages =
+    Array.isArray(options.messages)
+      ? options.messages
+      : [];
+
+  async function request(modelName) {
+
+    return fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+          Authorization:
+            `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages,
+          temperature: 0.7,
+          max_completion_tokens: 1200
+        })
+      }
+    );
+  }
+
+  let response =
+    await request(primaryModel);
+
+  if (
+    [500, 502, 503].includes(
+      response.status
+    ) &&
+    primaryModel !==
+      "openai/gpt-oss-20b"
+  ) {
+
+    console.warn(
+      "RIZORA AI primary model unavailable. Falling back to openai/gpt-oss-20b."
+    );
+
+    try {
+      await response.text();
+    } catch (_) {}
+
+    response =
+      await request(
+        "openai/gpt-oss-20b"
+      );
+  }
+
+  return response;
+}
+
+/* ============================================================
+   OFFICIAL PROFILE API
+============================================================ */
 function seedDatabase() {
   const db = loadDB();
 
   seedTasks(db);
+seedRizoraOfficialIdentities(db);
 
   let changed = false;
 
