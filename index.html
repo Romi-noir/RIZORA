@@ -912,6 +912,272 @@ window.RIZORA_API_BASE =
   margin-left:5px;
 }
 </style>
+
+<style id="RIZORA_CREATOR_PROFILE_CSS_V2">
+/* RIZORA CREATOR PROFILE V2 */
+.rz-creator-profile-v2 {
+    width: min(100%, 980px);
+    margin: 32px auto 0;
+    padding: 24px;
+    border: 1px solid rgba(170, 120, 255, .20);
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top right, rgba(136, 82, 255, .13), transparent 38%),
+        linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+    box-shadow: 0 24px 80px rgba(0,0,0,.28);
+    color: inherit;
+}
+
+.rz-creator-profile-v2[hidden] {
+    display: none !important;
+}
+
+.rz-profile-head-v2 {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+}
+
+.rz-profile-avatar-v2 {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex: 0 0 auto;
+    border: 2px solid rgba(165, 107, 255, .55);
+    background: linear-gradient(145deg, #24113f, #09070f);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 0 35px rgba(133, 70, 255, .18);
+}
+
+.rz-profile-avatar-v2 img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.rz-profile-avatar-fallback-v2 {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    opacity: .88;
+}
+
+.rz-profile-name-row-v2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.rz-profile-name-v2 {
+    margin: 0;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 800;
+    letter-spacing: -.03em;
+}
+
+.rz-profile-username-v2 {
+    margin-top: 4px;
+    opacity: .64;
+    font-size: 14px;
+}
+
+.rz-profile-category-v2 {
+    margin-top: 8px;
+    opacity: .78;
+    font-size: 13px;
+}
+
+.rz-profile-bio-v2 {
+    margin: 20px 0 0;
+    line-height: 1.65;
+    opacity: .86;
+    white-space: pre-wrap;
+}
+
+.rz-profile-stats-v2 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.rz-profile-stat-v2 {
+    min-width: 0;
+    padding: 15px 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.07);
+    background: rgba(255,255,255,.025);
+}
+
+.rz-profile-stat-value-v2 {
+    display: block;
+    font-size: 21px;
+    font-weight: 800;
+}
+
+.rz-profile-stat-label-v2 {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: .56;
+}
+
+.rz-profile-actions-v2 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.rz-profile-actions-v2 button,
+.rz-profile-link-v2 {
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 14px;
+    padding: 11px 16px;
+    background: rgba(255,255,255,.045);
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    font: inherit;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.rz-profile-actions-v2 button:hover,
+.rz-profile-link-v2:hover {
+    transform: translateY(-1px);
+    border-color: rgba(160,105,255,.48);
+    background: rgba(160,105,255,.10);
+}
+
+.rz-profile-actions-v2 .rz-profile-primary-v2 {
+    background: linear-gradient(135deg, rgba(129,72,255,.92), rgba(166,91,255,.82));
+    border-color: transparent;
+    color: #fff;
+}
+
+.rz-profile-links-v2 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.rz-profile-unlock-v2 {
+    margin-top: 22px;
+    padding: 17px;
+    border-radius: 18px;
+    border: 1px solid rgba(160,105,255,.18);
+    background: rgba(126,73,255,.055);
+}
+
+.rz-profile-unlock-title-v2 {
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.rz-profile-unlock-text-v2 {
+    margin-top: 5px;
+    opacity: .68;
+    font-size: 12px;
+}
+
+.rz-profile-progress-v2 {
+    height: 8px;
+    margin-top: 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255,255,255,.07);
+}
+
+.rz-profile-progress-bar-v2 {
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7a42ff, #bd7aff);
+    transition: width .35s ease;
+}
+
+.rz-profile-tabs-v2 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 26px;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.rz-profile-tab-v2 {
+    padding: 11px 13px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    opacity: .58;
+    cursor: pointer;
+    font: inherit;
+}
+
+.rz-profile-tab-v2.is-active {
+    opacity: 1;
+    border-bottom: 2px solid #a16bff;
+}
+
+.rz-profile-tab-panel-v2 {
+    padding-top: 18px;
+    min-height: 80px;
+}
+
+.rz-profile-empty-v2 {
+    padding: 20px 4px;
+    opacity: .56;
+    font-size: 13px;
+}
+
+@media (max-width: 640px) {
+    .rz-creator-profile-v2 {
+        margin-top: 20px;
+        padding: 18px;
+        border-radius: 22px;
+    }
+
+    .rz-profile-head-v2 {
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .rz-profile-avatar-v2 {
+        width: 72px;
+        height: 72px;
+    }
+
+    .rz-profile-avatar-fallback-v2 {
+        font-size: 22px;
+    }
+
+    .rz-profile-stats-v2 {
+        gap: 7px;
+    }
+
+    .rz-profile-stat-v2 {
+        padding: 12px 8px;
+    }
+
+    .rz-profile-stat-value-v2 {
+        font-size: 17px;
+    }
+
+    .rz-profile-stat-label-v2 {
+        font-size: 11px;
+    }
+
+    .rz-profile-actions-v2 button {
+        flex: 1 1 110px;
+    }
+}
+</style>
 </head>
 
 <body>
@@ -8109,6 +8375,498 @@ document.addEventListener(
     }
   );
 
+})();
+</script>
+
+<script id="RIZORA_CREATOR_PROFILE_JS_V2">
+(function () {
+    "use strict";
+
+    var MARKER = "RIZORA_CREATOR_PROFILE_V2";
+
+    if (window[MARKER]) {
+        return;
+    }
+
+    window[MARKER] = true;
+
+    function getObject() {
+        var sources = [
+            window.state,
+            window.rizoraState,
+            window.RIZORA_STATE
+        ];
+
+        for (var i = 0; i < sources.length; i++) {
+            if (sources[i] && typeof sources[i] === "object") {
+                return sources[i];
+            }
+        }
+
+        try {
+            var raw = localStorage.getItem("rizoraUser");
+
+            if (raw) {
+                var parsed = JSON.parse(raw);
+
+                if (parsed && typeof parsed === "object") {
+                    return parsed;
+                }
+            }
+        } catch (error) {
+            // Ignore malformed local profile data.
+        }
+
+        return {};
+    }
+
+    function firstValue(source, keys, fallback) {
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+
+            if (
+                source[key] !== undefined &&
+                source[key] !== null &&
+                String(source[key]).trim() !== ""
+            ) {
+                return source[key];
+            }
+        }
+
+        return fallback;
+    }
+
+    function safeText(value) {
+        return String(value === undefined || value === null ? "" : value);
+    }
+
+    function escapeHtml(value) {
+        return safeText(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function toNumber(value) {
+        var number = Number(value);
+
+        return Number.isFinite(number) && number >= 0 ? number : null;
+    }
+
+    function formatNumber(value) {
+        var number = toNumber(value);
+
+        if (number === null) {
+            return "—";
+        }
+
+        return number.toLocaleString();
+    }
+
+    function initials(name, username) {
+        var source = safeText(name || username).trim();
+
+        if (!source) {
+            return "R";
+        }
+
+        var pieces = source.split(/\s+/);
+
+        if (pieces.length > 1) {
+            return (
+                safeText(pieces[0]).charAt(0) +
+                safeText(pieces[1]).charAt(0)
+            ).toUpperCase();
+        }
+
+        return source.slice(0, 2).toUpperCase();
+    }
+
+    function getProfile() {
+        var source = getObject();
+
+        var profile = {
+            name: firstValue(
+                source,
+                ["displayName", "display_name", "name"],
+                "RIZORA Creator"
+            ),
+
+            username: firstValue(
+                source,
+                ["username", "handle"],
+                ""
+            ),
+
+            bio: firstValue(
+                source,
+                ["bio", "description"],
+                "Build your identity. Grow your presence."
+            ),
+
+            category: firstValue(
+                source,
+                ["category", "creatorType"],
+                ""
+            ),
+
+            followers: firstValue(
+                source,
+                ["followers", "followersCount", "followerCount"],
+                null
+            ),
+
+            likes: firstValue(
+                source,
+                ["likes", "likesCount", "totalLikes", "likesReceived"],
+                null
+            ),
+
+            following: firstValue(
+                source,
+                ["following", "followingCount"],
+                null
+            ),
+
+            avatar: firstValue(
+                source,
+                ["avatarUrl", "avatar", "photoURL", "photoUrl"],
+                ""
+            ),
+
+            verified: Boolean(
+                source.verified === true ||
+                source.isVerified === true ||
+                source.verificationStatus === "verified" ||
+                source.status === "verified"
+            ),
+
+            instagram: firstValue(source, ["instagram", "instagramUrl"], ""),
+            tiktok: firstValue(source, ["tiktok", "tiktokUrl"], ""),
+            twitter: firstValue(source, ["twitter", "twitterUrl", "xUrl"], ""),
+            website: firstValue(source, ["website", "websiteUrl"], "")
+        };
+
+        return profile;
+    }
+
+    function nextFollowerUnlock(followers) {
+        var thresholds = [100, 250, 500, 1000, 2500, 5000, 10000];
+
+        if (followers === null) {
+            return {
+                current: null,
+                next: thresholds[0],
+                percent: 0
+            };
+        }
+
+        for (var i = 0; i < thresholds.length; i++) {
+            if (followers < thresholds[i]) {
+                var previous = i === 0 ? 0 : thresholds[i - 1];
+                var span = thresholds[i] - previous;
+                var progress = ((followers - previous) / span) * 100;
+
+                return {
+                    current: followers,
+                    next: thresholds[i],
+                    percent: Math.max(0, Math.min(100, progress))
+                };
+            }
+        }
+
+        return {
+            current: followers,
+            next: null,
+            percent: 100
+        };
+    }
+
+    function buildProfile() {
+        if (document.getElementById("rzCreatorProfileV2")) {
+            return;
+        }
+
+        var host =
+            document.querySelector("[data-rizora-profile-host]") ||
+            document.querySelector("#creatorProfile") ||
+            document.querySelector(".creator-profile");
+
+        if (!host) {
+            host = document.createElement("div");
+
+            host.id = "rzCreatorProfileHost";
+
+            var anchor =
+                document.querySelector("main") ||
+                document.querySelector("#app") ||
+                document.body;
+
+            anchor.appendChild(host);
+        }
+
+        var profile = getProfile();
+        var followers = toNumber(profile.followers);
+        var unlock = nextFollowerUnlock(followers);
+
+        var wrapper = document.createElement("section");
+
+        wrapper.id = "rzCreatorProfileV2";
+        wrapper.className = "rz-creator-profile-v2";
+        wrapper.setAttribute("data-rizora-profile", "true");
+
+        var avatarHtml = profile.avatar
+            ? '<img src="' +
+              escapeHtml(profile.avatar) +
+              '" alt="' +
+              escapeHtml(profile.name) +
+              ' profile picture">'
+            : '<span class="rz-profile-avatar-fallback-v2">' +
+              escapeHtml(initials(profile.name, profile.username)) +
+              "</span>";
+
+        var verifiedHtml = profile.verified
+            ? '<span class="rz-verified-badge rz-verified-sm" data-rz-verified="true" aria-label="Verified"></span>'
+            : "";
+
+        var usernameHtml = profile.username
+            ? "@" + escapeHtml(String(profile.username).replace(/^@/, ""))
+            : "";
+
+        var categoryHtml = profile.category
+            ? '<div class="rz-profile-category-v2">' +
+              escapeHtml(profile.category) +
+              "</div>"
+            : "";
+
+        var unlockText;
+
+        if (unlock.next === null) {
+            unlockText = "All current follower progression milestones reached.";
+        } else if (followers === null) {
+            unlockText =
+                "Follower progression will appear once live profile analytics are available.";
+        } else {
+            var remaining = Math.max(0, unlock.next - followers);
+
+            unlockText =
+                remaining.toLocaleString() +
+                " follower" +
+                (remaining === 1 ? "" : "s") +
+                " until the next creator unlock.";
+        }
+
+        var links = [];
+
+        if (profile.tiktok) {
+            links.push(
+                '<a class="rz-profile-link-v2" href="' +
+                escapeHtml(profile.tiktok) +
+                '" target="_blank" rel="noopener noreferrer">TikTok</a>'
+            );
+        }
+
+        if (profile.instagram) {
+            links.push(
+                '<a class="rz-profile-link-v2" href="' +
+                escapeHtml(profile.instagram) +
+                '" target="_blank" rel="noopener noreferrer">Instagram</a>'
+            );
+        }
+
+        if (profile.twitter) {
+            links.push(
+                '<a class="rz-profile-link-v2" href="' +
+                escapeHtml(profile.twitter) +
+                '" target="_blank" rel="noopener noreferrer">X</a>'
+            );
+        }
+
+        if (profile.website) {
+            links.push(
+                '<a class="rz-profile-link-v2" href="' +
+                escapeHtml(profile.website) +
+                '" target="_blank" rel="noopener noreferrer">Website</a>'
+            );
+        }
+
+        wrapper.innerHTML =
+            '<div class="rz-profile-head-v2">' +
+                '<div class="rz-profile-avatar-v2">' +
+                    avatarHtml +
+                "</div>" +
+                '<div>' +
+                    '<div class="rz-profile-name-row-v2">' +
+                        '<h2 class="rz-profile-name-v2">' +
+                            escapeHtml(profile.name) +
+                        "</h2>" +
+                        verifiedHtml +
+                    "</div>" +
+                    '<div class="rz-profile-username-v2">' +
+                        escapeHtml(usernameHtml) +
+                    "</div>" +
+                    categoryHtml +
+                "</div>" +
+            "</div>" +
+
+            '<p class="rz-profile-bio-v2">' +
+                escapeHtml(profile.bio) +
+            "</p>" +
+
+            '<div class="rz-profile-stats-v2">' +
+                '<div class="rz-profile-stat-v2">' +
+                    '<span class="rz-profile-stat-value-v2">' +
+                        formatNumber(profile.followers) +
+                    "</span>" +
+                    '<span class="rz-profile-stat-label-v2">Followers</span>' +
+                "</div>" +
+
+                '<div class="rz-profile-stat-v2">' +
+                    '<span class="rz-profile-stat-value-v2">' +
+                        formatNumber(profile.likes) +
+                    "</span>" +
+                    '<span class="rz-profile-stat-label-v2">Likes</span>' +
+                "</div>" +
+
+                '<div class="rz-profile-stat-v2">' +
+                    '<span class="rz-profile-stat-value-v2">' +
+                        formatNumber(profile.following) +
+                    "</span>" +
+                    '<span class="rz-profile-stat-label-v2">Following</span>' +
+                "</div>" +
+            "</div>" +
+
+            '<div class="rz-profile-actions-v2">' +
+                '<button type="button" class="rz-profile-primary-v2" data-rz-profile-action="follow">Follow</button>' +
+                '<button type="button" data-rz-profile-action="message">Message</button>' +
+                '<button type="button" data-rz-profile-action="collaborate">Collaborate</button>' +
+            "</div>" +
+
+            (
+                links.length
+                    ? '<div class="rz-profile-links-v2">' +
+                      links.join("") +
+                      "</div>"
+                    : ""
+            ) +
+
+            '<div class="rz-profile-unlock-v2">' +
+                '<div class="rz-profile-unlock-title-v2">Creator progression</div>' +
+                '<div class="rz-profile-unlock-text-v2">' +
+                    escapeHtml(unlockText) +
+                "</div>" +
+                '<div class="rz-profile-progress-v2">' +
+                    '<div class="rz-profile-progress-bar-v2" style="width:' +
+                        String(unlock.percent) +
+                        '%"></div>' +
+                "</div>" +
+            "</div>" +
+
+            '<div class="rz-profile-tabs-v2">' +
+                '<button type="button" class="rz-profile-tab-v2 is-active" data-rz-profile-tab="posts">Posts</button>' +
+                '<button type="button" class="rz-profile-tab-v2" data-rz-profile-tab="videos">Videos</button>' +
+                '<button type="button" class="rz-profile-tab-v2" data-rz-profile-tab="series">Series</button>' +
+                '<button type="button" class="rz-profile-tab-v2" data-rz-profile-tab="about">About</button>' +
+            "</div>" +
+
+            '<div class="rz-profile-tab-panel-v2" data-rz-profile-panel="posts">' +
+                '<div class="rz-profile-empty-v2">Creator content will appear here.</div>' +
+            "</div>" +
+
+            '<div class="rz-profile-tab-panel-v2" data-rz-profile-panel="videos" hidden>' +
+                '<div class="rz-profile-empty-v2">Video content will appear here.</div>' +
+            "</div>" +
+
+            '<div class="rz-profile-tab-panel-v2" data-rz-profile-panel="series" hidden>' +
+                '<div class="rz-profile-empty-v2">Creator series will appear here.</div>' +
+            "</div>" +
+
+            '<div class="rz-profile-tab-panel-v2" data-rz-profile-panel="about" hidden>' +
+                '<div class="rz-profile-empty-v2">' +
+                    escapeHtml(profile.bio || "No creator bio yet.") +
+                "</div>" +
+            "</div>";
+
+        host.appendChild(wrapper);
+
+        var tabs = wrapper.querySelectorAll("[data-rz-profile-tab]");
+        var panels = wrapper.querySelectorAll("[data-rz-profile-panel]");
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener("click", function () {
+                var target = tab.getAttribute("data-rz-profile-tab");
+
+                tabs.forEach(function (item) {
+                    item.classList.toggle("is-active", item === tab);
+                });
+
+                panels.forEach(function (panel) {
+                    panel.hidden =
+                        panel.getAttribute("data-rz-profile-panel") !== target;
+                });
+            });
+        });
+
+        wrapper.addEventListener("click", function (event) {
+            var action = event.target.closest("[data-rz-profile-action]");
+
+            if (!action) {
+                return;
+            }
+
+            var type = action.getAttribute("data-rz-profile-action");
+
+            if (type === "follow") {
+                if (typeof window.RIZORA_PROFILE_FOLLOW === "function") {
+                    window.RIZORA_PROFILE_FOLLOW(profile);
+                }
+            }
+
+            if (type === "message") {
+                if (typeof window.RIZORA_PROFILE_MESSAGE === "function") {
+                    window.RIZORA_PROFILE_MESSAGE(profile);
+                }
+            }
+
+            if (type === "collaborate") {
+                if (typeof window.RIZORA_PROFILE_COLLABORATE === "function") {
+                    window.RIZORA_PROFILE_COLLABORATE(profile);
+                }
+            }
+        });
+
+        if (
+            profile.verified &&
+            window.RIZORA &&
+            typeof window.RIZORA.markVerified === "function"
+        ) {
+            window.RIZORA.markVerified(wrapper, "sm");
+        }
+
+        window.RIZORA_CREATOR_PROFILE = {
+            refresh: function () {
+                var existing = document.getElementById("rzCreatorProfileV2");
+
+                if (existing) {
+                    existing.remove();
+                }
+
+                buildProfile();
+            }
+        };
+    }
+
+    function start() {
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", buildProfile);
+        } else {
+            buildProfile();
+        }
+    }
+
+    start();
 })();
 </script>
 </body>
