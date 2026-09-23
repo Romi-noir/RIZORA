@@ -1178,6 +1178,386 @@ window.RIZORA_API_BASE =
     }
 }
 </style>
+
+<style id="RIZORA_COMPLETE_RUNTIME_V2_CSS">
+/* ============================================================
+   RIZORA COMPLETE EXPERIENCE V1
+============================================================ */
+
+.rz-hub-shell{
+  margin-top:22px;
+}
+
+.rz-hub-hero{
+  position:relative;
+  overflow:hidden;
+  padding:26px;
+  border:1px solid rgba(166,108,255,.22);
+  border-radius:28px;
+  background:
+    radial-gradient(circle at 85% 10%,rgba(159,92,255,.18),transparent 35%),
+    linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+  box-shadow:0 25px 80px rgba(0,0,0,.28);
+}
+
+.rz-hub-eyebrow{
+  color:#b98cff;
+  font-size:11px;
+  font-weight:850;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+
+.rz-hub-title{
+  margin:9px 0 7px;
+  font-size:clamp(28px,5vw,46px);
+  letter-spacing:-.045em;
+}
+
+.rz-hub-copy{
+  max-width:760px;
+  color:var(--muted);
+  line-height:1.7;
+}
+
+.rz-hub-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-top:18px;
+}
+
+.rz-hub-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:15px;
+  margin-top:15px;
+}
+
+.rz-hub-card{
+  min-width:0;
+  padding:19px;
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:21px;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018));
+}
+
+.rz-hub-card.full{
+  grid-column:1 / -1;
+}
+
+.rz-hub-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:13px;
+}
+
+.rz-hub-card-title{
+  margin:0;
+  font-size:18px;
+  font-weight:820;
+}
+
+.rz-hub-card-copy{
+  margin:5px 0 0;
+  color:var(--muted);
+  line-height:1.55;
+  font-size:13px;
+}
+
+.rz-hub-list{
+  display:grid;
+  gap:9px;
+}
+
+.rz-hub-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 13px;
+  border:1px solid rgba(255,255,255,.055);
+  border-radius:15px;
+  background:rgba(255,255,255,.024);
+}
+
+.rz-hub-row-main{
+  min-width:0;
+}
+
+.rz-hub-row-title{
+  font-weight:750;
+}
+
+.rz-hub-row-meta{
+  margin-top:3px;
+  font-size:12px;
+  color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.rz-hub-pill{
+  flex:0 0 auto;
+  padding:6px 9px;
+  border-radius:999px;
+  border:1px solid rgba(165,105,255,.25);
+  background:rgba(147,83,255,.08);
+  color:#d7c3ff;
+  font-size:11px;
+  font-weight:800;
+}
+
+.rz-hub-post{
+  padding:14px;
+  border:1px solid rgba(255,255,255,.065);
+  border-radius:16px;
+  background:rgba(255,255,255,.024);
+}
+
+.rz-hub-post + .rz-hub-post{
+  margin-top:9px;
+}
+
+.rz-hub-post-author{
+  font-weight:800;
+}
+
+.rz-hub-post-time{
+  margin-left:6px;
+  font-size:11px;
+  color:var(--muted);
+}
+
+.rz-hub-post-text{
+  margin-top:8px;
+  line-height:1.65;
+  white-space:pre-wrap;
+}
+
+.rz-hub-form{
+  display:grid;
+  gap:10px;
+  margin-bottom:13px;
+}
+
+.rz-hub-input,
+.rz-hub-textarea{
+  width:100%;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:14px;
+  padding:12px 13px;
+  color:var(--text);
+  background:#0b0912;
+  outline:none;
+  font:inherit;
+}
+
+.rz-hub-textarea{
+  min-height:105px;
+  resize:vertical;
+}
+
+.rz-hub-input:focus,
+.rz-hub-textarea:focus{
+  border-color:rgba(165,105,255,.6);
+  box-shadow:0 0 0 3px rgba(165,105,255,.08);
+}
+
+.rz-hub-tool-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+}
+
+.rz-hub-tool{
+  min-height:75px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:16px;
+  padding:12px;
+  text-align:left;
+  color:var(--text);
+  background:rgba(255,255,255,.025);
+  cursor:pointer;
+}
+
+.rz-hub-tool strong{
+  display:block;
+  font-size:13px;
+}
+
+.rz-hub-tool span{
+  display:block;
+  margin-top:5px;
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.45;
+}
+
+.rz-hub-result{
+  margin-top:12px;
+  padding:13px;
+  border-radius:15px;
+  border:1px solid rgba(165,105,255,.15);
+  background:rgba(128,70,255,.045);
+  white-space:pre-wrap;
+  line-height:1.6;
+  font-size:13px;
+}
+
+.rz-hub-quick{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+}
+
+.rz-hub-quick button{
+  min-height:60px;
+}
+
+.rz-hub-setting{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:13px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+.rz-hub-setting:last-child{
+  border-bottom:0;
+}
+
+.rz-hub-switch{
+  width:48px;
+  height:27px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.1);
+  background:#161220;
+  position:relative;
+  cursor:pointer;
+}
+
+.rz-hub-switch span{
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:19px;
+  height:19px;
+  border-radius:50%;
+  background:#6e667d;
+  transition:.2s ease;
+}
+
+.rz-hub-switch.on{
+  background:rgba(136,80,255,.28);
+  border-color:rgba(159,97,255,.55);
+}
+
+.rz-hub-switch.on span{
+  left:24px;
+  background:#b48cff;
+}
+
+.rz-romi-modal{
+  position:fixed;
+  inset:0;
+  z-index:3000;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:rgba(0,0,0,.72);
+  backdrop-filter:blur(14px);
+}
+
+.rz-romi-card{
+  width:min(560px,100%);
+  padding:26px;
+  border:1px solid rgba(172,110,255,.24);
+  border-radius:28px;
+  background:
+    radial-gradient(circle at top right,rgba(164,102,255,.16),transparent 38%),
+    #0d0a14;
+  box-shadow:0 35px 100px rgba(0,0,0,.5);
+}
+
+.rz-romi-avatar{
+  width:82px;
+  height:82px;
+  border-radius:50%;
+  object-fit:cover;
+  display:block;
+  margin-bottom:16px;
+  border:2px solid rgba(170,107,255,.5);
+}
+
+.rz-romi-name{
+  margin:0;
+  font-size:30px;
+  letter-spacing:-.04em;
+}
+
+.rz-romi-handle{
+  margin-top:4px;
+  color:var(--muted);
+}
+
+.rz-romi-bio{
+  margin-top:15px;
+  color:#d9d1e7;
+  line-height:1.7;
+}
+
+.rz-romi-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-top:19px;
+}
+
+@media(max-width:820px){
+  .rz-hub-grid{
+    grid-template-columns:1fr;
+  }
+
+  .rz-hub-card.full{
+    grid-column:auto;
+  }
+
+  .rz-hub-quick{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .rz-hub-tool-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:520px){
+  .rz-hub-hero{
+    padding:19px;
+    border-radius:22px;
+  }
+
+  .rz-hub-card{
+    padding:16px;
+    border-radius:18px;
+  }
+
+  .rz-hub-quick{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .rz-hub-row{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
+</style>
 </head>
 
 <body>
@@ -9662,6 +10042,1955 @@ document.addEventListener(
     }
 
     start();
+})();
+</script>
+
+<script id="RIZORA_COMPLETE_RUNTIME_V2_SCRIPT">
+(function(){
+
+  "use strict";
+
+  if(window.RIZORA_COMPLETE_RUNTIME_V2){
+    return;
+  }
+
+  window.RIZORA_COMPLETE_RUNTIME_V2 = true;
+
+  function safeText(value){
+    return String(value ?? "");
+  }
+
+  function cleanVisibleText(value){
+
+    let text = safeText(value);
+
+    const replacements = [
+      ["ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“", "✓"],
+      ["ÃÆÃÂ¢Ãâ¦Ã¢â¬ÅÃÂ¢Ã¢âÂ¬Ãâ", "✓"],
+      ["ÃÆÃÂ¢ÃÂ¢Ã¢â¬Å¡ÃÂ¬ÃÂ¢Ã¢âÂ¬ÃÂ", "—"],
+      ["ÃÆÃÂ¢ÃÂ¢Ã¢âÂ¬ÃÂ ÃÂ¢Ã¢âÂ¬Ã¢â¬Â", "→"],
+      ["ÃÂ¢Ã¢âÂ¬Ã¢â¬Â", "—"],
+      ["ÃÂ·", "·"],
+      ["ÃâÃÂ·", "·"],
+      ["â", "—"],
+      ["â", "→"],
+      ["Ãƒ", " "],
+      ["Ã", " "],
+      ["Ã‚", " "],
+      ["Â", " "]
+    ];
+
+    for(
+      const pair
+      of replacements
+    ){
+
+      text =
+        text.split(pair[0]).join(pair[1]);
+
+    }
+
+    return text;
+
+  }
+
+  function fixMojibake(){
+
+    if(!document.body){
+      return;
+    }
+
+    const walker =
+      document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT
+      );
+
+    const nodes = [];
+
+    while(walker.nextNode()){
+      nodes.push(
+        walker.currentNode
+      );
+    }
+
+    for(
+      const node
+      of nodes
+    ){
+
+      const parent =
+        node.parentElement;
+
+      if(!parent){
+        continue;
+      }
+
+      const tag =
+        parent.tagName;
+
+      if(
+        tag === "SCRIPT" ||
+        tag === "STYLE" ||
+        tag === "TEXTAREA" ||
+        tag === "INPUT"
+      ){
+        continue;
+      }
+
+      const original =
+        node.nodeValue || "";
+
+      const cleaned =
+        cleanVisibleText(original);
+
+      if(cleaned !== original){
+        node.nodeValue = cleaned;
+      }
+
+    }
+
+  }
+
+  window.RIZORA_FIX_ENCODING =
+    fixMojibake;
+
+
+  async function meetRomi(){
+
+    const old =
+      document.getElementById(
+        "rzCompleteMeetModal"
+      );
+
+    if(old){
+      old.remove();
+    }
+
+    const modal =
+      document.createElement("div");
+
+    modal.id =
+      "rzCompleteMeetModal";
+
+    modal.innerHTML = `
+      <div class="rz-romi-card-v2">
+        <div class="loading">
+          <div class="spinner" style="margin:auto"></div>
+          <div style="margin-top:10px">
+            Loading RoMi...
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(
+      modal
+    );
+
+    try{
+
+      const result =
+        await api(
+          "/api/romi/profile"
+        );
+
+      const p =
+        result.profile || {};
+
+      modal.innerHTML = `
+        <div class="rz-romi-card-v2">
+
+          <img
+            class="rz-romi-avatar-v2"
+            src="/rizora-cover.png"
+            alt="RoMi"
+          >
+
+          <div class="rz-complete-eyebrow">
+            RIZORA CREATOR
+          </div>
+
+          <h2 class="rz-romi-name-v2">
+            ${escapeHtml(
+              p.displayName ||
+              "RoMi"
+            )}
+          </h2>
+
+          <div class="rz-romi-handle-v2">
+            @${escapeHtml(
+              p.username ||
+              "romi"
+            )}
+          </div>
+
+          <p class="rz-romi-bio-v2">
+            Artist. Developer. Creator. Builder.
+            Creator of RIZORA — building a creator ecosystem
+            around identity, growth, tools, AI and opportunity.
+          </p>
+
+          <div class="rz-romi-actions-v2">
+
+            <a
+              class="btn primary"
+              href="${escapeHtml(
+                p.tiktok ||
+                "https://www.tiktok.com/@romi.noir"
+              )}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Visit @romi.noir
+            </a>
+
+            <button
+              class="btn ghost"
+              type="button"
+              onclick="document.getElementById('rzCompleteMeetModal').remove()"
+            >
+              Close
+            </button>
+
+          </div>
+
+        </div>
+      `;
+
+    }catch(error){
+
+      modal.innerHTML = `
+        <div class="rz-romi-card-v2">
+
+          <div class="rz-complete-eyebrow">
+            RIZORA CREATOR
+          </div>
+
+          <h2 class="rz-romi-name-v2">
+            RoMi
+          </h2>
+
+          <div class="rz-romi-handle-v2">
+            @romi
+          </div>
+
+          <p class="rz-romi-bio-v2">
+            Artist. Developer. Creator. Builder.
+            Creator of RIZORA.
+          </p>
+
+          <div class="rz-romi-actions-v2">
+
+            <a
+              class="btn primary"
+              href="https://www.tiktok.com/@romi.noir"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Visit @romi.noir
+            </a>
+
+            <button
+              class="btn ghost"
+              type="button"
+              onclick="document.getElementById('rzCompleteMeetModal').remove()"
+            >
+              Close
+            </button>
+
+          </div>
+
+        </div>
+      `;
+
+    }
+
+    modal.addEventListener(
+      "click",
+      function(event){
+
+        if(event.target === modal){
+          modal.remove();
+        }
+
+      }
+    );
+
+  }
+
+  window.meetRomi =
+    meetRomi;
+
+
+  function hubButton(
+    label,
+    subtitle,
+    action
+  ){
+
+    return `
+      <button
+        type="button"
+        class="rz-complete-tool"
+        onclick="${action}"
+      >
+        <strong>
+          ${label}
+        </strong>
+        <span>
+          ${subtitle}
+        </span>
+      </button>
+    `;
+
+  }
+
+
+  function row(
+    title,
+    meta,
+    pill
+  ){
+
+    return `
+      <div class="rz-complete-row">
+
+        <div class="rz-complete-main">
+
+          <div class="rz-complete-row-title">
+            ${escapeHtml(
+              title || "RIZORA"
+            )}
+          </div>
+
+          <div class="rz-complete-row-meta">
+            ${escapeHtml(
+              meta || ""
+            )}
+          </div>
+
+        </div>
+
+        ${
+          pill
+            ? `
+              <div class="rz-complete-pill">
+                ${escapeHtml(
+                  String(pill)
+                )}
+              </div>
+            `
+            : ""
+        }
+
+      </div>
+    `;
+
+  }
+
+
+  async function loadHub(){
+
+    const overlay =
+      document.getElementById(
+        "rzCompleteExperienceOverlay"
+      );
+
+    const body =
+      document.getElementById(
+        "rzCompleteExperienceBody"
+      );
+
+    if(!overlay || !body){
+      return;
+    }
+
+    overlay.classList.add(
+      "open"
+    );
+
+    body.innerHTML = `
+      <div class="loading">
+        <div class="spinner" style="margin:auto"></div>
+        <div style="margin-top:10px">
+          Loading your RIZORA universe...
+        </div>
+      </div>
+    `;
+
+    const results =
+      await Promise.allSettled([
+        api("/api/leaderboard"),
+        api("/api/community"),
+        api("/api/social/tasks"),
+        api("/api/social/mine"),
+        api("/api/notifications"),
+        api("/api/history"),
+        api("/api/settings"),
+        api("/api/experiments"),
+        api("/api/romi/profile")
+      ]);
+
+    const get =
+      index => (
+        results[index] &&
+        results[index].status === "fulfilled"
+          ? results[index].value || {}
+          : {}
+      );
+
+    const leaderboard =
+      Array.isArray(
+        get(0).leaderboard
+      )
+        ? get(0).leaderboard
+        : [];
+
+    const community =
+      Array.isArray(
+        get(1).posts
+      )
+        ? get(1).posts
+        : [];
+
+    const opportunities =
+      Array.isArray(
+        get(2).tasks
+      )
+        ? get(2).tasks
+        : [];
+
+    const campaigns =
+      Array.isArray(
+        get(3).campaigns
+      )
+        ? get(3).campaigns
+        : [];
+
+    const notifications =
+      Array.isArray(
+        get(4).notifications
+      )
+        ? get(4).notifications
+        : [];
+
+    const history =
+      Array.isArray(
+        get(5).history
+      )
+        ? get(5).history
+        : [];
+
+    const settings =
+      get(6).settings || {
+        notifications:true,
+        compactMode:false
+      };
+
+    const experiments =
+      Array.isArray(
+        get(7).experiments
+      )
+        ? get(7).experiments
+        : [];
+
+    const romi =
+      get(8).profile || {
+        displayName:"RoMi",
+        username:"romi",
+        tiktok:
+          "https://www.tiktok.com/@romi.noir"
+      };
+
+    const unread =
+      notifications.filter(
+        item =>
+          item.read !== true
+      ).length;
+
+    const opportunity =
+      opportunities.find(
+        item =>
+          item.completed !== true
+      );
+
+    const pulse =
+      unread > 0
+        ? `${unread} notification${
+            unread === 1 ? "" : "s"
+          } waiting for you.`
+        : opportunity
+          ? `Your next opportunity is ${opportunity.title || "ready"}.`
+          : "Your RIZORA workspace is ready for your next move.";
+
+    body.innerHTML = `
+
+      <section class="rz-complete-section">
+
+        <div class="rz-complete-card">
+
+          <div class="rz-complete-eyebrow">
+            RIZORA PULSE
+          </div>
+
+          <h3 style="margin:7px 0 0">
+            ${escapeHtml(
+              pulse
+            )}
+          </h3>
+
+          <p class="muted">
+            Live account activity and creator signals.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <section class="rz-complete-section">
+
+        <div class="rz-complete-section-head">
+
+          <div>
+            <h3 class="rz-complete-section-title">
+              Creator Launchpad
+            </h3>
+
+            <p class="rz-complete-section-copy">
+              Every major RIZORA surface in one place.
+            </p>
+          </div>
+
+        </div>
+
+        <div class="rz-complete-launchgrid">
+
+          <button
+            class="btn ghost rz-complete-launch"
+            onclick="navigate('home');closeRizoraUniverse()"
+          >
+            Home
+          </button>
+
+          <button
+            class="btn ghost rz-complete-launch"
+            onclick="navigate('profile');closeRizoraUniverse()"
+          >
+            Identity
+          </button>
+
+          <button
+            class="btn ghost rz-complete-launch"
+            onclick="navigate('missions');closeRizoraUniverse()"
+          >
+            Missions
+          </button>
+
+          <button
+            class="btn ghost rz-complete-launch"
+            onclick="navigate('studio');closeRizoraUniverse()"
+          >
+            Studio
+          </button>
+
+          <button
+            class="btn ghost rz-complete-launch"
+            onclick="navigate('ai');closeRizoraUniverse()"
+          >
+            RIZORA AI
+          </button>
+
+          <button
+            class="btn ghost rz-complete-launch"
+            onclick="navigate('referrals');closeRizoraUniverse()"
+          >
+            Referrals
+          </button>
+
+          <button
+            class="btn ghost rz-complete-launch"
+            onclick="navigate('support');closeRizoraUniverse()"
+          >
+            Help Center
+          </button>
+
+          <button
+            class="btn ghost rz-complete-launch"
+            onclick="rizoraOpenVerification();closeRizoraUniverse()"
+          >
+            Verification
+          </button>
+
+          <button
+            class="btn ghost rz-complete-launch"
+            onclick="installRIZORA()"
+          >
+            Install
+          </button>
+
+          <button
+            class="btn ghost rz-complete-launch"
+            onclick="meetRomi()"
+          >
+            Meet RoMi
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <section class="rz-complete-section">
+
+        <div class="rz-complete-grid">
+
+          <div class="rz-complete-card">
+
+            <div class="rz-complete-eyebrow">
+              RIZORA FLOW
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              Creator community
+            </h3>
+
+            <p class="rz-complete-section-copy">
+              Share updates and discover other creators.
+            </p>
+
+            <form
+              id="rzUniverseCommunityForm"
+              class="rz-complete-form"
+              style="margin-top:12px"
+            >
+
+              <textarea
+                id="rzUniverseCommunityText"
+                class="rz-complete-textarea"
+                maxlength="500"
+                placeholder="Share something with the RIZORA community..."
+              ></textarea>
+
+              <button
+                class="btn primary"
+                type="submit"
+              >
+                Publish
+              </button>
+
+            </form>
+
+            <div class="rz-complete-list">
+
+              ${
+                community.length
+                  ? community
+                      .slice(0,7)
+                      .map(
+                        item =>
+                          row(
+                            item.displayName ||
+                            item.username ||
+                            "Creator",
+                            "@" +
+                            (
+                              item.username ||
+                              ""
+                            ) +
+                            " · " +
+                            (
+                              item.text ||
+                              ""
+                            ),
+                            "Flow"
+                          )
+                      )
+                      .join("")
+                  : `
+                    <div class="empty">
+                      No community posts yet.
+                    </div>
+                  `
+              }
+
+            </div>
+
+          </div>
+
+
+          <div class="rz-complete-card">
+
+            <div class="rz-complete-eyebrow">
+              OPPORTUNITIES
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              Growth opportunities
+            </h3>
+
+            <p class="rz-complete-section-copy">
+              Real social growth tasks and campaigns.
+            </p>
+
+            <div
+              class="rz-complete-list"
+              style="margin-top:12px"
+            >
+
+              ${
+                opportunities.length
+                  ? opportunities
+                      .slice(0,8)
+                      .map(
+                        item =>
+                          row(
+                            item.title ||
+                            "Creator opportunity",
+                            (
+                              item.platform ||
+                              "RIZORA"
+                            ) +
+                            (
+                              item.action
+                                ? " · " +
+                                  item.action
+                                : ""
+                            ),
+                            "+" +
+                            Number(
+                              item.reward ||
+                              0
+                            ) +
+                            " pts"
+                          )
+                      )
+                      .join("")
+                  : `
+                    <div class="empty">
+                      No active opportunities right now.
+                    </div>
+                  `
+              }
+
+            </div>
+
+            <button
+              class="btn ghost"
+              style="margin-top:10px"
+              onclick="openGrowth()"
+            >
+              Open Growth
+            </button>
+
+          </div>
+
+
+          <div class="rz-complete-card">
+
+            <div class="rz-complete-eyebrow">
+              LEADERBOARD
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              Creator momentum
+            </h3>
+
+            <div
+              class="rz-complete-list"
+              style="margin-top:12px"
+            >
+
+              ${
+                leaderboard.length
+                  ? leaderboard
+                      .slice(0,8)
+                      .map(
+                        item =>
+                          row(
+                            "#" +
+                            Number(
+                              item.rank ||
+                              0
+                            ) +
+                            " " +
+                            (
+                              item.displayName ||
+                              item.username ||
+                              "Creator"
+                            ),
+                            "@" +
+                            (
+                              item.username ||
+                              ""
+                            ),
+                            Number(
+                              item.points ||
+                              0
+                            ).toLocaleString() +
+                            " pts"
+                          )
+                      )
+                      .join("")
+                  : `
+                    <div class="empty">
+                      No leaderboard data yet.
+                    </div>
+                  `
+              }
+
+            </div>
+
+          </div>
+
+
+          <div class="rz-complete-card">
+
+            <div class="rz-complete-eyebrow">
+              NOTIFICATIONS
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              What's happening
+            </h3>
+
+            ${
+              unread
+                ? `
+                  <button
+                    class="btn ghost"
+                    style="margin-top:9px"
+                    onclick="markRizoraNotificationsRead()"
+                  >
+                    Mark all read
+                  </button>
+                `
+                : ""
+            }
+
+            <div
+              class="rz-complete-list"
+              style="margin-top:12px"
+            >
+
+              ${
+                notifications.length
+                  ? notifications
+                      .slice(0,7)
+                      .map(
+                        item =>
+                          row(
+                            item.title ||
+                            "RIZORA notification",
+                            item.message ||
+                            "",
+                            item.read === true
+                              ? "Read"
+                              : "New"
+                          )
+                      )
+                      .join("")
+                  : `
+                    <div class="empty">
+                      You're all caught up.
+                    </div>
+                  `
+              }
+
+            </div>
+
+          </div>
+
+
+          <div class="rz-complete-card">
+
+            <div class="rz-complete-eyebrow">
+              CAMPAIGNS
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              Your creator campaigns
+            </h3>
+
+            <div
+              class="rz-complete-list"
+              style="margin-top:12px"
+            >
+
+              ${
+                campaigns.length
+                  ? campaigns
+                      .slice(0,7)
+                      .map(
+                        item =>
+                          row(
+                            item.title ||
+                            "Creator campaign",
+                            (
+                              item.platform ||
+                              ""
+                            ) +
+                            (
+                              item.action
+                                ? " · " +
+                                  item.action
+                                : ""
+                            ),
+                            item.status ||
+                            "active"
+                          )
+                      )
+                      .join("")
+                  : `
+                    <div class="empty">
+                      No creator campaigns yet.
+                    </div>
+                  `
+              }
+
+            </div>
+
+            <button
+              class="btn ghost"
+              style="margin-top:10px"
+              onclick="openCampaigns()"
+            >
+              Open Campaigns
+            </button>
+
+          </div>
+
+
+          <div class="rz-complete-card">
+
+            <div class="rz-complete-eyebrow">
+              HISTORY
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              Your creator activity
+            </h3>
+
+            <div
+              class="rz-complete-list"
+              style="margin-top:12px"
+            >
+
+              ${
+                history.length
+                  ? history
+                      .slice(0,7)
+                      .map(
+                        item =>
+                          row(
+                            item.type ||
+                            "Activity",
+                            (
+                              item.details?.taskId ||
+                              item.details?.rating ||
+                              "RIZORA activity"
+                            ),
+                            Number(
+                              item.amount ||
+                              0
+                            ).toLocaleString()
+                          )
+                      )
+                      .join("")
+                  : `
+                    <div class="empty">
+                      No history yet.
+                    </div>
+                  `
+              }
+
+            </div>
+
+          </div>
+
+
+          <div class="rz-complete-card full">
+
+            <div class="rz-complete-eyebrow">
+              CREATOR TOOLS
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              Build faster
+            </h3>
+
+            <p class="rz-complete-section-copy">
+              Existing RIZORA creator generators, surfaced together.
+            </p>
+
+            <div
+              class="rz-complete-toolgrid"
+              style="margin-top:12px"
+            >
+
+              ${hubButton(
+                "Hooks",
+                "Generate creator hooks.",
+                "generateUniverseTool('hooks')"
+              )}
+
+              ${hubButton(
+                "Hashtags",
+                "Generate hashtag ideas.",
+                "generateUniverseTool('hashtags')"
+              )}
+
+              ${hubButton(
+                "Captions",
+                "Generate caption ideas.",
+                "generateUniverseTool('captions')"
+              )}
+
+              ${hubButton(
+                "Analyze",
+                "Open Creator Studio analysis.",
+                "navigate('studio');closeRizoraUniverse()"
+              )}
+
+              ${hubButton(
+                "Ideas",
+                "Open creator ideas.",
+                "navigate('studio');closeRizoraUniverse()"
+              )}
+
+              ${hubButton(
+                "RIZORA AI",
+                "Open the contextual creator assistant.",
+                "navigate('ai');closeRizoraUniverse()"
+              )}
+
+            </div>
+
+            <div
+              id="rzCompleteToolResult"
+              class="rz-complete-result"
+            >
+              Choose a creator tool.
+            </div>
+
+          </div>
+
+
+          <div class="rz-complete-card">
+
+            <div class="rz-complete-eyebrow">
+              EXPERIMENT LAB
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              Test your ideas
+            </h3>
+
+            <form
+              id="rzCompleteExperimentForm"
+              class="rz-complete-form"
+              style="margin-top:12px"
+            >
+
+              <input
+                class="rz-complete-input"
+                name="name"
+                maxlength="120"
+                placeholder="Experiment name"
+              >
+
+              <input
+                class="rz-complete-input"
+                name="hookA"
+                maxlength="500"
+                placeholder="Hook A"
+              >
+
+              <input
+                class="rz-complete-input"
+                name="hookB"
+                maxlength="500"
+                placeholder="Hook B"
+              >
+
+              <button
+                class="btn primary"
+                type="submit"
+              >
+                Save experiment
+              </button>
+
+            </form>
+
+            <div
+              class="rz-complete-list"
+              style="margin-top:12px"
+            >
+
+              ${
+                experiments.length
+                  ? experiments
+                      .slice(0,5)
+                      .map(
+                        item =>
+                          row(
+                            item.name ||
+                            "Experiment",
+                            item.hookA ||
+                            "Creator A/B test",
+                            "Lab"
+                          )
+                      )
+                      .join("")
+                  : `
+                    <div class="empty">
+                      No experiments yet.
+                    </div>
+                  `
+              }
+
+            </div>
+
+          </div>
+
+
+          <div class="rz-complete-card">
+
+            <div class="rz-complete-eyebrow">
+              SETTINGS
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              Your preferences
+            </h3>
+
+            <div style="margin-top:8px">
+
+              <div class="rz-complete-switchrow">
+
+                <div>
+                  <strong>
+                    Notifications
+                  </strong>
+
+                  <div class="muted">
+                    Keep creator activity alerts enabled.
+                  </div>
+                </div>
+
+                <button
+                  id="rzCompleteNotifications"
+                  type="button"
+                  class="rz-complete-switch ${
+                    settings.notifications
+                      ? "on"
+                      : ""
+                  }"
+                >
+                  <i></i>
+                </button>
+
+              </div>
+
+              <div class="rz-complete-switchrow">
+
+                <div>
+                  <strong>
+                    Compact mode
+                  </strong>
+
+                  <div class="muted">
+                    Reduce spacing inside RIZORA.
+                  </div>
+                </div>
+
+                <button
+                  id="rzCompleteCompact"
+                  type="button"
+                  class="rz-complete-switch ${
+                    settings.compactMode
+                      ? "on"
+                      : ""
+                  }"
+                >
+                  <i></i>
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div class="rz-complete-card full">
+
+            <div class="rz-complete-eyebrow">
+              MEET ROMI
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              The creator behind RIZORA
+            </h3>
+
+            <p class="rz-complete-section-copy">
+              Artist. Developer. Creator. Builder.
+            </p>
+
+            <div
+              style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"
+            >
+
+              <button
+                class="btn primary"
+                type="button"
+                onclick="meetRomi()"
+              >
+                Meet RoMi
+              </button>
+
+              <a
+                class="btn ghost"
+                href="${escapeHtml(
+                  romi.tiktok ||
+                  "https://www.tiktok.com/@romi.noir"
+                )}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                @romi.noir
+              </a>
+
+            </div>
+
+          </div>
+
+
+          <div class="rz-complete-card full">
+
+            <div class="rz-complete-eyebrow">
+              PREMIUM
+            </div>
+
+            <h3 class="rz-complete-section-title">
+              RIZORA Premium foundation
+            </h3>
+
+            <p class="rz-complete-section-copy">
+              Advanced creator tools are designed around real creator progress,
+              not artificial followers or likes.
+            </p>
+
+            <div class="grid grid-3" style="margin-top:12px">
+
+              <div class="mini-stat">
+                <strong>
+                  Advanced AI
+                </strong>
+                <span>
+                  Higher AI capacity and deeper creator intelligence.
+                </span>
+              </div>
+
+              <div class="mini-stat">
+                <strong>
+                  Advanced Analytics
+                </strong>
+                <span>
+                  Deeper audience, content and growth insight.
+                </span>
+              </div>
+
+              <div class="mini-stat">
+                <strong>
+                  Pro Creator Tools
+                </strong>
+                <span>
+                  Scheduling, portfolio and advanced campaign workflows.
+                </span>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+    `;
+
+    const communityForm =
+      document.getElementById(
+        "rzUniverseCommunityForm"
+      );
+
+    if(communityForm){
+
+      communityForm.addEventListener(
+        "submit",
+        async function(event){
+
+          event.preventDefault();
+
+          const text =
+            document
+              .getElementById(
+                "rzUniverseCommunityText"
+              )
+              ?.value
+              .trim();
+
+          if(!text){
+            toast(
+              "Write something before publishing."
+            );
+            return;
+          }
+
+          try{
+
+            await api(
+              "/api/community",
+              {
+                method:"POST",
+                body:JSON.stringify({
+                  text
+                })
+              }
+            );
+
+            toast(
+              "Published to RIZORA Flow."
+            );
+
+            await loadHub();
+
+          }catch(error){
+
+            toast(
+              error.message ||
+              "Could not publish."
+            );
+
+          }
+
+        }
+      );
+
+    }
+
+    const experimentForm =
+      document.getElementById(
+        "rzCompleteExperimentForm"
+      );
+
+    if(experimentForm){
+
+      experimentForm.addEventListener(
+        "submit",
+        async function(event){
+
+          event.preventDefault();
+
+          const form =
+            event.target;
+
+          const name =
+            form.elements.name.value.trim();
+
+          const hookA =
+            form.elements.hookA.value.trim();
+
+          const hookB =
+            form.elements.hookB.value.trim();
+
+          if(!name){
+            toast(
+              "Give your experiment a name."
+            );
+            return;
+          }
+
+          try{
+
+            await api(
+              "/api/experiments",
+              {
+                method:"POST",
+                body:JSON.stringify({
+                  name,
+                  hookA,
+                  hookB
+                })
+              }
+            );
+
+            toast(
+              "Experiment saved."
+            );
+
+            await loadHub();
+
+          }catch(error){
+
+            toast(
+              error.message ||
+              "Could not save experiment."
+            );
+
+          }
+
+        }
+      );
+
+    }
+
+    const notificationSwitch =
+      document.getElementById(
+        "rzCompleteNotifications"
+      );
+
+    const compactSwitch =
+      document.getElementById(
+        "rzCompleteCompact"
+      );
+
+    async function saveSettings(){
+
+      try{
+
+        await api(
+          "/api/settings",
+          {
+            method:"POST",
+            body:JSON.stringify({
+              notifications:
+                notificationSwitch?.classList.contains("on") ||
+                false,
+              compactMode:
+                compactSwitch?.classList.contains("on") ||
+                false
+            })
+          }
+        );
+
+        toast(
+          "Settings saved."
+        );
+
+      }catch(error){
+
+        toast(
+          error.message ||
+          "Could not save settings."
+        );
+
+      }
+
+    }
+
+    if(notificationSwitch){
+
+      notificationSwitch.addEventListener(
+        "click",
+        function(){
+
+          this.classList.toggle(
+            "on"
+          );
+
+          saveSettings();
+
+        }
+      );
+
+    }
+
+    if(compactSwitch){
+
+      compactSwitch.addEventListener(
+        "click",
+        function(){
+
+          this.classList.toggle(
+            "on"
+          );
+
+          saveSettings();
+
+        }
+      );
+
+    }
+
+  }
+
+
+  async function markNotificationsRead(){
+
+    try{
+
+      await api(
+        "/api/notifications/read",
+        {
+          method:"POST",
+          body:JSON.stringify({})
+        }
+      );
+
+      toast(
+        "Notifications marked as read."
+      );
+
+      await loadHub();
+
+    }catch(error){
+
+      toast(
+        error.message ||
+        "Could not update notifications."
+      );
+
+    }
+
+  }
+
+  window.markRizoraNotificationsRead =
+    markNotificationsRead;
+
+
+  async function generateTool(type){
+
+    const box =
+      document.getElementById(
+        "rzCompleteToolResult"
+      );
+
+    if(!box){
+      return;
+    }
+
+    box.textContent =
+      "Generating...";
+
+    const routes = {
+      hooks:"/api/generate/hooks",
+      hashtags:"/api/generate/hashtags",
+      captions:"/api/generate/captions"
+    };
+
+    const route =
+      routes[type];
+
+    if(!route){
+      return;
+    }
+
+    try{
+
+      const result =
+        await api(
+          route
+        );
+
+      const list =
+        Array.isArray(
+          result[type]
+        )
+          ? result[type]
+          : [];
+
+      box.textContent =
+        list.length
+          ? list.join(
+              "\n\n"
+            )
+          : "No result returned.";
+
+    }catch(error){
+
+      box.textContent =
+        error.message ||
+        "Creator tool failed.";
+
+    }
+
+  }
+
+  window.generateUniverseTool =
+    generateTool;
+
+
+  function closeUniverse(){
+
+    const overlay =
+      document.getElementById(
+        "rzCompleteExperienceOverlay"
+      );
+
+    if(overlay){
+      overlay.classList.remove(
+        "open"
+      );
+    }
+
+  }
+
+  window.closeRizoraUniverse =
+    closeUniverse;
+
+
+  function openUniverse(){
+
+    let overlay =
+      document.getElementById(
+        "rzCompleteExperienceOverlay"
+      );
+
+    if(!overlay){
+
+      overlay =
+        document.createElement(
+          "div"
+        );
+
+      overlay.id =
+        "rzCompleteExperienceOverlay";
+
+      overlay.innerHTML = `
+        <div class="rz-complete-shell">
+
+          <div class="rz-complete-panel">
+
+            <div class="rz-complete-head">
+
+              <div>
+
+                <div class="rz-complete-eyebrow">
+                  RIZORA CREATOR OS
+                </div>
+
+                <h2 class="rz-complete-title">
+                  Your whole creator world.
+                </h2>
+
+                <p class="rz-complete-copy">
+                  Pulse, Flow, identity, opportunities,
+                  intelligence, activity, community and tools
+                  — connected to your real RIZORA account.
+                </p>
+
+              </div>
+
+              <button
+                type="button"
+                class="rz-complete-close"
+                onclick="closeRizoraUniverse()"
+              >
+                Close
+              </button>
+
+            </div>
+
+            <div
+              id="rzCompleteExperienceBody"
+              class="rz-complete-body"
+            ></div>
+
+          </div>
+
+        </div>
+      `;
+
+      document.body.appendChild(
+        overlay
+      );
+
+      overlay.addEventListener(
+        "click",
+        function(event){
+
+          if(event.target === overlay){
+            closeUniverse();
+          }
+
+        }
+      );
+
+    }
+
+    loadHub();
+
+  }
+
+  window.openRizoraUniverse =
+    openUniverse;
+
+
+  function addLauncherOnce(){
+
+    fixMojibake();
+
+    const publicButtons =
+      document.querySelector(
+        ".hero-actions"
+      );
+
+    if(
+      publicButtons &&
+      !publicButtons.querySelector(
+        "[data-rz-meet-romi]"
+      )
+    ){
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+      button.type =
+        "button";
+
+      button.className =
+        "btn ghost";
+
+      button.dataset.rzMeetRomi =
+        "true";
+
+      button.textContent =
+        "Meet RoMi";
+
+      button.addEventListener(
+        "click",
+        meetRomi
+      );
+
+      publicButtons.appendChild(
+        button
+      );
+
+    }
+
+    const navRight =
+      document.querySelector(
+        ".navright"
+      );
+
+    if(
+      navRight &&
+      !navRight.querySelector(
+        "[data-rz-hub-launch]"
+      )
+    ){
+
+      const hub =
+        document.createElement(
+          "button"
+        );
+
+      hub.type =
+        "button";
+
+      hub.className =
+        "btn ghost";
+
+      hub.dataset.rzHubLaunch =
+        "true";
+
+      hub.textContent =
+        "RIZORA Hub";
+
+      hub.addEventListener(
+        "click",
+        openUniverse
+      );
+
+      navRight.prepend(
+        hub
+      );
+
+    }
+
+    const navLinks =
+      document.querySelector(
+        ".navlinks"
+      );
+
+    if(
+      navLinks &&
+      !navLinks.querySelector(
+        "[data-rz-hub-nav]"
+      )
+    ){
+
+      const hub =
+        document.createElement(
+          "button"
+        );
+
+      hub.type =
+        "button";
+
+      hub.dataset.rzHubNav =
+        "true";
+
+      hub.textContent =
+        "Hub";
+
+      hub.addEventListener(
+        "click",
+        openUniverse
+      );
+
+      navLinks.appendChild(
+        hub
+      );
+
+    }
+
+    const menu =
+      document.querySelector(
+        "#mobileMenu"
+      );
+
+    if(
+      menu &&
+      !menu.querySelector(
+        "[data-rz-hub-mobile]"
+      )
+    ){
+
+      const hub =
+        document.createElement(
+          "button"
+        );
+
+      hub.type =
+        "button";
+
+      hub.dataset.rzHubMobile =
+        "true";
+
+      hub.textContent =
+        "RIZORA Hub";
+
+      hub.addEventListener(
+        "click",
+        openUniverse
+      );
+
+      menu.appendChild(
+        hub
+      );
+
+    }
+
+    if(
+      menu &&
+      !menu.querySelector(
+        "[data-rz-meet-mobile]"
+      )
+    ){
+
+      const meet =
+        document.createElement(
+          "button"
+        );
+
+      meet.type =
+        "button";
+
+      meet.dataset.rzMeetMobile =
+        "true";
+
+      meet.textContent =
+        "Meet RoMi";
+
+      meet.addEventListener(
+        "click",
+        meetRomi
+      );
+
+      menu.appendChild(
+        meet
+      );
+
+    }
+
+    if(
+      document.querySelector(
+        ".rz-runtime-launch"
+      ) === null
+    ){
+
+      const launcher =
+        document.createElement(
+          "button"
+        );
+
+      launcher.type =
+        "button";
+
+      launcher.className =
+        "rz-runtime-launch";
+
+      launcher.textContent =
+        "RIZORA Hub";
+
+      launcher.addEventListener(
+        "click",
+        openUniverse
+      );
+
+      document.body.appendChild(
+        launcher
+      );
+
+    }
+
+  }
+
+
+  const observer =
+    new MutationObserver(
+      function(){
+
+        addLauncherOnce();
+
+      }
+    );
+
+  function start(){
+
+    addLauncherOnce();
+
+    observer.observe(
+      document.body,
+      {
+        childList:true,
+        subtree:true
+      }
+    );
+
+  }
+
+  if(
+    document.readyState ===
+    "loading"
+  ){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      start
+    );
+
+  }else{
+
+    start();
+
+  }
+
 })();
 </script>
 </body>
