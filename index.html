@@ -13108,5 +13108,348 @@ document.addEventListener(
 })();
 
 </script>
+
+
+<!-- RIZORA MOBILE MENU V3 -->
+<script id="RIZORA_MOBILE_MENU_V3_SCRIPT">
+﻿(function () {
+  "use strict";
+
+  if (window.RIZORA_MOBILE_MENU_V3) {
+    return;
+  }
+
+  window.RIZORA_MOBILE_MENU_V3 = true;
+
+  var STYLE_ID = "RIZORA_MOBILE_MENU_V3_STYLE";
+  var MENU_SELECTOR = [
+    "#rzMobileMenu",
+    ".mobile-menu",
+    "[data-rizora-mobile-menu]"
+  ].join(",");
+
+  function getMenu() {
+    return document.querySelector(MENU_SELECTOR);
+  }
+
+  function getHamburger() {
+    return document.querySelector(
+      "#rzHamburgerButton, .menuBtn, [data-rizora-menu]"
+    );
+  }
+
+  function addButton(menu, label, fnName, args) {
+    var existing = Array.prototype.slice.call(
+      menu.querySelectorAll("button,a,[role='button']")
+    ).some(function (el) {
+      return (el.textContent || "").replace(/\s+/g, " ").trim() === label;
+    });
+
+    if (existing) {
+      return;
+    }
+
+    var button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.setAttribute("data-rizora-v3-item", label);
+
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      try {
+        if (fnName === "openAuth") {
+          if (typeof window.openAuth === "function") {
+            window.openAuth(args || "login");
+          }
+        } else if (typeof window[fnName] === "function") {
+          window[fnName]();
+        }
+      } catch (e) {}
+
+      closeMenu();
+    });
+
+    menu.appendChild(button);
+  }
+
+  function ensureMenuContent(menu) {
+    var items = menu.querySelectorAll(
+      "button,a,[role='button']"
+    );
+
+    if (items.length > 0) {
+      return;
+    }
+
+    addButton(menu, "Log in", "openAuth", "login");
+    addButton(menu, "Join RIZORA", "openAuth", "signup");
+    addButton(menu, "RIZORA Hub", "openRizoraUniverse");
+    addButton(menu, "Meet RoMi", "meetRomi");
+    addButton(menu, "Identity", "rizoraOpenVerification");
+    addButton(menu, "Install RIZORA", "installRIZORA");
+  }
+
+  function ensureStyle() {
+    if (document.getElementById(STYLE_ID)) {
+      return;
+    }
+
+    var style = document.createElement("style");
+    style.id = STYLE_ID;
+
+    style.textContent = [
+      "html.rz-menu-lock{overflow:hidden!important}",
+      ".rz-mobile-menu-v3-open{",
+        "display:grid!important;",
+        "visibility:visible!important;",
+        "opacity:1!important;",
+        "height:auto!important;",
+        "max-height:calc(100dvh - 74px)!important;",
+        "overflow-y:auto!important;",
+        "overflow-x:hidden!important;",
+        "position:relative!important;",
+        "z-index:10000!important;",
+      "}",
+      "@media(max-width:900px){",
+        ".mobile-menu.rz-mobile-menu-v3-open,",
+        "#rzMobileMenu.rz-mobile-menu-v3-open,",
+        "[data-rizora-mobile-menu].rz-mobile-menu-v3-open{",
+          "display:grid!important;",
+          "width:100%!important;",
+          "padding:12px 0 calc(20px + env(safe-area-inset-bottom))!important;",
+          "gap:5px!important;",
+          "background:rgba(7,6,13,.98)!important;",
+          "backdrop-filter:blur(24px)!important;",
+          "-webkit-backdrop-filter:blur(24px)!important;",
+          "border-top:1px solid rgba(255,255,255,.08)!important;",
+        "}",
+        ".mobile-menu.rz-mobile-menu-v3-open button,",
+        "#rzMobileMenu.rz-mobile-menu-v3-open button,",
+        "[data-rizora-mobile-menu].rz-mobile-menu-v3-open button,",
+        ".mobile-menu.rz-mobile-menu-v3-open a,",
+        "#rzMobileMenu.rz-mobile-menu-v3-open a,",
+        "[data-rizora-mobile-menu].rz-mobile-menu-v3-open a{",
+          "display:flex!important;",
+          "align-items:center!important;",
+          "justify-content:flex-start!important;",
+          "width:100%!important;",
+          "min-height:48px!important;",
+          "padding:13px 15px!important;",
+          "border-radius:13px!important;",
+          "background:rgba(255,255,255,.045)!important;",
+          "border:1px solid rgba(255,255,255,.06)!important;",
+          "color:#f7f4ff!important;",
+          "text-decoration:none!important;",
+          "box-sizing:border-box!important;",
+        "}",
+      "}"
+    ].join("");
+
+    document.head.appendChild(style);
+  }
+
+  function openMenu() {
+    ensureStyle();
+
+    var menu = getMenu();
+
+    if (!menu) {
+      return false;
+    }
+
+    ensureMenuContent(menu);
+
+    menu.hidden = false;
+    menu.removeAttribute("hidden");
+    menu.setAttribute("aria-hidden", "false");
+    menu.classList.add("open");
+    menu.classList.add("rz-mobile-menu-v3-open");
+
+    menu.style.setProperty("display", "grid", "important");
+    menu.style.setProperty("visibility", "visible", "important");
+    menu.style.setProperty("opacity", "1", "important");
+    menu.style.setProperty("height", "auto", "important");
+    menu.style.setProperty("max-height", "calc(100dvh - 74px)", "important");
+    menu.style.setProperty("overflow-y", "auto", "important");
+    menu.style.setProperty("overflow-x", "hidden", "important");
+
+    document.documentElement.classList.add("rz-menu-lock");
+
+    var button = getHamburger();
+
+    if (button) {
+      button.setAttribute("aria-expanded", "true");
+      button.setAttribute("aria-label", "Close RIZORA menu");
+    }
+
+    return true;
+  }
+
+  function closeMenu() {
+    var menu = getMenu();
+
+    if (menu) {
+      menu.classList.remove("open");
+      menu.classList.remove("rz-mobile-menu-v3-open");
+      menu.setAttribute("aria-hidden", "true");
+
+      menu.style.removeProperty("display");
+      menu.style.removeProperty("visibility");
+      menu.style.removeProperty("opacity");
+      menu.style.removeProperty("height");
+      menu.style.removeProperty("max-height");
+      menu.style.removeProperty("overflow-y");
+      menu.style.removeProperty("overflow-x");
+    }
+
+    document.documentElement.classList.remove("rz-menu-lock");
+
+    var button = getHamburger();
+
+    if (button) {
+      button.setAttribute("aria-expanded", "false");
+      button.setAttribute("aria-label", "Open RIZORA menu");
+    }
+  }
+
+  function toggleMenuV3() {
+    var menu = getMenu();
+
+    if (!menu) {
+      return;
+    }
+
+    var isOpen =
+      menu.classList.contains("rz-mobile-menu-v3-open") ||
+      menu.classList.contains("open") ||
+      menu.getAttribute("aria-hidden") === "false";
+
+    if (isOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+
+      /*
+       * Some existing RIZORA runtime handlers execute after the
+       * delegated/capture handler. Re-open after them so they cannot
+       * immediately hide the drawer.
+       */
+      setTimeout(openMenu, 0);
+      setTimeout(openMenu, 60);
+      setTimeout(openMenu, 180);
+    }
+  }
+
+  window.rizoraOpenMobileMenuV3 = openMenu;
+  window.rizoraCloseMobileMenuV3 = closeMenu;
+  window.rizoraToggleMobileMenuV3 = toggleMenuV3;
+
+  function bind() {
+    ensureStyle();
+
+    var button = getHamburger();
+
+    if (button && button.dataset.rizoraMobileV3Bound !== "1") {
+      button.dataset.rizoraMobileV3Bound = "1";
+      button.setAttribute("aria-haspopup", "true");
+      button.setAttribute("aria-expanded", "false");
+    }
+
+    var menu = getMenu();
+
+    if (menu) {
+      menu.setAttribute("aria-hidden", "true");
+      ensureMenuContent(menu);
+    }
+  }
+
+  document.addEventListener(
+    "click",
+    function (event) {
+      var target = event.target;
+
+      if (!target || !target.closest) {
+        return;
+      }
+
+      var hamburger = target.closest(
+        "#rzHamburgerButton, .menuBtn, [data-rizora-menu]"
+      );
+
+      if (hamburger) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        toggleMenuV3();
+        return;
+      }
+
+      var menu = getMenu();
+
+      if (
+        menu &&
+        (menu.classList.contains("rz-mobile-menu-v3-open") ||
+         menu.getAttribute("aria-hidden") === "false")
+      ) {
+        if (
+          !target.closest(
+            "#rzHamburgerButton, .menuBtn, [data-rizora-menu]"
+          ) &&
+          !target.closest(MENU_SELECTOR)
+        ) {
+          closeMenu();
+        }
+      }
+    },
+    true
+  );
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+      if (event.key === "Escape") {
+        closeMenu();
+      }
+    },
+    true
+  );
+
+  window.addEventListener(
+    "resize",
+    function () {
+      if (window.innerWidth > 900) {
+        closeMenu();
+      } else {
+        bind();
+      }
+    },
+    { passive: true }
+  );
+
+  var observer = new MutationObserver(function () {
+    bind();
+  });
+
+  function start() {
+    bind();
+
+    if (document.body) {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
+})();
+
+</script>
 </body>
 </html>
