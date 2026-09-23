@@ -23,3 +23,5 @@ RIZORA-QUARANTINE-*/
 RIZORA-*-BACKUP-*/
 .rizora-complete-backup-*/
 server.syntax-error-*.js
+# Unused local/OneDrive duplicate assets
+public/
