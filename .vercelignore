@@ -1,0 +1,16 @@
+﻿node_modules
+android/app/build
+android/.gradle
+android/build
+.git
+.vercel
+.env
+.env.*
+server.js
+package.json
+package-lock.json
+BACKUP_*
+*.backup
+*.bak
+*.before-*.html
+*.before-*.js

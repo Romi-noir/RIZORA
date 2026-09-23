@@ -17,3 +17,9 @@ manifest.before-*
 www/*.before-*
 assets/*.backup.*
 database/db.before-*.json
+.env.local
+.vercel/
+RIZORA-QUARANTINE-*/
+RIZORA-*-BACKUP-*/
+.rizora-complete-backup-*/
+server.syntax-error-*.js
