@@ -1558,6 +1558,477 @@ window.RIZORA_API_BASE =
   }
 }
 </style>
+
+
+<!-- RIZORA PRODUCTION HARDENING V1 -->
+<style id="RIZORA_PRODUCTION_HARDENING_V1_CSS">
+﻿/* RIZORA PRODUCTION HARDENING V1 */
+
+html,
+body {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
+html {
+  width: 100% !important;
+}
+
+body {
+  box-sizing: border-box !important;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100% !important;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  max-width: 100%;
+}
+
+#app {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: clip !important;
+}
+
+.shell,
+.page,
+.hero,
+.hero-grid,
+.card,
+.hero-card,
+.topbar,
+.nav,
+.mobile-menu,
+.section-title,
+.dashboard-head,
+.welcome,
+.task,
+.task-main,
+.task-actions,
+.form,
+.form-row,
+.grid,
+.grid-2,
+.grid-3,
+.grid-4,
+.table-wrap,
+.chat,
+.chatbar,
+.referral-box {
+  min-width: 0 !important;
+}
+
+.shell {
+  width: min(var(--max), calc(100% - 24px)) !important;
+  max-width: var(--max) !important;
+}
+
+.table-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+pre,
+code {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+
+/* ============================================================
+   TABLET / MOBILE NAVIGATION
+   ============================================================ */
+
+@media (max-width: 900px) {
+
+  .nav {
+    min-height: 64px !important;
+    gap: 10px !important;
+  }
+
+  .navlinks {
+    display: none !important;
+  }
+
+  .menuBtn,
+  #rzHamburgerButton {
+    display: grid !important;
+    place-items: center !important;
+    flex: 0 0 auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .navright {
+    margin-left: auto !important;
+    flex: 0 0 auto !important;
+    gap: 7px !important;
+  }
+
+  .navright > .btn {
+    display: none !important;
+  }
+
+  .mobile-menu {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .mobile-menu.open {
+    display: grid !important;
+  }
+
+  .mobile-menu button,
+  .mobile-menu .btn {
+    width: 100% !important;
+    min-height: 46px !important;
+    text-align: left !important;
+  }
+
+  .hero {
+    min-height: auto !important;
+    padding: 34px 0 58px !important;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 22px !important;
+  }
+
+  .hero-card {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .hero-logo img {
+    max-width: 290px !important;
+  }
+
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .task {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .task-actions {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+
+  .task-actions .btn {
+    flex: 1 1 130px !important;
+  }
+
+  .section-title {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .chat {
+    min-height: 0 !important;
+  }
+
+  .chatbar {
+    flex-wrap: wrap !important;
+  }
+
+  .chatbar .input {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .referral-box {
+    flex-direction: column !important;
+  }
+
+  .referral-box .input,
+  .referral-box .btn {
+    width: 100% !important;
+  }
+
+  /* Existing RIZORA growth center */
+  .rz-upgrade-wrap,
+  .rz-product-panel {
+    width: min(100%, 720px) !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 18px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .rz-upgrade-columns,
+  .rz-product-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .rz-upgrade-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .rz-upgrade-input,
+  .rz-upgrade-select,
+  .rz-upgrade-textarea,
+  .rz-product-input,
+  .rz-product-textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Creator Profile */
+  .rz-profile-header-v2,
+  .rz-profile-hero-v2,
+  .rz-profile-top-v2 {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Hub / universe surfaces */
+  #rzRizoraUniverse,
+  #rizoraUniverse,
+  [data-rizora-universe],
+  [data-rizora-hub-overlay] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #rzRizoraUniverse .card,
+  #rizoraUniverse .card,
+  [data-rizora-universe] .card,
+  [data-rizora-hub-overlay] .card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Meet RoMi */
+  #rizoraMeetRomiModalV2 {
+    padding: 10px !important;
+  }
+
+  #rizoraMeetRomiModalV2 .rzmr-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 20px) !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .shell {
+    width: calc(100% - 20px) !important;
+  }
+
+  .brand {
+    gap: 8px !important;
+    letter-spacing: .04em !important;
+  }
+
+  .brand img {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 11px !important;
+  }
+
+  .brand small {
+    display: none !important;
+  }
+
+  .hero {
+    padding: 26px 0 45px !important;
+  }
+
+  .hero h1 {
+    font-size: clamp(42px, 14vw, 56px) !important;
+    line-height: .96 !important;
+  }
+
+  .hero p {
+    font-size: 15px !important;
+    line-height: 1.65 !important;
+  }
+
+  .hero-actions {
+    width: 100% !important;
+    flex-direction: column !important;
+  }
+
+  .hero-actions .btn {
+    width: 100% !important;
+  }
+
+  .stat-strip {
+    grid-template-columns: 1fr !important;
+  }
+
+  .card,
+  .hero-card {
+    padding: 16px !important;
+    border-radius: 18px !important;
+  }
+
+  .page {
+    padding-top: 24px !important;
+    padding-bottom: 60px !important;
+  }
+
+  .section-title h2 {
+    font-size: 25px !important;
+  }
+
+  .kpi {
+    font-size: 29px !important;
+  }
+
+  .mini-stat {
+    padding: 12px !important;
+  }
+
+  .task-actions .btn {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+
+  .modal {
+    padding: 10px !important;
+  }
+
+  .modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 20px) !important;
+    overflow-y: auto !important;
+    padding: 18px !important;
+  }
+
+  .toast {
+    min-width: 0 !important;
+    width: calc(100% - 20px) !important;
+    max-width: calc(100% - 20px) !important;
+  }
+
+  .rz-upgrade-header,
+  .rz-product-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .rz-upgrade-close,
+  .rz-product-close {
+    align-self: flex-end !important;
+  }
+
+  .rz-upgrade-title,
+  .rz-product-title {
+    font-size: 28px !important;
+  }
+
+  table {
+    min-width: 620px !important;
+  }
+}
+
+/* iPhone / Android safe-area support */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .mobile-menu {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .rz-upgrade-overlay,
+  .rz-product-overlay,
+  .modal {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Prevent accidental horizontal layout caused by long URLs/text */
+a,
+button,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+div {
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   MOBILE AUTH / HEADER VISIBILITY
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .topbar {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .topbar .shell {
+    width: calc(100% - 20px) !important;
+  }
+
+  .navright .avatar {
+    display: grid !important;
+  }
+}
+
+/* ============================================================
+   HARD RESET FOR DESKTOP-ONLY WIDTHS
+   ============================================================ */
+
+@media (max-width: 900px) {
+  [style*="min-width: 700px"],
+  [style*="min-width:700px"],
+  [style*="min-width: 650px"],
+  [style*="min-width:650px"],
+  [style*="width: 900px"],
+  [style*="width:900px"] {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+</style>
 </head>
 
 <body>
@@ -12375,6 +12846,258 @@ document.addEventListener(
       childList: true,
       subtree: true
     });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
+})();
+
+</script>
+
+
+<script id="RIZORA_PRODUCTION_HARDENING_V1_SCRIPT">
+﻿(function () {
+  "use strict";
+
+  if (window.RIZORA_PRODUCTION_HARDENING_V1) {
+    return;
+  }
+
+  window.RIZORA_PRODUCTION_HARDENING_V1 = true;
+
+  var STYLE_ID = "RIZORA_PRODUCTION_HARDENING_V1_STYLE";
+  var MOBILE_CLASS = "rizora-mobile-runtime";
+
+  function ensureViewport() {
+    var meta = document.querySelector('meta[name="viewport"]');
+
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "viewport";
+      document.head.appendChild(meta);
+    }
+
+    meta.setAttribute(
+      "content",
+      "width=device-width, initial-scale=1.0, viewport-fit=cover"
+    );
+  }
+
+  function installStyle() {
+    var existing = document.getElementById(STYLE_ID);
+
+    if (existing) {
+      if (existing.parentNode === document.head) {
+        document.head.appendChild(existing);
+      }
+      return;
+    }
+
+    var css = window.RIZORA_PRODUCTION_HARDENING_CSS;
+
+    if (!css) {
+      return;
+    }
+
+    var style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  function refreshViewportClass() {
+    var width =
+      window.visualViewport && window.visualViewport.width
+        ? window.visualViewport.width
+        : window.innerWidth;
+
+    document.documentElement.dataset.rizoraViewport =
+      width <= 600
+        ? "mobile"
+        : width <= 900
+          ? "tablet"
+          : "desktop";
+
+    if (document.body) {
+      document.body.classList.toggle(
+        MOBILE_CLASS,
+        width <= 900
+      );
+    }
+  }
+
+  function ensureMobileActions() {
+    var menu = document.querySelector(".mobile-menu");
+
+    if (!menu) {
+      return;
+    }
+
+    function addButton(id, label, handlerName, marker) {
+      if (menu.querySelector("[" + marker + "]")) {
+        return;
+      }
+
+      var button = document.createElement("button");
+      button.type = "button";
+      button.setAttribute(marker, "true");
+      button.textContent = label;
+
+      button.addEventListener("click", function () {
+        if (typeof window[handlerName] === "function") {
+          try {
+            if (handlerName === "openAuth") {
+              window[handlerName](id === "login" ? "login" : "signup");
+            } else {
+              window[handlerName]();
+            }
+          } catch (e) {}
+        }
+
+        if (typeof window.closeMenu === "function") {
+          try { window.closeMenu(); } catch (e) {}
+        }
+      });
+
+      menu.appendChild(button);
+    }
+
+    addButton("login", "Log in", "openAuth", "data-rz-mobile-login");
+    addButton("signup", "Join RIZORA", "openAuth", "data-rz-mobile-signup");
+
+    if (!menu.querySelector("[data-rz-mobile-hub]")) {
+      var hub = document.createElement("button");
+      hub.type = "button";
+      hub.textContent = "RIZORA Hub";
+      hub.setAttribute("data-rz-mobile-hub", "true");
+
+      hub.addEventListener("click", function () {
+        if (typeof window.openRizoraUniverse === "function") {
+          try {
+            window.openRizoraUniverse();
+            return;
+          } catch (e) {}
+        }
+      });
+
+      menu.appendChild(hub);
+    }
+
+    if (!menu.querySelector("[data-rz-mobile-meet-romi]")) {
+      var romi = document.createElement("button");
+      romi.type = "button";
+      romi.textContent = "Meet RoMi";
+      romi.setAttribute("data-rz-mobile-meet-romi", "true");
+
+      romi.addEventListener("click", function () {
+        if (typeof window.meetRomi === "function") {
+          try {
+            window.meetRomi();
+          } catch (e) {}
+        }
+      });
+
+      menu.appendChild(romi);
+    }
+  }
+
+  function bindHamburgerFallback() {
+    var button = document.querySelector(
+      "#rzHamburgerButton, .menuBtn, [data-rizora-menu]"
+    );
+
+    if (!button || button.dataset.rizoraHardeningBound === "1") {
+      return;
+    }
+
+    button.dataset.rizoraHardeningBound = "1";
+
+    button.addEventListener("click", function () {
+      var menu = document.querySelector(".mobile-menu");
+
+      if (!menu) {
+        return;
+      }
+
+      var isOpen = menu.classList.toggle("open");
+
+      menu.setAttribute("aria-hidden", isOpen ? "false" : "true");
+    });
+  }
+
+  function bindResize() {
+    var refresh = function () {
+      refreshViewportClass();
+      installStyle();
+      ensureMobileActions();
+      bindHamburgerFallback();
+    };
+
+    window.addEventListener("resize", refresh, { passive: true });
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", refresh, {
+        passive: true
+      });
+    }
+
+    refresh();
+  }
+
+  function installAfterLoad() {
+    ensureViewport();
+    installStyle();
+    refreshViewportClass();
+    ensureMobileActions();
+    bindHamburgerFallback();
+
+    requestAnimationFrame(function () {
+      installStyle();
+      ensureMobileActions();
+      bindHamburgerFallback();
+    });
+
+    setTimeout(function () {
+      installStyle();
+      ensureMobileActions();
+      bindHamburgerFallback();
+    }, 250);
+
+    setTimeout(function () {
+      installStyle();
+      ensureMobileActions();
+      bindHamburgerFallback();
+    }, 1000);
+  }
+
+  function start() {
+    window.RIZORA_PRODUCTION_HARDENING_CSS = [
+      "﻿/* RIZORA PRODUCTION HARDENING V1 */\n\nhtml,\nbody {\n  width: 100% !important;\n  max-width: 100% !important;\n  min-width: 0 !important;\n  overflow-x: hidden !important;\n  -webkit-text-size-adjust: 100% !important;\n  text-size-adjust: 100% !important;\n}\n\nhtml {\n  width: 100% !important;\n}\n\nbody {\n  box-sizing: border-box !important;\n}\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\nimg,\nvideo,\ncanvas,\nsvg,\niframe {\n  max-width: 100% !important;\n}\n\nbutton,\na,\ninput,\ntextarea,\nselect {\n  max-width: 100%;\n}\n\n#app {\n  width: 100% !important;\n  max-width: 100% !important;\n  min-width: 0 !important;\n  overflow-x: clip !important;\n}\n\n.shell,\n.page,\n.hero,\n.hero-grid,\n.card,\n.hero-card,\n.topbar,\n.nav,\n.mobile-menu,\n.section-title,\n.dashboard-head,\n.welcome,\n.task,\n.task-main,\n.task-actions,\n.form,\n.form-row,\n.grid,\n.grid-2,\n.grid-3,\n.grid-4,\n.table-wrap,\n.chat,\n.chatbar,\n.referral-box {\n  min-width: 0 !important;\n}\n\n.shell {\n  width: min(var(--max), calc(100% - 24px)) !important;\n  max-width: var(--max) !important;\n}\n\n.table-wrap {\n  width: 100% !important;\n  max-width: 100% !important;\n  overflow-x: auto !important;\n  -webkit-overflow-scrolling: touch;\n}\n\npre,\ncode {\n  max-width: 100% !important;\n  overflow-x: auto !important;\n}\n\n/* ============================================================\n   TABLET / MOBILE NAVIGATION\n   ============================================================ */\n\n@media (max-width: 900px) {\n\n  .nav {\n    min-height: 64px !important;\n    gap: 10px !important;\n  }\n\n  .navlinks {\n    display: none !important;\n  }\n\n  .menuBtn,\n  #rzHamburgerButton {\n    display: grid !important;\n    place-items: center !important;\n    flex: 0 0 auto !important;\n    visibility: visible !important;\n    opacity: 1 !important;\n  }\n\n  .navright {\n    margin-left: auto !important;\n    flex: 0 0 auto !important;\n    gap: 7px !important;\n  }\n\n  .navright > .btn {\n    display: none !important;\n  }\n\n  .mobile-menu {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  .mobile-menu.open {\n    display: grid !important;\n  }\n\n  .mobile-menu button,\n  .mobile-menu .btn {\n    width: 100% !important;\n    min-height: 46px !important;\n    text-align: left !important;\n  }\n\n  .hero {\n    min-height: auto !important;\n    padding: 34px 0 58px !important;\n  }\n\n  .hero-grid {\n    grid-template-columns: 1fr !important;\n    gap: 22px !important;\n  }\n\n  .hero-card {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  .hero-logo img {\n    max-width: 290px !important;\n  }\n\n  .grid-2,\n  .grid-3,\n  .grid-4 {\n    grid-template-columns: 1fr !important;\n  }\n\n  .form-row {\n    grid-template-columns: 1fr !important;\n  }\n\n  .dashboard-head {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .task {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .task-actions {\n    width: 100% !important;\n    flex-wrap: wrap !important;\n  }\n\n  .task-actions .btn {\n    flex: 1 1 130px !important;\n  }\n\n  .section-title {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .chat {\n    min-height: 0 !important;\n  }\n\n  .chatbar {\n    flex-wrap: wrap !important;\n  }\n\n  .chatbar .input {\n    min-width: 0 !important;\n    width: 100% !important;\n  }\n\n  .referral-box {\n    flex-direction: column !important;\n  }\n\n  .referral-box .input,\n  .referral-box .btn {\n    width: 100% !important;\n  }\n\n  /* Existing RIZORA growth center */\n  .rz-upgrade-wrap,\n  .rz-product-panel {\n    width: min(100%, 720px) !important;\n    max-width: 100% !important;\n    max-height: calc(100dvh - 18px) !important;\n    overflow-y: auto !important;\n    overflow-x: hidden !important;\n  }\n\n  .rz-upgrade-columns,\n  .rz-product-grid {\n    grid-template-columns: 1fr !important;\n  }\n\n  .rz-upgrade-row {\n    grid-template-columns: 1fr !important;\n  }\n\n  .rz-upgrade-input,\n  .rz-upgrade-select,\n  .rz-upgrade-textarea,\n  .rz-product-input,\n  .rz-product-textarea {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  /* Creator Profile */\n  .rz-profile-header-v2,\n  .rz-profile-hero-v2,\n  .rz-profile-top-v2 {\n    grid-template-columns: 1fr !important;\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  /* Hub / universe surfaces */\n  #rzRizoraUniverse,\n  #rizoraUniverse,\n  [data-rizora-universe],\n  [data-rizora-hub-overlay] {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  #rzRizoraUniverse .card,\n  #rizoraUniverse .card,\n  [data-rizora-universe] .card,\n  [data-rizora-hub-overlay] .card {\n    min-width: 0 !important;\n    max-width: 100% !important;\n  }\n\n  /* Meet RoMi */\n  #rizoraMeetRomiModalV2 {\n    padding: 10px !important;\n  }\n\n  #rizoraMeetRomiModalV2 .rzmr-card {\n    width: 100% !important;\n    max-width: 100% !important;\n    max-height: calc(100dvh - 20px) !important;\n    overflow-y: auto !important;\n  }\n}\n\n@media (max-width: 600px) {\n\n  .shell {\n    width: calc(100% - 20px) !important;\n  }\n\n  .brand {\n    gap: 8px !important;\n    letter-spacing: .04em !important;\n  }\n\n  .brand img {\n    width: 36px !important;\n    height: 36px !important;\n    border-radius: 11px !important;\n  }\n\n  .brand small {\n    display: none !important;\n  }\n\n  .hero {\n    padding: 26px 0 45px !important;\n  }\n\n  .hero h1 {\n    font-size: clamp(42px, 14vw, 56px) !important;\n    line-height: .96 !important;\n  }\n\n  .hero p {\n    font-size: 15px !important;\n    line-height: 1.65 !important;\n  }\n\n  .hero-actions {\n    width: 100% !important;\n    flex-direction: column !important;\n  }\n\n  .hero-actions .btn {\n    width: 100% !important;\n  }\n\n  .stat-strip {\n    grid-template-columns: 1fr !important;\n  }\n\n  .card,\n  .hero-card {\n    padding: 16px !important;\n    border-radius: 18px !important;\n  }\n\n  .page {\n    padding-top: 24px !important;\n    padding-bottom: 60px !important;\n  }\n\n  .section-title h2 {\n    font-size: 25px !important;\n  }\n\n  .kpi {\n    font-size: 29px !important;\n  }\n\n  .mini-stat {\n    padding: 12px !important;\n  }\n\n  .task-actions .btn {\n    flex: 1 1 100% !important;\n    width: 100% !important;\n  }\n\n  .modal {\n    padding: 10px !important;\n  }\n\n  .modal-card {\n    width: 100% !important;\n    max-width: 100% !important;\n    max-height: calc(100dvh - 20px) !important;\n    overflow-y: auto !important;\n    padding: 18px !important;\n  }\n\n  .toast {\n    min-width: 0 !important;\n    width: calc(100% - 20px) !important;\n    max-width: calc(100% - 20px) !important;\n  }\n\n  .rz-upgrade-header,\n  .rz-product-head {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .rz-upgrade-close,\n  .rz-product-close {\n    align-self: flex-end !important;\n  }\n\n  .rz-upgrade-title,\n  .rz-product-title {\n    font-size: 28px !important;\n  }\n\n  table {\n    min-width: 620px !important;\n  }\n}\n\n/* iPhone / Android safe-area support */\n@supports (padding: env(safe-area-inset-bottom)) {\n  .mobile-menu {\n    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;\n  }\n\n  .rz-upgrade-overlay,\n  .rz-product-overlay,\n  .modal {\n    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;\n  }\n}\n\n/* Prevent accidental horizontal layout caused by long URLs/text */\na,\nbutton,\np,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\nspan,\ndiv {\n  overflow-wrap: anywhere;\n}\n\n/* ============================================================\n   MOBILE AUTH / HEADER VISIBILITY\n   ============================================================ */\n\n@media (max-width: 900px) {\n  .topbar {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  .topbar .shell {\n    width: calc(100% - 20px) !important;\n  }\n\n  .navright .avatar {\n    display: grid !important;\n  }\n}\n\n/* ============================================================\n   HARD RESET FOR DESKTOP-ONLY WIDTHS\n   ============================================================ */\n\n@media (max-width: 900px) {\n  [style*=\"min-width: 700px\"],\n  [style*=\"min-width:700px\"],\n  [style*=\"min-width: 650px\"],\n  [style*=\"min-width:650px\"],\n  [style*=\"width: 900px\"],\n  [style*=\"width:900px\"] {\n    min-width: 0 !important;\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n}\r\n"
+    ].join("");
+
+    ensureViewport();
+    installStyle();
+    refreshViewportClass();
+    ensureMobileActions();
+    bindHamburgerFallback();
+    bindResize();
+
+    var observer = new MutationObserver(function () {
+      ensureMobileActions();
+      bindHamburgerFallback();
+    });
+
+    if (document.body) {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    }
+
+    installAfterLoad();
   }
 
   if (document.readyState === "loading") {

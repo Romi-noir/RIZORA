@@ -1,4 +1,4 @@
-const RIZORA_CACHE = "rizora-shell-v1";
+﻿const RIZORA_CACHE = "rizora-shell-v2";
 
 self.addEventListener(
   "install",
