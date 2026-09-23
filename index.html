@@ -15304,5 +15304,270 @@ document.addEventListener(
 })();
 
 </script>
+
+<script id="rzDarkSurfaceHardeningV1">
+(function () {
+  "use strict";
+
+  if (window.__RZ_DARK_SURFACE_HARDENING_V1__) return;
+  window.__RZ_DARK_SURFACE_HARDENING_V1__ = true;
+
+  var STYLE_ID = "rzDarkSurfaceHardeningStyleV1";
+
+  var css = `
+    :root {
+      color-scheme: dark !important;
+      background: #080611 !important;
+    }
+
+    html,
+    body,
+    #app {
+      background:
+        radial-gradient(circle at 18% 0%, rgba(108, 73, 255, 0.10), transparent 34%),
+        radial-gradient(circle at 85% 12%, rgba(168, 92, 255, 0.07), transparent 28%),
+        #080611 !important;
+      color: #f5f1ff !important;
+      min-height: 100%;
+    }
+
+    body {
+      background-color: #080611 !important;
+    }
+
+    main,
+    section,
+    article,
+    aside,
+    nav,
+    header,
+    footer,
+    .view,
+    .card,
+    .panel,
+    .surface,
+    .section,
+    .dialog,
+    .modal,
+    .drawer,
+    .sheet,
+    .popup,
+    .auth-card,
+    .auth-panel,
+    .login-card,
+    .signup-card,
+    .form-card,
+    .verification-card,
+    #verification,
+    #verificationState,
+    #verificationFormCard,
+    #rzCleanMobileDrawerV6,
+    #rzCleanHubV6,
+    #rzCleanMeetRomiV6,
+    #rzCompleteExperienceOverlay,
+    #rzCompleteMeetModal,
+    #rizoraMeetRomiModalV2,
+    .rz-id-modal,
+    .mobile-menu {
+      background-color: rgba(10, 8, 22, 0.98) !important;
+      color: #f5f1ff !important;
+      border-color: rgba(180, 145, 255, 0.16) !important;
+    }
+
+    .rzDarkFixV1White {
+      background:
+        linear-gradient(
+          180deg,
+          rgba(25, 18, 48, 0.98),
+          rgba(9, 7, 20, 0.99)
+        ) !important;
+      color: #f5f1ff !important;
+      border-color: rgba(180, 145, 255, 0.16) !important;
+      box-shadow:
+        0 18px 55px rgba(0, 0, 0, 0.34),
+        inset 0 1px 0 rgba(255,255,255,0.035) !important;
+    }
+
+    .rzDarkFixV1White > *,
+    .rzDarkFixV1White p,
+    .rzDarkFixV1White span,
+    .rzDarkFixV1White strong,
+    .rzDarkFixV1White b,
+    .rzDarkFixV1White h1,
+    .rzDarkFixV1White h2,
+    .rzDarkFixV1White h3,
+    .rzDarkFixV1White h4,
+    .rzDarkFixV1White h5,
+    .rzDarkFixV1White h6,
+    .rzDarkFixV1White label {
+      color: inherit !important;
+    }
+
+    input,
+    textarea,
+    select {
+      background:
+        rgba(18, 14, 35, 0.96) !important;
+      color: #f8f5ff !important;
+      border-color: rgba(180, 145, 255, 0.20) !important;
+      caret-color: #ffffff !important;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: rgba(235, 228, 255, 0.48) !important;
+    }
+
+    button,
+    .btn {
+      color: #f8f5ff !important;
+    }
+
+    .mobile-menu,
+    .mobile-menu *,
+    #rzCleanMobileDrawerV6 *,
+    #rzCleanHubV6 *,
+    #rzCleanMeetRomiV6 *,
+    #verification *,
+    #verificationState *,
+    #verificationFormCard * {
+      scrollbar-color: rgba(170, 132, 255, 0.45) transparent;
+    }
+
+    ::selection {
+      background: rgba(137, 91, 255, 0.35) !important;
+      color: #ffffff !important;
+    }
+  `;
+
+  function installStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+
+    var style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = css;
+
+    if (document.head) {
+      document.head.appendChild(style);
+    }
+  }
+
+  function isIgnored(el) {
+    if (!el || el.nodeType !== 1) return true;
+
+    var tag = String(el.tagName || "").toLowerCase();
+
+    if (
+      tag === "img" ||
+      tag === "svg" ||
+      tag === "path" ||
+      tag === "video" ||
+      tag === "canvas" ||
+      tag === "audio" ||
+      tag === "iframe"
+    ) {
+      return true;
+    }
+
+    if (
+      el.classList.contains("rzDarkFixV1White") ||
+      el.classList.contains("rz-darkfix-optout") ||
+      el.id === STYLE_ID ||
+      el.id === "rzDarkSurfaceHardeningV1"
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function isWhiteBackground(color) {
+    if (!color) return false;
+
+    var match = color.match(
+      /rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)(?:\\s*,\\s*([\\d.]+))?\\s*\\)/
+    );
+
+    if (!match) return false;
+
+    var r = Number(match[1]);
+    var g = Number(match[2]);
+    var b = Number(match[3]);
+    var a = match[4] == null ? 1 : Number(match[4]);
+
+    return (
+      a > 0.82 &&
+      r >= 245 &&
+      g >= 245 &&
+      b >= 245
+    );
+  }
+
+  function scanWhiteSurfaces() {
+    if (!document.body) return;
+
+    var nodes = document.body.querySelectorAll(
+      "div,main,section,article,aside,nav,header,footer,form,button,a"
+    );
+
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+
+      if (isIgnored(el)) continue;
+
+      var rect = el.getBoundingClientRect();
+
+      if (rect.width < 40 || rect.height < 20) continue;
+
+      var cs = window.getComputedStyle(el);
+
+      if (cs.display === "none" || cs.visibility === "hidden") continue;
+
+      if (isWhiteBackground(cs.backgroundColor)) {
+        el.classList.add("rzDarkFixV1White");
+      }
+    }
+  }
+
+  function run() {
+    installStyles();
+    scanWhiteSurfaces();
+
+    document.documentElement.style.backgroundColor = "#080611";
+
+    if (document.body) {
+      document.body.style.backgroundColor = "#080611";
+    }
+  }
+
+  var observer = new MutationObserver(function () {
+    clearTimeout(window.__RZ_DARK_FIX_TIMER__);
+    window.__RZ_DARK_FIX_TIMER__ = setTimeout(run, 180);
+  });
+
+  function boot() {
+    run();
+
+    if (document.body) {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["class", "style"]
+      });
+    }
+
+    setTimeout(run, 400);
+    setTimeout(run, 1200);
+    setTimeout(run, 2500);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
 </body>
 </html>
