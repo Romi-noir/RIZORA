@@ -1021,7 +1021,7 @@ function landingView() {
   data-view="verification"
   onclick="rizoraOpenVerification()"
 >
-  <span>✓</span>
+  <span>Ã¢Å“â€œ</span>
   Verification
 </button>
 <main class="hero">
@@ -2817,7 +2817,7 @@ if ("serviceWorker" in navigator) {
 })();
 
 /* =========================================================
-   RIZORA VERIFICATION — INDEPENDENT VIEW CONTROLLER
+   RIZORA VERIFICATION Ã¢â‚¬â€ INDEPENDENT VIEW CONTROLLER
 ========================================================= */
 
 function rizoraOpenVerification() {
@@ -2987,7 +2987,7 @@ async function loadVerification() {
 
     const badge =
       status === "verified"
-        ? '<span class="verify">✓ Verified</span>'
+        ? '<span class="verify">Ã¢Å“â€œ Verified</span>'
         : "";
 
     stateBox.innerHTML = `
@@ -3344,7 +3344,7 @@ async function loadVerificationAdmin() {
           "noopener noreferrer";
 
         link.textContent =
-          "View proof ↗";
+          "View proof Ã¢â€ â€”";
 
         proofBox.appendChild(link);
       }
@@ -3608,5 +3608,2386 @@ document.addEventListener(
 })();
 </script>
 <!-- /RIZORA_VERIFICATION_LAYER_V2 -->
+<!-- ============================================================
+     RIZORA COMPLETE UPGRADE V3
+     ============================================================ -->
+
+<style id="RIZORA_COMPLETE_UPGRADE_V3">
+
+.rz-complete-fab{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:99980;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid rgba(167,139,250,.35);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(124,58,237,.96),
+      rgba(76,29,149,.96)
+    );
+  color:#fff;
+  border-radius:999px;
+  padding:12px 17px;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:
+    0 15px 45px rgba(0,0,0,.35),
+    0 0 30px rgba(124,58,237,.18);
+}
+
+.rz-complete-fab:hover{
+  transform:translateY(-1px);
+}
+
+.rz-upgrade-overlay{
+  position:fixed;
+  inset:0;
+  z-index:99990;
+  display:none;
+  overflow:auto;
+  padding:18px;
+  background:
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(124,58,237,.18),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 90% 90%,
+      rgba(91,33,182,.14),
+      transparent 30%
+    ),
+    rgba(5,4,12,.965);
+  backdrop-filter:blur(22px);
+}
+
+.rz-upgrade-overlay.open{
+  display:block;
+}
+
+.rz-upgrade-wrap{
+  width:min(1180px,100%);
+  margin:0 auto;
+}
+
+.rz-upgrade-header{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:flex-start;
+  margin-bottom:18px;
+}
+
+.rz-upgrade-eyebrow{
+  color:#a78bfa;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.18em;
+}
+
+.rz-upgrade-title{
+  margin:7px 0 0;
+  color:#fff;
+  font-size:clamp(30px,5vw,54px);
+  line-height:.98;
+}
+
+.rz-upgrade-copy{
+  max-width:760px;
+  color:rgba(255,255,255,.62);
+  line-height:1.65;
+  margin-top:12px;
+}
+
+.rz-upgrade-close{
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.045);
+  color:#fff;
+  border-radius:14px;
+  padding:11px 15px;
+  cursor:pointer;
+}
+
+.rz-upgrade-stats{
+  display:grid;
+  grid-template-columns:
+    repeat(4,minmax(0,1fr));
+  gap:11px;
+  margin:20px 0;
+}
+
+.rz-upgrade-stat{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  padding:15px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.04),
+      rgba(255,255,255,.018)
+    );
+}
+
+.rz-upgrade-stat-label{
+  font-size:11px;
+  color:rgba(255,255,255,.45);
+  margin-bottom:7px;
+}
+
+.rz-upgrade-stat-value{
+  font-size:25px;
+  color:#fff;
+  font-weight:900;
+}
+
+.rz-upgrade-columns{
+  display:grid;
+  grid-template-columns:
+    minmax(0,1.2fr)
+    minmax(310px,.8fr);
+  gap:18px;
+}
+
+.rz-upgrade-card{
+  border:1px solid rgba(255,255,255,.08);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.045),
+      rgba(255,255,255,.018)
+    );
+  border-radius:22px;
+  padding:18px;
+  margin-bottom:18px;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.25);
+}
+
+.rz-upgrade-card h3{
+  color:#fff;
+  margin:0 0 6px;
+}
+
+.rz-upgrade-card p{
+  color:rgba(255,255,255,.56);
+  line-height:1.55;
+}
+
+.rz-upgrade-list{
+  display:grid;
+  gap:10px;
+  margin-top:15px;
+}
+
+.rz-upgrade-item{
+  border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.025);
+  border-radius:17px;
+  padding:14px;
+}
+
+.rz-upgrade-item-top{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+}
+
+.rz-upgrade-item-title{
+  color:#fff;
+  font-weight:800;
+}
+
+.rz-upgrade-meta{
+  color:rgba(255,255,255,.45);
+  font-size:12px;
+  margin-top:5px;
+  line-height:1.5;
+}
+
+.rz-upgrade-reward{
+  color:#c4b5fd;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.rz-upgrade-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+
+.rz-upgrade-btn{
+  border:1px solid rgba(139,92,246,.35);
+  background:rgba(124,58,237,.15);
+  color:#fff;
+  border-radius:12px;
+  padding:10px 13px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.rz-upgrade-btn.secondary{
+  border-color:rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);
+}
+
+.rz-upgrade-btn.danger{
+  border-color:rgba(248,113,113,.22);
+  background:rgba(127,29,29,.16);
+}
+
+.rz-upgrade-form{
+  display:grid;
+  gap:10px;
+}
+
+.rz-upgrade-input,
+.rz-upgrade-select,
+.rz-upgrade-textarea{
+  width:100%;
+  box-sizing:border-box;
+  border:1px solid rgba(255,255,255,.09);
+  background:rgba(0,0,0,.25);
+  color:#fff;
+  border-radius:13px;
+  padding:12px 13px;
+  outline:none;
+}
+
+.rz-upgrade-input:focus,
+.rz-upgrade-select:focus,
+.rz-upgrade-textarea:focus{
+  border-color:rgba(167,139,250,.7);
+}
+
+.rz-upgrade-textarea{
+  min-height:95px;
+  resize:vertical;
+}
+
+.rz-upgrade-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.rz-upgrade-status{
+  min-height:20px;
+  margin:4px 0 12px;
+  color:#c4b5fd;
+  font-size:13px;
+}
+
+.rz-upgrade-chip{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:5px 9px;
+  background:rgba(124,58,237,.13);
+  color:#c4b5fd;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.rz-upgrade-empty{
+  border:1px dashed rgba(255,255,255,.1);
+  border-radius:15px;
+  padding:17px;
+  color:rgba(255,255,255,.45);
+  text-align:center;
+}
+
+.rz-ai-box{
+  display:grid;
+  gap:10px;
+}
+
+.rz-ai-reply{
+  min-height:110px;
+  border:1px solid rgba(255,255,255,.07);
+  background:rgba(0,0,0,.18);
+  border-radius:15px;
+  padding:13px;
+  color:rgba(255,255,255,.78);
+  line-height:1.6;
+  white-space:pre-wrap;
+}
+
+.rz-install-box{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  padding:14px;
+  border:1px solid rgba(167,139,250,.18);
+  background:rgba(124,58,237,.06);
+  border-radius:16px;
+}
+
+.rz-install-box strong{
+  color:#fff;
+}
+
+.rz-install-box span{
+  display:block;
+  color:rgba(255,255,255,.52);
+  font-size:12px;
+  margin-top:3px;
+}
+
+.rz-notification-dot{
+  min-width:7px;
+  height:7px;
+  border-radius:999px;
+  background:#a78bfa;
+  display:inline-block;
+}
+
+@media(max-width:900px){
+
+  .rz-upgrade-columns{
+    grid-template-columns:1fr;
+  }
+
+}
+
+@media(max-width:700px){
+
+  .rz-complete-fab{
+    left:14px;
+    right:14px;
+    justify-content:center;
+    bottom:14px;
+  }
+
+  .rz-upgrade-overlay{
+    padding:12px;
+  }
+
+  .rz-upgrade-header{
+    flex-direction:column;
+  }
+
+  .rz-upgrade-stats{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .rz-upgrade-row{
+    grid-template-columns:1fr;
+  }
+
+}
+
+</style>
+
+<button
+  id="rzCompleteFab"
+  class="rz-complete-fab"
+  type="button"
+>
+  RIZORA Growth
+</button>
+
+<div
+  id="rzCompleteOverlay"
+  class="rz-upgrade-overlay"
+  aria-hidden="true"
+>
+
+  <div class="rz-upgrade-wrap">
+
+    <div class="rz-upgrade-header">
+
+      <div>
+
+        <div class="rz-upgrade-eyebrow">
+          RIZORA CREATOR GROWTH
+        </div>
+
+        <h1 class="rz-upgrade-title">
+          Build. Grow. Earn.
+        </h1>
+
+        <div class="rz-upgrade-copy">
+          Your RIZORA growth center â€” official missions,
+          creator campaigns, AI assistance and installable
+          app experience in one place.
+        </div>
+
+      </div>
+
+      <button
+        id="rzUpgradeClose"
+        class="rz-upgrade-close"
+        type="button"
+      >
+        Close
+      </button>
+
+    </div>
+
+    <div
+      id="rzUpgradeStatus"
+      class="rz-upgrade-status"
+    ></div>
+
+    <div class="rz-upgrade-stats">
+
+      <div class="rz-upgrade-stat">
+
+        <div class="rz-upgrade-stat-label">
+          POINTS
+        </div>
+
+        <div
+          id="rzUpgradePoints"
+          class="rz-upgrade-stat-value"
+        >
+          â€”
+        </div>
+
+      </div>
+
+      <div class="rz-upgrade-stat">
+
+        <div class="rz-upgrade-stat-label">
+          MISSIONS
+        </div>
+
+        <div
+          id="rzUpgradeCompleted"
+          class="rz-upgrade-stat-value"
+        >
+          â€”
+        </div>
+
+      </div>
+
+      <div class="rz-upgrade-stat">
+
+        <div class="rz-upgrade-stat-label">
+          EARNED
+        </div>
+
+        <div
+          id="rzUpgradeEarned"
+          class="rz-upgrade-stat-value"
+        >
+          â€”
+        </div>
+
+      </div>
+
+      <div class="rz-upgrade-stat">
+
+        <div class="rz-upgrade-stat-label">
+          CAMPAIGNS
+        </div>
+
+        <div
+          id="rzUpgradeCampaigns"
+          class="rz-upgrade-stat-value"
+        >
+          â€”
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="rz-upgrade-columns">
+
+      <div>
+
+        <div class="rz-upgrade-card">
+
+          <h3>
+            RIZORA official missions
+          </h3>
+
+          <p>
+            Complete official RIZORA tasks and earn points.
+            Your normal RIZORA mission cooldown remains 45 minutes.
+          </p>
+
+          <div
+            id="rzUpgradeTasks"
+            class="rz-upgrade-list"
+          >
+            <div class="rz-upgrade-empty">
+              Loading missions...
+            </div>
+          </div>
+
+        </div>
+
+        <div class="rz-upgrade-card">
+
+          <h3>
+            Creator marketplace
+          </h3>
+
+          <p>
+            Complete growth actions for other creators and earn
+            points from their funded campaigns.
+          </p>
+
+          <div
+            id="rzUpgradeMarketplace"
+            class="rz-upgrade-list"
+          >
+            <div class="rz-upgrade-empty">
+              Loading campaigns...
+            </div>
+          </div>
+
+        </div>
+
+        <div class="rz-upgrade-card">
+
+          <h3>
+            My campaigns
+          </h3>
+
+          <p>
+            Track the campaigns you have funded.
+          </p>
+
+          <div
+            id="rzUpgradeMine"
+            class="rz-upgrade-list"
+          >
+            <div class="rz-upgrade-empty">
+              Loading...
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div>
+
+        <div class="rz-upgrade-card">
+
+          <h3>
+            Launch a creator campaign
+          </h3>
+
+          <p>
+            Spend your RIZORA points to reward other creators
+            for completing a social action on your content.
+          </p>
+
+          <form
+            id="rzUpgradeCampaignForm"
+            class="rz-upgrade-form"
+          >
+
+            <input
+              id="rzUpgradeTitle"
+              class="rz-upgrade-input"
+              maxlength="160"
+              placeholder="Campaign title"
+              required
+            >
+
+            <input
+              id="rzUpgradeUsername"
+              class="rz-upgrade-input"
+              maxlength="120"
+              placeholder="@yourusername"
+            >
+
+            <input
+              id="rzUpgradeURL"
+              class="rz-upgrade-input"
+              maxlength="1000"
+              placeholder="https://your-social-post-or-profile..."
+              required
+            >
+
+            <div class="rz-upgrade-row">
+
+              <select
+                id="rzUpgradePlatform"
+                class="rz-upgrade-select"
+              >
+
+                <option value="tiktok">
+                  TikTok
+                </option>
+
+                <option value="instagram">
+                  Instagram
+                </option>
+
+                <option value="x">
+                  X
+                </option>
+
+                <option value="youtube">
+                  YouTube
+                </option>
+
+                <option value="facebook">
+                  Facebook
+                </option>
+
+                <option value="website">
+                  Website
+                </option>
+
+              </select>
+
+              <select
+                id="rzUpgradeAction"
+                class="rz-upgrade-select"
+              >
+
+                <option value="follow">
+                  Follow
+                </option>
+
+                <option value="like">
+                  Like
+                </option>
+
+                <option value="share">
+                  Share
+                </option>
+
+                <option value="comment">
+                  Comment
+                </option>
+
+                <option value="subscribe">
+                  Subscribe
+                </option>
+
+                <option value="visit">
+                  Visit
+                </option>
+
+              </select>
+
+            </div>
+
+            <textarea
+              id="rzUpgradeDescription"
+              class="rz-upgrade-textarea"
+              maxlength="1000"
+              placeholder="Tell creators exactly what to do..."
+            ></textarea>
+
+            <div class="rz-upgrade-row">
+
+              <input
+                id="rzUpgradeQuantity"
+                class="rz-upgrade-input"
+                type="number"
+                min="1"
+                max="500"
+                value="10"
+                placeholder="Creators"
+                required
+              >
+
+              <input
+                id="rzUpgradeReward"
+                class="rz-upgrade-input"
+                type="number"
+                min="5"
+                max="100"
+                value="10"
+                placeholder="Points each"
+                required
+              >
+
+            </div>
+
+            <div
+              id="rzUpgradeBudget"
+              class="rz-upgrade-meta"
+            >
+              Budget: 100 points
+            </div>
+
+            <button
+              type="submit"
+              class="rz-upgrade-btn"
+            >
+              Launch campaign
+            </button>
+
+          </form>
+
+        </div>
+
+        <div class="rz-upgrade-card">
+
+          <h3>
+            RIZORA AI
+          </h3>
+
+          <p>
+            Ask the built-in RIZORA creator assistant for
+            content ideas, hooks, captions, growth strategy,
+            profile improvements or campaign ideas.
+          </p>
+
+          <div class="rz-ai-box">
+
+            <textarea
+              id="rzUpgradeAIPrompt"
+              class="rz-upgrade-textarea"
+              maxlength="4000"
+              placeholder="Ask RIZORA AI something..."
+            ></textarea>
+
+            <button
+              id="rzUpgradeAIButton"
+              class="rz-upgrade-btn"
+              type="button"
+            >
+              Ask RIZORA AI
+            </button>
+
+            <div
+              id="rzUpgradeAIReply"
+              class="rz-ai-reply"
+            >
+              Your AI response will appear here.
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="rz-upgrade-card">
+
+          <div class="rz-install-box">
+
+            <div>
+
+              <strong>
+                Install RIZORA
+              </strong>
+
+              <span>
+                Add RIZORA directly to your device.
+              </span>
+
+            </div>
+
+            <button
+              id="rzUpgradeInstall"
+              class="rz-upgrade-btn"
+              type="button"
+            >
+              Install
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script id="RIZORA_COMPLETE_UPGRADE_V3">
+(function(){
+
+  if(
+    window.__RIZORA_COMPLETE_UPGRADE_V3__
+  ){
+    return;
+  }
+
+  window.__RIZORA_COMPLETE_UPGRADE_V3__ =
+    true;
+
+  var SOCIAL_MODE =
+    "social";
+
+  var API_BASE =
+    window.RIZORA_API_BASE ||
+    "https://rizora-guse.onrender.com";
+
+  var deferredInstallPrompt =
+    null;
+
+  function el(id){
+
+    return document.getElementById(id);
+
+  }
+
+  function token(){
+
+    return (
+      localStorage.getItem(
+        "rizora_token"
+      ) ||
+      localStorage.getItem(
+        "rizoraToken"
+      ) ||
+      ""
+    );
+
+  }
+
+  function esc(value){
+
+    return String(
+      value == null
+        ? ""
+        : value
+    )
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#039;"
+      );
+
+  }
+
+  async function api(
+    path,
+    options
+  ){
+
+    var headers =
+      Object.assign(
+        {
+          "Content-Type":
+            "application/json"
+        },
+        (
+          options &&
+          options.headers
+        ) || {}
+      );
+
+    var t =
+      token();
+
+    if(t){
+
+      headers.Authorization =
+        "Bearer " + t;
+
+    }
+
+    var response =
+      await fetch(
+        API_BASE + path,
+        Object.assign(
+          {
+            credentials:
+              "include",
+
+            headers:
+              headers
+          },
+          options || {},
+          {
+            headers:
+              headers
+          }
+        )
+      );
+
+    var data = {};
+
+    try{
+
+      data =
+        await response.json();
+
+    }catch(_){
+
+      data = {};
+
+    }
+
+    if(!response.ok){
+
+      throw new Error(
+        data.message ||
+        data.error ||
+        "RIZORA request failed."
+      );
+
+    }
+
+    return data;
+
+  }
+
+  function status(message){
+
+    var box =
+      el(
+        "rzUpgradeStatus"
+      );
+
+    if(box){
+
+      box.textContent =
+        message || "";
+
+    }
+
+  }
+
+  function open(){
+
+    var overlay =
+      el(
+        "rzCompleteOverlay"
+      );
+
+    if(!overlay){
+      return;
+    }
+
+    overlay.classList.add(
+      "open"
+    );
+
+    overlay.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+    document.body.style.overflow =
+      "hidden";
+
+    loadAll();
+
+  }
+
+  function close(){
+
+    var overlay =
+      el(
+        "rzCompleteOverlay"
+      );
+
+    if(!overlay){
+      return;
+    }
+
+    overlay.classList.remove(
+      "open"
+    );
+
+    overlay.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+    document.body.style.overflow =
+      "";
+
+  }
+
+  function setStats(
+    data
+  ){
+
+    el(
+      "rzUpgradePoints"
+    ).textContent =
+      Number(
+        data.points || 0
+      ).toLocaleString();
+
+    el(
+      "rzUpgradeCompleted"
+    ).textContent =
+      Number(
+        data.completed || 0
+      ).toLocaleString();
+
+    el(
+      "rzUpgradeEarned"
+    ).textContent =
+      Number(
+        data.earned || 0
+      ).toLocaleString();
+
+    el(
+      "rzUpgradeCampaigns"
+    ).textContent =
+      Number(
+        data.campaigns || 0
+      ).toLocaleString();
+
+  }
+
+  async function loadOverview(){
+
+    try{
+
+      if(
+        SOCIAL_MODE ===
+        "boosts"
+      ){
+
+        try{
+
+          var mine =
+            await api(
+              "/api/boosts/mine"
+            );
+
+          var current =
+            mine.user ||
+            null;
+
+          if(
+            current &&
+            current.points != null
+          ){
+
+            var userCompletions =
+              Number(
+                current.completedTasks ||
+                current.taskCompletions ||
+                0
+              );
+
+            setStats({
+              points:
+                current.points,
+
+              completed:
+                userCompletions,
+
+              earned:
+                Number(
+                  current.pointsEarned ||
+                  0
+                ),
+
+              campaigns:
+                Array.isArray(
+                  mine.boosts
+                )
+                  ? mine.boosts.length
+                  : 0
+            });
+
+            return;
+
+          }
+
+        }catch(_){}
+
+      }
+
+      var result =
+        await api(
+          "/api/social/overview"
+        );
+
+      setStats(
+        result
+      );
+
+    }catch(_){
+
+      try{
+
+        var me =
+          await api(
+            "/api/auth/me"
+          );
+
+        setStats({
+          points:
+            me.user &&
+            me.user.points || 0,
+
+          completed:0,
+
+          earned:0,
+
+          campaigns:0
+        });
+
+      }catch(_2){}
+
+    }
+
+  }
+
+  async function loadOfficialTasks(){
+
+    var box =
+      el(
+        "rzUpgradeTasks"
+      );
+
+    if(!box){
+      return;
+    }
+
+    try{
+
+      var result =
+        await api(
+          "/api/tasks"
+        );
+
+      var tasks =
+        Array.isArray(
+          result.tasks
+        )
+          ? result.tasks
+          : [];
+
+      if(
+        result.cooldown &&
+        result.cooldown.active
+      ){
+
+        box.innerHTML =
+          '<div class="rz-upgrade-empty">' +
+          '<span class="rz-upgrade-chip">45 MINUTE COOLDOWN</span>' +
+          '<br><br>' +
+          'Your next RIZORA mission unlocks after the cooldown.' +
+          '</div>';
+
+        return;
+
+      }
+
+      if(!tasks.length){
+
+        box.innerHTML =
+          '<div class="rz-upgrade-empty">' +
+          'No official mission is available right now.' +
+          '</div>';
+
+        return;
+
+      }
+
+      box.innerHTML =
+        tasks.slice(
+          0,
+          12
+        ).map(
+          function(task){
+
+            var reward =
+              Number(
+                task.reward ||
+                task.points ||
+                0
+              );
+
+            return `
+              <div class="rz-upgrade-item">
+
+                <div class="rz-upgrade-item-top">
+
+                  <div>
+
+                    <div class="rz-upgrade-item-title">
+                      ${esc(task.title)}
+                    </div>
+
+                    <div class="rz-upgrade-meta">
+                      ${esc(task.description || "")}
+                    </div>
+
+                  </div>
+
+                  <div class="rz-upgrade-reward">
+                    +${reward} pts
+                  </div>
+
+                </div>
+
+                <div class="rz-upgrade-actions">
+
+                  ${
+                    task.url
+                      ? `
+                        <button
+                          class="rz-upgrade-btn secondary"
+                          type="button"
+                          onclick='window.open(${JSON.stringify(task.url)},"_blank","noopener,noreferrer")'
+                        >
+                          Open
+                        </button>
+                      `
+                      : ""
+                  }
+
+                  <button
+                    class="rz-upgrade-btn"
+                    type="button"
+                    onclick="window.rzCompleteOfficial('${esc(task.id)}')"
+                  >
+                    Complete
+                  </button>
+
+                </div>
+
+              </div>
+            `;
+
+          }
+        ).join("");
+
+    }catch(error){
+
+      box.innerHTML =
+        '<div class="rz-upgrade-empty">' +
+        esc(
+          error.message ||
+          "Could not load official missions."
+        ) +
+        '</div>';
+
+    }
+
+  }
+
+  window.rzCompleteOfficial =
+    async function(
+      taskId
+    ){
+
+      try{
+
+        status(
+          "Completing mission..."
+        );
+
+        var result =
+          await api(
+            "/api/tasks/complete",
+            {
+              method:
+                "POST",
+
+              body:
+                JSON.stringify({
+                  taskId:
+                    taskId
+                })
+            }
+          );
+
+        status(
+          "+" +
+          Number(
+            result.reward ||
+            0
+          ) +
+          " points earned."
+        );
+
+        await loadAll();
+
+      }catch(error){
+
+        status(
+          error.message
+        );
+
+      }
+
+    };
+
+  async function loadMarketplace(){
+
+    var box =
+      el(
+        "rzUpgradeMarketplace"
+      );
+
+    if(!box){
+      return;
+    }
+
+    if(
+      SOCIAL_MODE ===
+      "boosts"
+    ){
+
+      try{
+
+        var result =
+          await api(
+            "/api/boosts"
+          );
+
+        var boosts =
+          Array.isArray(
+            result.boosts
+          )
+            ? result.boosts
+            : [];
+
+        if(!boosts.length){
+
+          box.innerHTML =
+            '<div class="rz-upgrade-empty">' +
+            'No creator campaigns are live right now.' +
+            '</div>';
+
+          return;
+
+        }
+
+        box.innerHTML =
+          boosts
+            .slice(
+              0,
+              30
+            )
+            .map(
+              function(boost){
+
+                var reward =
+                  Number(
+                    boost.reward ||
+                    0
+                  );
+
+                return `
+                  <div class="rz-upgrade-item">
+
+                    <div class="rz-upgrade-item-top">
+
+                      <div>
+
+                        <div class="rz-upgrade-item-title">
+                          ${esc(boost.title || "Creator campaign")}
+                        </div>
+
+                        <div class="rz-upgrade-meta">
+                          ${esc(boost.platform || "")}
+                          Â·
+                          ${esc(boost.action || "")}
+                          Â·
+                          ${Number(boost.completedCount || 0)}
+                          /
+                          ${Number(boost.maxCompletions || 0)}
+                          completed
+                        </div>
+
+                      </div>
+
+                      <div class="rz-upgrade-reward">
+                        +${reward} pts
+                      </div>
+
+                    </div>
+
+                    <div class="rz-upgrade-actions">
+
+                      <button
+                        class="rz-upgrade-btn secondary"
+                        type="button"
+                        onclick='window.open(${JSON.stringify(boost.url || "/")},"_blank","noopener,noreferrer")'
+                      >
+                        Open target
+                      </button>
+
+                      <button
+                        class="rz-upgrade-btn"
+                        type="button"
+                        onclick="window.rzCompleteBoost('${esc(boost.id)}')"
+                      >
+                        Complete
+                      </button>
+
+                    </div>
+
+                  </div>
+                `;
+
+              }
+            )
+            .join("");
+
+        return;
+
+      }catch(error){
+
+        box.innerHTML =
+          '<div class="rz-upgrade-empty">' +
+          esc(
+            error.message ||
+            "Could not load creator campaigns."
+          ) +
+          '</div>';
+
+        return;
+
+      }
+
+    }
+
+    try{
+
+      var result =
+        await api(
+          "/api/social/tasks"
+        );
+
+      var tasks =
+        Array.isArray(
+          result.tasks
+        )
+          ? result.tasks
+          : [];
+
+      if(!tasks.length){
+
+        box.innerHTML =
+          '<div class="rz-upgrade-empty">' +
+          'No creator campaigns are live right now.' +
+          '</div>';
+
+        return;
+
+      }
+
+      box.innerHTML =
+        tasks
+          .slice(
+            0,
+            30
+          )
+          .map(
+            function(task){
+
+              return `
+                <div class="rz-upgrade-item">
+
+                  <div class="rz-upgrade-item-top">
+
+                    <div>
+
+                      <div class="rz-upgrade-item-title">
+                        ${esc(task.title)}
+                      </div>
+
+                      <div class="rz-upgrade-meta">
+                        ${esc(task.platform)}
+                        Â·
+                        ${esc(task.action)}
+                      </div>
+
+                    </div>
+
+                    <div class="rz-upgrade-reward">
+                      +${Number(task.reward || 0)} pts
+                    </div>
+
+                  </div>
+
+                  <div class="rz-upgrade-actions">
+
+                    <button
+                      class="rz-upgrade-btn secondary"
+                      type="button"
+                      onclick='window.open(${JSON.stringify(task.url)},"_blank","noopener,noreferrer")'
+                    >
+                      Open target
+                    </button>
+
+                    <button
+                      class="rz-upgrade-btn"
+                      type="button"
+                      onclick="window.rzCompleteSocial('${esc(task.id)}')"
+                    >
+                      Complete
+                    </button>
+
+                  </div>
+
+                </div>
+              `;
+
+            }
+          )
+          .join("");
+
+    }catch(error){
+
+      box.innerHTML =
+        '<div class="rz-upgrade-empty">' +
+        esc(
+          error.message
+        ) +
+        '</div>';
+
+    }
+
+  }
+
+  window.rzCompleteBoost =
+    async function(
+      boostId
+    ){
+
+      try{
+
+        status(
+          "Saving completion..."
+        );
+
+        var result =
+          await api(
+            "/api/boosts/complete",
+            {
+              method:
+                "POST",
+
+              body:
+                JSON.stringify({
+                  boostTaskId:
+                    boostId
+                })
+            }
+          );
+
+        status(
+          "+" +
+          Number(
+            result.reward ||
+            0
+          ) +
+          " points earned."
+        );
+
+        await loadAll();
+
+      }catch(error){
+
+        status(
+          error.message
+        );
+
+      }
+
+    };
+
+  window.rzCompleteSocial =
+    async function(
+      taskId
+    ){
+
+      try{
+
+        status(
+          "Saving completion..."
+        );
+
+        var result =
+          await api(
+            "/api/social/tasks/complete",
+            {
+              method:
+                "POST",
+
+              body:
+                JSON.stringify({
+                  taskId:
+                    taskId
+                })
+            }
+          );
+
+        status(
+          "+" +
+          Number(
+            result.reward ||
+            0
+          ) +
+          " points earned."
+        );
+
+        await loadAll();
+
+      }catch(error){
+
+        status(
+          error.message
+        );
+
+      }
+
+    };
+
+  async function loadMine(){
+
+    var box =
+      el(
+        "rzUpgradeMine"
+      );
+
+    if(!box){
+      return;
+    }
+
+    if(
+      SOCIAL_MODE ===
+      "boosts"
+    ){
+
+      try{
+
+        var result =
+          await api(
+            "/api/boosts/mine"
+          );
+
+        var boosts =
+          Array.isArray(
+            result.boosts
+          )
+            ? result.boosts
+            : [];
+
+        if(!boosts.length){
+
+          box.innerHTML =
+            '<div class="rz-upgrade-empty">' +
+            'You have not launched a creator campaign yet.' +
+            '</div>';
+
+          return;
+
+        }
+
+        box.innerHTML =
+          boosts
+            .slice()
+            .reverse()
+            .slice(
+              0,
+              20
+            )
+            .map(
+              function(boost){
+
+                return `
+                  <div class="rz-upgrade-item">
+
+                    <div class="rz-upgrade-item-title">
+                      ${esc(boost.title)}
+                    </div>
+
+                    <div class="rz-upgrade-meta">
+                      ${Number(boost.completedCount || 0)}
+                      /
+                      ${Number(boost.maxCompletions || 0)}
+                      completed
+                      Â·
+                      ${esc(boost.status || "active")}
+                    </div>
+
+                    <div class="rz-upgrade-actions">
+
+                      ${
+                        boost.status === "active"
+                          ? `
+                            <button
+                              class="rz-upgrade-btn danger"
+                              type="button"
+                              onclick="window.rzCancelBoost('${esc(boost.id)}')"
+                            >
+                              Cancel + Refund
+                            </button>
+                          `
+                          : ""
+                      }
+
+                    </div>
+
+                  </div>
+                `;
+
+              }
+            )
+            .join("");
+
+      }catch(error){
+
+        box.innerHTML =
+          '<div class="rz-upgrade-empty">' +
+          esc(error.message) +
+          '</div>';
+
+      }
+
+      return;
+
+    }
+
+    try{
+
+      var result =
+        await api(
+          "/api/social/mine"
+        );
+
+      var campaigns =
+        Array.isArray(
+          result.campaigns
+        )
+          ? result.campaigns
+          : [];
+
+      if(!campaigns.length){
+
+        box.innerHTML =
+          '<div class="rz-upgrade-empty">' +
+          'You have not launched a creator campaign yet.' +
+          '</div>';
+
+        return;
+
+      }
+
+      box.innerHTML =
+        campaigns
+          .slice(
+            0,
+            20
+          )
+          .map(
+            function(task){
+
+              return `
+                <div class="rz-upgrade-item">
+
+                  <div class="rz-upgrade-item-title">
+                    ${esc(task.title)}
+                  </div>
+
+                  <div class="rz-upgrade-meta">
+                    ${Number(task.completedCount || 0)}
+                    /
+                    ${Number(task.quantity || 0)}
+                    completed
+                    Â·
+                    ${esc(task.status || "active")}
+                  </div>
+
+                  ${
+                    task.status ===
+                    "active"
+                      ? `
+                        <div class="rz-upgrade-actions">
+
+                          <button
+                            class="rz-upgrade-btn danger"
+                            type="button"
+                            onclick="window.rzCancelSocial('${esc(task.id)}')"
+                          >
+                            Cancel + Refund
+                          </button>
+
+                        </div>
+                      `
+                      : ""
+                  }
+
+                </div>
+              `;
+
+            }
+          )
+          .join("");
+
+    }catch(error){
+
+      box.innerHTML =
+        '<div class="rz-upgrade-empty">' +
+        esc(
+          error.message
+        ) +
+        '</div>';
+
+    }
+
+  }
+
+  window.rzCancelBoost =
+    async function(
+      boostId
+    ){
+
+      if(
+        !window.confirm(
+          "Cancel this campaign and refund the unused points?"
+        )
+      ){
+        return;
+      }
+
+      try{
+
+        status(
+          "Cancelling campaign..."
+        );
+
+        var result =
+          await api(
+            "/api/boosts/cancel",
+            {
+              method:
+                "POST",
+
+              body:
+                JSON.stringify({
+                  boostTaskId:
+                    boostId
+                })
+            }
+          );
+
+        status(
+          Number(
+            result.refund ||
+            0
+          ) +
+          " points refunded."
+        );
+
+        await loadAll();
+
+      }catch(error){
+
+        status(
+          error.message
+        );
+
+      }
+
+    };
+
+  window.rzCancelSocial =
+    async function(
+      taskId
+    ){
+
+      if(
+        !window.confirm(
+          "Cancel this campaign and refund the unused points?"
+        )
+      ){
+        return;
+      }
+
+      try{
+
+        status(
+          "Cancelling campaign..."
+        );
+
+        var result =
+          await api(
+            "/api/social/tasks/cancel",
+            {
+              method:
+                "POST",
+
+              body:
+                JSON.stringify({
+                  taskId:
+                    taskId
+                })
+            }
+          );
+
+        status(
+          Number(
+            result.refund ||
+            0
+          ) +
+          " points refunded."
+        );
+
+        await loadAll();
+
+      }catch(error){
+
+        status(
+          error.message
+        );
+
+      }
+
+    };
+
+  function updateBudget(){
+
+    var quantity =
+      Number(
+        el(
+          "rzUpgradeQuantity"
+        ).value ||
+        0
+      );
+
+    var reward =
+      Number(
+        el(
+          "rzUpgradeReward"
+        ).value ||
+        0
+      );
+
+    var total =
+      Math.max(
+        0,
+        quantity * reward
+      );
+
+    el(
+      "rzUpgradeBudget"
+    ).textContent =
+      "Budget: " +
+      total.toLocaleString() +
+      " points";
+
+  }
+
+  async function createCampaign(
+    event
+  ){
+
+    event.preventDefault();
+
+    try{
+
+      status(
+        "Launching campaign..."
+      );
+
+      var body = {
+
+        title:
+          el(
+            "rzUpgradeTitle"
+          ).value.trim(),
+
+        username:
+          el(
+            "rzUpgradeUsername"
+          ).value.trim(),
+
+        url:
+          el(
+            "rzUpgradeURL"
+          ).value.trim(),
+
+        platform:
+          el(
+            "rzUpgradePlatform"
+          ).value,
+
+        action:
+          el(
+            "rzUpgradeAction"
+          ).value,
+
+        description:
+          el(
+            "rzUpgradeDescription"
+          ).value.trim(),
+
+        quantity:
+          Number(
+            el(
+              "rzUpgradeQuantity"
+            ).value
+          ),
+
+        reward:
+          Number(
+            el(
+              "rzUpgradeReward"
+            ).value
+          )
+
+      };
+
+      if(
+        SOCIAL_MODE ===
+        "boosts"
+      ){
+
+        await api(
+          "/api/boosts/create",
+          {
+            method:
+              "POST",
+
+            body:
+              JSON.stringify(
+                body
+              )
+          }
+        );
+
+      }else{
+
+        await api(
+          "/api/social/tasks/create",
+          {
+            method:
+              "POST",
+
+            body:
+              JSON.stringify(
+                body
+              )
+          }
+        );
+
+      }
+
+      el(
+        "rzUpgradeCampaignForm"
+      ).reset();
+
+      el(
+        "rzUpgradeQuantity"
+      ).value =
+        10;
+
+      el(
+        "rzUpgradeReward"
+      ).value =
+        10;
+
+      updateBudget();
+
+      status(
+        "Campaign launched successfully."
+      );
+
+      await loadAll();
+
+    }catch(error){
+
+      status(
+        error.message
+      );
+
+    }
+
+  }
+
+  async function askAI(){
+
+    var prompt =
+      el(
+        "rzUpgradeAIPrompt"
+      ).value.trim();
+
+    var reply =
+      el(
+        "rzUpgradeAIReply"
+      );
+
+    if(!prompt){
+
+      reply.textContent =
+        "Type something first.";
+
+      return;
+
+    }
+
+    reply.textContent =
+      "RIZORA AI is thinking...";
+
+    try{
+
+      var result =
+        await api(
+          "/api/ai/chat",
+          {
+            method:
+              "POST",
+
+            body:
+              JSON.stringify({
+                message:
+                  prompt
+              })
+          }
+        );
+
+      reply.textContent =
+        result.reply ||
+        "RIZORA AI returned no reply.";
+
+    }catch(error){
+
+      reply.textContent =
+        error.message;
+
+    }
+
+  }
+
+  async function loadAll(){
+
+    if(!token()){
+
+      status(
+        "Log in to use RIZORA Growth."
+      );
+
+      return;
+
+    }
+
+    status(
+      "Loading your growth center..."
+    );
+
+    await Promise.all([
+      loadOverview(),
+      loadOfficialTasks(),
+      loadMarketplace(),
+      loadMine()
+    ]);
+
+    status("");
+
+  }
+
+  async function installRIZORA(){
+
+    if(
+      deferredInstallPrompt
+    ){
+
+      deferredInstallPrompt.prompt();
+
+      try{
+
+        await deferredInstallPrompt.userChoice;
+
+      }catch(_){}
+
+      deferredInstallPrompt =
+        null;
+
+      return;
+
+    }
+
+    status(
+      "Use your browser's install button to add RIZORA to your device."
+    );
+
+  }
+
+  function registerPWA(){
+
+    if(
+      "serviceWorker" in navigator
+    ){
+
+      window.addEventListener(
+        "load",
+        function(){
+
+          navigator.serviceWorker
+            .register(
+              "/service-worker.js"
+            )
+            .catch(
+              function(){}
+            );
+
+        }
+      );
+
+    }
+
+    window.addEventListener(
+      "beforeinstallprompt",
+      function(event){
+
+        event.preventDefault();
+
+        deferredInstallPrompt =
+          event;
+
+      }
+    );
+
+  }
+
+  function setup(){
+
+    var fab =
+      el(
+        "rzCompleteFab"
+      );
+
+    var closeButton =
+      el(
+        "rzUpgradeClose"
+      );
+
+    var form =
+      el(
+        "rzUpgradeCampaignForm"
+      );
+
+    var ai =
+      el(
+        "rzUpgradeAIButton"
+      );
+
+    var install =
+      el(
+        "rzUpgradeInstall"
+      );
+
+    if(fab){
+
+      fab.addEventListener(
+        "click",
+        open
+      );
+
+    }
+
+    if(closeButton){
+
+      closeButton.addEventListener(
+        "click",
+        close
+      );
+
+    }
+
+    if(form){
+
+      form.addEventListener(
+        "submit",
+        createCampaign
+      );
+
+    }
+
+    if(ai){
+
+      ai.addEventListener(
+        "click",
+        askAI
+      );
+
+    }
+
+    if(install){
+
+      install.addEventListener(
+        "click",
+        installRIZORA
+      );
+
+    }
+
+    [
+      "rzUpgradeQuantity",
+      "rzUpgradeReward"
+    ].forEach(
+      function(id){
+
+        var input =
+          el(id);
+
+        if(input){
+
+          input.addEventListener(
+            "input",
+            updateBudget
+          );
+
+        }
+
+      }
+    );
+
+    updateBudget();
+
+    registerPWA();
+
+  }
+
+  window.rzOpenCompleteUpgrade =
+    open;
+
+  window.rzCloseCompleteUpgrade =
+    close;
+
+  if(
+    document.readyState ===
+    "loading"
+  ){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      setup
+    );
+
+  }else{
+
+    setup();
+
+  }
+
+})();
+</script>
 </body>
 </html>

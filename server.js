@@ -1,4 +1,4 @@
-// RIZORA Backend — Version 8.1.0
+// RIZORA Backend Ã¢â‚¬â€ Version 8.1.0
 // Clean copy-paste version
 
 "use strict";
@@ -728,7 +728,7 @@ function getCurrentUser(
 // ============================================================
 
 
-const TASK_COOLDOWN_MS = 4 * 60 * 1000;
+const TASK_COOLDOWN_MS = 45 * 60 * 1000;
 
 const RIZORA_FEATURE_LAYER_V1 = true;
 
@@ -3157,7 +3157,7 @@ if (method === "GET" && pathname === "/api/tasks") {
    * History prevents reuse of the same action/platform pair.
    */
   // ----------------------------------------------------------
-  // TASKS — START
+  // TASKS Ã¢â‚¬â€ START
   // ----------------------------------------------------------
 
   if (
@@ -3642,7 +3642,7 @@ const completion = {
 
 
 /* ============================================================
-   COMMUNITY TASK — CREATE
+   COMMUNITY TASK Ã¢â‚¬â€ CREATE
 ============================================================ */
 
 if (
@@ -3811,7 +3811,7 @@ if (
 }
 
 /* ============================================================
-   BOOSTS — AVAILABLE
+   BOOSTS Ã¢â‚¬â€ AVAILABLE
 ============================================================ */
 
 if (
@@ -3858,7 +3858,7 @@ if (
 
 
 /* ============================================================
-   BOOSTS — CREATE
+   BOOSTS Ã¢â‚¬â€ CREATE
 ============================================================ */
 
 if (
@@ -4081,7 +4081,7 @@ if (
 
 
 /* ============================================================
-   BOOSTS — COMPLETE
+   BOOSTS Ã¢â‚¬â€ COMPLETE
 ============================================================ */
 
 if (
@@ -4648,7 +4648,7 @@ if (
   return;
 }
 
-// REFERRALS — ME
+// REFERRALS Ã¢â‚¬â€ ME
   // ----------------------------------------------------------
 
   if (
@@ -4880,7 +4880,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — STATS
+  // ADMIN Ã¢â‚¬â€ STATS
   // ----------------------------------------------------------
 
   if (
@@ -4914,7 +4914,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — USERS
+  // ADMIN Ã¢â‚¬â€ USERS
   // ----------------------------------------------------------
 
   if (
@@ -4950,7 +4950,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — REFERRALS
+  // ADMIN Ã¢â‚¬â€ REFERRALS
   // ----------------------------------------------------------
 
   if (
@@ -4984,7 +4984,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — AUDIT
+  // ADMIN Ã¢â‚¬â€ AUDIT
   // ----------------------------------------------------------
 
   if (
@@ -5018,7 +5018,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — TASKS
+  // ADMIN Ã¢â‚¬â€ TASKS
   // ----------------------------------------------------------
 
   if (
@@ -5052,7 +5052,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — CHANGE ROLE
+  // ADMIN Ã¢â‚¬â€ CHANGE ROLE
   // ----------------------------------------------------------
 
   if (
@@ -5181,7 +5181,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — CHANGE STATUS
+  // ADMIN Ã¢â‚¬â€ CHANGE STATUS
   // ----------------------------------------------------------
 
   if (
@@ -5310,7 +5310,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — POINTS
+  // ADMIN Ã¢â‚¬â€ POINTS
   // ----------------------------------------------------------
 
   if (
@@ -5424,7 +5424,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — DASHBOARD
+  // SUPER ADMIN Ã¢â‚¬â€ DASHBOARD
   // ----------------------------------------------------------
 
   if (
@@ -5475,7 +5475,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — USERS
+  // SUPER ADMIN Ã¢â‚¬â€ USERS
   // ----------------------------------------------------------
 
   if (
@@ -5511,7 +5511,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — AUDIT
+  // SUPER ADMIN Ã¢â‚¬â€ AUDIT
   // ----------------------------------------------------------
 
   if (
@@ -5545,7 +5545,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — REFERRALS
+  // SUPER ADMIN Ã¢â‚¬â€ REFERRALS
   // ----------------------------------------------------------
 
   if (
@@ -5579,7 +5579,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — ROLE
+  // SUPER ADMIN Ã¢â‚¬â€ ROLE
   // ----------------------------------------------------------
 
   if (
@@ -5705,7 +5705,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — STATUS
+  // SUPER ADMIN Ã¢â‚¬â€ STATUS
   // ----------------------------------------------------------
 
   if (
@@ -5831,7 +5831,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — POINTS
+  // SUPER ADMIN Ã¢â‚¬â€ POINTS
   // ----------------------------------------------------------
 
   if (
@@ -5942,7 +5942,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — TASKS
+  // SUPER ADMIN Ã¢â‚¬â€ TASKS
   // ----------------------------------------------------------
 
   if (
@@ -5976,7 +5976,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — TASK STATUS
+  // SUPER ADMIN Ã¢â‚¬â€ TASK STATUS
   // ----------------------------------------------------------
 
   if (
@@ -6066,7 +6066,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — TASK LIST
+  // SUPER ADMIN Ã¢â‚¬â€ TASK LIST
   // ----------------------------------------------------------
 
   if (
@@ -7166,7 +7166,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION — MY STATUS
+   VERIFICATION Ã¢â‚¬â€ MY STATUS
 ------------------------------------------------------------ */
 
 if (
@@ -7267,7 +7267,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION — APPLY
+   VERIFICATION Ã¢â‚¬â€ APPLY
 ------------------------------------------------------------ */
 
 if (
@@ -7534,7 +7534,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION — PUBLIC USER STATUS
+   VERIFICATION Ã¢â‚¬â€ PUBLIC USER STATUS
 ------------------------------------------------------------ */
 
 if (
@@ -7604,7 +7604,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   SUPER ADMIN — VERIFICATION QUEUE
+   SUPER ADMIN Ã¢â‚¬â€ VERIFICATION QUEUE
 ------------------------------------------------------------ */
 
 if (
@@ -7720,7 +7720,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   SUPER ADMIN — VERIFICATION ACTION
+   SUPER ADMIN Ã¢â‚¬â€ VERIFICATION ACTION
 ------------------------------------------------------------ */
 
 if (
@@ -7946,6 +7946,1028 @@ if (
   return;
 }
 
+/* ============================================================
+   RIZORA SOCIAL ROUTES V2
+   ============================================================ */
+
+if(
+  method === "GET" &&
+  pathname === "/api/social/tasks"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+
+  }
+
+  ensureRizoraSocialDB(db);
+
+  const tasks =
+    db.socialTasks
+      .filter(
+        task =>
+          task.status === "active" &&
+          (
+            task.creatorId !== user.id ||
+            task.sponsored
+          )
+      )
+      .map(
+        task => {
+
+          const cooldown =
+            task.sponsored
+              ? rzSocialCooldown(
+                  db,
+                  user.id,
+                  task.id
+                )
+              : 0;
+
+          return {
+
+            ...task,
+
+            completed:
+              task.sponsored
+                ? cooldown > 0
+                : db.socialCompletions.some(
+                    item =>
+                      item.userId === user.id &&
+                      item.taskId === task.id
+                  ),
+
+            cooldownMs:
+              cooldown
+
+          };
+
+        }
+      );
+
+  sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      tasks
+    }
+  );
+
+  return;
+
+}
+
+if(
+  method === "GET" &&
+  pathname === "/api/social/overview"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+
+  }
+
+  ensureRizoraSocialDB(db);
+
+  const completed =
+    db.socialCompletions.filter(
+      item =>
+        item.userId === user.id
+    );
+
+  const campaigns =
+    db.socialTasks.filter(
+      task =>
+        task.creatorId === user.id
+    );
+
+  const earned =
+    completed.reduce(
+      (
+        total,
+        item
+      ) =>
+        total +
+        rzSocialNumber(
+          item.reward,
+          0
+        ),
+      0
+    );
+
+  sendJSON(
+    res,
+    200,
+    {
+      success:true,
+
+      points:
+        rzSocialNumber(
+          user.points,
+          0
+        ),
+
+      completed:
+        completed.length,
+
+      earned,
+
+      campaigns:
+        campaigns.length
+    }
+  );
+
+  return;
+
+}
+
+if(
+  method === "GET" &&
+  pathname === "/api/social/mine"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+
+  }
+
+  ensureRizoraSocialDB(db);
+
+  const campaigns =
+    db.socialTasks
+      .filter(
+        task =>
+          task.creatorId === user.id
+      )
+      .sort(
+        (a,b) =>
+          new Date(b.createdAt).getTime() -
+          new Date(a.createdAt).getTime()
+      );
+
+  sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      campaigns
+    }
+  );
+
+  return;
+
+}
+
+if(
+  method === "POST" &&
+  pathname === "/api/social/tasks/create"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+
+  }
+
+  let body;
+
+  try{
+
+    body =
+      await readBody(req);
+
+  }catch(error){
+
+    sendError(
+      res,
+      400,
+      error.message
+    );
+
+    return;
+
+  }
+
+  ensureRizoraSocialDB(db);
+
+  const platform =
+    cleanString(
+      body.platform,
+      30
+    ).toLowerCase();
+
+  const action =
+    cleanString(
+      body.action,
+      30
+    ).toLowerCase();
+
+  const url =
+    cleanString(
+      body.url,
+      1000
+    );
+
+  const title =
+    cleanString(
+      body.title,
+      160
+    ) ||
+    "Creator growth campaign";
+
+  const description =
+    cleanString(
+      body.description,
+      1000
+    );
+
+  const reward =
+    Math.floor(
+      rzSocialNumber(
+        body.reward,
+        0
+      )
+    );
+
+  const quantity =
+    Math.floor(
+      rzSocialNumber(
+        body.quantity,
+        0
+      )
+    );
+
+  if(
+    !RIZORA_SOCIAL_PLATFORMS.has(
+      platform
+    )
+  ){
+
+    sendError(
+      res,
+      400,
+      "Unsupported social platform."
+    );
+
+    return;
+
+  }
+
+  if(
+    !RIZORA_SOCIAL_ACTIONS.has(
+      action
+    )
+  ){
+
+    sendError(
+      res,
+      400,
+      "Unsupported social action."
+    );
+
+    return;
+
+  }
+
+  if(
+    !rzSocialValidURL(url)
+  ){
+
+    sendError(
+      res,
+      400,
+      "Enter a valid social URL."
+    );
+
+    return;
+
+  }
+
+  if(
+    reward <
+      RIZORA_SOCIAL_MIN_REWARD ||
+    reward >
+      RIZORA_SOCIAL_MAX_REWARD
+  ){
+
+    sendError(
+      res,
+      400,
+      "Reward must be between 5 and 100 points."
+    );
+
+    return;
+
+  }
+
+  if(
+    quantity < 1 ||
+    quantity >
+      RIZORA_SOCIAL_MAX_QUANTITY
+  ){
+
+    sendError(
+      res,
+      400,
+      "Quantity must be between 1 and 500."
+    );
+
+    return;
+
+  }
+
+  const budget =
+    reward * quantity;
+
+  const points =
+    rzSocialNumber(
+      user.points,
+      0
+    );
+
+  if(points < budget){
+
+    sendError(
+      res,
+      400,
+      `You need ${budget} points to fund this campaign.`
+    );
+
+    return;
+
+  }
+
+  user.points =
+    points -
+    budget;
+
+  const task = {
+
+    id:
+      uid("social_"),
+
+    title,
+
+    description,
+
+    platform,
+
+    action,
+
+    url,
+
+    reward,
+
+    quantity,
+
+    completedCount:0,
+
+    fundedRemaining:
+      budget,
+
+    creatorId:
+      user.id,
+
+    sponsored:false,
+
+    status:
+      "active",
+
+    createdAt:
+      new Date().toISOString()
+
+  };
+
+  db.socialTasks.push(
+    task
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    201,
+    {
+      success:true,
+      task,
+      points:
+        rzSocialNumber(
+          user.points,
+          0
+        )
+    }
+  );
+
+  return;
+
+}
+
+if(
+  method === "POST" &&
+  pathname === "/api/social/tasks/complete"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+
+  }
+
+  let body;
+
+  try{
+
+    body =
+      await readBody(req);
+
+  }catch(error){
+
+    sendError(
+      res,
+      400,
+      error.message
+    );
+
+    return;
+
+  }
+
+  ensureRizoraSocialDB(db);
+
+  const taskId =
+    cleanString(
+      body.taskId ||
+      body.id,
+      120
+    );
+
+  const task =
+    db.socialTasks.find(
+      item =>
+        item.id === taskId &&
+        item.status === "active"
+    );
+
+  if(!task){
+
+    sendError(
+      res,
+      404,
+      "Social task not found."
+    );
+
+    return;
+
+  }
+
+  if(
+    task.creatorId === user.id &&
+    !task.sponsored
+  ){
+
+    sendError(
+      res,
+      400,
+      "You cannot complete your own campaign."
+    );
+
+    return;
+
+  }
+
+  const previous =
+    db.socialCompletions.find(
+      item =>
+        item.userId === user.id &&
+        item.taskId === task.id
+    );
+
+  if(
+    task.sponsored
+  ){
+
+    const cooldown =
+      rzSocialCooldown(
+        db,
+        user.id,
+        task.id
+      );
+
+    if(cooldown > 0){
+
+      sendError(
+        res,
+        429,
+        "This mission is on cooldown. Come back later."
+      );
+
+      return;
+
+    }
+
+  }else{
+
+    if(previous){
+
+      sendError(
+        res,
+        409,
+        "You already completed this campaign."
+      );
+
+      return;
+
+    }
+
+  }
+
+  const reward =
+    Math.max(
+      5,
+      Math.floor(
+        rzSocialNumber(
+          task.reward,
+          0
+        )
+      )
+    );
+
+  if(
+    !task.sponsored &&
+    rzSocialNumber(
+      task.fundedRemaining,
+      0
+    ) < reward
+  ){
+
+    sendError(
+      res,
+      409,
+      "This campaign has no funded rewards remaining."
+    );
+
+    return;
+
+  }
+
+  const completion = {
+
+    id:
+      uid("social_completion_"),
+
+    taskId:
+      task.id,
+
+    userId:
+      user.id,
+
+    creatorId:
+      task.creatorId || null,
+
+    reward,
+
+    createdAt:
+      new Date().toISOString()
+
+  };
+
+  db.socialCompletions.push(
+    completion
+  );
+
+  user.points =
+    rzSocialNumber(
+      user.points,
+      0
+    ) +
+    reward;
+
+  task.completedCount =
+    rzSocialNumber(
+      task.completedCount,
+      0
+    ) +
+    1;
+
+  if(!task.sponsored){
+
+    task.fundedRemaining =
+      Math.max(
+        0,
+        rzSocialNumber(
+          task.fundedRemaining,
+          0
+        ) -
+        reward
+      );
+
+    if(
+      task.fundedRemaining <= 0
+    ){
+
+      task.status =
+        "completed";
+
+    }
+
+    if(task.creatorId){
+
+      rzSocialNotify(
+        db,
+        task.creatorId,
+        "Campaign completed",
+        `${user.displayName || user.username || "A creator"} completed "${task.title}" and earned ${reward} points.`
+      );
+
+    }
+
+  }
+
+  if(
+    typeof pushPointsLedger ===
+    "function"
+  ){
+
+    try{
+
+      pushPointsLedger(
+        db,
+        user.id,
+        "credit",
+        reward,
+        "social_task",
+        {
+          taskId:
+            task.id
+        }
+      );
+
+    }catch(_){}
+
+  }
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success:true,
+
+      reward,
+
+      points:
+        rzSocialNumber(
+          user.points,
+          0
+        ),
+
+      user,
+
+      completion
+    }
+  );
+
+  return;
+
+}
+
+if(
+  method === "POST" &&
+  pathname === "/api/social/tasks/cancel"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+
+  }
+
+  let body;
+
+  try{
+
+    body =
+      await readBody(req);
+
+  }catch(error){
+
+    sendError(
+      res,
+      400,
+      error.message
+    );
+
+    return;
+
+  }
+
+  ensureRizoraSocialDB(db);
+
+  const task =
+    db.socialTasks.find(
+      item =>
+        item.id ===
+        cleanString(
+          body.taskId ||
+          body.id,
+          120
+        )
+    );
+
+  if(!task){
+
+    sendError(
+      res,
+      404,
+      "Campaign not found."
+    );
+
+    return;
+
+  }
+
+  if(
+    task.creatorId !==
+    user.id
+  ){
+
+    sendError(
+      res,
+      403,
+      "You cannot cancel this campaign."
+    );
+
+    return;
+
+  }
+
+  if(
+    task.status !==
+    "active"
+  ){
+
+    sendError(
+      res,
+      400,
+      "This campaign is already closed."
+    );
+
+    return;
+
+  }
+
+  const refund =
+    Math.max(
+      0,
+      rzSocialNumber(
+        task.fundedRemaining,
+        0
+      )
+    );
+
+  user.points =
+    rzSocialNumber(
+      user.points,
+      0
+    ) +
+    refund;
+
+  task.status =
+    "cancelled";
+
+  task.fundedRemaining =
+    0;
+
+  if(
+    typeof pushPointsLedger ===
+    "function"
+  ){
+
+    try{
+
+      pushPointsLedger(
+        db,
+        user.id,
+        "credit",
+        refund,
+        "social_campaign_refund",
+        {
+          taskId:
+            task.id
+        }
+      );
+
+    }catch(_){}
+
+  }
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      refund,
+
+      points:
+        rzSocialNumber(
+          user.points,
+          0
+        ),
+
+      user
+    }
+  );
+
+  return;
+
+}
+
+if(
+  method === "GET" &&
+  pathname === "/api/notifications"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+
+  }
+
+  ensureRizoraSocialDB(db);
+
+  const notifications =
+    db.notifications
+      .filter(
+        item =>
+          item.userId === user.id
+      )
+      .sort(
+        (a,b) =>
+          new Date(b.createdAt).getTime() -
+          new Date(a.createdAt).getTime()
+      )
+      .slice(0,100);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      notifications
+    }
+  );
+
+  return;
+
+}
+
+if(
+  method === "POST" &&
+  pathname === "/api/notifications/read"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+
+    return;
+
+  }
+
+  ensureRizoraSocialDB(db);
+
+  for(
+    const notification
+    of db.notifications
+  ){
+
+    if(
+      notification.userId ===
+      user.id
+    ){
+
+      notification.read =
+        true;
+
+    }
+
+  }
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success:true
+    }
+  );
+
+  return;
+
+}
+
 // STATIC FRONTEND
   // ----------------------------------------------------------
 
@@ -8129,6 +9151,282 @@ function seedDatabase() {
 
 ensureDatabase();
 seedDatabase();
+
+/* ============================================================
+   RIZORA SOCIAL ENGINE V2
+   ============================================================ */
+
+const RIZORA_SOCIAL_COOLDOWN_MS =
+  45 * 60 * 1000;
+
+const RIZORA_SOCIAL_MIN_REWARD =
+  5;
+
+const RIZORA_SOCIAL_MAX_REWARD =
+  100;
+
+const RIZORA_SOCIAL_MAX_QUANTITY =
+  500;
+
+const RIZORA_SOCIAL_PLATFORMS =
+  new Set([
+    "tiktok",
+    "instagram",
+    "x",
+    "youtube",
+    "facebook",
+    "website"
+  ]);
+
+const RIZORA_SOCIAL_ACTIONS =
+  new Set([
+    "follow",
+    "like",
+    "share",
+    "comment",
+    "subscribe",
+    "visit"
+  ]);
+
+function ensureRizoraSocialDB(db){
+
+  db.socialTasks ||= [];
+  db.socialCompletions ||= [];
+  db.notifications ||= [];
+
+  const official = [
+    {
+      id:"rz_official_tiktok",
+
+      title:
+        "Follow @official_rizora.hq on TikTok",
+
+      description:
+        "Follow the official RIZORA TikTok account.",
+
+      platform:"tiktok",
+
+      action:"follow",
+
+      url:
+        "https://www.tiktok.com/@official_rizora.hq",
+
+      reward:100,
+
+      sponsored:true
+    },
+
+    {
+      id:"rz_official_instagram",
+
+      title:
+        "Follow @rizora.hq on Instagram",
+
+      description:
+        "Follow the official RIZORA Instagram account.",
+
+      platform:"instagram",
+
+      action:"follow",
+
+      url:
+        "https://www.instagram.com/rizora.hq",
+
+      reward:75,
+
+      sponsored:true
+    },
+
+    {
+      id:"rz_official_x",
+
+      title:
+        "Follow @Rizora_hq on X",
+
+      description:
+        "Follow the official RIZORA X account.",
+
+      platform:"x",
+
+      action:"follow",
+
+      url:
+        "https://x.com/Rizora_hq",
+
+      reward:75,
+
+      sponsored:true
+    },
+
+    {
+      id:"rz_romi_tiktok",
+
+      title:
+        "Follow @romi.noir on TikTok",
+
+      description:
+        "Follow RoMi's official TikTok account.",
+
+      platform:"tiktok",
+
+      action:"follow",
+
+      url:
+        "https://www.tiktok.com/@romi.noir",
+
+      reward:75,
+
+      sponsored:true
+    }
+  ];
+
+  for(
+    const task
+    of official
+  ){
+
+    const exists =
+      db.socialTasks.some(
+        item =>
+          item.id === task.id
+      );
+
+    if(!exists){
+
+      db.socialTasks.push({
+
+        ...task,
+
+        creatorId:null,
+
+        quantity:null,
+
+        completedCount:0,
+
+        fundedRemaining:null,
+
+        status:"active",
+
+        createdAt:
+          new Date().toISOString()
+
+      });
+
+    }
+
+  }
+
+  return db;
+}
+
+function rzSocialNumber(
+  value,
+  fallback
+){
+
+  const n =
+    Number(value);
+
+  if(
+    Number.isFinite(n)
+  ){
+    return n;
+  }
+
+  return fallback || 0;
+}
+
+function rzSocialValidURL(
+  value
+){
+
+  try{
+
+    const parsed =
+      new URL(
+        String(value || "").trim()
+      );
+
+    return (
+      parsed.protocol === "https:" ||
+      parsed.protocol === "http:"
+    );
+
+  }catch{
+
+    return false;
+
+  }
+
+}
+
+function rzSocialCooldown(
+  db,
+  userId,
+  taskId
+){
+
+  const latest =
+    db.socialCompletions
+      .filter(
+        item =>
+          item.userId === userId &&
+          item.taskId === taskId
+      )
+      .sort(
+        (a,b) =>
+          new Date(b.createdAt).getTime() -
+          new Date(a.createdAt).getTime()
+      )[0];
+
+  if(!latest){
+
+    return 0;
+
+  }
+
+  const next =
+    new Date(
+      latest.createdAt
+    ).getTime() +
+    RIZORA_SOCIAL_COOLDOWN_MS;
+
+  return Math.max(
+    0,
+    next - Date.now()
+  );
+
+}
+
+function rzSocialNotify(
+  db,
+  userId,
+  title,
+  message
+){
+
+  db.notifications.push({
+
+    id:
+      uid("notif_"),
+
+    userId,
+
+    title,
+
+    message,
+
+    type:
+      "social",
+
+    read:false,
+
+    createdAt:
+      new Date().toISOString()
+
+  });
+
+}
 
 const server =
   http.createServer(
