@@ -761,6 +761,157 @@ img{max-width:100%}
 window.RIZORA_API_BASE =
   "https://rizora-guse.onrender.com";
 </script>
+<style id="RIZORA_UNIQUE_VERIFIED_BADGE_V1">
+/* =========================================================
+   OFFICIAL RIZORA VERIFIED BADGE
+   One badge only.
+   Tiny check is fully contained inside the seal.
+   ========================================================= */
+
+.rz-verified-badge{
+  --rz-violet-1:#c4b5fd;
+  --rz-violet-2:#8b5cf6;
+  --rz-violet-3:#5b21b6;
+
+  position:relative;
+
+  display:inline-grid;
+  place-items:center;
+
+  width:18px;
+  height:18px;
+
+  min-width:18px;
+  min-height:18px;
+
+  flex:0 0 18px;
+
+  margin-left:5px;
+
+  vertical-align:-3px;
+
+  background:
+    radial-gradient(
+      circle at 32% 25%,
+      rgba(255,255,255,.24) 0%,
+      rgba(255,255,255,.08) 22%,
+      transparent 48%
+    ),
+    linear-gradient(
+      145deg,
+      var(--rz-violet-1) 0%,
+      var(--rz-violet-2) 45%,
+      var(--rz-violet-3) 100%
+    );
+
+  clip-path:polygon(
+    50% 0%,
+    62% 6%,
+    74% 5%,
+    82% 15%,
+    94% 22%,
+    92% 35%,
+    100% 50%,
+    92% 65%,
+    94% 78%,
+    82% 85%,
+    74% 95%,
+    62% 94%,
+    50% 100%,
+    38% 94%,
+    26% 95%,
+    18% 85%,
+    6% 78%,
+    8% 65%,
+    0% 50%,
+    8% 35%,
+    6% 22%,
+    18% 15%,
+    26% 5%,
+    38% 6%
+  );
+
+  box-shadow:
+    0 0 0 1px rgba(196,181,253,.22),
+    0 0 12px rgba(139,92,246,.28);
+
+  filter:saturate(1.08);
+
+  user-select:none;
+
+  pointer-events:none;
+
+  contain:layout paint;
+}
+
+.rz-verified-badge::after{
+  content:"\2713";
+
+  display:grid;
+  place-items:center;
+
+  width:100%;
+  height:100%;
+
+  color:#fff;
+
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  font-size:9px;
+  line-height:1;
+
+  font-weight:950;
+
+  text-shadow:
+    0 1px 2px rgba(0,0,0,.38);
+
+  transform:translateY(-.15px);
+}
+
+.rz-verified-badge.rz-verified-sm{
+  width:15px;
+  height:15px;
+  min-width:15px;
+  min-height:15px;
+  flex-basis:15px;
+  margin-left:4px;
+  vertical-align:-2px;
+}
+
+.rz-verified-badge.rz-verified-sm::after{
+  font-size:7px;
+}
+
+.rz-verified-badge.rz-verified-lg{
+  width:22px;
+  height:22px;
+  min-width:22px;
+  min-height:22px;
+  flex-basis:22px;
+  margin-left:6px;
+  vertical-align:-4px;
+}
+
+.rz-verified-badge.rz-verified-lg::after{
+  font-size:11px;
+}
+
+.rz-verified-wrap{
+  display:inline-flex;
+  align-items:center;
+}
+
+.rz-verified-wrap > .rz-verified-badge{
+  margin-left:5px;
+}
+</style>
 </head>
 
 <body>
@@ -7371,6 +7522,592 @@ document.addEventListener(
     );
 
   }
+
+})();
+</script>
+<script id="RIZORA_UNIQUE_VERIFIED_BADGE_V1_SCRIPT">
+(function(){
+
+  if(window.__RIZORA_VERIFIED_BADGE_V1__){
+    return;
+  }
+
+  window.__RIZORA_VERIFIED_BADGE_V1__ = true;
+
+  window.RIZORA = window.RIZORA || {};
+
+  window.RIZORA.createVerifiedBadge = function(size){
+
+    var badge =
+      document.createElement("span");
+
+    badge.className =
+      "rz-verified-badge" +
+      (
+        size === "sm"
+          ? " rz-verified-sm"
+          : size === "lg"
+            ? " rz-verified-lg"
+            : ""
+      );
+
+    badge.setAttribute(
+      "aria-label",
+      "RIZORA Verified"
+    );
+
+    badge.setAttribute(
+      "role",
+      "img"
+    );
+
+    badge.setAttribute(
+      "title",
+      "RIZORA Verified"
+    );
+
+    return badge;
+  };
+
+  window.RIZORA.markVerified = function(
+    target,
+    size
+  ){
+
+    if(!target){
+      return null;
+    }
+
+    if(
+      target.querySelector &&
+      target.querySelector(
+        ".rz-verified-badge"
+      )
+    ){
+      return target.querySelector(
+        ".rz-verified-badge"
+      );
+    }
+
+    var badge =
+      window.RIZORA.createVerifiedBadge(
+        size
+      );
+
+    target.classList.add(
+      "rz-verified-wrap"
+    );
+
+    target.appendChild(
+      badge
+    );
+
+    target.setAttribute(
+      "data-rz-verified",
+      "true"
+    );
+
+    return badge;
+  };
+
+  function decorateVerified(){
+
+    document
+      .querySelectorAll(
+        "[data-rz-verified='true']"
+      )
+      .forEach(
+        function(node){
+
+          if(
+            !node.querySelector(
+              ".rz-verified-badge"
+            )
+          ){
+
+            node.classList.add(
+              "rz-verified-wrap"
+            );
+
+            node.appendChild(
+              window.RIZORA.createVerifiedBadge()
+            );
+
+          }
+
+        }
+      );
+
+  }
+
+  if(
+    document.readyState ===
+    "loading"
+  ){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      decorateVerified
+    );
+
+  }else{
+
+    decorateVerified();
+
+  }
+
+})();
+</script>
+<script id="RIZORA_VERIFIED_BADGE_BRIDGE_V1">
+(function(){
+
+  if(window.__RIZORA_VERIFIED_BADGE_BRIDGE_V1__){
+    return;
+  }
+
+  window.__RIZORA_VERIFIED_BADGE_BRIDGE_V1__ = true;
+
+  var API =
+    window.RIZORA_API_BASE ||
+    "https://rizora-guse.onrender.com";
+
+  function getToken(){
+
+    return (
+      localStorage.getItem("rizoraToken") ||
+      localStorage.getItem("rizora_token") ||
+      ""
+    );
+
+  }
+
+  function boolVerified(value){
+
+    if(value === true){
+      return true;
+    }
+
+    if(typeof value === "string"){
+
+      return [
+        "verified",
+        "approved",
+        "active",
+        "true"
+      ].indexOf(
+        value.trim().toLowerCase()
+      ) !== -1;
+
+    }
+
+    return false;
+
+  }
+
+  function findVerifiedValue(root){
+
+    if(!root || typeof root !== "object"){
+      return false;
+    }
+
+    var directKeys = [
+      "verified",
+      "isVerified",
+      "verificationVerified"
+    ];
+
+    for(var i=0;i<directKeys.length;i++){
+
+      if(
+        Object.prototype.hasOwnProperty.call(
+          root,
+          directKeys[i]
+        ) &&
+        boolVerified(
+          root[directKeys[i]]
+        )
+      ){
+
+        return true;
+
+      }
+
+    }
+
+    var statusKeys = [
+      "status",
+      "verificationStatus",
+      "verification_status",
+      "state"
+    ];
+
+    for(var j=0;j<statusKeys.length;j++){
+
+      if(
+        Object.prototype.hasOwnProperty.call(
+          root,
+          statusKeys[j]
+        ) &&
+        boolVerified(
+          root[statusKeys[j]]
+        )
+      ){
+
+        return true;
+
+      }
+
+    }
+
+    var keys = Object.keys(root);
+
+    for(var k=0;k<keys.length;k++){
+
+      var value = root[keys[k]];
+
+      if(
+        value &&
+        typeof value === "object"
+      ){
+
+        if(findVerifiedValue(value)){
+          return true;
+        }
+
+      }
+
+    }
+
+    return false;
+
+  }
+
+  function getIdentityNames(payload){
+
+    var names = [];
+
+    function add(value){
+
+      if(
+        typeof value !== "string" ||
+        !value.trim()
+      ){
+        return;
+      }
+
+      var clean =
+        value.trim();
+
+      if(
+        names.indexOf(clean) === -1
+      ){
+        names.push(clean);
+      }
+
+      if(
+        clean.charAt(0) === "@"
+      ){
+
+        var plain =
+          clean.slice(1);
+
+        if(
+          plain &&
+          names.indexOf(plain) === -1
+        ){
+
+          names.push(plain);
+
+        }
+
+      }else{
+
+        var at =
+          "@" + clean;
+
+        if(
+          names.indexOf(at) === -1
+        ){
+
+          names.push(at);
+
+        }
+
+      }
+
+    }
+
+    function walk(root){
+
+      if(
+        !root ||
+        typeof root !== "object"
+      ){
+        return;
+      }
+
+      [
+        "username",
+        "displayName",
+        "display_name",
+        "handle"
+      ].forEach(function(key){
+
+        if(
+          Object.prototype.hasOwnProperty.call(
+            root,
+            key
+          )
+        ){
+
+          add(root[key]);
+
+        }
+
+      });
+
+      Object.keys(root).forEach(function(key){
+
+        if(
+          root[key] &&
+          typeof root[key] === "object"
+        ){
+
+          walk(root[key]);
+
+        }
+
+      });
+
+    }
+
+    walk(payload);
+
+    return names;
+
+  }
+
+  function addBadge(target){
+
+    if(!target){
+      return;
+    }
+
+    if(
+      !target.querySelector ||
+      !window.RIZORA ||
+      typeof window.RIZORA.createVerifiedBadge !==
+      "function"
+    ){
+
+      return;
+
+    }
+
+    if(
+      target.querySelector(
+        ".rz-verified-badge"
+      )
+    ){
+
+      return;
+
+    }
+
+    var badge =
+      window.RIZORA.createVerifiedBadge(
+        "sm"
+      );
+
+    target.classList.add(
+      "rz-verified-wrap"
+    );
+
+    target.appendChild(
+      badge
+    );
+
+  }
+
+  function markExplicitTargets(){
+
+    document
+      .querySelectorAll(
+        "[data-rz-verified-target='true']"
+      )
+      .forEach(function(node){
+
+        addBadge(node);
+
+      });
+
+  }
+
+  function markIdentityText(names){
+
+    if(!names.length){
+      return;
+    }
+
+    var candidates =
+      document.querySelectorAll(
+        "span,div,strong,b,h1,h2,h3,h4,a,button"
+      );
+
+    candidates.forEach(function(node){
+
+      if(
+        node.children &&
+        node.children.length > 0
+      ){
+
+        return;
+
+      }
+
+      var text =
+        (node.textContent || "")
+          .trim();
+
+      if(!text){
+        return;
+      }
+
+      var match =
+        names.some(function(name){
+
+          return (
+            text === name ||
+            text === "@" + name.replace(/^@/,"")
+          );
+
+        });
+
+      if(match){
+
+        addBadge(node);
+
+      }
+
+    });
+
+  }
+
+  async function sync(){
+
+    var token =
+      getToken();
+
+    if(!token){
+      return;
+    }
+
+    try{
+
+      var response =
+        await fetch(
+          API + "/api/verification/me",
+          {
+            method:"GET",
+            credentials:"include",
+            headers:{
+              "Accept":
+                "application/json",
+              "Authorization":
+                "Bearer " + token
+            }
+          }
+        );
+
+      if(!response.ok){
+        return;
+      }
+
+      var payload =
+        await response.json();
+
+      if(
+        !findVerifiedValue(payload)
+      ){
+        return;
+      }
+
+      var names =
+        getIdentityNames(payload);
+
+      markExplicitTargets();
+      markIdentityText(names);
+
+      window.RIZORA =
+        window.RIZORA || {};
+
+      window.RIZORA.isVerified =
+        true;
+
+    }catch(error){
+
+      console.warn(
+        "RIZORA verification badge sync:",
+        error
+      );
+
+    }
+
+  }
+
+  function start(){
+
+    sync();
+
+    setTimeout(
+      sync,
+      800
+    );
+
+    setTimeout(
+      sync,
+      2000
+    );
+
+    setTimeout(
+      sync,
+      5000
+    );
+
+  }
+
+  if(
+    document.readyState ===
+    "loading"
+  ){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      start,
+      {once:true}
+    );
+
+  }else{
+
+    start();
+
+  }
+
+  window.addEventListener(
+    "storage",
+    function(event){
+
+      if(
+        event.key === "rizoraToken" ||
+        event.key === "rizora_token"
+      ){
+
+        sync();
+
+      }
+
+    }
+  );
 
 })();
 </script>
