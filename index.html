@@ -1562,7 +1562,7 @@ window.RIZORA_API_BASE =
 
 <!-- RIZORA PRODUCTION HARDENING V1 -->
 <style id="RIZORA_PRODUCTION_HARDENING_V1_CSS">
-﻿/* RIZORA PRODUCTION HARDENING V1 */
+ï»¿/* RIZORA PRODUCTION HARDENING V1 */
 
 html,
 body {
@@ -2031,50 +2031,48 @@ div {
 </style>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-
-<script id="RIZORA_FORCE_SHELL_REFRESH_V2">
+<script id="RIZORA_FORCE_SHELL_REFRESH_V1">
 (() => {
   try {
-    const updateKey = "rizora-shell-refresh-v2";
+    if (!("serviceWorker" in navigator)) return;
 
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register(
-        "/service-worker.js?v=rizora-shell-v5",
-        { updateViaCache: "none" }
-      ).then(reg => {
+    navigator.serviceWorker.register(
+      "/service-worker.js?v=rizora-shell-v5",
+      {
+        updateViaCache: "none"
+      }
+    ).then(reg => {
+      try {
+        reg.update();
+      } catch (_) {}
+    }).catch(() => {});
+
+    navigator.serviceWorker.addEventListener(
+      "controllerchange",
+      () => {
         try {
-          reg.update();
+          const key = "rizora-shell-refresh-v1";
+
+          if (sessionStorage.getItem(key) === "1") {
+            return;
+          }
+
+          sessionStorage.setItem(key, "1");
+
+          window.location.replace(
+            window.location.pathname +
+            "?rz_shell=" +
+            Date.now() +
+            window.location.hash
+          );
         } catch (_) {}
-      }).catch(() => {});
+      },
+      { once: true }
+    );
 
-      navigator.serviceWorker.addEventListener(
-        "controllerchange",
-        () => {
-          try {
-            if (
-              sessionStorage.getItem(updateKey) === "1"
-            ) {
-              return;
-            }
-
-            sessionStorage.setItem(updateKey, "1");
-
-            const url =
-              window.location.pathname +
-              "?rz_shell=" +
-              Date.now() +
-              window.location.hash;
-
-            window.location.replace(url);
-          } catch (_) {}
-        },
-        { once: true }
-      );
-    }
   } catch (_) {}
 })();
 </script>
-
 </head>
 
 <body>
@@ -2121,7 +2119,29 @@ div {
       </div>
 
       <button class="btn primary" id="authSubmit" type="submit">Log in</button>
-    </form>
+          <div id="RIZORA_GOOGLE_AUTH_FORM_V1" style="margin-top:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px;color:rgba(255,255,255,.55);font-size:11px;letter-spacing:.14em;font-weight:700;">
+          <span style="height:1px;flex:1;background:rgba(255,255,255,.12);"></span>
+          <span>OR CONTINUE WITH</span>
+          <span style="height:1px;flex:1;background:rgba(255,255,255,.12);"></span>
+        </div>
+
+        <div id="rzGoogleAuthFormMountV1" style="min-height:44px;display:flex;justify-content:center;align-items:center;"></div>
+
+        <button
+          type="button"
+          id="rzGoogleAuthFormFallbackV1"
+          style="display:none;width:100%;min-height:44px;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:#fff;color:#111;font-weight:700;cursor:pointer;"
+        >
+          Continue with Google
+        </button>
+
+        <div
+          id="rzGoogleAuthFormStatusV1"
+          style="min-height:18px;margin-top:8px;text-align:center;font-size:12px;color:rgba(255,255,255,.6);"
+          aria-live="polite"
+        ></div>
+      </div></form>
 
     <div id="authMessage" class="result hidden"></div>
 
@@ -2339,7 +2359,7 @@ function landingView() {
   data-view="verification"
   onclick="rizoraOpenVerification()"
 >
-  <span>ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span>
+  <span>ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ</span>
   Verification
 </button>
 <main class="hero">
@@ -3488,7 +3508,7 @@ async function renderCreatorProfileV3() {
 
   function numberText(value) {
     return value === null
-      ? "—"
+      ? "â€”"
       : Number(value).toLocaleString();
   }
 
@@ -4032,7 +4052,7 @@ async function renderCreatorProfileV3() {
             <div class="kpi">
               ${
                 a.averageScore ??
-                "—"
+                "â€”"
               }
             </div>
             <div class="kpi-label">
@@ -4044,7 +4064,7 @@ async function renderCreatorProfileV3() {
             <div class="kpi">
               ${
                 a.bestScore ??
-                "—"
+                "â€”"
               }
             </div>
             <div class="kpi-label">
@@ -4926,7 +4946,7 @@ if ("serviceWorker" in navigator) {
 })();
 
 /* =========================================================
-   RIZORA VERIFICATION ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â INDEPENDENT VIEW CONTROLLER
+   RIZORA VERIFICATION ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â INDEPENDENT VIEW CONTROLLER
 ========================================================= */
 
 function rizoraOpenVerification() {
@@ -5096,7 +5116,7 @@ async function loadVerification() {
 
     const badge =
       status === "verified"
-        ? '<span class="verify">ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ Verified</span>'
+        ? '<span class="verify">ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Verified</span>'
         : "";
 
     stateBox.innerHTML = `
@@ -5453,7 +5473,7 @@ async function loadVerificationAdmin() {
           "noopener noreferrer";
 
         link.textContent =
-          "View proof ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â€";
+          "View proof ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â";
 
         proofBox.appendChild(link);
       }
@@ -6126,7 +6146,7 @@ document.addEventListener(
         </h1>
 
         <div class="rz-upgrade-copy">
-          Your RIZORA growth center Ã¢â‚¬â€ official missions,
+          Your RIZORA growth center ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â official missions,
           creator campaigns, AI assistance and installable
           app experience in one place.
         </div>
@@ -6160,7 +6180,7 @@ document.addEventListener(
           id="rzUpgradePoints"
           class="rz-upgrade-stat-value"
         >
-          Ã¢â‚¬â€
+          ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â
         </div>
 
       </div>
@@ -6175,7 +6195,7 @@ document.addEventListener(
           id="rzUpgradeCompleted"
           class="rz-upgrade-stat-value"
         >
-          Ã¢â‚¬â€
+          ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â
         </div>
 
       </div>
@@ -6190,7 +6210,7 @@ document.addEventListener(
           id="rzUpgradeEarned"
           class="rz-upgrade-stat-value"
         >
-          Ã¢â‚¬â€
+          ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â
         </div>
 
       </div>
@@ -6205,7 +6225,7 @@ document.addEventListener(
           id="rzUpgradeCampaigns"
           class="rz-upgrade-stat-value"
         >
-          Ã¢â‚¬â€
+          ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â
         </div>
 
       </div>
@@ -7112,9 +7132,9 @@ document.addEventListener(
 
                         <div class="rz-upgrade-meta">
                           ${esc(boost.platform || "")}
-                          Ã‚Â·
+                          Ãƒâ€šÃ‚Â·
                           ${esc(boost.action || "")}
-                          Ã‚Â·
+                          Ãƒâ€šÃ‚Â·
                           ${Number(boost.completedCount || 0)}
                           /
                           ${Number(boost.maxCompletions || 0)}
@@ -7221,7 +7241,7 @@ document.addEventListener(
 
                       <div class="rz-upgrade-meta">
                         ${esc(task.platform)}
-                        Ã‚Â·
+                        Ãƒâ€šÃ‚Â·
                         ${esc(task.action)}
                       </div>
 
@@ -7431,7 +7451,7 @@ document.addEventListener(
                       /
                       ${Number(boost.maxCompletions || 0)}
                       completed
-                      Ã‚Â·
+                      Ãƒâ€šÃ‚Â·
                       ${esc(boost.status || "active")}
                     </div>
 
@@ -7519,7 +7539,7 @@ document.addEventListener(
                     /
                     ${Number(task.quantity || 0)}
                     completed
-                    Ã‚Â·
+                    Ãƒâ€šÃ‚Â·
                     ${esc(task.status || "active")}
                   </div>
 
@@ -8869,9 +8889,9 @@ document.addEventListener(
       status.textContent =
         (
           result.provider
-            ? "Connected Â· " +
+            ? "Connected Ã‚Â· " +
               result.provider +
-              " Â· " +
+              " Ã‚Â· " +
               (
                 result.model ||
                 ""
@@ -10147,7 +10167,7 @@ document.addEventListener(
         var number = toNumber(value);
 
         if (number === null) {
-            return "—";
+            return "â€”";
         }
 
         return number.toLocaleString();
@@ -10582,19 +10602,19 @@ document.addEventListener(
     let text = safeText(value);
 
     const replacements = [
-      ["ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“", "✓"],
-      ["ÃÆÃÂ¢Ãâ¦Ã¢â¬ÅÃÂ¢Ã¢âÂ¬Ãâ", "✓"],
-      ["ÃÆÃÂ¢ÃÂ¢Ã¢â¬Å¡ÃÂ¬ÃÂ¢Ã¢âÂ¬ÃÂ", "—"],
-      ["ÃÆÃÂ¢ÃÂ¢Ã¢âÂ¬ÃÂ ÃÂ¢Ã¢âÂ¬Ã¢â¬Â", "→"],
-      ["ÃÂ¢Ã¢âÂ¬Ã¢â¬Â", "—"],
-      ["ÃÂ·", "·"],
-      ["ÃâÃÂ·", "·"],
-      ["â", "—"],
-      ["â", "→"],
-      ["Ãƒ", " "],
-      ["Ã", " "],
-      ["Ã‚", " "],
-      ["Â", " "]
+      ["ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ", "âœ“"],
+      ["ÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚Â¢ÃƒÂƒÃ¢Â€Â¦ÃƒÂ¢Ã¢Â‚Â¬Ã…Â“ÃƒÂƒÃ‚Â¢ÃƒÂ¢Ã¢Â€ÂšÃ‚Â¬ÃƒÂ…Ã¢Â€Âœ", "âœ“"],
+      ["ÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚Â¢ÃƒÂƒÃ‚Â¢ÃƒÂ¢Ã¢Â‚Â¬Ã…Â¡ÃƒÂ‚Ã‚Â¬ÃƒÂƒÃ‚Â¢ÃƒÂ¢Ã¢Â€ÂšÃ‚Â¬ÃƒÂ‚Ã‚Â", "â€”"],
+      ["ÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚Â¢ÃƒÂƒÃ‚Â¢ÃƒÂ¢Ã¢Â€ÂšÃ‚Â¬ÃƒÂ‚Ã‚ ÃƒÂƒÃ‚Â¢ÃƒÂ¢Ã¢Â€ÂšÃ‚Â¬ÃƒÂ¢Ã¢Â‚Â¬Ã‚Â", "â†’"],
+      ["ÃƒÂƒÃ‚Â¢ÃƒÂ¢Ã¢Â€ÂšÃ‚Â¬ÃƒÂ¢Ã¢Â‚Â¬Ã‚Â", "â€”"],
+      ["ÃƒÂ‚Ã‚Â·", "Â·"],
+      ["ÃƒÂƒÃ¢Â€ÂšÃƒÂ‚Ã‚Â·", "Â·"],
+      ["Ã¢Â€Â”", "â€”"],
+      ["Ã¢Â†Â’", "â†’"],
+      ["ÃƒÆ’", " "],
+      ["ÃƒÂƒ", " "],
+      ["Ãƒâ€š", " "],
+      ["Ã‚", " "]
     ];
 
     for(
@@ -10744,7 +10764,7 @@ document.addEventListener(
 
           <p class="rz-romi-bio-v2">
             Artist. Developer. Creator. Builder.
-            Creator of RIZORA — building a creator ecosystem
+            Creator of RIZORA â€” building a creator ecosystem
             around identity, growth, tools, AI and opportunity.
           </p>
 
@@ -11216,7 +11236,7 @@ document.addEventListener(
                               item.username ||
                               ""
                             ) +
-                            " · " +
+                            " Â· " +
                             (
                               item.text ||
                               ""
@@ -11271,7 +11291,7 @@ document.addEventListener(
                             ) +
                             (
                               item.action
-                                ? " · " +
+                                ? " Â· " +
                                   item.action
                                 : ""
                             ),
@@ -11450,7 +11470,7 @@ document.addEventListener(
                             ) +
                             (
                               item.action
-                                ? " · " +
+                                ? " Â· " +
                                   item.action
                                 : ""
                             ),
@@ -12195,7 +12215,7 @@ document.addEventListener(
                 <p class="rz-complete-copy">
                   Pulse, Flow, identity, opportunities,
                   intelligence, activity, community and tools
-                  — connected to your real RIZORA account.
+                  â€” connected to your real RIZORA account.
                 </p>
 
               </div>
@@ -12514,7 +12534,7 @@ document.addEventListener(
 
 <!-- RIZORA MEET ROMI V2 -->
 <script id="RIZORA_MEET_ROMI_V2_SCRIPT">
-﻿(function () {
+ï»¿(function () {
   "use strict";
 
   if (window.RIZORA_MEET_ROMI_V2) {
@@ -12714,7 +12734,7 @@ document.addEventListener(
 
     wrap.innerHTML = [
       "<div class='rzmr-card' role='dialog' aria-modal='true' aria-label='Meet RoMi'>",
-        "<button class='rzmr-close' type='button' data-rzmr-close aria-label='Close'>×</button>",
+        "<button class='rzmr-close' type='button' data-rzmr-close aria-label='Close'>Ã—</button>",
         "<div class='rzmr-avatar'>R</div>",
         "<div class='rzmr-kicker'>THE CREATOR BEHIND RIZORA</div>",
         "<h2>RoMi</h2>",
@@ -12823,8 +12843,8 @@ document.addEventListener(
 
       if (
         text === "Meet RoMi" ||
-        text === "Meet RoMi ↗" ||
-        text === "Meet RoMi →"
+        text === "Meet RoMi â†—" ||
+        text === "Meet RoMi â†’"
       ) {
         el.setAttribute("data-rizora-meet-romi", "true");
         el.setAttribute("aria-haspopup", "dialog");
@@ -12905,7 +12925,7 @@ document.addEventListener(
 
 
 <script id="RIZORA_PRODUCTION_HARDENING_V1_SCRIPT">
-﻿(function () {
+ï»¿(function () {
   "use strict";
 
   if (window.RIZORA_PRODUCTION_HARDENING_V1) {
@@ -13121,7 +13141,7 @@ document.addEventListener(
 
   function start() {
     window.RIZORA_PRODUCTION_HARDENING_CSS = [
-      "﻿/* RIZORA PRODUCTION HARDENING V1 */\n\nhtml,\nbody {\n  width: 100% !important;\n  max-width: 100% !important;\n  min-width: 0 !important;\n  overflow-x: hidden !important;\n  -webkit-text-size-adjust: 100% !important;\n  text-size-adjust: 100% !important;\n}\n\nhtml {\n  width: 100% !important;\n}\n\nbody {\n  box-sizing: border-box !important;\n}\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\nimg,\nvideo,\ncanvas,\nsvg,\niframe {\n  max-width: 100% !important;\n}\n\nbutton,\na,\ninput,\ntextarea,\nselect {\n  max-width: 100%;\n}\n\n#app {\n  width: 100% !important;\n  max-width: 100% !important;\n  min-width: 0 !important;\n  overflow-x: clip !important;\n}\n\n.shell,\n.page,\n.hero,\n.hero-grid,\n.card,\n.hero-card,\n.topbar,\n.nav,\n.mobile-menu,\n.section-title,\n.dashboard-head,\n.welcome,\n.task,\n.task-main,\n.task-actions,\n.form,\n.form-row,\n.grid,\n.grid-2,\n.grid-3,\n.grid-4,\n.table-wrap,\n.chat,\n.chatbar,\n.referral-box {\n  min-width: 0 !important;\n}\n\n.shell {\n  width: min(var(--max), calc(100% - 24px)) !important;\n  max-width: var(--max) !important;\n}\n\n.table-wrap {\n  width: 100% !important;\n  max-width: 100% !important;\n  overflow-x: auto !important;\n  -webkit-overflow-scrolling: touch;\n}\n\npre,\ncode {\n  max-width: 100% !important;\n  overflow-x: auto !important;\n}\n\n/* ============================================================\n   TABLET / MOBILE NAVIGATION\n   ============================================================ */\n\n@media (max-width: 900px) {\n\n  .nav {\n    min-height: 64px !important;\n    gap: 10px !important;\n  }\n\n  .navlinks {\n    display: none !important;\n  }\n\n  .menuBtn,\n  #rzHamburgerButton {\n    display: grid !important;\n    place-items: center !important;\n    flex: 0 0 auto !important;\n    visibility: visible !important;\n    opacity: 1 !important;\n  }\n\n  .navright {\n    margin-left: auto !important;\n    flex: 0 0 auto !important;\n    gap: 7px !important;\n  }\n\n  .navright > .btn {\n    display: none !important;\n  }\n\n  .mobile-menu {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  .mobile-menu.open {\n    display: grid !important;\n  }\n\n  .mobile-menu button,\n  .mobile-menu .btn {\n    width: 100% !important;\n    min-height: 46px !important;\n    text-align: left !important;\n  }\n\n  .hero {\n    min-height: auto !important;\n    padding: 34px 0 58px !important;\n  }\n\n  .hero-grid {\n    grid-template-columns: 1fr !important;\n    gap: 22px !important;\n  }\n\n  .hero-card {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  .hero-logo img {\n    max-width: 290px !important;\n  }\n\n  .grid-2,\n  .grid-3,\n  .grid-4 {\n    grid-template-columns: 1fr !important;\n  }\n\n  .form-row {\n    grid-template-columns: 1fr !important;\n  }\n\n  .dashboard-head {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .task {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .task-actions {\n    width: 100% !important;\n    flex-wrap: wrap !important;\n  }\n\n  .task-actions .btn {\n    flex: 1 1 130px !important;\n  }\n\n  .section-title {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .chat {\n    min-height: 0 !important;\n  }\n\n  .chatbar {\n    flex-wrap: wrap !important;\n  }\n\n  .chatbar .input {\n    min-width: 0 !important;\n    width: 100% !important;\n  }\n\n  .referral-box {\n    flex-direction: column !important;\n  }\n\n  .referral-box .input,\n  .referral-box .btn {\n    width: 100% !important;\n  }\n\n  /* Existing RIZORA growth center */\n  .rz-upgrade-wrap,\n  .rz-product-panel {\n    width: min(100%, 720px) !important;\n    max-width: 100% !important;\n    max-height: calc(100dvh - 18px) !important;\n    overflow-y: auto !important;\n    overflow-x: hidden !important;\n  }\n\n  .rz-upgrade-columns,\n  .rz-product-grid {\n    grid-template-columns: 1fr !important;\n  }\n\n  .rz-upgrade-row {\n    grid-template-columns: 1fr !important;\n  }\n\n  .rz-upgrade-input,\n  .rz-upgrade-select,\n  .rz-upgrade-textarea,\n  .rz-product-input,\n  .rz-product-textarea {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  /* Creator Profile */\n  .rz-profile-header-v2,\n  .rz-profile-hero-v2,\n  .rz-profile-top-v2 {\n    grid-template-columns: 1fr !important;\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  /* Hub / universe surfaces */\n  #rzRizoraUniverse,\n  #rizoraUniverse,\n  [data-rizora-universe],\n  [data-rizora-hub-overlay] {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  #rzRizoraUniverse .card,\n  #rizoraUniverse .card,\n  [data-rizora-universe] .card,\n  [data-rizora-hub-overlay] .card {\n    min-width: 0 !important;\n    max-width: 100% !important;\n  }\n\n  /* Meet RoMi */\n  #rizoraMeetRomiModalV2 {\n    padding: 10px !important;\n  }\n\n  #rizoraMeetRomiModalV2 .rzmr-card {\n    width: 100% !important;\n    max-width: 100% !important;\n    max-height: calc(100dvh - 20px) !important;\n    overflow-y: auto !important;\n  }\n}\n\n@media (max-width: 600px) {\n\n  .shell {\n    width: calc(100% - 20px) !important;\n  }\n\n  .brand {\n    gap: 8px !important;\n    letter-spacing: .04em !important;\n  }\n\n  .brand img {\n    width: 36px !important;\n    height: 36px !important;\n    border-radius: 11px !important;\n  }\n\n  .brand small {\n    display: none !important;\n  }\n\n  .hero {\n    padding: 26px 0 45px !important;\n  }\n\n  .hero h1 {\n    font-size: clamp(42px, 14vw, 56px) !important;\n    line-height: .96 !important;\n  }\n\n  .hero p {\n    font-size: 15px !important;\n    line-height: 1.65 !important;\n  }\n\n  .hero-actions {\n    width: 100% !important;\n    flex-direction: column !important;\n  }\n\n  .hero-actions .btn {\n    width: 100% !important;\n  }\n\n  .stat-strip {\n    grid-template-columns: 1fr !important;\n  }\n\n  .card,\n  .hero-card {\n    padding: 16px !important;\n    border-radius: 18px !important;\n  }\n\n  .page {\n    padding-top: 24px !important;\n    padding-bottom: 60px !important;\n  }\n\n  .section-title h2 {\n    font-size: 25px !important;\n  }\n\n  .kpi {\n    font-size: 29px !important;\n  }\n\n  .mini-stat {\n    padding: 12px !important;\n  }\n\n  .task-actions .btn {\n    flex: 1 1 100% !important;\n    width: 100% !important;\n  }\n\n  .modal {\n    padding: 10px !important;\n  }\n\n  .modal-card {\n    width: 100% !important;\n    max-width: 100% !important;\n    max-height: calc(100dvh - 20px) !important;\n    overflow-y: auto !important;\n    padding: 18px !important;\n  }\n\n  .toast {\n    min-width: 0 !important;\n    width: calc(100% - 20px) !important;\n    max-width: calc(100% - 20px) !important;\n  }\n\n  .rz-upgrade-header,\n  .rz-product-head {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .rz-upgrade-close,\n  .rz-product-close {\n    align-self: flex-end !important;\n  }\n\n  .rz-upgrade-title,\n  .rz-product-title {\n    font-size: 28px !important;\n  }\n\n  table {\n    min-width: 620px !important;\n  }\n}\n\n/* iPhone / Android safe-area support */\n@supports (padding: env(safe-area-inset-bottom)) {\n  .mobile-menu {\n    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;\n  }\n\n  .rz-upgrade-overlay,\n  .rz-product-overlay,\n  .modal {\n    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;\n  }\n}\n\n/* Prevent accidental horizontal layout caused by long URLs/text */\na,\nbutton,\np,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\nspan,\ndiv {\n  overflow-wrap: anywhere;\n}\n\n/* ============================================================\n   MOBILE AUTH / HEADER VISIBILITY\n   ============================================================ */\n\n@media (max-width: 900px) {\n  .topbar {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  .topbar .shell {\n    width: calc(100% - 20px) !important;\n  }\n\n  .navright .avatar {\n    display: grid !important;\n  }\n}\n\n/* ============================================================\n   HARD RESET FOR DESKTOP-ONLY WIDTHS\n   ============================================================ */\n\n@media (max-width: 900px) {\n  [style*=\"min-width: 700px\"],\n  [style*=\"min-width:700px\"],\n  [style*=\"min-width: 650px\"],\n  [style*=\"min-width:650px\"],\n  [style*=\"width: 900px\"],\n  [style*=\"width:900px\"] {\n    min-width: 0 !important;\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n}\r\n"
+      "ï»¿/* RIZORA PRODUCTION HARDENING V1 */\n\nhtml,\nbody {\n  width: 100% !important;\n  max-width: 100% !important;\n  min-width: 0 !important;\n  overflow-x: hidden !important;\n  -webkit-text-size-adjust: 100% !important;\n  text-size-adjust: 100% !important;\n}\n\nhtml {\n  width: 100% !important;\n}\n\nbody {\n  box-sizing: border-box !important;\n}\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\nimg,\nvideo,\ncanvas,\nsvg,\niframe {\n  max-width: 100% !important;\n}\n\nbutton,\na,\ninput,\ntextarea,\nselect {\n  max-width: 100%;\n}\n\n#app {\n  width: 100% !important;\n  max-width: 100% !important;\n  min-width: 0 !important;\n  overflow-x: clip !important;\n}\n\n.shell,\n.page,\n.hero,\n.hero-grid,\n.card,\n.hero-card,\n.topbar,\n.nav,\n.mobile-menu,\n.section-title,\n.dashboard-head,\n.welcome,\n.task,\n.task-main,\n.task-actions,\n.form,\n.form-row,\n.grid,\n.grid-2,\n.grid-3,\n.grid-4,\n.table-wrap,\n.chat,\n.chatbar,\n.referral-box {\n  min-width: 0 !important;\n}\n\n.shell {\n  width: min(var(--max), calc(100% - 24px)) !important;\n  max-width: var(--max) !important;\n}\n\n.table-wrap {\n  width: 100% !important;\n  max-width: 100% !important;\n  overflow-x: auto !important;\n  -webkit-overflow-scrolling: touch;\n}\n\npre,\ncode {\n  max-width: 100% !important;\n  overflow-x: auto !important;\n}\n\n/* ============================================================\n   TABLET / MOBILE NAVIGATION\n   ============================================================ */\n\n@media (max-width: 900px) {\n\n  .nav {\n    min-height: 64px !important;\n    gap: 10px !important;\n  }\n\n  .navlinks {\n    display: none !important;\n  }\n\n  .menuBtn,\n  #rzHamburgerButton {\n    display: grid !important;\n    place-items: center !important;\n    flex: 0 0 auto !important;\n    visibility: visible !important;\n    opacity: 1 !important;\n  }\n\n  .navright {\n    margin-left: auto !important;\n    flex: 0 0 auto !important;\n    gap: 7px !important;\n  }\n\n  .navright > .btn {\n    display: none !important;\n  }\n\n  .mobile-menu {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  .mobile-menu.open {\n    display: grid !important;\n  }\n\n  .mobile-menu button,\n  .mobile-menu .btn {\n    width: 100% !important;\n    min-height: 46px !important;\n    text-align: left !important;\n  }\n\n  .hero {\n    min-height: auto !important;\n    padding: 34px 0 58px !important;\n  }\n\n  .hero-grid {\n    grid-template-columns: 1fr !important;\n    gap: 22px !important;\n  }\n\n  .hero-card {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  .hero-logo img {\n    max-width: 290px !important;\n  }\n\n  .grid-2,\n  .grid-3,\n  .grid-4 {\n    grid-template-columns: 1fr !important;\n  }\n\n  .form-row {\n    grid-template-columns: 1fr !important;\n  }\n\n  .dashboard-head {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .task {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .task-actions {\n    width: 100% !important;\n    flex-wrap: wrap !important;\n  }\n\n  .task-actions .btn {\n    flex: 1 1 130px !important;\n  }\n\n  .section-title {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .chat {\n    min-height: 0 !important;\n  }\n\n  .chatbar {\n    flex-wrap: wrap !important;\n  }\n\n  .chatbar .input {\n    min-width: 0 !important;\n    width: 100% !important;\n  }\n\n  .referral-box {\n    flex-direction: column !important;\n  }\n\n  .referral-box .input,\n  .referral-box .btn {\n    width: 100% !important;\n  }\n\n  /* Existing RIZORA growth center */\n  .rz-upgrade-wrap,\n  .rz-product-panel {\n    width: min(100%, 720px) !important;\n    max-width: 100% !important;\n    max-height: calc(100dvh - 18px) !important;\n    overflow-y: auto !important;\n    overflow-x: hidden !important;\n  }\n\n  .rz-upgrade-columns,\n  .rz-product-grid {\n    grid-template-columns: 1fr !important;\n  }\n\n  .rz-upgrade-row {\n    grid-template-columns: 1fr !important;\n  }\n\n  .rz-upgrade-input,\n  .rz-upgrade-select,\n  .rz-upgrade-textarea,\n  .rz-product-input,\n  .rz-product-textarea {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  /* Creator Profile */\n  .rz-profile-header-v2,\n  .rz-profile-hero-v2,\n  .rz-profile-top-v2 {\n    grid-template-columns: 1fr !important;\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  /* Hub / universe surfaces */\n  #rzRizoraUniverse,\n  #rizoraUniverse,\n  [data-rizora-universe],\n  [data-rizora-hub-overlay] {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  #rzRizoraUniverse .card,\n  #rizoraUniverse .card,\n  [data-rizora-universe] .card,\n  [data-rizora-hub-overlay] .card {\n    min-width: 0 !important;\n    max-width: 100% !important;\n  }\n\n  /* Meet RoMi */\n  #rizoraMeetRomiModalV2 {\n    padding: 10px !important;\n  }\n\n  #rizoraMeetRomiModalV2 .rzmr-card {\n    width: 100% !important;\n    max-width: 100% !important;\n    max-height: calc(100dvh - 20px) !important;\n    overflow-y: auto !important;\n  }\n}\n\n@media (max-width: 600px) {\n\n  .shell {\n    width: calc(100% - 20px) !important;\n  }\n\n  .brand {\n    gap: 8px !important;\n    letter-spacing: .04em !important;\n  }\n\n  .brand img {\n    width: 36px !important;\n    height: 36px !important;\n    border-radius: 11px !important;\n  }\n\n  .brand small {\n    display: none !important;\n  }\n\n  .hero {\n    padding: 26px 0 45px !important;\n  }\n\n  .hero h1 {\n    font-size: clamp(42px, 14vw, 56px) !important;\n    line-height: .96 !important;\n  }\n\n  .hero p {\n    font-size: 15px !important;\n    line-height: 1.65 !important;\n  }\n\n  .hero-actions {\n    width: 100% !important;\n    flex-direction: column !important;\n  }\n\n  .hero-actions .btn {\n    width: 100% !important;\n  }\n\n  .stat-strip {\n    grid-template-columns: 1fr !important;\n  }\n\n  .card,\n  .hero-card {\n    padding: 16px !important;\n    border-radius: 18px !important;\n  }\n\n  .page {\n    padding-top: 24px !important;\n    padding-bottom: 60px !important;\n  }\n\n  .section-title h2 {\n    font-size: 25px !important;\n  }\n\n  .kpi {\n    font-size: 29px !important;\n  }\n\n  .mini-stat {\n    padding: 12px !important;\n  }\n\n  .task-actions .btn {\n    flex: 1 1 100% !important;\n    width: 100% !important;\n  }\n\n  .modal {\n    padding: 10px !important;\n  }\n\n  .modal-card {\n    width: 100% !important;\n    max-width: 100% !important;\n    max-height: calc(100dvh - 20px) !important;\n    overflow-y: auto !important;\n    padding: 18px !important;\n  }\n\n  .toast {\n    min-width: 0 !important;\n    width: calc(100% - 20px) !important;\n    max-width: calc(100% - 20px) !important;\n  }\n\n  .rz-upgrade-header,\n  .rz-product-head {\n    align-items: stretch !important;\n    flex-direction: column !important;\n  }\n\n  .rz-upgrade-close,\n  .rz-product-close {\n    align-self: flex-end !important;\n  }\n\n  .rz-upgrade-title,\n  .rz-product-title {\n    font-size: 28px !important;\n  }\n\n  table {\n    min-width: 620px !important;\n  }\n}\n\n/* iPhone / Android safe-area support */\n@supports (padding: env(safe-area-inset-bottom)) {\n  .mobile-menu {\n    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;\n  }\n\n  .rz-upgrade-overlay,\n  .rz-product-overlay,\n  .modal {\n    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;\n  }\n}\n\n/* Prevent accidental horizontal layout caused by long URLs/text */\na,\nbutton,\np,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\nspan,\ndiv {\n  overflow-wrap: anywhere;\n}\n\n/* ============================================================\n   MOBILE AUTH / HEADER VISIBILITY\n   ============================================================ */\n\n@media (max-width: 900px) {\n  .topbar {\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n\n  .topbar .shell {\n    width: calc(100% - 20px) !important;\n  }\n\n  .navright .avatar {\n    display: grid !important;\n  }\n}\n\n/* ============================================================\n   HARD RESET FOR DESKTOP-ONLY WIDTHS\n   ============================================================ */\n\n@media (max-width: 900px) {\n  [style*=\"min-width: 700px\"],\n  [style*=\"min-width:700px\"],\n  [style*=\"min-width: 650px\"],\n  [style*=\"min-width:650px\"],\n  [style*=\"width: 900px\"],\n  [style*=\"width:900px\"] {\n    min-width: 0 !important;\n    width: 100% !important;\n    max-width: 100% !important;\n  }\n}\r\n"
     ].join("");
 
     ensureViewport();
@@ -13158,7 +13178,7 @@ document.addEventListener(
 
 <!-- RIZORA MOBILE MENU V3 -->
 <script id="RIZORA_MOBILE_MENU_V3_SCRIPT">
-﻿(function () {
+ï»¿(function () {
   "use strict";
 
   if (window.RIZORA_MOBILE_MENU_V3) {
@@ -13501,7 +13521,7 @@ document.addEventListener(
 
 <!-- RIZORA MOBILE NAV V5 -->
 <script id="RIZORA_MOBILE_NAV_V5_SCRIPT">
-﻿(function () {
+ï»¿(function () {
   "use strict";
 
   if (window.RIZORA_MOBILE_NAV_V5) return;
@@ -13781,7 +13801,7 @@ document.addEventListener(
 
 <!-- RIZORA EXPERIENCE PURGE V6 -->
 <script id="RIZORA_EXPERIENCE_PURGE_V6_SCRIPT">
-﻿(function () {
+ï»¿(function () {
   "use strict";
 
   if (window.RIZORA_EXPERIENCE_PURGE_V6) {
@@ -15002,7 +15022,7 @@ document.addEventListener(
               'class="rz-v6-close" ' +
               'data-rz-v6-close-hub' +
             '>' +
-              '×' +
+              'Ã—' +
             '</button>' +
           '</div>' +
 
@@ -16322,7 +16342,7 @@ document.addEventListener(
                     aria-label="Verified"
                     title="Verified"
                   >
-                    ✓
+                    âœ“
                   </span>
                 </div>
 
@@ -16443,5 +16463,1016 @@ document.addEventListener(
 
 })();
 </script>
-</body>
+<script id="RIZORA_GOOGLE_FORCE_V2">
+(() => {
+  "use strict";
+
+  const API_BASE =
+    String(
+      window.RIZORA_API_BASE ||
+      "https://rizora-guse.onrender.com"
+    ).replace(/\/+$/, "");
+
+  const SCRIPT_ID =
+    "RIZORA_GOOGLE_GSI_SCRIPT_V2";
+
+  const STYLE_ID =
+    "RIZORA_GOOGLE_FORCE_STYLE_V2";
+
+  const CLIENT_CONFIG_URL =
+    API_BASE + "/api/auth/google/config";
+
+  let clientId = "";
+  let booted = false;
+  let observer = null;
+  let timer = null;
+
+  function log(...args) {
+    try {
+      console.log("[RIZORA GOOGLE]", ...args);
+    } catch (_) {}
+  }
+
+  function getElement(id) {
+    return document.getElementById(id);
+  }
+
+  function isVisible(el) {
+    if (!el) return false;
+
+    const style =
+      window.getComputedStyle(el);
+
+    return (
+      style.display !== "none" &&
+      style.visibility !== "hidden" &&
+      !el.classList.contains("hidden")
+    );
+  }
+
+  function addStyle() {
+
+    if (getElement(STYLE_ID)) {
+      return;
+    }
+
+    const style =
+      document.createElement("style");
+
+    style.id = STYLE_ID;
+
+    style.textContent = `
+      .rz-google-force-wrap-v2 {
+        width: 100%;
+        margin: 14px 0 0;
+        box-sizing: border-box;
+      }
+
+      .rz-google-force-divider-v2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 13px 0;
+        color: rgba(255,255,255,.48);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .16em;
+      }
+
+      .rz-google-force-divider-v2::before,
+      .rz-google-force-divider-v2::after {
+        content: "";
+        height: 1px;
+        flex: 1;
+        background: rgba(255,255,255,.10);
+      }
+
+      .rz-google-force-mount-v2 {
+        width: 100%;
+        min-height: 44px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        border-radius: 12px;
+      }
+
+      .rz-google-force-mount-v2 iframe {
+        max-width: 100% !important;
+      }
+
+      .rz-google-force-fallback-v2 {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid rgba(255,255,255,.14);
+        border-radius: 12px;
+        background: rgba(255,255,255,.045);
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          transform .15s ease,
+          background .15s ease,
+          border-color .15s ease;
+      }
+
+      .rz-google-force-fallback-v2:hover {
+        transform: translateY(-1px);
+        background: rgba(255,255,255,.075);
+        border-color: rgba(255,255,255,.24);
+      }
+
+      .rz-google-force-error-v2 {
+        margin-top: 8px;
+        font-size: 11px;
+        color: rgba(255,180,200,.78);
+        text-align: center;
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  function loadGoogleScript() {
+
+    return new Promise((resolve, reject) => {
+
+      if (
+        window.google &&
+        window.google.accounts &&
+        window.google.accounts.id
+      ) {
+        resolve();
+        return;
+      }
+
+      const existing =
+        document.getElementById(SCRIPT_ID);
+
+      if (existing) {
+
+        const started =
+          Date.now();
+
+        const wait = () => {
+
+          if (
+            window.google &&
+            window.google.accounts &&
+            window.google.accounts.id
+          ) {
+            resolve();
+            return;
+          }
+
+          if (Date.now() - started > 12000) {
+            reject(
+              new Error(
+                "Google Identity Services did not load."
+              )
+            );
+            return;
+          }
+
+          setTimeout(wait, 150);
+        };
+
+        wait();
+        return;
+      }
+
+      const script =
+        document.createElement("script");
+
+      script.id =
+        SCRIPT_ID;
+
+      script.src =
+        "https://accounts.google.com/gsi/client";
+
+      script.async = true;
+      script.defer = true;
+
+      script.onload = () => {
+
+        const started =
+          Date.now();
+
+        const wait = () => {
+
+          if (
+            window.google &&
+            window.google.accounts &&
+            window.google.accounts.id
+          ) {
+            resolve();
+            return;
+          }
+
+          if (Date.now() - started > 8000) {
+            reject(
+              new Error(
+                "Google Identity Services loaded but API is unavailable."
+              )
+            );
+            return;
+          }
+
+          setTimeout(wait, 100);
+        };
+
+        wait();
+      };
+
+      script.onerror = () => {
+        reject(
+          new Error(
+            "Could not load Google Sign-In."
+          )
+        );
+      };
+
+      document.head.appendChild(script);
+    });
+  }
+
+  async function loadClientId() {
+
+    const response =
+      await fetch(
+        CLIENT_CONFIG_URL + "?rz_google_v2=1",
+        {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          headers: {
+            "Accept": "application/json"
+          }
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        "Google configuration request failed (" +
+        response.status +
+        ")."
+      );
+    }
+
+    const data =
+      await response.json();
+
+    if (
+      !data ||
+      !data.enabled ||
+      !data.clientId
+    ) {
+      throw new Error(
+        "Google Sign-In is not enabled."
+      );
+    }
+
+    clientId =
+      String(data.clientId);
+
+    return clientId;
+  }
+
+  async function handleCredential(response) {
+
+    if (
+      typeof window.handleGoogleCredential ===
+      "function"
+    ) {
+      await window.handleGoogleCredential(
+        response
+      );
+      return;
+    }
+
+    const result =
+      await fetch(
+        API_BASE + "/api/auth/google",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type":
+              "application/json",
+            "Accept":
+              "application/json"
+          },
+          body: JSON.stringify({
+            credential:
+              response &&
+              response.credential
+          })
+        }
+      );
+
+    const data =
+      await result.json()
+        .catch(() => ({}));
+
+    if (
+      !result.ok ||
+      !data.success
+    ) {
+      throw new Error(
+        data.message ||
+        data.error ||
+        "Google sign-in failed."
+      );
+    }
+
+    if (data.token) {
+      localStorage.setItem(
+        "rizoraToken",
+        data.token
+      );
+
+      window.token =
+        data.token;
+    }
+
+    if (data.user) {
+      localStorage.setItem(
+        "rizoraUser",
+        JSON.stringify(
+          data.user
+        )
+      );
+
+      window.currentUser =
+        data.user;
+    }
+
+    if (
+      typeof window.closeAuth ===
+      "function"
+    ) {
+      window.closeAuth();
+    }
+
+    if (
+      typeof window.navigate ===
+      "function"
+    ) {
+      window.navigate("home");
+    }
+    else {
+      window.location.reload();
+    }
+  }
+
+  function createFallback(container) {
+
+    if (
+      container.querySelector(
+        ".rz-google-force-fallback-v2"
+      )
+    ) {
+      return;
+    }
+
+    const button =
+      document.createElement("button");
+
+    button.type =
+      "button";
+
+    button.className =
+      "rz-google-force-fallback-v2";
+
+    button.textContent =
+      "Continue with Google";
+
+    button.addEventListener(
+      "click",
+      async () => {
+
+        try {
+
+          if (
+            !window.google ||
+            !window.google.accounts ||
+            !window.google.accounts.id
+          ) {
+            await loadGoogleScript();
+          }
+
+          if (!clientId) {
+            await loadClientId();
+          }
+
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleCredential,
+            ux_mode: "popup",
+            auto_select: false
+          });
+
+          window.google.accounts.id.prompt();
+
+        }
+        catch (error) {
+
+          log(
+            "Fallback error:",
+            error
+          );
+
+          let message =
+            container.querySelector(
+              ".rz-google-force-error-v2"
+            );
+
+          if (!message) {
+            message =
+              document.createElement("div");
+
+            message.className =
+              "rz-google-force-error-v2";
+
+            container.appendChild(message);
+          }
+
+          message.textContent =
+            error &&
+            error.message
+              ? error.message
+              : "Google Sign-In is unavailable.";
+        }
+      }
+    );
+
+    container.appendChild(button);
+  }
+
+  function renderInto(container) {
+
+    if (!container) {
+      return;
+    }
+
+    container.innerHTML = "";
+
+    try {
+
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleCredential,
+        ux_mode: "popup",
+        auto_select: false
+      });
+
+      window.google.accounts.id.renderButton(
+        container,
+        {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          shape: "rectangular",
+          width: 360,
+          logo_alignment: "left"
+        }
+      );
+
+      container.dataset.googleRendered =
+        "1";
+
+      log(
+        "Google button rendered."
+      );
+
+    }
+    catch (error) {
+
+      log(
+        "renderButton failed:",
+        error
+      );
+
+      createFallback(container);
+    }
+  }
+
+  function ensureForForm(form, label) {
+
+    if (!form) {
+      return;
+    }
+
+    let wrap =
+      form.querySelector(
+        ".rz-google-force-wrap-v2"
+      );
+
+    if (!wrap) {
+
+      wrap =
+        document.createElement("div");
+
+      wrap.className =
+        "rz-google-force-wrap-v2";
+
+      const divider =
+        document.createElement("div");
+
+      divider.className =
+        "rz-google-force-divider-v2";
+
+      divider.textContent =
+        "or";
+
+      const mount =
+        document.createElement("div");
+
+      mount.className =
+        "rz-google-force-mount-v2";
+
+      wrap.appendChild(divider);
+      wrap.appendChild(mount);
+
+      const submit =
+        form.querySelector(
+          'button[type="submit"]'
+        );
+
+      if (submit) {
+        submit.insertAdjacentElement(
+          "afterend",
+          wrap
+        );
+      }
+      else {
+        form.appendChild(wrap);
+      }
+
+      log(
+        "Google mount created for",
+        label
+      );
+    }
+
+    const mount =
+      wrap.querySelector(
+        ".rz-google-force-mount-v2"
+      );
+
+    if (!mount) {
+      return;
+    }
+
+    if (
+      mount.dataset.googleRendered ===
+      "1"
+    ) {
+      return;
+    }
+
+    if (
+      window.google &&
+      window.google.accounts &&
+      window.google.accounts.id &&
+      clientId
+    ) {
+      renderInto(mount);
+    }
+    else {
+      createFallback(mount);
+    }
+  }
+
+  function scan() {
+
+    addStyle();
+
+    const loginForm =
+      getElement("loginForm");
+
+    const signupForm =
+      getElement("signupForm");
+
+    ensureForForm(
+      loginForm,
+      "login"
+    );
+
+    ensureForForm(
+      signupForm,
+      "signup"
+    );
+  }
+
+  async function boot() {
+
+    if (booted) {
+      return;
+    }
+
+    booted = true;
+
+    addStyle();
+
+    scan();
+
+    try {
+      await loadGoogleScript();
+      await loadClientId();
+      scan();
+    }
+    catch (error) {
+
+      log(
+        "Initial Google boot failed:",
+        error
+      );
+
+      scan();
+    }
+
+    if (!observer) {
+
+      observer =
+        new MutationObserver(() => {
+          scan();
+        });
+
+      observer.observe(
+        document.body,
+        {
+          childList: true,
+          subtree: true
+        }
+      );
+    }
+
+    if (!timer) {
+
+      timer =
+        setInterval(() => {
+          scan();
+        }, 1000);
+    }
+
+    setTimeout(
+      () => {
+        try {
+          if (
+            timer
+          ) {
+            clearInterval(timer);
+            timer = null;
+          }
+        }
+        catch (_) {}
+      },
+      30000
+    );
+  }
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+    document.addEventListener(
+      "DOMContentLoaded",
+      boot,
+      { once: true }
+    );
+  }
+  else {
+    boot();
+  }
+
+})();
+</script>
+<script id="RIZORA_GOOGLE_AUTH_FORM_RUNTIME_V1">
+(() => {
+  if (window.__RIZORA_GOOGLE_AUTH_FORM_RUNTIME_V1__) return;
+  window.__RIZORA_GOOGLE_AUTH_FORM_RUNTIME_V1__ = true;
+
+  const API_BASE =
+    String(window.RIZORA_API_BASE || "https://rizora-guse.onrender.com")
+      .replace(/\/+$/, "");
+
+  const MOUNT_ID = "rzGoogleAuthFormMountV1";
+  const FALLBACK_ID = "rzGoogleAuthFormFallbackV1";
+  const STATUS_ID = "rzGoogleAuthFormStatusV1";
+
+  function getEl(id) {
+    return document.getElementById(id);
+  }
+
+  function setStatus(message, isError = false) {
+    const el = getEl(STATUS_ID);
+    if (!el) return;
+    el.textContent = message || "";
+    el.style.color = isError
+      ? "#ff8f9a"
+      : "rgba(255,255,255,.6)";
+  }
+
+  function showFallback(show) {
+    const el = getEl(FALLBACK_ID);
+    if (!el) return;
+    el.style.display = show ? "block" : "none";
+  }
+
+  async function waitForGoogleIdentityServices() {
+    if (
+      window.google &&
+      window.google.accounts &&
+      window.google.accounts.id
+    ) {
+      return true;
+    }
+
+    return new Promise(resolve => {
+      let attempts = 0;
+
+      const timer = setInterval(() => {
+        attempts++;
+
+        if (
+          window.google &&
+          window.google.accounts &&
+          window.google.accounts.id
+        ) {
+          clearInterval(timer);
+          resolve(true);
+          return;
+        }
+
+        if (attempts >= 100) {
+          clearInterval(timer);
+          resolve(false);
+        }
+      }, 100);
+    });
+  }
+
+  async function handleCredential(response) {
+    if (!response || !response.credential) {
+      setStatus("Google did not return a valid sign-in credential.", true);
+      return;
+    }
+
+    setStatus("Signing you in with Google...");
+
+    try {
+
+      if (typeof window.handleGoogleCredential === "function") {
+        await window.handleGoogleCredential(response);
+        return;
+      }
+
+      const apiResponse = await fetch(API_BASE + "/api/auth/google", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          credential: response.credential
+        })
+      });
+
+      const data = await apiResponse.json().catch(() => ({}));
+
+      if (!apiResponse.ok) {
+        throw new Error(
+          data.message ||
+          data.error ||
+          "Google sign-in failed."
+        );
+      }
+
+      if (data.token) {
+        localStorage.setItem("rizoraToken", data.token);
+      }
+
+      if (data.user) {
+        localStorage.setItem(
+          "rizoraUser",
+          JSON.stringify(data.user)
+        );
+      }
+
+      if (typeof window.refreshMe === "function") {
+        await window.refreshMe();
+      }
+
+      if (typeof window.closeAuth === "function") {
+        window.closeAuth();
+      }
+
+      if (typeof window.navigate === "function") {
+        window.navigate("home");
+      }
+
+      setStatus("");
+      if (typeof window.toast === "function") {
+        window.toast("Signed in with Google.");
+      }
+
+    } catch (error) {
+      console.error("[RIZORA GOOGLE AUTH FORM]", error);
+      setStatus(
+        error && error.message
+          ? error.message
+          : "Google sign-in failed.",
+        true
+      );
+    }
+  }
+
+  async function loadAndRender() {
+    const mount = getEl(MOUNT_ID);
+    const fallback = getEl(FALLBACK_ID);
+
+    if (!mount) return;
+
+    try {
+      const configResponse = await fetch(
+        API_BASE + "/api/auth/google/config?rz_auth_form_v1=1",
+        {
+          credentials: "include",
+          cache: "no-store"
+        }
+      );
+
+      const config = await configResponse.json().catch(() => ({}));
+
+      if (
+        !configResponse.ok ||
+        !config.success ||
+        !config.enabled ||
+        !config.clientId
+      ) {
+        throw new Error(
+          config.message ||
+          "Google Sign-In is currently unavailable."
+        );
+      }
+
+      const ready = await waitForGoogleIdentityServices();
+
+      if (!ready) {
+        throw new Error(
+          "Google Sign-In could not load."
+        );
+      }
+
+      google.accounts.id.initialize({
+        client_id: config.clientId,
+        callback: handleCredential,
+        auto_select: false,
+        cancel_on_tap_outside: true
+      });
+
+      mount.innerHTML = "";
+
+      google.accounts.id.renderButton(
+        mount,
+        {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          shape: "rectangular",
+          width: Math.min(
+            420,
+            Math.max(240, mount.parentElement?.clientWidth || 360)
+          ),
+          logo_alignment: "left"
+        }
+      );
+
+      showFallback(false);
+      setStatus("");
+
+      if (fallback) {
+        fallback.onclick = () => {
+          try {
+            google.accounts.id.prompt();
+          } catch (error) {
+            console.error(
+              "[RIZORA GOOGLE AUTH FORM FALLBACK]",
+              error
+            );
+          }
+        };
+      }
+
+      console.log("[RIZORA GOOGLE AUTH FORM] Google button rendered.");
+
+    } catch (error) {
+
+      console.error(
+        "[RIZORA GOOGLE AUTH FORM]",
+        error
+      );
+
+      showFallback(true);
+
+      setStatus(
+        error && error.message
+          ? error.message
+          : "Google Sign-In is unavailable.",
+        true
+      );
+
+      if (fallback) {
+        fallback.onclick = async () => {
+
+          try {
+
+            const ready =
+              await waitForGoogleIdentityServices();
+
+            if (!ready) {
+              throw new Error(
+                "Google Sign-In could not load."
+              );
+            }
+
+            const configResponse = await fetch(
+              API_BASE + "/api/auth/google/config?rz_auth_form_v1_fallback=1",
+              {
+                credentials: "include",
+                cache: "no-store"
+              }
+            );
+
+            const config =
+              await configResponse.json().catch(() => ({}));
+
+            if (
+              !configResponse.ok ||
+              !config.success ||
+              !config.enabled ||
+              !config.clientId
+            ) {
+              throw new Error(
+                config.message ||
+                "Google Sign-In is currently unavailable."
+              );
+            }
+
+            google.accounts.id.initialize({
+              client_id: config.clientId,
+              callback: handleCredential,
+              auto_select: false,
+              cancel_on_tap_outside: true
+            });
+
+            google.accounts.id.prompt();
+
+          } catch (fallbackError) {
+
+            console.error(
+              "[RIZORA GOOGLE AUTH FALLBACK]",
+              fallbackError
+            );
+
+            setStatus(
+              fallbackError && fallbackError.message
+                ? fallbackError.message
+                : "Google Sign-In is unavailable.",
+              true
+            );
+          }
+        };
+      }
+    }
+  }
+
+  function boot() {
+    loadAndRender().catch(error => {
+      console.error(
+        "[RIZORA GOOGLE AUTH BOOT]",
+        error
+      );
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      boot,
+      { once: true }
+    );
+  } else {
+    boot();
+  }
+
+  window.RIZORA_GOOGLE_AUTH_FORM_V1 = {
+    reload: loadAndRender
+  };
+})();
+</script></body>
 </html>
