@@ -87,6 +87,23 @@ async function verifyPayment(ref){try{var d=await api("/api/v2/payments/verify/"
 function bindView(){
   document.querySelectorAll("[data-rzx-action]").forEach(function(b){b.onclick=async function(){var a=b.getAttribute("data-rzx-action");if(a==="support")return showSupport();if(a==="wallet")return showWallet();if(a==="creator")return showCreatorLookup();if(a==="report")return showReport();if(a==="admin")return showAdmin();if(a==="boosts"){var n=document.querySelector('[data-nav="boosts"]');if(n)n.click();return;}if(a==="back")return backHome();if(a==="refresh-support")return loadSupport();if(a==="refresh-wallet")return loadWallet();if(a==="refresh-admin")return showAdmin();if(a.indexOf("verify-payment:")===0)return verifyPayment(a.slice(15));};});
 }
+
+function injectPasswordToggles(){
+  ["password","confirmPassword"].forEach(function(id){
+    var input=document.getElementById(id);
+    if(!input || input.parentElement.getAttribute("data-rz-password"))return;
+    var wrap=document.createElement("div");
+    wrap.className="rz-password-wrap";
+    wrap.setAttribute("data-rz-password","1");
+    input.parentNode.insertBefore(wrap,input);
+    wrap.appendChild(input);
+    var b=document.createElement("button");
+    b.type="button";b.className="rz-btn rz-password-toggle";b.textContent="Show";
+    b.onclick=function(){var hidden=input.type==="password";input.type=hidden?"text":"password";b.textContent=hidden?"Hide":"Show";};
+    wrap.appendChild(b);
+  });
+}
+
 function injectTools(){
   if(document.body.classList.contains("rz-auth")||!document.querySelector(".rz-sidebar")||document.getElementById("rzEnterpriseTools"))return;
   var aside=document.querySelector(".rz-sidebar");if(!aside)return;
@@ -96,7 +113,8 @@ function injectTools(){
 }
 function boot(){
   injectTools();
-  var mo=new MutationObserver(function(){injectTools();});
+  injectPasswordToggles();
+  var mo=new MutationObserver(function(){injectTools();injectPasswordToggles();});
   mo.observe(document.body,{childList:true,subtree:true});
   window.RIZORA_ENTERPRISE={support:showSupport,wallet:showWallet,profiles:showCreatorLookup,report:showReport,admin:showAdmin};
   bindView();
