@@ -88,6 +88,7 @@ function makePost(db, ctx, user, data) {
     userId: user.id,
     text: text,
     mediaUrl: mediaUrl,
+    aiAssisted: data.aiAssisted === true,
     hashtags: hashtags,
     mentions: [],
     collaboratorIds: Array.isArray(data.collaboratorIds) ? data.collaboratorIds.slice(0, 5) : [],
@@ -124,7 +125,7 @@ function decoratePost(db, post) {
     })
   } : null;
   return {
-    id:post.id,userId:post.userId,text:post.text,mediaUrl:post.mediaUrl,
+    id:post.id,userId:post.userId,text:post.text,mediaUrl:post.mediaUrl,aiAssisted:post.aiAssisted===true,
     hashtags:post.hashtags||[],mentions:post.mentions||[],createdAt:post.createdAt,
     author:publicUser(db,author),collaborators:collaborators,poll:poll,metrics:postMetrics(db,post)
   };
