@@ -330,11 +330,19 @@ async function handleRizoraMedia(ctx){
     const record = db.rzV2.media.find(x => x.id === id);
     if(!record || !record.path || !fs.existsSync(record.path)){ sendError(res,404,"Media not found."); return true; }
 
-    res.writeHead(200,{
+    const origin=String(req.headers.origin||"");
+    const allowedOrigin=origin==="https://rizora.com.ng"||origin==="https://www.rizora.com.ng"||origin==="http://localhost:3000"||origin==="http://127.0.0.1:3000";
+    const headers={
       "Content-Type":record.mimeType,
       "Content-Length":String(record.bytes),
-      "Cache-Control":"public, max-age=31536000, immutable"
-    });
+      "Cache-Control":"public, max-age=31536000, immutable",
+      "Access-Control-Allow-Credentials":"true",
+      "Access-Control-Expose-Headers":"Content-Length,Content-Type,Content-Disposition",
+      "Vary":"Origin"
+    };
+    if(allowedOrigin)headers["Access-Control-Allow-Origin"]=origin;
+    if(url.searchParams.get("download")==="1")headers["Content-Disposition"]="attachment; filename=\""+safeName(record.filename)+"\"";
+    res.writeHead(200,headers);
     fs.createReadStream(record.path).pipe(res);
     return true;
   }
