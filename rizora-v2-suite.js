@@ -82,7 +82,7 @@ async function community(){
 }
 function suiteMenu(){
  var b=modal("RIZORA Suite","Every recovered website feature in one place.",'<div class="rz-suite-grid rz-suite-grid-3">'+[
-  ["Premium","premium","Advanced AI, analytics and Pro Creator Tools."],["Creator Intelligence","intelligence","Creator profile, ideas and post analysis."],["Leaderboard","leaderboard","Points rankings."],["Referrals","referrals","Referral code, link and rewards."],["History","history","Points and creator-score history."],["Experiment Lab","experiments","A/B hooks and experiment notes."],["Settings","settings","Notifications and compact mode."],["Portfolio + Planner","portfolio","Portfolio identity and content planning."],["Campaigns","campaigns","Original funded creator campaigns."],["Community Feed","community","Global community feed."],["Install RIZORA","install","Install the PWA."],["Meet RoMi","romi","Creator profile."],["Flow","flow","Modern RIZORA Flow."],["Grow","grow","Official missions and growth tasks."],["Boosts","boosts","Creator Boost Network."]
+  ["Premium","premium","Advanced AI, analytics and Pro Creator Tools."],["Verification","verification","Open your RIZORA verification center."],["Creator Intelligence","intelligence","Creator profile, ideas and post analysis."],["Leaderboard","leaderboard","Points rankings."],["Referrals","referrals","Referral code, link and rewards."],["History","history","Points and creator-score history."],["Experiment Lab","experiments","A/B hooks and experiment notes."],["Settings","settings","Notifications and compact mode."],["Portfolio + Planner","portfolio","Portfolio identity and content planning."],["Campaigns","campaigns","Original funded creator campaigns."],["Community Feed","community","Global community feed."],["Install RIZORA","install","Install the PWA."],["Meet RoMi","romi","Creator profile."],["Flow","flow","Modern RIZORA Flow."],["Grow","grow","Official missions and growth tasks."],["Boosts","boosts","Creator Boost Network."]
  ].map(function(x){return '<button class="rz-suite-launch" data-suite-go="'+x[1]+'"><strong>'+esc(x[0])+'</strong><span>'+esc(x[2])+'</span></button>';}).join("")+'</div>');
  bindSuiteButtons(b);
 }
@@ -95,7 +95,30 @@ function romi(){
  '<img class="rz-suite-romi-avatar" src="/rizora-cover.png"><div><div class="rz-kicker">OFFICIAL CREATOR</div><h2>RoMi · @romi.noir</h2><p class="rz-muted">Artist. Developer. Creator. Builder. Creator of RIZORA.</p><div class="rz-actions"><a class="rz-btn" href="https://www.tiktok.com/@romi.noir" target="_blank" rel="noopener noreferrer">@romi.noir</a><a class="rz-btn primary" href="https://rizora.com.ng/" target="_blank" rel="noopener noreferrer">RIZORA</a></div></div></div>');
 }
 function bindSuiteButtons(root){
- (root||document).querySelectorAll("[data-suite-go]").forEach(function(el){el.onclick=function(){var a=el.getAttribute("data-suite-go");if(a==="premium")return premium();if(a==="analytics")return analytics();if(a==="intelligence")return intelligence();if(a==="leaderboard")return leaderboard();if(a==="referrals")return referrals();if(a==="history")return history();if(a==="experiments")return experiments();if(a==="settings")return settings();if(a==="portfolio")return portfolio();if(a==="campaigns")return campaigns();if(a==="community")return community();if(a==="install")return install();if(a==="romi")return romi();if(a==="flow"||a==="grow"||a==="boosts"){var n=document.querySelector('[data-nav="'+a+'"]');if(n){var m=document.getElementById("rzSuiteModal");if(m)m.remove();n.click();}}};});
+ (root||document).querySelectorAll("[data-suite-go]").forEach(function(el){el.onclick=function(){var a=el.getAttribute("data-suite-go");if(a==="premium")return premium();if(a==="analytics")return analytics();if(a==="intelligence")return intelligence();if(a==="leaderboard")return leaderboard();if(a==="referrals")return referrals();if(a==="history")return history();if(a==="experiments")return experiments();if(a==="settings")return settings();if(a==="portfolio")return portfolio();if(a==="campaigns")return campaigns();if(a==="community")return community();if(a==="install")return install();if(a==="romi")return romi();if(a==="verification"){var pv=document.querySelector('[data-nav="profile"]');if(pv){var mm=document.getElementById("rzSuiteModal");if(mm)mm.remove();pv.click();}}if(a==="flow"||a==="grow"||a==="boosts"){var n=document.querySelector('[data-nav="'+a+'"]');if(n){var m=document.getElementById("rzSuiteModal");if(m)m.remove();n.click();}}};});
+}
+function logout(){
+  fetch(API+"/api/auth/logout",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"}}).catch(function(){});
+  try{localStorage.removeItem("rizoraToken");localStorage.removeItem("rizora_token");}catch(_){}
+  location.reload();
+}
+function injectLogout(){
+  var actions=document.querySelector(".rz-top-inner .rz-actions");
+  if(actions&&!document.getElementById("rzSuiteLogout")){
+    var b=document.createElement("button");b.id="rzSuiteLogout";b.className="rz-btn";b.textContent="Log out";b.onclick=logout;actions.appendChild(b);
+  }
+}
+function injectMobileMenu(){
+  if(window.innerWidth>980)return;
+  if(document.getElementById("rzMobileSuiteButton"))return;
+  var top=document.querySelector(".rz-top-inner");if(!top)return;
+  var b=document.createElement("button");b.id="rzMobileSuiteButton";b.className="rz-btn rz-mobile-suite-button";b.textContent="Menu";b.onclick=function(){
+    var m=modal("RIZORA Menu","Mobile navigation and creator tools.",'<div class="rz-suite-grid rz-suite-grid-2">'+[
+      ["Home","home"],["Flow","flow"],["Stories","stories"],["Grow","grow"],["Boosts","boosts"],["Communities","communities"],["Studio","studio"],["AI","ai"],["Discover","discover"],["Official","official"],["Messages","messages"],["Opportunities","opportunities"],["Analytics","analytics"],["Notifications","notifications"],["Profile","profile"],["Safety","safety"],["Creator Suite","suite"],["Log out","logout"]
+    ].map(function(x){return '<button class="rz-suite-launch" data-mobile-nav="'+x[1]+'"><strong>'+esc(x[0])+'</strong></button>';}).join("")+'</div>');
+    m.querySelectorAll("[data-mobile-nav]").forEach(function(x){x.onclick=function(){var a=x.getAttribute("data-mobile-nav");if(a==="suite"){suiteMenu();return;}if(a==="logout"){logout();return;}var n=document.querySelector('[data-nav="'+a+'"]');var sm=document.getElementById("rzSuiteModal");if(sm)sm.remove();if(n)n.click();};});
+  };
+  top.insertBefore(b,top.firstChild);
 }
 function injectSuite(){
  if(!document.querySelector(".rz-sidebar"))return;
