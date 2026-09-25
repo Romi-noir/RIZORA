@@ -25,6 +25,9 @@ function ensureEnterprise(db) {
   db.rzV2.premiumEvents = db.rzV2.premiumEvents || [];
   db.rzV2.products = db.rzV2.products || [];
   db.rzV2.productPurchases = db.rzV2.productPurchases || [];
+  db.rzV2.creatorMembershipTiers = db.rzV2.creatorMembershipTiers || [];
+  db.rzV2.creatorMemberships = db.rzV2.creatorMemberships || [];
+  db.rzV2.creatorMembershipEvents = db.rzV2.creatorMembershipEvents || [];
 }
 
 async function readBody(req, limit) {
@@ -393,6 +396,150 @@ async function handleRizoraEnterprise(ctx) {
     if(!ps.response.ok||!ps.data.status){ctx.sendError(res,502,ps.data.message||"Unable to initialize product payment.");return true;}
     db.rzV2.productPurchases.push({id:ctx.uid("purchase_"),productId:product.id,buyerId:user.id,creatorId:product.creatorId,reference:ps.data.data.reference,status:"pending",amountNaira:product.priceNaira,createdAt:new Date().toISOString()});
     ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,authorizationUrl:ps.data.data.authorization_url,reference:ps.data.data.reference});return true;
+  }
+
+  // ---------- creator memberships / recurring fan support ----------
+  if (path === "/api/v2/memberships/tiers" && method === "GET") {
+    const creatorKey = String(new URL(req.url, "http://rizora.local").searchParams.get("creator") || "").trim().toLowerCase();
+    const owner = creatorKey
+      ? (db.users || []).find(u => String(u.id || "").toLowerCase() === creatorKey || String(u.username || "").toLowerCase() === creatorKey || String(u.publicUsername || "").toLowerCase() === creatorKey)
+      : user;
+    if (!owner) { ctx.sendError(res, 404, "Creator not found."); return true; }
+    const tiers = db.rzV2.creatorMembershipTiers.filter(t => t.creatorId === owner.id && t.status === "active").map(function(t) {
+      const members = db.rzV2.creatorMemberships.filter(m => m.tierId === t.id && m.status === "active").length;
+      const joined = !!user && db.rzV2.creatorMemberships.some(m => m.tierId === t.id && m.memberId === user.id && ["active","attention","non-renewing"].includes(m.status));
+      return Object.assign({}, t, {memberCount:members, joined:joined});
+    });
+    ctx.sendJSON(res, 200, {success:true, creator:{id:owner.id,username:owner.publicUsername||owner.username,displayName:owner.displayName,verified:!!owner.verified}, tiers});
+    return true;
+  }
+
+  if (path === "/api/v2/memberships/tiers" && method === "POST") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    if (!paystackConfigured()) { ctx.sendError(res, 503, "Paystack is not configured on the RIZORA server yet."); return true; }
+    const b = await readBody(req, 120000);
+    const name = safeString(b.name, 100);
+    const description = safeString(b.description, 600);
+    const priceNaira = Number(b.priceNaira);
+    const perks = Array.isArray(b.perks) ? b.perks.slice(0, 12).map(x => safeString(x, 100)).filter(Boolean) : [];
+    if (!name || !Number.isFinite(priceNaira) || priceNaira < 100 || priceNaira > 1000000) {
+      ctx.sendError(res, 400, "Enter a tier name and a monthly price between ₦100 and ₦1,000,000.");
+      return true;
+    }
+    const currency = String(process.env.RIZORA_CURRENCY || "NGN").toUpperCase();
+    const planPayload = {
+      name: "RIZORA — " + String(user.displayName || user.username || "Creator") + " — " + name,
+      description: description || ("Monthly membership for @" + String(user.publicUsername || user.username)),
+      amount: Math.round(priceNaira * 100),
+      interval: "monthly",
+      currency,
+      send_invoices: true,
+      send_sms: false
+    };
+    const planResponse = await paystackRequest("/plan", {method:"POST", body:JSON.stringify(planPayload)});
+    if (!planResponse.response.ok || !planResponse.data.status) {
+      ctx.sendError(res, 502, planResponse.data.message || "Unable to create the recurring membership plan.");
+      return true;
+    }
+    const tier = {
+      id:ctx.uid("mtier_"),
+      creatorId:user.id,
+      name,
+      description,
+      priceNaira,
+      currency,
+      interval:"monthly",
+      perks,
+      paystackPlanCode:planResponse.data.data.plan_code || "",
+      status:"active",
+      createdAt:new Date().toISOString(),
+      updatedAt:new Date().toISOString()
+    };
+    db.rzV2.creatorMembershipTiers.push(tier);
+    db.rzV2.creatorMembershipEvents.push({id:ctx.uid("mevent_"),event:"tier.created",tierId:tier.id,creatorId:user.id,createdAt:new Date().toISOString()});
+    ctx.saveDB(db);
+    addAudit(ctx,user,"creator_membership_tier_created",{tierId:tier.id,priceNaira:priceNaira});
+    ctx.sendJSON(res,201,{success:true,tier});
+    return true;
+  }
+
+  const tierJoin = path.match(/^\/api\/v2\/memberships\/tiers\/([^/]+)\/join$/);
+  if (tierJoin && method === "POST") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    if (!paystackConfigured()) { ctx.sendError(res, 503, "Paystack is not configured on the RIZORA server yet."); return true; }
+    const tier = db.rzV2.creatorMembershipTiers.find(t => t.id === tierJoin[1] && t.status === "active");
+    if (!tier) { ctx.sendError(res, 404, "Membership tier not found."); return true; }
+    if (tier.creatorId === user.id) { ctx.sendError(res, 400, "You cannot subscribe to your own membership tier."); return true; }
+    const creator = (db.users || []).find(u => u.id === tier.creatorId);
+    if (!creator) { ctx.sendError(res, 404, "Creator not found."); return true; }
+    const email = safeString(user.email,180);
+    if (!email || !email.includes("@")) { ctx.sendError(res, 400, "A valid account email is required for membership."); return true; }
+    const existing = db.rzV2.creatorMemberships.find(m => m.tierId === tier.id && m.memberId === user.id && ["pending","active","attention","non-renewing"].includes(m.status));
+    if (existing) { ctx.sendError(res, 409, "You already have a membership on this tier."); return true; }
+    if (!tier.paystackPlanCode) { ctx.sendError(res, 503, "This membership tier is not ready for billing yet."); return true; }
+
+    const reference = ("RZM-" + Date.now() + "-" + Math.random().toString(36).slice(2,8)).replace(/[^A-Za-z0-9\-.=]/g,"");
+    const payload = {
+      email,
+      amount:String(Math.round(Number(tier.priceNaira) * 100)),
+      currency:tier.currency || String(process.env.RIZORA_CURRENCY || "NGN"),
+      reference,
+      plan:tier.paystackPlanCode,
+      metadata:JSON.stringify({type:"creator_membership",tierId:tier.id,creatorId:tier.creatorId,memberId:user.id}),
+      callback_url:String(process.env.RIZORA_PAYMENT_CALLBACK || "https://rizora.com.ng/")
+    };
+    const ps=await paystackRequest("/transaction/initialize",{method:"POST",body:JSON.stringify(payload)});
+    if(!ps.response.ok||!ps.data.status){ctx.sendError(res,502,ps.data.message||"Unable to initialize membership payment.");return true;}
+    const membership={
+      id:ctx.uid("cmembership_"),
+      tierId:tier.id,
+      creatorId:tier.creatorId,
+      memberId:user.id,
+      memberEmail:email,
+      reference:ps.data.data.reference || reference,
+      status:"pending",
+      priceNaira:tier.priceNaira,
+      currency:tier.currency,
+      interval:"monthly",
+      authorizationUrl:ps.data.data.authorization_url || "",
+      createdAt:new Date().toISOString(),
+      updatedAt:new Date().toISOString()
+    };
+    db.rzV2.creatorMemberships.push(membership);
+    db.rzV2.creatorMembershipEvents.push({id:ctx.uid("mevent_"),event:"membership.initialize",membershipId:membership.id,tierId:tier.id,reference:membership.reference,createdAt:new Date().toISOString()});
+    ctx.saveDB(db);
+    ctx.sendJSON(res,200,{success:true,authorizationUrl:membership.authorizationUrl,reference:membership.reference,membershipId:membership.id,creator:{username:creator.publicUsername||creator.username,displayName:creator.displayName}});
+    return true;
+  }
+
+  if (path === "/api/v2/memberships/me" && method === "GET") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    const joined=db.rzV2.creatorMemberships.filter(m=>m.memberId===user.id).slice().reverse().slice(0,100).map(function(m){
+      const t=db.rzV2.creatorMembershipTiers.find(x=>x.id===m.tierId);
+      const creator=(db.users||[]).find(u=>u.id===m.creatorId);
+      return Object.assign({},m,{tier:t?{id:t.id,name:t.name,description:t.description,priceNaira:t.priceNaira,perks:t.perks}:null,creator:creator?{username:creator.publicUsername||creator.username,displayName:creator.displayName,avatarUrl:creator.avatarUrl||""}:null});
+    });
+    const owned=db.rzV2.creatorMembershipTiers.filter(t=>t.creatorId===user.id).slice().reverse().slice(0,50).map(function(t){
+      return Object.assign({},t,{memberCount:db.rzV2.creatorMemberships.filter(m=>m.tierId===t.id&&["active","attention","non-renewing"].includes(m.status)).length});
+    });
+    ctx.sendJSON(res,200,{success:true,joined,owned});
+    return true;
+  }
+
+  const membershipCancel=path.match(/^\/api\/v2\/memberships\/([^/]+)\/cancel$/);
+  if(membershipCancel&&method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    if(!paystackConfigured()){ctx.sendError(res,503,"Paystack is not configured on the RIZORA server yet.");return true;}
+    const membership=db.rzV2.creatorMemberships.find(m=>m.id===membershipCancel[1]&&m.memberId===user.id);
+    if(!membership){ctx.sendError(res,404,"Membership not found.");return true;}
+    if(!membership.subscriptionCode||!membership.emailToken){ctx.sendError(res,409,"The subscription is not active enough to cancel yet.");return true;}
+    const ps=await paystackRequest("/subscription/disable",{method:"POST",body:JSON.stringify({code:membership.subscriptionCode,token:membership.emailToken})});
+    if(!ps.response.ok||!ps.data.status){ctx.sendError(res,502,ps.data.message||"Unable to cancel the membership.");return true;}
+    membership.status="non-renewing";membership.updatedAt=new Date().toISOString();
+    db.rzV2.creatorMembershipEvents.push({id:ctx.uid("mevent_"),event:"membership.cancel",membershipId:membership.id,createdAt:new Date().toISOString()});
+    ctx.saveDB(db);
+    ctx.sendJSON(res,200,{success:true,status:membership.status});
+    return true;
   }
 
   // ---------- creator profile ----------
@@ -770,7 +917,38 @@ async function handleRizoraEnterprise(ctx) {
       tx.paystackId = data.id || tx.paystackId || null;
       tx.updatedAt = new Date().toISOString();
     }
+
+    // Creator membership webhooks: activate after the paid charge and attach
+    // Paystack's recurring subscription credentials when available.
+    let membership = reference ? db.rzV2.creatorMemberships.find(m => m.reference === reference) : null;
+    if (!membership && (event === "subscription.create" || event === "invoice.create" || event === "invoice.payment_failed" || event === "subscription.not_renew")) {
+      const planCode = String((data.plan && (data.plan.plan_code || data.plan.code)) || data.plan_code || "");
+      membership = db.rzV2.creatorMemberships.slice().reverse().find(m =>
+        m.status === "pending" &&
+        (!planCode || (db.rzV2.creatorMembershipTiers.find(t => t.id === m.tierId) || {}).paystackPlanCode === planCode) &&
+        String(m.memberEmail || "").toLowerCase() === String((data.customer && data.customer.email) || "").toLowerCase()
+      );
+    }
+    if (membership) {
+      if (event === "charge.success" || event === "subscription.create" || event === "invoice.create") {
+        membership.status = "active";
+        membership.updatedAt = new Date().toISOString();
+      } else if (["invoice.payment_failed","subscription.disable","subscription.not_renew"].includes(event)) {
+        membership.status = event === "subscription.disable" ? "cancelled" : "attention";
+        membership.updatedAt = new Date().toISOString();
+      }
+      if (data.subscription_code) membership.subscriptionCode = data.subscription_code;
+      if (data.email_token) membership.emailToken = data.email_token;
+      if (data.subscription) {
+        membership.subscriptionCode = membership.subscriptionCode || data.subscription.subscription_code || "";
+        membership.emailToken = membership.emailToken || data.subscription.email_token || "";
+      }
+      membership.lastEvent=event;
+      db.rzV2.creatorMembershipEvents.push({id:ctx.uid("mevent_"),event,membershipId:membership.id,reference:reference||null,createdAt:new Date().toISOString()});
+    }
+
     if (db.rzV2.paymentEvents.length > 5000) db.rzV2.paymentEvents = db.rzV2.paymentEvents.slice(-5000);
+    if (db.rzV2.creatorMembershipEvents.length > 5000) db.rzV2.creatorMembershipEvents = db.rzV2.creatorMembershipEvents.slice(-5000);
     ctx.saveDB(db);
     ctx.sendJSON(res, 200, { received:true });
     return true;
