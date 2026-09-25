@@ -18,6 +18,7 @@ jobs:
         run: |
           node --check server.js
           node --check rizora-v2-media-backend.js
+          node --check rizora-v2-fans.js
           node --check rizora-v2-backend.js
           node --check rizora-v2-growth.js
           node --check rizora-v2-modern.js
