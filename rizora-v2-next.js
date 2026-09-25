@@ -130,7 +130,7 @@ function integrity(){
       ["Caption has enough context",caption.length>=20,"Add enough context for a viewer to understand the post without guessing."],
       ["No obvious spam pattern",!/^(.)\\1{7,}$/.test(caption)&&!/(.)\\1{5,}/.test(caption),"Avoid repeated characters, empty engagement bait or copy-paste spam."],
       ["Adapted content is attributed",!adapted||src.length>=3,"Add the original source or permission when you are adapting someone else's work."],
-      ["Media reference is valid",!url||/^https?:\\/\\//i.test(url),"Use a normal HTTPS media URL when attaching remote media."]
+      ["Media reference is valid",!url||url.indexOf("https://")===0||url.indexOf("http://")===0,"Use a normal HTTP(S) media URL when attaching remote media."]
     ];
     var passed=checks.filter(function(x){return x[1];}).length;
     m.querySelector("#rzIntegrityOut").innerHTML='<div class="rz-next-result"><strong>'+passed+"/"+checks.length+' checks passed</strong>'+checks.map(function(x){return '<div class="rz-next-result-row"><span class="'+(x[1]?"good":"warn")+'">'+(x[1]?"✓":"!")+'</span><div><b>'+esc(x[0])+'</b><small>'+esc(x[2])+'</small></div></div>';}).join("")+
