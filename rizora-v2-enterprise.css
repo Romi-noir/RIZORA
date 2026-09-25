@@ -15,3 +15,5 @@
   .rz-enterprise-grid{grid-template-columns:1fr}
   .rz-enterprise-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+.rz-password-wrap{position:relative;display:flex;align-items:center;gap:7px}.rz-password-wrap .rz-input{min-width:0;flex:1}.rz-password-toggle{padding:9px 10px;font-size:11px;white-space:nowrap}
