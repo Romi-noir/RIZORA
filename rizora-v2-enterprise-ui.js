@@ -194,7 +194,7 @@ function boot(){
   injectPasswordToggles();
   var mo=new MutationObserver(function(){injectTools();injectPasswordToggles();});
   mo.observe(document.body,{childList:true,subtree:true});
-  window.RIZORA_ENTERPRISE={support:showSupport,wallet:showWallet,profiles:showCreatorLookup,report:showReport,admin:showAdmin};
+  window.RIZORA_ENTERPRISE={support:showSupport,wallet:showWallet,profiles:showCreatorLookup,report:showReport,admin:showAdmin,showPremium:showPremium,showChannels:showChannels,showProducts:showShop};
   bindView();
 }
 setTimeout(boot,60);
