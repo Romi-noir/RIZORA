@@ -5,7 +5,7 @@ const path = require("path");
 const crypto = require("crypto");
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
-const SIMPLE_UPLOAD_MAX = 750 * 1024;
+const SIMPLE_UPLOAD_MAX = 600 * 1024;
 const CHUNK_BYTES = 512 * 1024;
 const MAX_DAILY_BYTES = 250 * 1024 * 1024;
 const SESSION_TTL_MS = 30 * 60 * 1000;
@@ -83,7 +83,7 @@ async function readBody(req){
   let raw = "";
   for await(const chunk of req){
     raw += chunk.toString();
-    if(raw.length > 1100000) throw new Error("Request body too large.");
+    if(Buffer.byteLength(raw, "utf8") > 2 * 1024 * 1024) throw new Error("Request body too large.");
   }
   return raw ? JSON.parse(raw) : {};
 }
