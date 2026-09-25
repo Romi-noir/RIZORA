@@ -98,10 +98,18 @@ async function main() {
     const authHeaders = { Cookie: cookie, "Content-Type": "application/json" };
 
     const me = await request("/api/auth/me", { headers: authHeaders });
-    assert(me.res.status === 200 && me.data.user && me.data.user.username === username, "auth/me failed");
+    assert(me.res.status === 200 && me.data.user && me.data.user.username === username, "auth/me cookie session failed");
 
-    const v2me = await request("/api/v2/me", { headers: authHeaders });
-    assert(v2me.res.status === 200 && v2me.data.user, "v2/me failed");
+    const bearerHeaders = {
+      Authorization: "Bearer " + signup.data.token,
+      "Content-Type": "application/json"
+    };
+
+    const bearerMe = await request("/api/auth/me", { headers: bearerHeaders });
+    assert(bearerMe.res.status === 200 && bearerMe.data.user && bearerMe.data.user.username === username, "auth/me bearer session failed");
+
+    const v2me = await request("/api/v2/me", { headers: bearerHeaders });
+    assert(v2me.res.status === 200 && v2me.data.user, "v2/me bearer session failed");
 
     const feed = await request("/api/v2/feed?tab=for-you", { headers: authHeaders });
     assert(feed.res.status === 200 && Array.isArray(feed.data.posts), "feed failed");
