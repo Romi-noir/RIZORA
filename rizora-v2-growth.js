@@ -80,7 +80,7 @@ function tags(text) {
 function makePost(db, ctx, user, data) {
   var text = clean(ctx, data.text || data.caption, 4000);
   var mediaUrl = clean(ctx, data.mediaUrl, 1200);
-  if (!text && !mediaUrl) throw new Error("Add text or media before publishing.");
+  if (!text && !mediaUrl && !data.poll) throw new Error("Add text or media before publishing.");
   if (blocked([text, mediaUrl])) throw new Error("Adult or sexually explicit content is not allowed on RIZORA.");
   var hashtags = tags(text);
   var post = {
@@ -344,4 +344,4 @@ async function handleRizoraGrowth(ctx) {
   return false;
 }
 
-module.exports = { handleRizoraGrowth };
+module.exports = { handleRizoraGrowth, publishDueSchedules };
