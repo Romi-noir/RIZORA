@@ -210,19 +210,18 @@ function cleanString(value, max = 500) {
 
 function json(res, statusCode, data, extraHeaders = {}) {
   const body = JSON.stringify(data);
+  const origin = res.getHeader("Access-Control-Allow-Origin") || "https://rizora.com.ng";
 
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
-    "Access-Control-Allow-Origin":
-      "https://rizora.com.ng",
-    "Access-Control-Allow-Headers":
-      "Content-Type, Authorization",
-        "Access-Control-Allow-Credentials": "true",
-
-    "Access-Control-Allow-Methods":
-      "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Credentials": "true",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
     ...extraHeaders
   });
 
@@ -597,21 +596,28 @@ function verifyTotpCode(secret, code) {
 async function readBody(req) {
   return new Promise((resolve, reject) => {
     let raw = "";
+    let settled = false;
 
     req.setEncoding("utf8");
 
     req.on("data", chunk => {
+      if (settled) return;
       raw += chunk;
+      if (Buffer.byteLength(raw, "utf8") > MAX_BODY_SIZE) {
+        settled = true;
+        reject(new Error("Request body too large."));
+        try { req.destroy(); } catch (_) {}
+      }
     });
 
     req.on("end", () => {
+      if (settled) return;
+      settled = true;
       const body = raw.trim();
-
       if (!body) {
         resolve({});
         return;
       }
-
       try {
         resolve(JSON.parse(body));
       } catch (error) {
@@ -619,7 +625,12 @@ async function readBody(req) {
       }
     });
 
-    req.on("error", reject);
+    req.on("error", error => {
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    });
   });
 }
 
@@ -3588,17 +3599,6 @@ if (
     return;
   }
 
-  if (
-    task.creatorId &&
-    task.creatorId === user.id
-  ) {
-    sendError(
-      res,
-      403,
-      "You cannot complete your own task."
-    );
-    return;
-  }
   const cooldown =
     getCooldown(
       db,
@@ -4005,9 +4005,6 @@ if (
   const user =
     getCurrentUser(db, req);
 
-  const authenticated =
-    !!user;
-
   let body = {};
 
   try {
@@ -4242,6 +4239,11 @@ if (
       400,
       error.message
     );
+    return;
+  }
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
     return;
   }
 
@@ -9190,6 +9192,12 @@ async function requestHandler(
     res.statusCode = 204;
     res.end();
     return;
+  }
+
+  if (!res.headersSent) {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=()");
   }
   try {
 
