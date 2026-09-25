@@ -21,6 +21,7 @@ function bindMediaPicker(fileId,statusId,urlId){
 function verified(u){return u&&u.verified?'<span class="rz-badge ok">✓ Verified</span>':"";}
 function toast(s){var t=$("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rt);window.__rt=setTimeout(function(){t.classList.remove("show");},2400);}
 function textPreview(v){var s=String(v||"").trim().replace(/\s+/g," ");return s.slice(0,70)||"Untitled draft";}
+function bindPasswordToggles(root){(root||document).querySelectorAll("[data-rz-password-toggle]").forEach(function(b){b.onclick=function(){var id=b.getAttribute("data-rz-password-toggle"),i=document.getElementById(id);if(!i)return;var show=i.type==="password";i.type=show?"text":"password";b.textContent=show?"Hide":"Show";b.setAttribute("aria-label",show?"Hide password":"Show password");};});}
 async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var x=await r.text(),d={};try{d=x?JSON.parse(x):{};}catch(e){d={error:x};}if(!r.ok){var err=new Error(d.message||d.error||"Request failed.");err.code=d.code||"";throw err;}return d;}
 
 function landing(){
@@ -31,7 +32,8 @@ function landing(){
 }
 
 function auth(){
-  document.body.innerHTML='<div class="rz-auth"><div class="rz-auth-card"><button id="backLanding" class="rz-btn">Back to RIZORA</button><div class="rz-brand"><img src="/rizora-cover.png"><div>RIZORA<small>CREATOR OS</small></div></div><h1>Everything for creators.</h1><p class="rz-muted">Social. Growth. AI. Community.</p><div class="rz-tabs"><button id="tabLogin">Log in</button><button id="tabSignup">Create account</button></div><form id="authForm"><div id="signupBox"></div><div class="rz-field"><label class="rz-label">Username or email</label><input id="identifier" class="rz-input" required></div><div class="rz-field"><label class="rz-label">Password</label><input id="password" class="rz-input" type="password" required></div><button id="authSubmit" class="rz-btn primary" style="width:100%">Log in</button><div class="rz-divider">OR</div><div id="googleButton"></div><div id="authError" class="rz-error"></div></form></div></div>';
+  document.body.innerHTML='<div class="rz-auth"><div class="rz-auth-card"><button id="backLanding" class="rz-btn">Back to RIZORA</button><div class="rz-brand"><img src="/rizora-cover.png"><div>RIZORA<small>CREATOR OS</small></div></div><h1>Everything for creators.</h1><p class="rz-muted">Social. Growth. AI. Community.</p><div class="rz-tabs"><button id="tabLogin">Log in</button><button id="tabSignup">Create account</button></div><form id="authForm"><div id="signupBox"></div><div class="rz-field"><label class="rz-label">Username or email</label><input id="identifier" class="rz-input" required></div><div class="rz-field"><label class="rz-label">Password</label><div style="display:flex;gap:8px;align-items:center"><input id="password" class="rz-input" type="password" autocomplete="current-password" required style="flex:1"><button type="button" class="rz-btn" data-rz-password-toggle="password" aria-label="Show password">Show</button></div></div><button id="authSubmit" class="rz-btn primary" style="width:100%">Log in</button><div class="rz-divider">OR</div><div id="googleButton"></div><div id="authError" class="rz-error"></div></form></div></div>';
+  bindPasswordToggles(document.getElementById("authForm"));
   $("backLanding").onclick=function(){landing();};
   $("tabLogin").onclick=function(){state.authMode="login";auth();};
   $("tabSignup").onclick=function(){state.authMode="signup";auth();};
@@ -40,7 +42,8 @@ function auth(){
   if(state.authMode==="signup"){
     $("identifier").required=false;
     $("identifier").parentElement.style.display="none";
-    $("signupBox").innerHTML='<div class="rz-field"><label class="rz-label">Username</label><input id="username" class="rz-input" required></div><div class="rz-field"><label class="rz-label">Display name</label><input id="displayName" class="rz-input"></div><div class="rz-field"><label class="rz-label">Email</label><input id="email" class="rz-input" type="email" required></div><div class="rz-field"><label class="rz-label">Confirm password</label><input id="confirmPassword" class="rz-input" type="password" required></div>';
+    $("signupBox").innerHTML='<div class="rz-field"><label class="rz-label">Username</label><input id="username" class="rz-input" autocomplete="username" required></div><div class="rz-field"><label class="rz-label">Display name</label><input id="displayName" class="rz-input"></div><div class="rz-field"><label class="rz-label">Email</label><input id="email" class="rz-input" type="email" autocomplete="email" required></div><div class="rz-field"><label class="rz-label">Confirm password</label><div style="display:flex;gap:8px;align-items:center"><input id="confirmPassword" class="rz-input" type="password" autocomplete="new-password" required style="flex:1"><button type="button" class="rz-btn" data-rz-password-toggle="confirmPassword" aria-label="Show password">Show</button></div></div>';
+     bindPasswordToggles(document.getElementById("signupBox"));
     $("authSubmit").textContent="Create account";
     $("email").oninput=function(){ $("identifier").value=this.value; };
   }else{
