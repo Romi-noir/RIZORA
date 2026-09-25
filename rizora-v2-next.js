@@ -117,28 +117,28 @@ async function supportCreator(preferredCreator){
   }catch(err){m.querySelector("#rzSupportSummary").textContent=err.message;}
 }
 async function business(){
-  var s=await loadSnapshot(),a=s.analytics||{},c=s.creator||{},ops=s.opportunities.opportunities||[],chs=s.channels.channels||[],prods=s.products.products||[],p=s.premium||{};
+  var s=await loadSnapshot(),a=s.analytics||{},c=s.creator||{},ops=s.opportunities.opportunities||[],chs=s.channels.channels||[],p=s.premium||{};
   var openOps=ops.filter(function(x){return !x.applied;}).slice(0,6);
-  var activeChannels=chs.filter(function(x){return x.joined;}).slice(0,6);
   var body='<div class="rz-next-grid rz-next-grid-6">'+metricRows(a,c)+'</div>'+
     '<div class="rz-next-grid rz-next-grid-3">'+
       '<div class="rz-next-card"><div class="rz-kicker">COMMUNITY</div><h3>'+esc(chs.length)+'</h3><p>creator channels available now</p><button class="rz-btn" data-next-nav="channels">Open Channels</button></div>'+
-      '<div class="rz-next-card"><div class="rz-kicker">SHOP</div><h3>'+esc(prods.length)+'</h3><p>active digital products</p><button class="rz-btn" data-next-nav="products">Open Shop</button></div>'+
-      '<div class="rz-next-card"><div class="rz-kicker">PREMIUM</div><h3>'+esc(p.active?"ACTIVE":"AVAILABLE")+'</h3><p>'+esc(p.active?"Advanced creator intelligence is active.":"Creator monetization tools are ready when billing is configured.")+'</p><button class="rz-btn" data-next-nav="premium">Open Premium</button></div>'+'<div class="rz-next-card"><div class="rz-kicker">FAN SUPPORT</div><h3>₦'+esc(Number((s.tips&&s.tips.summary&&s.tips.summary.receivedTotalNaira)||0).toLocaleString())+'</h3><p>confirmed Creator Support received</p><button class="rz-btn" data-next-nav="support">Support Creator</button></div>'+
+      '<div class="rz-next-card"><div class="rz-kicker">OPPORTUNITIES</div><h3>'+esc(openOps.length)+'</h3><p>creator opportunities ready to explore</p><button class="rz-btn" data-next-nav="opportunities">Open Opportunities</button></div>'+
+      '<div class="rz-next-card"><div class="rz-kicker">INTELLIGENCE</div><h3>'+esc(p.active?"ACTIVE":"READY")+'</h3><p>creator strategy, analytics and AI tools</p><button class="rz-btn" data-next-nav="premium">Open Creator Tools</button></div>'+
+      '<div class="rz-next-card"><div class="rz-kicker">PLANNING</div><h3>Creator Lab</h3><p>draft, schedule, test and protect your content</p><button class="rz-btn" data-next-nav="lab">Open Creator Lab</button></div>'+
     '</div>'+
     '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Opportunity Radar</strong><p>Current creator opportunities already available inside RIZORA.</p></div></div>'+
       (openOps.length?openOps.map(function(o){return '<div class="rz-next-list-row"><div><strong>'+esc(o.title)+'</strong><span>'+esc(o.type||"opportunity")+'</span></div><button class="rz-btn" data-next-opp="'+esc(o.id)+'">Apply</button></div>';}).join(""):'<div class="rz-next-empty">No new opportunities right now.</div>')+
     '</div>'+
-    '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Business setup checklist</strong><p>Build a creator business, not only a feed.</p></div></div>'+
-      '<div class="rz-next-checklist"><label><span>✓</span><b>Creator profile</b><small>Identity, bio and links</small></label><label><span>✓</span><b>Content planning</b><small>Plan and schedule ideas</small></label><label><span>✓</span><b>Community channel</b><small>Own a direct audience space</small></label><label><span>✓</span><b>Digital products</b><small>Sell creator-made downloads</small></label><label><span>✓</span><b>Opportunities</b><small>Apply to creator campaigns</small></label></div>'+
+    '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Creator workflow</strong><p>Build a repeatable system around your content and audience.</p></div></div>'+
+      '<div class="rz-next-checklist"><label><span>✓</span><b>Creator profile</b><small>Identity, bio and links</small></label><label><span>✓</span><b>Content planning</b><small>Draft and schedule ideas</small></label><label><span>✓</span><b>Community</b><small>Own a direct audience space</small></label><label><span>✓</span><b>Opportunities</b><small>Apply to creator opportunities</small></label><label><span>✓</span><b>Content safety</b><small>Run checks before publishing</small></label></div>'+
     '</div>';
-  var m=modal("Creator Business Hub","BUILD • GROW • EARN",body);
+  var m=modal("Creator Workspace","BUILD • GROW • CREATE",body);
   m.querySelectorAll("[data-next-nav]").forEach(function(b){b.onclick=function(){
     var x=b.getAttribute("data-next-nav");closeModal();
     if(x==="channels"&&window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showChannels)return window.RIZORA_ENTERPRISE.showChannels();
-    if(x==="products"&&window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showProducts)return window.RIZORA_ENTERPRISE.showProducts();
+    if(x==="opportunities"){var n=document.querySelector('[data-nav="opportunities"]');if(n)n.click();return;}
     if(x==="premium"&&window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showPremium)return window.RIZORA_ENTERPRISE.showPremium();
-    if(x==="support")return supportCreator();
+    if(x==="lab"&&window.RIZORA_UPGRADES&&window.RIZORA_UPGRADES.open)return window.RIZORA_UPGRADES.open();
   };});
   m.querySelectorAll("[data-next-opp]").forEach(function(b){b.onclick=async function(){
     try{await api("/api/v2/opportunities/"+encodeURIComponent(b.getAttribute("data-next-opp"))+"/apply",{method:"POST",body:"{}"});b.disabled=true;b.textContent="Applied";}catch(e){alert(e.message);}
