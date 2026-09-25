@@ -281,7 +281,7 @@ function wire(){
 }
 function renderView(){view();}
 async function load(){
-  try{if(!state.user){var me=await api("/api/auth/me");state.user=me.user;}var x=await api("/api/v2/me");state.user=x.user;state.profile=x.profile;state.points=Number(x.user.points||0);}catch(e){state.user=null;auth();return;}
+  try{if(!state.user){var me=await api("/api/auth/me");state.user=me.user;}var x=await api("/api/v2/me");state.user=x.user;state.profile=x.profile;window.RIZORA_CURRENT_USER=state.user;state.points=Number(x.user.points||0);}catch(e){state.user=null;window.RIZORA_CURRENT_USER=null;auth();return;}
   try{if(state.view==="home"||state.view==="flow"){var f=await api("/api/v2/feed?tab="+state.feedTab);state.feed=f.posts||[];}}catch(e){}
   try{if(state.view==="grow"){var a=await api("/api/tasks");var s=await api("/api/social/tasks");state.tasks=a.tasks||[];state.socialTasks=s.tasks||[];}}catch(e){}
   try{if(state.view==="notifications"){var n=await api("/api/v2/notifications");state.notifications=n.notifications||[];}}catch(e){}
