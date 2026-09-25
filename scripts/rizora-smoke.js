@@ -336,6 +336,51 @@ async function main() {
     const premium = await request("/api/v2/premium/status", { headers: authHeaders });
     assert(premium.res.status === 200 && "active" in premium.data, "premium status failed");
 
+    const assistant = await request("/api/v2/assistant/brief", { headers: authHeaders });
+    assert(assistant.res.status === 200 && assistant.data.brief && Array.isArray(assistant.data.brief.actions), "creator assistant failed");
+
+    const insight = await request("/api/v2/search-insights?q=rizora", { headers: authHeaders });
+    assert(insight.res.status === 200 && insight.data.insights, "search insights failed");
+
+    const onboarding = await request("/api/v2/onboarding", { headers: authHeaders });
+    assert(onboarding.res.status === 200 && Array.isArray(onboarding.data.tasks), "onboarding endpoint failed");
+
+    const profile = await request("/api/v2/profiles/" + encodeURIComponent(username), { headers: authHeaders });
+    assert(profile.res.status === 200 && profile.data.profile && profile.data.profile.username === username, "public creator profile failed");
+
+    const support = await request("/api/v2/support/tickets", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        subject: "Smoke support ticket",
+        message: "Runtime support workflow verification."
+      })
+    });
+    assert(support.res.status === 201 && support.data.ticket, "support ticket creation failed");
+
+    const business = await request("/api/v2/business/summary", { headers: authHeaders });
+    assert(business.res.status === 200 && business.data.business && business.data.business.totals, "business summary failed");
+
+    const portfolio = await request("/api/v2/portfolio", { headers: authHeaders });
+    assert(portfolio.res.status === 200 && portfolio.data.portfolio, "portfolio endpoint failed");
+
+    const plans = await request("/api/v2/plans", { headers: authHeaders });
+    assert(plans.res.status === 200 && Array.isArray(plans.data.plans), "planning endpoint failed");
+
+    const globalFeed = await request("/api/v2/feeds", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        name: "Smoke Global Feed",
+        hashtags: ["rizora"],
+        creatorIds: [username]
+      })
+    });
+    assert(globalFeed.res.status === 201 && globalFeed.data.feed, "global custom feed creation failed");
+
+    const globalFeedItems = await request("/api/v2/feeds/" + encodeURIComponent(globalFeed.data.feed.id) + "/items", { headers: authHeaders });
+    assert(globalFeedItems.res.status === 200 && Array.isArray(globalFeedItems.data.posts), "global custom feed items failed");
+
     const insights = await request("/api/v2/search-insights?q=rizora", { headers: authHeaders });
     assert(insights.res.status === 200 && insights.data.insights && Array.isArray(insights.data.insights.trending), "search insights failed");
 
