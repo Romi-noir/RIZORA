@@ -1,0 +1,103 @@
+(function(){
+"use strict";
+var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
+var state={user:null,profile:null,view:"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[]};
+
+function $(id){return document.getElementById(id);}
+function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function avatar(u){return u&&u.avatarUrl?'<img class="rz-avatar" src="'+esc(u.avatarUrl)+'">':'<div class="rz-avatar">'+esc((u&&(u.displayName||u.username)||"R").slice(0,2).toUpperCase())+"</div>";}
+function verified(u){return u&&u.verified?'<span class="rz-badge ok">✓ Verified</span>':"";}
+function toast(s){var t=$("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rt);window.__rt=setTimeout(function(){t.classList.remove("show");},2400);}
+async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var x=await r.text(),d={};try{d=x?JSON.parse(x):{};}catch(e){d={error:x};}if(!r.ok)throw new Error(d.message||d.error||"Request failed.");return d;}
+
+function auth(){
+  document.body.innerHTML='<div class="rz-auth"><div class="rz-auth-card"><div class="rz-brand"><img src="/rizora-cover.png"><div>RIZORA<small>CREATOR OS</small></div></div><h1>Everything for creators.</h1><p class="rz-muted">Social. Growth. AI. Community.</p><div class="rz-tabs"><button id="tabLogin">Log in</button><button id="tabSignup">Create account</button></div><form id="authForm"><div id="signupBox"></div><div class="rz-field"><label class="rz-label">Username or email</label><input id="identifier" class="rz-input" required></div><div class="rz-field"><label class="rz-label">Password</label><input id="password" class="rz-input" type="password" required></div><button id="authSubmit" class="rz-btn primary" style="width:100%">Log in</button><div class="rz-divider">OR</div><div id="googleButton"></div><div id="authError" class="rz-error"></div></form></div></div>';
+  $("tabLogin").onclick=function(){state.authMode="login";auth();};
+  $("tabSignup").onclick=function(){state.authMode="signup";auth();};
+  $("tabLogin").className=state.authMode==="login"?"active":"";
+  $("tabSignup").className=state.authMode==="signup"?"active":"";
+  if(state.authMode==="signup"){
+    $("signupBox").innerHTML='<div class="rz-field"><label class="rz-label">Username</label><input id="username" class="rz-input" required></div><div class="rz-field"><label class="rz-label">Display name</label><input id="displayName" class="rz-input"></div><div class="rz-field"><label class="rz-label">Email</label><input id="email" class="rz-input" type="email" required></div><div class="rz-field"><label class="rz-label">Confirm password</label><input id="confirmPassword" class="rz-input" type="password" required></div>';
+    $("authSubmit").textContent="Create account";
+  }
+  $("authForm").onsubmit=async function(e){
+    e.preventDefault();$("authError").textContent="";
+    try{
+      var b={identifier:$("identifier").value,password:$("password").value};
+      if(state.authMode==="signup"){b.username=$("username").value;b.displayName=$("displayName").value;b.email=$("email").value;b.confirmPassword=$("confirmPassword").value;}
+      var d=await api(state.authMode==="signup"?"/api/auth/signup":"/api/auth/login",{method:"POST",body:JSON.stringify(b)});
+      state.user=d.user;await load();toast("Welcome to RIZORA.");
+    }catch(err){$("authError").textContent=err.message;}
+  };
+  googleButton();
+}
+function googleButton(){
+  api("/api/auth/google/config").then(function(c){
+    if(!c.enabled||!c.clientId)return;
+    var n=0,tm=setInterval(function(){
+      n++;
+      if(window.google&&google.accounts&&google.accounts.id){
+        clearInterval(tm);
+        google.accounts.id.initialize({client_id:c.clientId,callback:function(r){
+          api("/api/auth/google",{method:"POST",body:JSON.stringify({credential:r.credential})}).then(function(d){state.user=d.user;load();}).catch(function(e){$("authError").textContent=e.message;});
+        }});
+        google.accounts.id.renderButton($("googleButton"),{theme:"outline",size:"large",width:380,text:"continue_with",shape:"rectangular"});
+      }
+      if(n>80)clearInterval(tm);
+    },100);
+  }).catch(function(){});
+}
+function shell(){
+  var items=["home","flow","grow","studio","ai","discover","notifications","profile","safety"];
+  var side=items.map(function(id){return '<button class="'+(state.view===id?"active":"")+'" data-nav="'+id+'">'+id.charAt(0).toUpperCase()+id.slice(1)+"</button>";}).join("");
+  document.body.innerHTML='<div class="rz-top"><div class="rz-shell rz-top-inner"><button class="rz-btn rz-brand" id="brand"><img src="/rizora-cover.png" style="width:36px;height:36px;border-radius:11px">RIZORA</button><div class="rz-actions"><button class="rz-btn" id="refresh">Refresh</button>'+avatar(state.user)+'</div></div></div><main class="rz-shell rz-main"><aside class="rz-sidebar"><div class="rz-nav">'+side+'</div><div class="rz-mini" style="padding:12px;border-top:1px solid var(--line);margin-top:10px">POINTS<br><strong>'+state.points+'</strong><br>7-minute cycle</div></aside><section class="rz-content" id="content"></section></main><nav class="rz-mobile-nav">'+items.slice(0,5).map(function(id){return '<button data-nav="'+id+'">'+id+"</button>";}).join("")+'</nav>';
+  document.querySelectorAll("[data-nav]").forEach(function(b){b.onclick=function(){state.view=b.getAttribute("data-nav");shell();load();};});
+  $("refresh").onclick=load;
+  $("brand").onclick=function(){state.view="home";shell();load();};
+  view();
+}
+function card(title,body){return '<section class="rz-card"><div class="rz-kicker">'+title+'</div>'+body+'</section>';}
+function view(){
+  var c=$("content");
+  if(state.view==="home")c.innerHTML=card("RIZORA RADAR","<h2>What should you do now?</h2><p class='rz-muted'>Content, growth, AI and community in one place.</p><div class='rz-actions'><button class='rz-btn primary' data-go='flow'>Create a post</button><button class='rz-btn' data-go='grow'>Open Grow</button><button class='rz-btn' data-go='ai'>Ask AI</button></div>")+card("ACCOUNT","<div class='rz-stat'>"+state.points+"</div><div class='rz-mini'>points</div><div>"+verified(state.user)+" <span class='rz-badge'>"+Number(state.user.warningCount||0)+"/3 warnings</span></div>");
+  if(state.view==="flow")c.innerHTML=card("FLOW","<h2>Social platform</h2><div class='rz-actions'><button class='rz-btn' data-tab='for-you'>For You</button><button class='rz-btn' data-tab='following'>Following</button><button class='rz-btn' data-tab='trending'>Trending</button></div><form id='postForm' style='margin-top:14px'><textarea id='postText' class='rz-textarea' placeholder='Post something. Use #hashtags and @mentions.'></textarea><input id='postMedia' class='rz-input' placeholder='Optional media URL'><button class='rz-btn primary'>Post</button><div id='postError' class='rz-error'></div></form>")+('<div class="rz-feed">'+state.feed.map(post).join("")+"</div>");
+  if(state.view==="grow")c.innerHTML=card("GROW","<h2>Build momentum</h2><p class='rz-muted'>7-minute cooldown.</p><div class='rz-feed'>"+state.tasks.map(task).join("")+state.socialTasks.map(socialTask).join("")+"</div>");
+  if(state.view==="studio")c.innerHTML=card("STUDIO","<h2>Create smarter</h2><div class='rz-actions'><button id='hooks' class='rz-btn primary'>Hooks</button><button id='hash' class='rz-btn'>Hashtags</button><button id='captions' class='rz-btn'>Captions</button></div><pre id='studioOut'></pre>");
+  if(state.view==="ai")c.innerHTML=card("RIZORA AI","<h2>Creator copilot</h2><div class='rz-feed'>"+state.aiMessages.map(function(m){return '<div class="rz-card"><strong>'+m.role+'</strong><div>'+esc(m.text)+"</div></div>";}).join("")+"</div><form id='aiForm' class='rz-actions'><input id='aiInput' class='rz-input' placeholder='Ask about content or growth'><button class='rz-btn primary'>Ask</button></form>");
+  if(state.view==="discover")c.innerHTML=card("DISCOVER","<h2>Search</h2><div class='rz-actions'><input id='q' class='rz-input' value='"+esc(state.query)+"' placeholder='creator or #hashtag'><button id='doSearch' class='rz-btn primary'>Search</button></div><div class='rz-feed'>"+((state.search&&state.search.users)||[]).map(function(u){return '<div class="rz-card">'+avatar(u)+" <strong>"+esc(u.displayName)+"</strong> @"+esc(u.publicUsername||u.username)+"</div>";}).join("")+"</div>");
+  if(state.view==="notifications")c.innerHTML=card("ALERTS","<h2>Notifications</h2><button id='readAll' class='rz-btn'>Mark read</button><div class='rz-feed'>"+state.notifications.map(function(n){return '<div class="rz-card"><strong>'+esc(n.title)+"</strong><div>"+esc(n.message)+"</div></div>";}).join("")+"</div>");
+  if(state.view==="profile")c.innerHTML=card("PROFILE","<div class='rz-profile'>"+avatar(state.user)+"<div><h2>"+esc(state.user.displayName||state.user.username)+"</h2><div>@"+esc(state.user.publicUsername||state.user.username)+"</div>"+verified(state.user)+"</div></div><p class='rz-muted'>No banner. PFP + bio + links.</p><form id='profileForm'><input id='pfAvatar' class='rz-input' placeholder='PFP URL' value='"+esc((state.profile&&state.profile.avatarUrl)||"")+"'><textarea id='pfBio' class='rz-textarea' placeholder='Bio'>"+esc((state.profile&&state.profile.bio)||"")+"</textarea><input id='pfCategory' class='rz-input' placeholder='Category' value='"+esc((state.profile&&state.profile.category)||"")+"'><button class='rz-btn primary'>Save profile</button></form><div style='margin-top:14px'>"+card("VERIFICATION","<button id='verify' class='rz-btn'>Open verification</button>")+"</div>");
+  if(state.view==="safety")c.innerHTML=card("SAFETY","<h2>"+Number(state.user.warningCount||0)+"/3 warnings</h2><p class='rz-muted'>No 18+ / sexually explicit content. Three warnings are enforced on the backend.</p>"+((state.safety&&state.safety.warnings)||[]).map(function(w){return '<div class="rz-card"><strong>Warning '+w.number+"</strong><div>"+esc(w.reason)+"</div></div>";}).join(""));
+  wire();
+}
+function post(p){return '<article class="rz-card"><div class="rz-post-head">'+avatar(p.author)+'<div><strong>'+esc(p.author.displayName)+'</strong> '+verified(p.author)+'<div class="rz-mini">@'+esc(p.author.publicUsername||p.author.username)+"</div></div></div><div class='rz-post-body'>"+esc(p.text)+"</div><div class='rz-tags'>"+(p.hashtags||[]).map(function(t){return '<span class="rz-tag">#'+esc(t)+"</span>";}).join("")+"</div><div class='rz-post-actions'><button data-like='"+p.id+"'>Like "+p.metrics.likes+"</button><button data-comment='"+p.id+"'>Comment "+p.metrics.comments+"</button><button data-save='"+p.id+"'>Save "+p.metrics.saves+"</button></div></article>";}
+function task(t){return '<div class="rz-card rz-task"><strong>'+esc(t.title)+"</strong><div>"+esc(t.description||"")+"</div><span class='rz-points'>+"+Number(t.points||t.reward||0)+" pts</span><button class='rz-btn primary' data-task='"+esc(t.id)+"'>Complete</button></div>";}
+function socialTask(t){return '<div class="rz-card rz-task"><strong>'+esc(t.title)+"</strong><div>"+esc(t.description||"")+"</div><span class='rz-points'>+"+Number(t.reward||0)+" pts</span><button class='rz-btn primary' data-social='"+esc(t.id)+"'>Complete</button></div>";}
+function wire(){
+  document.querySelectorAll("[data-go]").forEach(function(b){b.onclick=function(){state.view=b.getAttribute("data-go");shell();load();};});
+  if(state.view==="flow"){document.querySelectorAll("[data-tab]").forEach(function(b){b.onclick=function(){state.feedTab=b.getAttribute("data-tab");load();};});$("postForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/posts",{method:"POST",body:JSON.stringify({text:$("postText").value,mediaUrl:$("postMedia").value})});$("postText").value="";load();}catch(err){$("postError").textContent=err.message;}};document.querySelectorAll("[data-like]").forEach(function(b){b.onclick=function(){api("/api/v2/posts/"+b.getAttribute("data-like")+"/like",{method:"POST"}).then(load).catch(function(e){toast(e.message);});}});document.querySelectorAll("[data-save]").forEach(function(b){b.onclick=function(){api("/api/v2/posts/"+b.getAttribute("data-save")+"/save",{method:"POST"}).then(load).catch(function(e){toast(e.message);});}});}
+  if(state.view==="grow"){document.querySelectorAll("[data-task]").forEach(function(b){b.onclick=function(){var id=b.getAttribute("data-task");api("/api/tasks/start",{method:"POST",body:JSON.stringify({taskId:id})}).then(function(){return api("/api/tasks/complete",{method:"POST",body:JSON.stringify({taskId:id})});}).then(load).catch(function(e){toast(e.message);});};});document.querySelectorAll("[data-social]").forEach(function(b){b.onclick=function(){api("/api/social/tasks/complete",{method:"POST",body:JSON.stringify({taskId:b.getAttribute("data-social")})}).then(load).catch(function(e){toast(e.message);});};});}
+  if(state.view==="studio"){$("hooks").onclick=async function(){var d=await api("/api/generate/hooks",{method:"POST",body:"{}"});$("studioOut").textContent=(d.hooks||[]).join("\n");};$("hash").onclick=async function(){var d=await api("/api/generate/hashtags",{method:"POST",body:"{}"});$("studioOut").textContent=(d.hashtags||[]).join(" ");};$("captions").onclick=async function(){var d=await api("/api/generate/captions",{method:"POST",body:"{}"});$("studioOut").textContent=(d.captions||[]).join("\n");};}
+  if(state.view==="ai")$("aiForm").onsubmit=async function(e){e.preventDefault();var q=$("aiInput").value.trim();if(!q)return;state.aiMessages.push({role:"you",text:q});renderView();try{var d=await api("/api/ai/chat",{method:"POST",body:JSON.stringify({message:q})});state.aiMessages.push({role:"ai",text:d.reply||"No response."});}catch(err){state.aiMessages.push({role:"ai",text:err.message});}renderView();};
+  if(state.view==="discover")$("doSearch").onclick=async function(){state.query=$("q").value;state.search=await api("/api/v2/search?q="+encodeURIComponent(state.query));view();};
+  if(state.view==="notifications")$("readAll").onclick=function(){api("/api/v2/notifications/read",{method:"POST"}).then(load);};
+  if(state.view==="profile"){$("profileForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/profile",{method:"PATCH",body:JSON.stringify({avatarUrl:$("pfAvatar").value,bio:$("pfBio").value,category:$("pfCategory").value})});load();}catch(err){toast(err.message);}};$("verify").onclick=verification;}
+}
+function renderView(){view();}
+async function load(){
+  try{if(!state.user){var me=await api("/api/auth/me");state.user=me.user;}var x=await api("/api/v2/me");state.user=x.user;state.profile=x.profile;state.points=Number(x.user.points||0);}catch(e){state.user=null;auth();return;}
+  try{if(state.view==="home"||state.view==="flow"){var f=await api("/api/v2/feed?tab="+state.feedTab);state.feed=f.posts||[];}}catch(e){}
+  try{if(state.view==="grow"){var a=await api("/api/tasks");var s=await api("/api/social/tasks");state.tasks=a.tasks||[];state.socialTasks=s.tasks||[];}}catch(e){}
+  try{if(state.view==="notifications"){var n=await api("/api/v2/notifications");state.notifications=n.notifications||[];}}catch(e){}
+  try{if(state.view==="profile"){state.verification=await api("/api/verification/me");state.safety=await api("/api/v2/safety/me");}}catch(e){}
+  try{if(state.view==="safety"){state.safety=await api("/api/v2/safety/me");}}catch(e){}
+  shell();
+}
+async function verification(){
+  var overlay=document.createElement("div");overlay.className="rz-overlay";
+  overlay.innerHTML='<div class="rz-modal"><h2>Creator verification</h2><p class="rz-muted">Status: '+esc(state.verification&&state.verification.status||"not_submitted")+'</p><textarea id="verifyReason" class="rz-textarea" placeholder="Why should we verify you?"></textarea><input id="verifyUrl" class="rz-input" placeholder="Public proof URL"><button id="sendVerify" class="rz-btn primary">Submit</button><button id="closeVerify" class="rz-btn">Close</button></div>';
+  document.body.appendChild(overlay);$("closeVerify").onclick=function(){overlay.remove();};$("sendVerify").onclick=async function(){try{await api("/api/verification/apply",{method:"POST",body:JSON.stringify({reason:$("verifyReason").value,proofUrl:$("verifyUrl").value})});overlay.remove();toast("Verification submitted.");load();}catch(err){toast(err.message);}};
+}
+boot();
+async function boot(){if(navigator.serviceWorker)navigator.serviceWorker.register("/service-worker.js").catch(function(){});try{var m=await api("/api/auth/me");state.user=m.user;load();}catch(e){auth();}}
+})();

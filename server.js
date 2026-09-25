@@ -10,6 +10,7 @@ const crypto = require("crypto");
 require("dotenv").config();
 const { OAuth2Client } =
   require("google-auth-library");
+const { handleRizoraV2 } = require("./rizora-v2-backend");
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -728,7 +729,7 @@ function getCurrentUser(
 // ============================================================
 
 
-const TASK_COOLDOWN_MS = 45 * 60 * 1000;
+const TASK_COOLDOWN_MS = 7 * 60 * 1000;
 
 const RIZORA_FEATURE_LAYER_V1 = true;
 
@@ -2104,6 +2105,8 @@ async function handleRequest(
 
   cleanupSessions(db);
 
+  if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
+
   // ----------------------------------------------------------
   // HEALTH
   // ----------------------------------------------------------
@@ -3395,7 +3398,7 @@ if (method === "GET" && pathname === "/api/tasks") {
     ],
 
     cooldown,
-    cooldownMinutes: 4,
+    cooldownMinutes: 7,
     generatedCount: generatedTasks.length,
 
     message:
@@ -3477,7 +3480,7 @@ if (
         error:
           "Your next RIZORA task is still on cooldown.",
         cooldown,
-        cooldownMinutes: 4
+        cooldownMinutes: 7
       }
     );
     return;
@@ -3626,7 +3629,7 @@ const completion = {
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: 4,
+      cooldownMinutes: 7,
       cooldown:
         getCooldown(
           db,
@@ -4169,7 +4172,7 @@ if (
         error:
           "Your next task is still on cooldown.",
         cooldown,
-        cooldownMinutes: 4
+        cooldownMinutes: 7
       }
     );
     return;
@@ -4292,7 +4295,7 @@ if (
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: 4,
+      cooldownMinutes: 7,
       cooldown:
         getCooldown(
           db,
@@ -9367,7 +9370,7 @@ seedDatabase();
    ============================================================ */
 
 const RIZORA_SOCIAL_COOLDOWN_MS =
-  45 * 60 * 1000;
+  7 * 60 * 1000;
 
 const RIZORA_SOCIAL_MIN_REWARD =
   5;
