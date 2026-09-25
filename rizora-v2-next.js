@@ -56,7 +56,8 @@ async function loadSnapshot(){
     api("/api/v2/channels"),
     api("/api/v2/products"),
     api("/api/v2/premium/status"),
-    api("/api/v2/memberships/me")
+    api("/api/v2/memberships/me"),
+    api("/api/v2/tips/mine")
   ]);
   out.analytics=calls[0].status==="fulfilled"?calls[0].value:{};
   out.creator=calls[1].status==="fulfilled"?calls[1].value:{};
@@ -65,6 +66,7 @@ async function loadSnapshot(){
   out.products=calls[4].status==="fulfilled"?calls[4].value:{products:[]};
   out.premium=calls[5].status==="fulfilled"?calls[5].value:{active:false};
   out.memberships=calls[6].status==="fulfilled"?calls[6].value:{owned:[],joined:[]};
+  out.tips=calls[7].status==="fulfilled"?calls[7].value:{summary:{sentTotalNaira:0,receivedTotalNaira:0,sentCount:0,receivedCount:0,recent:[]}};
   return out;
 }
 async function assistant(prefill){
@@ -91,6 +93,29 @@ async function assistant(prefill){
   m.querySelectorAll("[data-next-prompt]").forEach(function(b){b.onclick=function(){ask(b.getAttribute("data-next-prompt"));};});
   document.getElementById("rzNextAiForm").onsubmit=function(e){e.preventDefault();var q=document.getElementById("rzNextAiInput").value.trim();if(q)ask(q);};
 }
+async function supportCreator(){
+  var body='<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Support a creator</strong><p>Send a one-time thank-you through RIZORA.</p></div></div>'+
+    '<form id="rzSupportForm" class="rz-next-form">'+
+    '<input class="rz-input" name="creator" placeholder="@creator username" required>'+
+    '<input class="rz-input" name="amount" type="number" min="100" max="1000000" step="100" placeholder="Amount in NGN" required>'+
+    '<textarea class="rz-input rz-next-textarea" name="note" maxlength="240" placeholder="Optional note"></textarea>'+
+    '<button class="rz-btn primary" type="submit">Continue to Paystack</button><div id="rzSupportStatus" class="rz-muted"></div></form>'+
+    '<p class="rz-muted">Creator Support uses Paystack. Until creator payout configuration is enabled, successful payments settle to the RIZORA merchant account.</p></div>'+
+    '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Your support activity</strong><p>Confirmed support you sent and support recorded for your creator account.</p></div></div><div id="rzSupportSummary">Loading…</div></div>';
+  var m=modal("Creator Support","FAN SUPPORT • ONE-TIME",body);
+  m.querySelector("#rzSupportForm").onsubmit=async function(e){
+    e.preventDefault();var f=e.target,status=m.querySelector("#rzSupportStatus");
+    status.textContent="Starting secure Paystack checkout…";
+    try{var d=await api("/api/v2/tips/initialize",{method:"POST",body:JSON.stringify({creator:f.creator.value.trim(),amountNaira:Number(f.amount.value),note:f.note.value.trim()})});
+      status.textContent="Opening Paystack…";
+      location.href=d.authorizationUrl;
+    }catch(err){status.textContent=err.message;}
+  };
+  try{
+    var d=await api("/api/v2/tips/mine"),s=d.summary||{};
+    m.querySelector("#rzSupportSummary").innerHTML='<div class="rz-next-grid rz-next-grid-2"><div class="rz-next-stat"><span>Sent</span><strong>₦'+esc(Number(s.sentTotalNaira||0).toLocaleString())+'</strong><small>'+esc(s.sentCount||0)+' confirmed payment(s)</small></div><div class="rz-next-stat"><span>Received</span><strong>₦'+esc(Number(s.receivedTotalNaira||0).toLocaleString())+'</strong><small>'+esc(s.receivedCount||0)+' confirmed support payment(s)</small></div></div>';
+  }catch(err){m.querySelector("#rzSupportSummary").textContent=err.message;}
+}
 async function business(){
   var s=await loadSnapshot(),a=s.analytics||{},c=s.creator||{},ops=s.opportunities.opportunities||[],chs=s.channels.channels||[],prods=s.products.products||[],p=s.premium||{};
   var openOps=ops.filter(function(x){return !x.applied;}).slice(0,6);
@@ -99,7 +124,7 @@ async function business(){
     '<div class="rz-next-grid rz-next-grid-3">'+
       '<div class="rz-next-card"><div class="rz-kicker">COMMUNITY</div><h3>'+esc(chs.length)+'</h3><p>creator channels available now</p><button class="rz-btn" data-next-nav="channels">Open Channels</button></div>'+
       '<div class="rz-next-card"><div class="rz-kicker">SHOP</div><h3>'+esc(prods.length)+'</h3><p>active digital products</p><button class="rz-btn" data-next-nav="products">Open Shop</button></div>'+
-      '<div class="rz-next-card"><div class="rz-kicker">PREMIUM</div><h3>'+esc(p.active?"ACTIVE":"AVAILABLE")+'</h3><p>'+esc(p.active?"Advanced creator intelligence is active.":"Creator monetization tools are ready when billing is configured.")+'</p><button class="rz-btn" data-next-nav="premium">Open Premium</button></div>'+
+      '<div class="rz-next-card"><div class="rz-kicker">PREMIUM</div><h3>'+esc(p.active?"ACTIVE":"AVAILABLE")+'</h3><p>'+esc(p.active?"Advanced creator intelligence is active.":"Creator monetization tools are ready when billing is configured.")+'</p><button class="rz-btn" data-next-nav="premium">Open Premium</button></div>'+<div class="rz-next-card"><div class="rz-kicker">FAN SUPPORT</div><h3>₦'+esc(Number((s.tips&&s.tips.summary&&s.tips.summary.receivedTotalNaira)||0).toLocaleString())+'</h3><p>confirmed Creator Support received</p><button class="rz-btn" data-next-nav="support">Support Creator</button></div>'+
     '</div>'+
     '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Opportunity Radar</strong><p>Current creator opportunities already available inside RIZORA.</p></div></div>'+
       (openOps.length?openOps.map(function(o){return '<div class="rz-next-list-row"><div><strong>'+esc(o.title)+'</strong><span>'+esc(o.type||"opportunity")+'</span></div><button class="rz-btn" data-next-opp="'+esc(o.id)+'">Apply</button></div>';}).join(""):'<div class="rz-next-empty">No new opportunities right now.</div>')+
@@ -113,6 +138,7 @@ async function business(){
     if(x==="channels"&&window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showChannels)return window.RIZORA_ENTERPRISE.showChannels();
     if(x==="products"&&window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showProducts)return window.RIZORA_ENTERPRISE.showProducts();
     if(x==="premium"&&window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showPremium)return window.RIZORA_ENTERPRISE.showPremium();
+    if(x==="support")return supportCreator();
   };});
   m.querySelectorAll("[data-next-opp]").forEach(function(b){b.onclick=async function(){
     try{await api("/api/v2/opportunities/"+encodeURIComponent(b.getAttribute("data-next-opp"))+"/apply",{method:"POST",body:"{}"});b.disabled=true;b.textContent="Applied";}catch(e){alert(e.message);}
@@ -194,11 +220,17 @@ function inject(){
   aside.appendChild(box);
   box.querySelectorAll("[data-next-open]").forEach(function(b){b.onclick=function(){var x=b.getAttribute("data-next-open");if(x==="assistant")assistant();if(x==="business")business();if(x==="memberships")memberships();if(x==="integrity")integrity();};});
 }
+async function verifyTipCallback(){
+  var ref=new URLSearchParams(location.search).get("reference");
+  if(!ref||ref.indexOf("tip_")!==0)return;
+  try{await api("/api/v2/tips/verify/"+encodeURIComponent(ref));history.replaceState({},document.title,location.pathname+location.hash);}catch(_){ }
+}
 function boot(){
+  verifyTipCallback();
   inject();
   var mo=new MutationObserver(function(){inject();});
   mo.observe(document.body,{childList:true,subtree:true});
 }
-window.RIZORA_NEXT={assistant:assistant,business:business,memberships:memberships,integrity:integrity};
+window.RIZORA_NEXT={assistant:assistant,business:business,memberships:memberships,integrity:integrity,supportCreator:supportCreator};
 setTimeout(boot,140);
 })();
