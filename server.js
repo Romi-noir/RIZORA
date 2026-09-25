@@ -483,19 +483,44 @@ function ensureOfficialPlatformAccount(db) {
   return account;
 }
 
-function configuredSuperAdminPassword() {
-  return String(
-    process.env.RIZORA_SUPER_ADMIN_PASSWORD || ""
-  ).trim();
+function configuredPasswordForUser(username) {
+  const normalized = normalizeUsername(username);
+
+  if (normalized === "romi" || normalized === "romi.noir") {
+    return String(
+      process.env.RIZORA_ROMI_PASSWORD ||
+      process.env.RIZORA_SUPER_ADMIN_PASSWORD ||
+      ""
+    ).trim();
+  }
+
+  if (normalized === "superadmin2") {
+    return String(
+      process.env.RIZORA_SUPERADMIN2_PASSWORD ||
+      process.env.RIZORA_SUPER_ADMIN2_PASSWORD ||
+      process.env.RIZORA_SUPER_ADMIN_PASSWORD ||
+      ""
+    ).trim();
+  }
+
+  return "";
+}
+
+function hasConfiguredSuperAdminPassword() {
+  return Boolean(
+    configuredPasswordForUser("romi") ||
+    configuredPasswordForUser("superadmin2")
+  );
 }
 
 function ensureConfiguredSuperAdminAccounts(db) {
-  const password = configuredSuperAdminPassword();
-  if (!password) return false;
+  if (!hasConfiguredSuperAdminPassword()) return false;
 
   const configured = [
     {
       username: "romi",
+      publicUsername: "romi.noir",
+      socialHandle: "romi.noir",
       email: normalizeEmail(
         process.env.RIZORA_SUPER_ADMIN_EMAIL ||
         "romi@rizora.com.ng"
@@ -504,6 +529,8 @@ function ensureConfiguredSuperAdminAccounts(db) {
     },
     {
       username: "superadmin2",
+      publicUsername: "superadmin2",
+      socialHandle: "",
       email: normalizeEmail(
         process.env.RIZORA_SUPER_ADMIN2_EMAIL ||
         "superadmin2@rizora.com.ng"
@@ -515,6 +542,12 @@ function ensureConfiguredSuperAdminAccounts(db) {
   let changed = false;
 
   for (const item of configured) {
+    const password = configuredPasswordForUser(item.username);
+
+    if (!password) {
+      continue;
+    }
+
     let user = db.users.find(
       (entry) =>
         normalizeUsername(entry.username) === item.username
@@ -524,11 +557,12 @@ function ensureConfiguredSuperAdminAccounts(db) {
       user = {
         id: uid("usr_"),
         username: item.username,
-        publicUsername: item.username,
+        publicUsername: item.publicUsername,
         displayName: item.displayName,
         email: item.email,
-        passwordHash: "",
-        passwordSetupRequired: true,
+        socialHandle: item.socialHandle,
+        passwordHash: hashPasswordSync(password),
+        passwordSetupRequired: false,
         role: "super_admin",
         status: "active",
         points: 0,
@@ -537,14 +571,34 @@ function ensureConfiguredSuperAdminAccounts(db) {
         referralCount: 0,
         verified: true,
         verificationStatus: "verified",
-        verificationType: "super_admin",
+        verificationType:
+          item.username === "romi"
+            ? "official_creator"
+            : "super_admin",
         official: true,
-        accountType: "super_admin",
+        accountType:
+          item.username === "romi"
+            ? "creator"
+            : "super_admin",
         createdAt: new Date().toISOString(),
         lastLoginAt: null,
         avatarUrl: "/rizora-cover.png"
       };
       db.users.push(user);
+      changed = true;
+      continue;
+    }
+
+    if (user.publicUsername !== item.publicUsername) {
+      user.publicUsername = item.publicUsername;
+      changed = true;
+    }
+
+    if (
+      item.socialHandle &&
+      user.socialHandle !== item.socialHandle
+    ) {
+      user.socialHandle = item.socialHandle;
       changed = true;
     }
 
@@ -563,7 +617,32 @@ function ensureConfiguredSuperAdminAccounts(db) {
       changed = true;
     }
 
-    if (!user.passwordHash || user.passwordSetupRequired === true) {
+    if (
+      item.username === "romi" &&
+      (
+        user.verificationStatus !== "verified" ||
+        user.verified !== true ||
+        user.verificationType !== "official_creator" ||
+        user.official !== true ||
+        user.accountType !== "creator"
+      )
+    ) {
+      user.verified = true;
+      user.verificationStatus = "verified";
+      user.verificationType = "official_creator";
+      user.official = true;
+      user.accountType = "creator";
+      changed = true;
+    }
+
+    const existingHashMatchesConfigured = user.passwordHash
+      ? false
+      : false;
+
+    if (
+      !user.passwordHash ||
+      user.passwordSetupRequired === true
+    ) {
       user.passwordHash = hashPasswordSync(password);
       user.passwordSetupRequired = false;
       changed = true;
@@ -3135,8 +3214,11 @@ async function handleRequest(
     let bootstrapChanged = false;
 
     if (
-      SUPER_ADMINS.has(identifier) &&
-      configuredSuperAdminPassword()
+      (
+        SUPER_ADMINS.has(identifier) ||
+        identifier === "romi.noir"
+      ) &&
+      hasConfiguredSuperAdminPassword()
     ) {
       bootstrapChanged = ensureConfiguredSuperAdminAccounts(db);
     }
@@ -3146,6 +3228,9 @@ async function handleRequest(
         (item) =>
           normalizeUsername(
             item.username
+          ) === identifier ||
+          normalizeUsername(
+            item.publicUsername
           ) === identifier ||
           normalizeEmail(
             item.email
@@ -3175,7 +3260,9 @@ async function handleRequest(
       )
     ) {
       const bootstrapPassword =
-        configuredSuperAdminPassword();
+        configuredPasswordForUser(
+          user.username
+        );
 
       if (
         bootstrapPassword &&
