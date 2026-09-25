@@ -50,9 +50,9 @@ async function mediaLibrary(){
       usage.textContent=(Number(u.bytes||0)/1024/1024).toFixed(1)+" MB used";
       box.innerHTML=rows.map(function(x){
         var size=Number(x.bytes||0)>=1024*1024?(Number(x.bytes||0)/1024/1024).toFixed(1)+" MB":Math.max(1,Math.round(Number(x.bytes||0)/1024))+" KB";
-        return '<div class="rz-hub-media-row"><div class="rz-hub-media-meta"><strong>'+esc(x.filename||"Untitled")+'</strong><span class="rz-mini">'+esc(x.mimeType||"media")+' · '+size+'</span><small>'+new Date(x.createdAt).toLocaleString()+'</small><code>'+esc(location.origin+x.url)+'</code></div><div class="rz-actions"><button class="rz-btn" data-copy-media="'+esc(x.url)+'">Copy URL</button><button class="rz-btn" data-delete-media="'+esc(x.id)+'">Delete</button></div></div>';
+        return '<div class="rz-hub-media-row"><div class="rz-hub-media-meta"><strong>'+esc(x.filename||"Untitled")+'</strong><span class="rz-mini">'+esc(x.mimeType||"media")+' · '+size+'</span><small>'+new Date(x.createdAt).toLocaleString()+'</small><code>'+esc(API+x.url)+'</code></div><div class="rz-actions"><button class="rz-btn" data-copy-media="'+esc(x.url)+'">Copy URL</button><button class="rz-btn" data-delete-media="'+esc(x.id)+'">Delete</button></div></div>';
       }).join("")||'<div class="rz-hub-empty">No uploads yet. Use the media picker in Flow or Stories.</div>';
-      box.querySelectorAll("[data-copy-media]").forEach(function(b){b.onclick=async function(){var u=b.getAttribute("data-copy-media"),full=location.origin+u;try{await navigator.clipboard.writeText(full);toast("Media URL copied.");}catch(_){toast(full);}};});
+      box.querySelectorAll("[data-copy-media]").forEach(function(b){b.onclick=async function(){var u=b.getAttribute("data-copy-media"),full=API+u;try{await navigator.clipboard.writeText(full);toast("Media URL copied.");}catch(_){toast(full);}};});
       box.querySelectorAll("[data-delete-media]").forEach(function(b){b.onclick=async function(){if(!confirm("Delete this uploaded media file? Posts that reference the URL may stop displaying it."))return;try{await api("/api/v2/media/"+encodeURIComponent(b.getAttribute("data-delete-media")),{method:"DELETE",body:"{}"});toast("Media deleted.");load();}catch(e){toast(e.message);}};});
     }catch(e){box.innerHTML='<div class="rz-hub-empty">'+esc(e.message)+'</div>';}
   }
