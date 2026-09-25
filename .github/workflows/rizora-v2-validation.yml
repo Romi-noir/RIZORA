@@ -1,0 +1,41 @@
+name: RIZORA v2 validation
+
+on:
+  push:
+    branches:
+      - rizora-v2-rebuild
+  pull_request:
+    branches:
+      - main
+      - rizora-v2-rebuild
+
+jobs:
+  syntax-and-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            node --check "$file"
+          done < <(find . -maxdepth 2 -type f -name '*.js' -not -path './node_modules/*' -print0)
+
+      - name: Production safety checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f index.html
+          test -f manifest.json
+          test -f service-worker.js
+          test ! -e database/db.json
+          ! grep -R --line-number --exclude-dir=.git --exclude='*.md' 'RIZORA_OFFICIAL_PASSWORD[[:space:]]*=' . | grep -v 'process\.env' || true
