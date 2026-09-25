@@ -213,6 +213,8 @@ async function handleRizoraV2(ctx){
   }
   if (await handleRizoraGrowth(ctx)) return true;
   if (await handleRizoraPlatform(ctx)) return true;
+  if (await handleRizoraModern(ctx)) return true;
+  if (await handleRizoraUpgrades(ctx)) return true;
   return false;
 }
 module.exports={handleRizoraV2};
