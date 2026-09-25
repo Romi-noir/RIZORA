@@ -331,10 +331,11 @@ async function handleRizoraEnterprise(ctx) {
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     const active=db.rzV2.premiumSubscriptions.find(x=>x.userId===user.id&&["active","non-renewing","attention"].includes(x.status));
     const configured=!!String(process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
-    ctx.sendJSON(res,200,{success:true,plan:active?active.plan:"free",active:!!active,configured,provider:"paystack",features:{
-      advancedAI:true,advancedAnalytics:true,creatorPortfolio:true,experiments:true,contentPlanning:true,
-      broadcastChannels:true,digitalProducts:true,creatorPayouts:true
-    }}); return true;
+    const isPremium=!!active;
+    ctx.sendJSON(res,200,{success:true,plan:isPremium?(active.plan||"premium"):"free",active:isPremium,configured,provider:"paystack",features:{
+      advancedAI:isPremium,advancedAnalytics:isPremium,creatorPortfolio:true,experiments:true,contentPlanning:true,
+      broadcastChannels:true,digitalProducts:true,creatorPayouts:false
+    },premiumOnly:["advancedAI","advancedAnalytics"]}); return true;
   }
   if(path==="/api/v2/premium/subscribe"&&method==="POST"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
