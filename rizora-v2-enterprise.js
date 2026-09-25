@@ -337,6 +337,21 @@ async function handleRizoraEnterprise(ctx) {
       broadcastChannels:true,digitalProducts:true,creatorPayouts:false
     },premiumOnly:["advancedAI","advancedAnalytics"]}); return true;
   }
+  const premiumVerifyMatch=path.match(/^\/api\/v2\/premium\/verify\/([^/]+)$/);
+  if(premiumVerifyMatch&&method==="GET"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    if(!paystackConfigured()){ctx.sendError(res,503,"Paystack is not configured on the RIZORA server yet.");return true;}
+    const reference=decodeURIComponent(premiumVerifyMatch[1]);
+    const sub=db.rzV2.premiumSubscriptions.find(function(x){return x.reference===reference&&x.userId===user.id;});
+    if(!sub){ctx.sendError(res,404,"Premium payment reference not found.");return true;}
+    const ps=await paystackRequest("/transaction/verify/"+encodeURIComponent(reference),{method:"GET"});
+    if(!ps.response.ok||!ps.data.status){ctx.sendError(res,502,ps.data.message||"Unable to verify Premium payment.");return true;}
+    const paid=String(ps.data.data&&ps.data.data.status||"").toLowerCase()==="success";
+    sub.status=paid?"active":"pending";sub.verifiedAt=new Date().toISOString();sub.updatedAt=new Date().toISOString();
+    ctx.saveDB(db);
+    ctx.sendJSON(res,200,{success:true,active:paid,status:sub.status,reference});return true;
+  }
+
   if(path==="/api/v2/premium/subscribe"&&method==="POST"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     const planCode=String(process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
