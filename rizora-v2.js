@@ -7,6 +7,17 @@ var state={user:null,profile:null,view:"home",authMode:"login",feedTab:"for-you"
 function $(id){return document.getElementById(id);}
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function avatar(u){return u&&u.avatarUrl?'<img class="rz-avatar" src="'+esc(u.avatarUrl)+'">':'<div class="rz-avatar">'+esc((u&&(u.displayName||u.username)||"R").slice(0,2).toUpperCase())+"</div>";}
+function renderMedia(url){
+  var raw=String(url||"").trim(); if(!raw)return "";
+  var safe=esc(raw), clean=raw.split("?")[0].toLowerCase();
+  if(/\.(jpg|jpeg|png|webp|gif)$/.test(clean)) return '<div class="rz-post-media"><img src="'+safe+'" alt="Creator media" loading="lazy"></div>';
+  if(/\.(mp4|webm)$/.test(clean)) return '<div class="rz-post-media"><video controls preload="metadata" src="'+safe+'"></video></div>';
+  if(/\.(mp3|m4a|wav|ogg)$/.test(clean)) return '<div class="rz-post-media"><audio controls preload="metadata" src="'+safe+'"></audio></div>';
+  return '<div class="rz-post-media"><a class="rz-btn" href="'+safe+'" target="_blank" rel="noopener noreferrer">Open media</a></div>';
+}
+function bindMediaPicker(fileId,statusId,urlId){
+  if(window.RIZORA_MEDIA_BIND) window.RIZORA_MEDIA_BIND(fileId,statusId,urlId);
+}
 function verified(u){return u&&u.verified?'<span class="rz-badge ok">✓ Verified</span>':"";}
 function toast(s){var t=$("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rt);window.__rt=setTimeout(function(){t.classList.remove("show");},2400);}
 async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var x=await r.text(),d={};try{d=x?JSON.parse(x):{};}catch(e){d={error:x};}if(!r.ok){var err=new Error(d.message||d.error||"Request failed.");err.code=d.code||"";throw err;}return d;}
@@ -85,7 +96,7 @@ function card(title,body){return '<section class="rz-card"><div class="rz-kicker
 function view(){
   var c=$("content");
   if(state.view==="home")c.innerHTML=card("RIZORA RADAR","<h2>What should you do now?</h2><p class='rz-muted'>Content, growth, AI and community in one place.</p><div class='rz-actions'><button class='rz-btn primary' data-go='flow'>Create a post</button><button class='rz-btn' data-go='grow'>Open Grow</button><button class='rz-btn' data-go='ai'>Ask AI</button></div>")+((state.onboarding||[]).some(function(t){return !t.completed;})?card("START HERE","<h3>Follow the verified RIZORA accounts</h3><p class='rz-muted'>Follow them on RIZORA and earn your first creator points.</p><div class='rz-feed'>"+(state.onboarding||[]).filter(function(t){return !t.completed;}).map(function(t){return "<div class='rz-card rz-task'><strong>"+esc(t.title)+"</strong><div>"+esc(t.description)+"</div><span class='rz-points'>+"+Number(t.points||0)+" pts</span><button class='rz-btn primary' data-onboarding-follow='"+esc(t.username)+"'>Follow + earn</button></div>";}).join("")+"</div>"): "")+card("ACCOUNT","<div class='rz-stat'>"+state.points+"</div><div class='rz-mini'>points</div><div>"+verified(state.user)+" <span class='rz-badge'>"+Number(state.user.warningCount||0)+"/3 warnings</span></div>");
-  if(state.view==="flow")c.innerHTML=card("FLOW","<h2>Social platform</h2><div class='rz-actions'><button class='rz-btn' data-tab='for-you'>For You</button><button class='rz-btn' data-tab='following'>Following</button><button class='rz-btn' data-tab='trending'>Trending</button></div><form id='postForm' style='margin-top:14px'><textarea id='postText' class='rz-textarea' placeholder='Post something. Use #hashtags and @mentions.'></textarea><input id='postMedia' class='rz-input' placeholder='Optional media URL'><button class='rz-btn primary'>Post</button><div id='postError' class='rz-error'></div></form>")+('<div class="rz-feed">'+state.feed.map(post).join("")+"</div>");
+  if(state.view==="flow")c.innerHTML=card("FLOW","<h2>Social platform</h2><div class='rz-actions'><button class='rz-btn' data-tab='for-you'>For You</button><button class='rz-btn' data-tab='following'>Following</button><button class='rz-btn' data-tab='trending'>Trending</button></div><form id='postForm' style='margin-top:14px'><textarea id='postText' class='rz-textarea' placeholder='Post something. Use #hashtags and @mentions.'></textarea><input id='postMedia' class='rz-input' placeholder='Optional media URL'><div class='rz-media-picker'><input id='postMediaFile' class='rz-media-file' type='file' accept='image/*,video/*,audio/*'><div id='postMediaStatus' class='rz-media-status'></div></div><button class='rz-btn primary'>Post</button><div id='postError' class='rz-error'></div></form>")+('<div class="rz-feed">'+state.feed.map(post).join("")+"</div>");
   if(state.view==="grow")c.innerHTML=card("GROW","<h2>Build momentum</h2><p class='rz-muted'>7-minute cooldown.</p><div class='rz-feed'>"+state.tasks.map(task).join("")+state.socialTasks.map(socialTask).join("")+"</div>");
   if(state.view==="studio")c.innerHTML=card("STUDIO","<h2>Create smarter</h2><div class='rz-actions'><button id='hooks' class='rz-btn primary'>Hooks</button><button id='hash' class='rz-btn'>Hashtags</button><button id='captions' class='rz-btn'>Captions</button></div><pre id='studioOut'></pre>");
   if(state.view==="ai")c.innerHTML=card("RIZORA AI","<h2>Creator copilot</h2><div class='rz-feed'>"+state.aiMessages.map(function(m){return '<div class="rz-card"><strong>'+m.role+'</strong><div>'+esc(m.text)+"</div></div>";}).join("")+"</div><form id='aiForm' class='rz-actions'><input id='aiInput' class='rz-input' placeholder='Ask about content or growth'><button class='rz-btn primary'>Ask</button></form>");
@@ -105,8 +116,8 @@ function view(){
 }
 
 function storiesView(){
-  var groups=(state.stories||[]).map(function(g){return '<div class="rz-card"><div class="rz-post-head">'+avatar(g.user)+'<div><strong>'+esc(g.user.displayName)+'</strong> '+verified(g.user)+'<div class="rz-mini">@'+esc(g.user.publicUsername||g.user.username)+'</div></div></div>'+g.stories.map(function(s){return '<div class="rz-card"><div class="rz-post-body">'+esc(s.text||"")+'</div>'+(s.mediaUrl?'<a class="rz-btn" href="'+esc(s.mediaUrl)+'" target="_blank" rel="noopener">Open media</a>':'')+'</div>';}).join("")+'</div>';}).join("");
-  return card("STORIES","<h2>Creator stories</h2><p class='rz-muted'>Stories expire after 24 hours.</p><form id='storyForm'><textarea id='storyText' class='rz-textarea' placeholder='Add a story'></textarea><input id='storyMedia' class='rz-input' placeholder='Optional media URL'><button class='rz-btn primary'>Publish story</button><div id='storyError' class='rz-error'></div></form><div class='rz-feed'>"+(groups||"<div class='rz-empty'>No active stories yet.</div>")+"</div>");
+  var groups=(state.stories||[]).map(function(g){return '<div class="rz-card"><div class="rz-post-head">'+avatar(g.user)+'<div><strong>'+esc(g.user.displayName)+'</strong> '+verified(g.user)+'<div class="rz-mini">@'+esc(g.user.publicUsername||g.user.username)+'</div></div></div>'+g.stories.map(function(s){return '<div class="rz-card"><div class="rz-post-body">'+esc(s.text||"")+'</div>'+renderMedia(s.mediaUrl)+'</div>';}).join("")+'</div>';}).join("");
+  return card("STORIES","<h2>Creator stories</h2><p class='rz-muted'>Stories expire after 24 hours.</p><form id='storyForm'><textarea id='storyText' class='rz-textarea' placeholder='Add a story'></textarea><input id='storyMedia' class='rz-input' placeholder='Optional media URL'><div class='rz-media-picker'><input id='storyMediaFile' class='rz-media-file' type='file' accept='image/*,video/*,audio/*'><div id='storyMediaStatus' class='rz-media-status'></div></div><button class='rz-btn primary'>Publish story</button><div id='storyError' class='rz-error'></div></form><div class='rz-feed'>"+(groups||"<div class='rz-empty'>No active stories yet.</div>")+"</div>");
 }
 function communitiesView(){
   var body="<h2>Creator communities</h2><p class='rz-muted'>Focused spaces for creators.</p><form id='communityForm'><input id='communityName' class='rz-input' placeholder='Community name' required><textarea id='communityDescription' class='rz-textarea' placeholder='What is it for?'></textarea><button class='rz-btn primary'>Create community</button></form><div class='rz-feed'>";
@@ -137,7 +148,7 @@ function analyticsView(){
   '<div class="rz-card rz-span-4"><div class="rz-kicker">WARNINGS</div><div class="rz-stat">'+Number(a.warningCount||0)+'/3</div></div></div>';
 }
 function wireStories(){
-  $("storyForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/stories",{method:"POST",body:JSON.stringify({text:$("storyText").value,mediaUrl:$("storyMedia").value})});toast("Story published.");load();}catch(err){$("storyError").textContent=err.message;}};
+  $("storyForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/stories",{method:"POST",body:JSON.stringify({text:$("storyText").value,mediaUrl:$("storyMedia").value})});toast("Story published.");load();}catch(err){$("storyError").textContent=err.message;}};bindMediaPicker("storyMediaFile","storyMediaStatus","storyMedia");
 }
 function wireCommunities(){
   $("communityForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/communities",{method:"POST",body:JSON.stringify({name:$("communityName").value,description:$("communityDescription").value})});toast("Community created.");load();}catch(err){toast(err.message);}};
@@ -260,7 +271,7 @@ function wire(){
   document.querySelectorAll("[data-go]").forEach(function(b){b.onclick=function(){state.view=b.getAttribute("data-go");shell();load();};});
   if(state.view==="flow"){
     document.querySelectorAll("[data-tab]").forEach(function(b){b.onclick=function(){state.feedTab=b.getAttribute("data-tab");load();};});
-    $("postForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/posts",{method:"POST",body:JSON.stringify({text:$("postText").value,mediaUrl:$("postMedia").value})});$("postText").value="";load();}catch(err){$("postError").textContent=err.message;}};
+    $("postForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/posts",{method:"POST",body:JSON.stringify({text:$("postText").value,mediaUrl:$("postMedia").value})});$("postText").value="";load();}catch(err){$("postError").textContent=err.message;}};bindMediaPicker("postMediaFile","postMediaStatus","postMedia");
     document.querySelectorAll("[data-like]").forEach(function(b){b.onclick=function(){api("/api/v2/posts/"+b.getAttribute("data-like")+"/like",{method:"POST"}).then(load).catch(function(e){toast(e.message);});}});
     document.querySelectorAll("[data-save]").forEach(function(b){b.onclick=function(){api("/api/v2/posts/"+b.getAttribute("data-save")+"/save",{method:"POST"}).then(load).catch(function(e){toast(e.message);});}});
     document.querySelectorAll("[data-poll-vote]").forEach(function(b){b.onclick=function(){api("/api/v2/polls/"+encodeURIComponent(b.getAttribute("data-poll-vote"))+"/vote",{method:"POST",body:JSON.stringify({optionId:b.getAttribute("data-poll-option")})}).then(load).catch(function(e){toast(e.message);});}});
@@ -277,7 +288,7 @@ function wire(){
   if(state.view==="opportunities")wireOpportunities();
   if(state.view==="boosts")wireBoosts();
   if(state.view==="admin")wireAdmin();
-  if(state.view==="profile"){$("profileForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/profile",{method:"PATCH",body:JSON.stringify({avatarUrl:$("pfAvatar").value,bio:$("pfBio").value,category:$("pfCategory").value})});load();}catch(err){toast(err.message);}};$("verify").onclick=verification;}
+  if(state.view==="profile"){$("profileForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/profile",{method:"PATCH",body:JSON.stringify({avatarUrl:$("pfAvatar").value,bio:$("pfBio").value,category:$("pfCategory").value})});load();}catch(err){toast(err.message);}};bindMediaPicker("pfAvatarFile","pfAvatarStatus","pfAvatar");$("verify").onclick=verification;}
 }
 function renderView(){view();}
 async function load(){
