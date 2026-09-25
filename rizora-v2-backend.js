@@ -4,6 +4,7 @@ const { handleRizoraGrowth } = require("./rizora-v2-growth");
 const { handleRizoraPlatform } = require("./rizora-v2-platform");
 const { handleRizoraUpgrades } = require("./rizora-v2-upgrades");
 const { handleRizoraFans } = require("./rizora-v2-fans");
+const { handleRizoraComments, controlsFor, commentBlockedByControl } = require("./rizora-v2-comments");
 "use strict";
 const { handleRizoraModern } = require("./rizora-v2-modern");
 
@@ -139,7 +140,7 @@ async function handleRizoraV2(ctx){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     var commentsPost=db.rzV2.posts.find(function(p){return p.id===commentsRoute[1];});
     if(!commentsPost){ctx.sendError(res,404,"Post not found.");return true;}
-    var rawComments=(db.rzV2.comments||[]).filter(function(c){return c.postId===commentsPost.id;}).slice().sort(function(a,b){return new Date(a.createdAt)-new Date(b.createdAt);});
+    var rawComments=(db.rzV2.comments||[]).filter(function(c){return c.postId===commentsPost.id&&((c.hidden!==true)||commentsPost.userId===user.id);}).slice().sort(function(a,b){return new Date(a.createdAt)-new Date(b.createdAt);});
     var commentMap={};
     rawComments.forEach(function(c){
       var author=db.users.find(function(u){return u.id===c.userId;});
@@ -171,9 +172,11 @@ async function handleRizoraV2(ctx){
       }
       var cm=moderate(db,user,ctx,ct,postId);
       if(!cm.allowed){ctx.sendJSON(res,422,Object.assign({success:false,code:"CONTENT_POLICY_VIOLATION"},cm));return true;}
-      db.rzV2.comments.push({id:ctx.uid("comment_"),postId:postId,userId:user.id,text:ct,parentId:parentId,createdAt:new Date().toISOString()});
-      if(postTarget.userId!==user.id)notify(db,postTarget.userId,parentId?"New reply":"New comment","@"+user.username+(parentId?" replied to a comment on your post.":" commented on your post."),"comment");
-      ctx.saveDB(db);ctx.sendJSON(res,201,{success:true});return true;
+      var held=false,holdReason="";
+      if(postTarget.userId!==user.id){var creatorControls=controlsFor(db,postTarget.userId);var heldCheck=commentBlockedByControl(creatorControls,ct);held=heldCheck.blocked;holdReason=heldCheck.reason;}
+      db.rzV2.comments.push({id:ctx.uid("comment_"),postId:postId,userId:user.id,text:ct,parentId:parentId,hidden:held,moderationReason:holdReason,createdAt:new Date().toISOString()});
+      if(postTarget.userId!==user.id)notify(db,postTarget.userId,held?"Comment held for review":(parentId?"New reply":"New comment"),"@"+user.username+(held?" left a comment that matched your creator filters and was held for review.":(parentId?" replied to a comment on your post.":" commented on your post.")),"comment");
+      ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,hidden:held});return true;
     }
     var key=action==="like"?"likes":action==="save"?"saves":"reposts",collection=db.rzV2[key],existing=collection.find(function(x){return x.userId===user.id&&x.postId===postId;});
     if(existing){collection.splice(collection.indexOf(existing),1);ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,active:false});return true;}
@@ -242,6 +245,7 @@ async function handleRizoraV2(ctx){
     if(rb.resetWarnings===true){var rs=warningState(db,rt.id);rs.count=0;rs.history=[];}
     ctx.audit(db,"account_restored",user,{targetUserId:rt.id,resetWarnings:rb.resetWarnings===true});ctx.saveDB(db);ctx.sendJSON(res,200,{success:true});return true;
   }
+  if (await handleRizoraComments(ctx)) return true;
   if (await handleRizoraBusiness(ctx)) return true;
   if (await handleRizoraMedia(ctx)) return true;
   if (await handleRizoraGrowth(ctx)) return true;
