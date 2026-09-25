@@ -24,9 +24,16 @@ async function showPremium(){
  '<section class="rz-card"><h3>Premium capabilities</h3><div class="rz-enterprise-grid"><div><strong>Advanced AI</strong><p class="rz-muted">Higher creator intelligence capacity.</p></div><div><strong>Advanced Analytics</strong><p class="rz-muted">Deeper creator performance insight.</p></div><div><strong>Creator Portfolio</strong><p class="rz-muted">Professional identity and portfolio tools.</p></div><div><strong>Experiments</strong><p class="rz-muted">Test hooks and content ideas.</p></div></div></section>');
  api("/api/v2/premium/status").then(function(d){
    var el=document.getElementById("rzPremiumStatus");if(!el)return;
-   el.innerHTML='<div class="rz-section-title"><div><h3>'+(d.active?"Premium active":"Free plan")+'</h3><p class="rz-muted">'+(d.active?"Your Premium features are active.":"Premium billing is available when Paystack plan configuration is enabled.")+'</p></div>'+(d.active?"":btn("Upgrade to Premium","premium-subscribe","primary"))+'</div><div class="rz-mini">'+(d.configured?"Paystack plan configured.":"Paystack Premium plan not configured yet.")+'</div>';
+   var title=d.active?"Premium active":"Free plan";
+   var copy=d.active?("Status: "+(d.status||"active")+(d.nextPaymentDate?" · next payment "+new Date(d.nextPaymentDate).toLocaleDateString():"")):"Premium billing is available when Paystack plan configuration is enabled.";
+   var action=d.active
+     ? (d.canCancel?btn("Turn off auto-renewal","premium-cancel"):'<span class="rz-badge">'+esc(d.status||"active")+'</span>')
+     : btn("Upgrade to Premium","premium-subscribe","primary");
+   el.innerHTML='<div class="rz-section-title"><div><h3>'+title+'</h3><p class="rz-muted">'+esc(copy)+'</p></div>'+action+'</div><div class="rz-mini">'+(d.configured?"Paystack plan configured.":"Paystack Premium plan not configured yet.")+'</div>';
    var b=el.querySelector('[data-rzx-action="premium-subscribe"]');
    if(b)b.onclick=async function(){try{var x=await api("/api/v2/premium/subscribe",{method:"POST",body:"{}"});if(x.authorizationUrl)location.href=x.authorizationUrl;}catch(e){toast(e.message);}};
+   var c=el.querySelector('[data-rzx-action="premium-cancel"]');
+   if(c)c.onclick=async function(){if(!confirm("Stop RIZORA Premium from renewing? Your access stays active until the paid period ends."))return;try{var x=await api("/api/v2/premium/cancel",{method:"POST",body:"{}"});toast(x.status==="non-renewing"?"Premium renewal disabled.":"Premium updated.");showPremium();}catch(e){toast(e.message);}};
  }).catch(function(e){var el=document.getElementById("rzPremiumStatus");if(el)el.innerHTML='<div class="rz-error">'+esc(e.message)+'</div>';});
 }
 async function showChannels(){
@@ -52,15 +59,21 @@ async function openChannel(id){
  }catch(e){toast(e.message);}
 }
 async function showShop(){
- renderInto(header("SHOP","Creator Shop","Digital products and creator commerce foundations.")+
- '<section class="rz-card"><form id="rzProductForm"><div class="rz-enterprise-grid"><input name="title" class="rz-input" placeholder="Product title" required><input name="priceNaira" class="rz-input" type="number" min="1" placeholder="Price (NGN)" required><input name="assetUrl" class="rz-input" placeholder="Secure product URL"><textarea name="description" class="rz-textarea" placeholder="Product description"></textarea></div><button class="rz-btn primary">Publish product</button><div id="rzProductError" class="rz-error"></div></form></section><section class="rz-card"><h3>Creator products</h3><div id="rzProductList" class="rz-feed">Loading…</div></section>');
+ renderInto(header("SHOP","Creator Shop","Digital products and creator commerce.")+
+ '<section class="rz-card"><form id="rzProductForm"><div class="rz-enterprise-grid"><input name="title" class="rz-input" placeholder="Product title" required><input name="priceNaira" class="rz-input" type="number" min="100" placeholder="Price (NGN)" required><input name="assetUrl" class="rz-input" placeholder="Secure product URL"><textarea name="description" class="rz-textarea" placeholder="Product description"></textarea></div><button class="rz-btn primary">Publish product</button><div id="rzProductError" class="rz-error"></div></form></section><section class="rz-card"><h3>Creator products</h3><div id="rzProductList" class="rz-feed">Loading…</div></section><section class="rz-card"><h3>My purchases</h3><div id="rzPurchaseList" class="rz-feed">Loading…</div></section>');
  document.getElementById("rzProductForm").onsubmit=async function(e){e.preventDefault();var f=e.target;try{await api("/api/v2/products",{method:"POST",body:JSON.stringify({title:f.title.value,priceNaira:Number(f.priceNaira.value),assetUrl:f.assetUrl.value,description:f.description.value})});e.target.reset();toast("Product published.");loadProducts();}catch(x){document.getElementById("rzProductError").textContent=x.message;}};
- loadProducts();
+ loadProducts();loadPurchases();
 }
 async function loadProducts(){
  var list=document.getElementById("rzProductList");if(!list)return;
- try{var d=await api("/api/v2/products");list.innerHTML=(d.products||[]).map(function(p){return '<article class="rz-card"><strong>'+esc(p.title)+'</strong><p class="rz-muted">'+esc(p.description||"")+'</p><div class="rz-mini">₦'+esc(p.priceNaira)+'</div><button class="rz-btn primary" data-product-buy="'+esc(p.id)+'">Purchase</button></article>';}).join("")||'<div class="rz-empty">No products yet.</div>';
+ try{var d=await api("/api/v2/products");list.innerHTML=(d.products||[]).map(function(p){var own=window.RIZORA_CURRENT_USER&&p.creatorId===window.RIZORA_CURRENT_USER.id;return '<article class="rz-card"><strong>'+esc(p.title)+'</strong><p class="rz-muted">'+esc(p.description||"")+'</p><div class="rz-mini">₦'+esc(Number(p.priceNaira||0).toLocaleString())+'</div>'+(own?'<span class="rz-badge">Your product</span>':'<button class="rz-btn primary" data-product-buy="'+esc(p.id)+'">Purchase</button>')+'</article>';}).join("")||'<div class="rz-empty">No products yet.</div>';
  list.querySelectorAll("[data-product-buy]").forEach(function(b){b.onclick=async function(){try{var x=await api("/api/v2/products/"+encodeURIComponent(b.getAttribute("data-product-buy"))+"/buy",{method:"POST",body:"{}"});if(x.authorizationUrl)location.href=x.authorizationUrl;}catch(e){toast(e.message);}};});
+ }catch(e){list.innerHTML='<div class="rz-error">'+esc(e.message)+'</div>';}
+}
+async function loadPurchases(){
+ var list=document.getElementById("rzPurchaseList");if(!list)return;
+ try{var d=await api("/api/v2/products/purchases"),rows=d.purchases||[];
+ list.innerHTML=rows.map(function(p){return '<article class="rz-card"><div class="rz-section-title"><div><strong>'+esc((p.product&&p.product.title)||"Product")+'</strong><div class="rz-mini">'+esc(p.status)+' · ₦'+esc(Number(p.amountNaira||0).toLocaleString())+'</div></div>'+(p.status==="success"&&p.product&&p.product.assetUrl?'<a class="rz-btn primary" href="'+esc(p.product.assetUrl)+'" target="_blank" rel="noopener noreferrer">Open product</a>':"")+'</div></article>';}).join("")||'<div class="rz-empty">No purchases yet.</div>';
  }catch(e){list.innerHTML='<div class="rz-error">'+esc(e.message)+'</div>';}
 }
 
@@ -153,7 +166,7 @@ function bindAdmin(){
 }
 async function verifyPayment(ref){try{var d=await api("/api/v2/payments/verify/"+encodeURIComponent(ref));toast("Payment status: "+d.status);loadWallet();}catch(x){toast(x.message);}}
 function bindView(){
-  document.querySelectorAll("[data-rzx-action]").forEach(function(b){b.onclick=async function(){var a=b.getAttribute("data-rzx-action");if(a==="premium")return showPremium();if(a==="channels")return showChannels();if(a==="shop")return showShop();if(a==="support")return showSupport();if(a==="wallet")return showWallet();if(a==="creator")return showCreatorLookup();if(a==="report")return showReport();if(a==="admin")return showAdmin();if(a==="boosts"){var n=document.querySelector('[data-nav="boosts"]');if(n)n.click();return;}if(a==="back")return backHome();if(a==="refresh-support")return loadSupport();if(a==="refresh-wallet")return loadWallet();if(a==="refresh-admin")return showAdmin();if(a.indexOf("verify-payment:")===0)return verifyPayment(a.slice(15));};});
+  document.querySelectorAll("[data-rzx-action]").forEach(function(b){b.onclick=async function(){var a=b.getAttribute("data-rzx-action");if(a==="premium")return showPremium();if(a==="premium-cancel")return; if(a==="channels")return showChannels();if(a==="shop")return showShop();if(a==="support")return showSupport();if(a==="wallet")return showWallet();if(a==="creator")return showCreatorLookup();if(a==="report")return showReport();if(a==="admin")return showAdmin();if(a==="boosts"){var n=document.querySelector('[data-nav="boosts"]');if(n)n.click();return;}if(a==="back")return backHome();if(a==="refresh-support")return loadSupport();if(a==="refresh-wallet")return loadWallet();if(a==="refresh-admin")return showAdmin();if(a.indexOf("verify-payment:")===0)return verifyPayment(a.slice(15));};});
 }
 
 function injectPasswordToggles(){
