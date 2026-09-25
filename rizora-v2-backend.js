@@ -1,4 +1,5 @@
 const { handleRizoraMedia } = require("./rizora-v2-media-backend");
+const { handleRizoraBusiness } = require("./rizora-v2-business");
 const { handleRizoraGrowth } = require("./rizora-v2-growth");
 const { handleRizoraPlatform } = require("./rizora-v2-platform");
 const { handleRizoraUpgrades } = require("./rizora-v2-upgrades");
@@ -241,6 +242,7 @@ async function handleRizoraV2(ctx){
     if(rb.resetWarnings===true){var rs=warningState(db,rt.id);rs.count=0;rs.history=[];}
     ctx.audit(db,"account_restored",user,{targetUserId:rt.id,resetWarnings:rb.resetWarnings===true});ctx.saveDB(db);ctx.sendJSON(res,200,{success:true});return true;
   }
+  if (await handleRizoraBusiness(ctx)) return true;
   if (await handleRizoraMedia(ctx)) return true;
   if (await handleRizoraGrowth(ctx)) return true;
   if (await handleRizoraPlatform(ctx)) return true;
