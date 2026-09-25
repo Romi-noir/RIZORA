@@ -244,6 +244,8 @@ async function handleRizoraV2(ctx){
     ctx.audit(db,"account_restored",user,{targetUserId:rt.id,resetWarnings:rb.resetWarnings===true});ctx.saveDB(db);ctx.sendJSON(res,200,{success:true});return true;
   }
   if (await handleRizoraComments(ctx)) return true;
+  if (await handleRizoraModern(ctx)) return true;
+  if (await handleRizoraUpgrades(ctx)) return true;
   if (await handleRizoraBusiness(ctx)) return true;
   if (await handleRizoraMedia(ctx)) return true;
   if (await handleRizoraGrowth(ctx)) return true;
