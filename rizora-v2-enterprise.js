@@ -25,6 +25,7 @@ function ensureEnterprise(db) {
   db.rzV2.premiumEvents = db.rzV2.premiumEvents || [];
   db.rzV2.products = db.rzV2.products || [];
   db.rzV2.productPurchases = db.rzV2.productPurchases || [];
+  db.rzV2.tips = db.rzV2.tips || [];
   db.rzV2.creatorMembershipTiers = db.rzV2.creatorMembershipTiers || [];
   db.rzV2.creatorMemberships = db.rzV2.creatorMemberships || [];
   db.rzV2.creatorMembershipEvents = db.rzV2.creatorMembershipEvents || [];
@@ -1016,6 +1017,27 @@ async function handleRizoraEnterprise(ctx) {
 
     // Digital product purchases.
     const purchase = reference ? db.rzV2.productPurchases.find(x => x.reference === reference) : null;
+        // Creator Support tips: confirm the one-time payment and notify both sides.
+    const tip = reference ? db.rzV2.tips.find(x => x.reference === reference) : null;
+    if (tip) {
+      if (event === "charge.success") tip.status = "success";
+      else if (["charge.failed","transaction.failed"].includes(event)) tip.status = "failed";
+      tip.paystackId = data.id || tip.paystackId || null;
+      tip.updatedAt = new Date().toISOString();
+      const tipTx = db.rzV2.transactions.find(t => t.reference === reference);
+      if (tipTx) {
+        tipTx.status = tip.status;
+        tipTx.paystackId = tip.paystackId;
+        tipTx.updatedAt = tip.updatedAt;
+      }
+      if (tip.status === "success" && !tip.notified) {
+        db.notifications=db.notifications||[];
+        db.notifications.push({id:ctx.uid("notif_"),userId:tip.senderId,title:"Creator Support sent",message:"Your ₦"+Number(tip.amountNaira||0).toLocaleString()+" support payment was confirmed.",type:"support",read:false,createdAt:new Date().toISOString()});
+        db.notifications.push({id:ctx.uid("notif_"),userId:tip.creatorId,title:"You received Creator Support",message:"A supporter sent ₦"+Number(tip.amountNaira||0).toLocaleString()+" to your RIZORA creator account.",type:"support",read:false,createdAt:new Date().toISOString()});
+        tip.notified = true;
+      }
+    }
+
     if (purchase) {
       if (event === "charge.success") purchase.status = "success";
       else if (["charge.failed","transaction.failed"].includes(event)) purchase.status = "failed";
