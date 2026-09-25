@@ -71,7 +71,7 @@ async function loadSnapshot(){
 }
 async function assistant(prefill){
   var s=await loadSnapshot(),a=s.analytics||{},c=s.creator||{};
-  var prompts=prefill?[]:["What should I do next?","Analyze my growth","Give me 7 content ideas","How can I monetize?"];
+  var prompts=prefill?[]:["What should I do next?","Analyze my growth","Give me 7 content ideas","How can I build a stronger creator routine?"];
   var body='<div class="rz-next-grid rz-next-grid-6">'+metricRows(a,c)+'</div>'+
     '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Creator Assistant</strong><p>Personalized guidance built from your current RIZORA activity.</p></div></div>'+
     '<div class="rz-next-prompts">'+(prompts.map(function(p){return '<button class="rz-next-chip" data-next-prompt="'+esc(p)+'">'+esc(p)+'</button>';}).join(""))+'</div>'+
@@ -216,7 +216,7 @@ function inject(){
   if(document.getElementById("rzNextTools"))return;
   var aside=document.querySelector(".rz-sidebar");if(!aside)return;
   var box=document.createElement("div");box.id="rzNextTools";box.className="rz-next-tools";
-  box.innerHTML='<div class="rz-enterprise-heading">NEXT-GEN TOOLS</div><button class="rz-btn" data-next-open="assistant">Creator Assistant</button><button class="rz-btn" data-next-open="business">Business Hub</button><button class="rz-btn" data-next-open="memberships">Memberships</button><button class="rz-btn" data-next-open="integrity">Pre-publish Check</button>';
+  box.innerHTML='<div class="rz-enterprise-heading">NEXT-GEN TOOLS</div><button class="rz-btn" data-next-open="assistant">Creator Assistant</button><button class="rz-btn" data-next-open="business">Business Hub</button><button class="rz-btn" data-next-open="integrity">Content Integrity</button><button class="rz-btn" data-next-open="integrity">Pre-publish Check</button>';
   aside.appendChild(box);
   box.querySelectorAll("[data-next-open]").forEach(function(b){b.onclick=function(){var x=b.getAttribute("data-next-open");if(x==="assistant")assistant();if(x==="business")business();if(x==="memberships")memberships();if(x==="integrity")integrity();};});
 }
