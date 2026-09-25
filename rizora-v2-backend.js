@@ -1,6 +1,7 @@
 const { handleRizoraGrowth } = require("./rizora-v2-growth");
 const { handleRizoraPlatform } = require("./rizora-v2-platform");
 "use strict";
+const { handleRizoraModern } = require("./rizora-v2-modern");
 
 function ensure(db){
   db.rzV2=db.rzV2||{};
@@ -84,6 +85,7 @@ async function body(req){var raw="";for await(var c of req){raw+=c.toString();if
 function active(user){return !!user&&user.status==="active"&&user.postingRestricted!==true;}
 
 async function handleRizoraV2(ctx){
+  if (await handleRizoraModern(ctx)) return true;
   ensure(ctx.db);
   var db=ctx.db,req=ctx.req,res=ctx.res,user=ctx.getCurrentUser(db,req),url=new URL(req.url,"http://rizora.local"),path=url.pathname,method=String(req.method||"GET").toUpperCase();
 
