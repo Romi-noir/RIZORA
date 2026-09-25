@@ -47,7 +47,7 @@ async function mediaLibrary(){
     try{
       var d=await api("/api/v2/media/mine");
       var rows=d.media||[],u=d.usage||{};
-      usage.textContent=(Number(u.usedBytes||0)/1024/1024).toFixed(1)+" MB used";
+      usage.textContent=(Number(u.bytes||0)/1024/1024).toFixed(1)+" MB used";
       box.innerHTML=rows.map(function(x){
         var size=Number(x.bytes||0)>=1024*1024?(Number(x.bytes||0)/1024/1024).toFixed(1)+" MB":Math.max(1,Math.round(Number(x.bytes||0)/1024))+" KB";
         return '<div class="rz-hub-media-row"><div class="rz-hub-media-meta"><strong>'+esc(x.filename||"Untitled")+'</strong><span class="rz-mini">'+esc(x.mimeType||"media")+' · '+size+'</span><small>'+new Date(x.createdAt).toLocaleString()+'</small><code>'+esc(location.origin+x.url)+'</code></div><div class="rz-actions"><button class="rz-btn" data-copy-media="'+esc(x.url)+'">Copy URL</button><button class="rz-btn" data-delete-media="'+esc(x.id)+'">Delete</button></div></div>';
