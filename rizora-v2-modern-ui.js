@@ -78,7 +78,7 @@ async function safety(){
   m.querySelectorAll("[data-rz-unmute]").forEach(function(b){b.onclick=async function(){try{await api("/api/v2/mutes/"+encodeURIComponent(b.getAttribute("data-rz-unmute")),{method:"DELETE"});safety();}catch(e){notify(e.message);}};});
 }
 async function exportData(){
-  try{var d=await api("/api/v2/data/export"),blob=new Blob([JSON.stringify(d.data,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="rizora-data-export-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);notify("Your RIZORA data export is ready.");}catch(e){notify(e.message);}
+  try{var d=await api("/api/v2/data/export"),blob=new Blob([JSON.stringify(d.data,null,2)],{type:"application/json"}),name="rizora-data-export-"+new Date().toISOString().slice(0,10)+".json";if(window.RIZORA_DOWNLOAD&&window.RIZORA_DOWNLOAD.blob)window.RIZORA_DOWNLOAD.blob(blob,name,"account-export");else{var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}notify("Your RIZORA data export is ready.");}catch(e){notify(e.message);}
 }
 function inject(){
   var aside=document.querySelector(".rz-sidebar"),nav=aside&&aside.querySelector(".rz-nav");
