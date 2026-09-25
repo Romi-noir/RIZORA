@@ -139,7 +139,7 @@ async function paystackRequest(path, options) {
 
 function addAudit(ctx, user, action, details) {
   try {
-    if (typeof ctx.audit === "function") ctx.audit(ctx.db, user, action, details);
+    if (typeof ctx.audit === "function") ctx.audit(ctx.db, action, user, details);
   } catch (_) {}
 }
 
