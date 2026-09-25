@@ -135,6 +135,18 @@ async function main() {
     const aiStatus = await request("/api/ai/status");
     assert(aiStatus.res.status === 200 && aiStatus.data.provider === "groq", "AI status failed");
 
+    const preferences = await request("/api/v2/preferences", { headers: authHeaders });
+    assert(preferences.res.status === 200 && preferences.data.preferences, "preferences endpoint failed");
+
+    const trials = await request("/api/v2/trials/mine", { headers: authHeaders });
+    assert(trials.res.status === 200 && Array.isArray(trials.data.trials), "creator trials endpoint failed");
+
+    const protection = await request("/api/v2/protection/mine", { headers: authHeaders });
+    assert(protection.res.status === 200 && Array.isArray(protection.data.proofs), "content protection endpoint failed");
+
+    const dataExport = await request("/api/v2/data/export", { headers: authHeaders });
+    assert(dataExport.res.status === 200 && dataExport.data.data, "data export endpoint failed");
+
     const premium = await request("/api/v2/premium/status", { headers: authHeaders });
     assert(premium.res.status === 200 && "active" in premium.data, "premium status failed");
 
