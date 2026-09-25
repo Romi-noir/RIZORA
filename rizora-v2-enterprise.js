@@ -89,6 +89,35 @@ function transactionForUser(db, userId, ref) {
   return (db.rzV2.transactions || []).find(t => t.userId === userId && (!ref || t.reference === ref));
 }
 
+function safeProductAsset(value) {
+  const asset = String(value == null ? "" : value).trim();
+  if (!asset) return "";
+  if (/^https:\/\//i.test(asset) || /^http:\/\//i.test(asset)) return asset.slice(0, 1000);
+  if (/^\/api\/v2\/media\/[A-Za-z0-9_.\-/%]+$/i.test(asset)) return asset.slice(0, 1000);
+  return "";
+}
+
+function productView(db, product, user) {
+  const own = !!user && product.creatorId === user.id;
+  const purchased = !!user && (db.rzV2.productPurchases || []).some(function(p) {
+    return p.productId === product.id && p.buyerId === user.id && p.status === "success";
+  });
+  return {
+    id: product.id,
+    creatorId: product.creatorId,
+    title: product.title,
+    description: product.description,
+    priceNaira: Number(product.priceNaira || 0),
+    currency: product.currency || "NGN",
+    status: product.status || "active",
+    createdAt: product.createdAt || null,
+    owns: own,
+    purchased: purchased,
+    assetAvailable: own || purchased,
+    assetUrl: own || purchased ? safeProductAsset(product.assetUrl) : ""
+  };
+}
+
 function paystackConfigured() {
   return !!String(process.env.PAYSTACK_SECRET_KEY || "").trim();
 }
@@ -409,18 +438,27 @@ async function handleRizoraEnterprise(ctx) {
     ctx.sendJSON(res,200,{success:true,status:sub.status,reference:sub.reference});return true;
   }
 
-  // ---------- digital products / creator commerce foundation ----------
+  // ---------- digital products / creator commerce ----------
   if(path==="/api/v2/products"&&method==="GET"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     const products=db.rzV2.products.filter(x=>x.status!=="archived").slice().reverse().slice(0,100);
-    ctx.sendJSON(res,200,{success:true,products});return true;
+    ctx.sendJSON(res,200,{success:true,products:products.map(function(product){return productView(db,product,user);})});return true;
+  }
+  const productViewMatch=path.match(/^\/api\/v2\/products\/([^/]+)$/);
+  if(productViewMatch&&method==="GET"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const product=db.rzV2.products.find(function(x){return x.id===productViewMatch[1]&&x.status!=="archived";});
+    if(!product){ctx.sendError(res,404,"Product not found.");return true;}
+    ctx.sendJSON(res,200,{success:true,product:productView(db,product,user)});return true;
   }
   if(path==="/api/v2/products"&&method==="POST"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     const b=await readBody(req,200000),title=safeString(b.title,160),description=safeString(b.description,1000),price=Number(b.priceNaira);
     if(!title||!Number.isFinite(price)||price<=0){ctx.sendError(res,400,"Product title and valid price are required.");return true;}
-    const product={id:ctx.uid("product_"),creatorId:user.id,title,description,priceNaira:price,currency:"NGN",assetUrl:safeString(b.assetUrl,1000),status:"active",createdAt:new Date().toISOString()};
-    db.rzV2.products.push(product);ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,product});return true;
+    const rawAsset=safeProductAsset(b.assetUrl);
+    if(b.assetUrl&&!rawAsset){ctx.sendError(res,400,"Product delivery URL must be HTTPS or a RIZORA media URL.");return true;}
+    const product={id:ctx.uid("product_"),creatorId:user.id,title,description,priceNaira:price,currency:"NGN",assetUrl:rawAsset,status:"active",createdAt:new Date().toISOString()};
+    db.rzV2.products.push(product);ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,product:productView(db,product,user)});return true;
   }
   const buyMatch=path.match(/^\/api\/v2\/products\/([^/]+)\/buy$/);
   if(path==="/api/v2/products/purchases"&&method==="GET"){
