@@ -150,6 +150,18 @@ async function main() {
     const premium = await request("/api/v2/premium/status", { headers: authHeaders });
     assert(premium.res.status === 200 && "active" in premium.data, "premium status failed");
 
+    const products = await request("/api/v2/products", { headers: authHeaders });
+    assert(products.res.status === 200 && Array.isArray(products.data.products), "products endpoint failed");
+
+    const memberships = await request("/api/v2/memberships/me", { headers: authHeaders });
+    assert(memberships.res.status === 200 && Array.isArray(memberships.data.joined), "membership endpoint failed");
+
+    const payments = await request("/api/v2/payments/status", { headers: authHeaders });
+    assert(payments.res.status === 200 && "configured" in payments.data, "payments status failed");
+
+    const support = await request("/api/v2/support/tickets", { headers: authHeaders });
+    assert(support.res.status === 200 && Array.isArray(support.data.tickets), "support tickets endpoint failed");
+
     console.log("RIZORA runtime smoke test: PASS");
   } finally {
     child.kill("SIGTERM");
