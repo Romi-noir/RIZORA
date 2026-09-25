@@ -27,4 +27,6 @@ jobs:
           node --check rizora-v2-growth.js
           node --check rizora-v2-growth-ui.js
           node --check rizora-v2-enterprise-ui.js
+          node --check rizora-v2-global.js
+          node --check rizora-v2-global-ui.js
           node --check rizora-v2.js
