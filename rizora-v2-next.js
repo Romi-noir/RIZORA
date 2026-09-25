@@ -1,6 +1,6 @@
 (function(){
 "use strict";
-var API=String(window.RIZORA_API_BASE||location.origin).replace(/\\/+$/,"");
+var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 async function api(path,opt){
