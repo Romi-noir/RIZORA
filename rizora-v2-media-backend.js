@@ -313,6 +313,17 @@ async function handleRizoraMedia(ctx){
     return true;
   }
 
+  if(method === "GET" && pathName === "/api/v2/media/mine"){
+    const rows = (db.rzV2.media || [])
+      .filter(x => x.ownerId === user.id)
+      .slice()
+      .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0,200)
+      .map(publicMedia);
+    sendJSON(res,200,{success:true,media:rows,usage:usageFor(db,user.id)});
+    return true;
+  }
+
   const fileMatch = pathName.match(/^\/api\/v2\/media\/([^/.]+)(?:\.([a-z0-9]+))?$/i);
   if(method === "GET" && fileMatch){
     const id = decodeURIComponent(fileMatch[1]);
