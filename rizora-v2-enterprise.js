@@ -331,6 +331,30 @@ async function handleRizoraEnterprise(ctx) {
   }
 
 
+  if (path === "/api/v2/admin/users/password" && method === "POST") {
+    if (!admin(ctx, user)) { ctx.sendError(res, 403, "Super Admin access required."); return true; }
+    const b = await readBody(req, 100000);
+    const username = safeString(b.username, 80).replace(/^@/, "").toLowerCase();
+    const target = (db.users || []).find(function(u) {
+      return String(u.username || "").toLowerCase() === username ||
+        String(u.publicUsername || "").toLowerCase() === username;
+    });
+    if (!target) { ctx.sendError(res, 404, "User not found."); return true; }
+    const password = String(b.password || "");
+    if (password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      ctx.sendError(res, 400, "Password must be at least 8 characters and include uppercase, lowercase and a number.");
+      return true;
+    }
+    target.passwordHash = hashPasswordSyncEnterprise(password);
+    target.passwordSetupRequired = false;
+    target.passwordChangedAt = new Date().toISOString();
+    db.sessions = (db.sessions || []).filter(function(session) { return session.userId !== target.id; });
+    ctx.saveDB(db);
+    addAudit(ctx, user, "admin_password_reset", { targetUserId: target.id, targetUsername: target.username });
+    ctx.sendJSON(res, 200, { success:true, username:target.username, sessionsRevoked:true });
+    return true;
+  }
+
   if (path === "/api/v2/admin/official/rizora/password" && method === "POST") {
     if (!admin(ctx, user)) { ctx.sendError(res, 403, "Super Admin access required."); return true; }
     const target = (db.users || []).find(function(u) {
