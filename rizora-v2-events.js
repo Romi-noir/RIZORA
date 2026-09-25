@@ -61,9 +61,10 @@ async function handleRizoraEvents(ctx){
     const ev=db.rzV2.events.find(function(e){return e.id===rsvp[1];});if(!ev){ctx.sendError(res,404,"Event not found.");return true;}
     if(new Date(ev.startsAt).getTime()<Date.now()-ev.durationMinutes*60000){ctx.sendError(res,409,"This event has ended.");return true;}
     const existing=db.rzV2.eventRsvps.find(function(x){return x.eventId===ev.id&&x.userId===user.id;});
-    if(existing){existing.status=existing.status==="going"?"cancelled":"going";existing.updatedAt=new Date().toISOString();}
-    else db.rzV2.eventRsvps.push({id:ctx.uid("rsvp_"),eventId:ev.id,userId:user.id,status:"going",createdAt:new Date().toISOString()});
-    if(existing&&existing.status==="going"&&ev.creatorId!==user.id)db.notifications=db.notifications||[],db.notifications.push({id:ctx.uid("notif_"),userId:ev.creatorId,title:"New event RSVP",message:"@"+user.username+" is going to your RIZORA event.","type":"event",read:false,createdAt:new Date().toISOString()});
+    let nowGoing=false;
+    if(existing){existing.status=existing.status==="going"?"cancelled":"going";existing.updatedAt=new Date().toISOString();nowGoing=existing.status==="going";}
+    else {db.rzV2.eventRsvps.push({id:ctx.uid("rsvp_"),eventId:ev.id,userId:user.id,status:"going",createdAt:new Date().toISOString()});nowGoing=true;}
+    if(nowGoing&&ev.creatorId!==user.id){db.notifications=db.notifications||[];db.notifications.push({id:ctx.uid("notif_"),userId:ev.creatorId,title:"New event RSVP",message:"@"+user.username+" is going to your RIZORA event.","type":"event",read:false,createdAt:new Date().toISOString()});}
     ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,event:viewEvent(db,ev,user.id)});return true;
   }
   const cancel=path.match(/^\/api\/v2\/events\/([^/]+)\/cancel$/);
