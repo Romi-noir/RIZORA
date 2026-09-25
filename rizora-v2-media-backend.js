@@ -175,7 +175,7 @@ async function handleRizoraMedia(ctx){
       filename:safeName(filename),
       mimeType,
       bytes:buffer.length,
-      url:"/api/v2/media/" + encodeURIComponent(id),
+      url:"/api/v2/media/" + encodeURIComponent(id) + "." + ext,
       path:paths.file,
       createdAt:new Date().toISOString()
     };
@@ -297,7 +297,7 @@ async function handleRizoraMedia(ctx){
       filename:session.filename,
       mimeType:session.mimeType,
       bytes:stat.size,
-      url:"/api/v2/media/" + encodeURIComponent(id),
+      url:"/api/v2/media/" + encodeURIComponent(id) + "." + ext,
       path:paths.file,
       createdAt:new Date().toISOString()
     };
