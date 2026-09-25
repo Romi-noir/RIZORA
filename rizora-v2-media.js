@@ -2,7 +2,7 @@
 (function(){
   const API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   const MAX=25*1024*1024;
-  const SIMPLE=750*1024;
+  const SIMPLE=600*1024;
   const CHUNK=512*1024;
   const TYPES=new Set(["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm","audio/mpeg","audio/mp4","audio/wav","audio/ogg"]);
 
