@@ -1,4 +1,5 @@
 "use strict";
+const { handleRizoraEnterprise } = require("./rizora-v2-enterprise");
 
 function ensurePlatform(db) {
   db.rzV2 = db.rzV2 || {};
@@ -162,6 +163,7 @@ async function handleRizoraPlatform(ctx){
     var warning=db.rzV2.policy.warnings[user.id]||{count:0};
     ctx.sendJSON(res,200,{success:true,posts:own.length,followers:db.rzV2.follows.filter(function(f){return f.followingId===user.id;}).length,following:db.rzV2.follows.filter(function(f){return f.followerId===user.id;}).length,likes:likes,comments:comments,saves:saves,reposts:reposts,stories:db.rzV2.stories.filter(function(s){return s.userId===user.id;}).length,points:Number(user.points||0),warningCount:Number(warning.count||0)});return true;
   }
+  if (await handleRizoraEnterprise(ctx)) return true;
 
   return false;
 }
