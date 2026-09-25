@@ -1,0 +1,155 @@
+(function(){
+"use strict";
+var API=String(window.RIZORA_API_BASE||location.origin).replace(/\\/+$/,"");
+
+function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+async function api(path,opt){
+  opt=opt||{};
+  var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});
+  var t=await r.text(),d={};
+  try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}
+  if(!r.ok)throw new Error(d.message||d.error||"Request failed.");
+  return d;
+}
+function closeModal(){var m=document.getElementById("rzNextModal");if(m)m.remove();}
+function modal(title,kicker,body){
+  closeModal();
+  var m=document.createElement("div");m.id="rzNextModal";m.className="rz-next-overlay";
+  m.innerHTML='<div class="rz-next-panel"><div class="rz-next-head"><div><div class="rz-kicker">'+esc(kicker||"RIZORA")+'</div><h2>'+esc(title)+'</h2></div><button class="rz-btn" id="rzNextClose">Close</button></div><div id="rzNextBody">'+body+'</div></div>';
+  document.body.appendChild(m);
+  document.getElementById("rzNextClose").onclick=closeModal;
+  m.addEventListener("click",function(e){if(e.target===m)closeModal();});
+  return m;
+}
+function stat(label,value,note){
+  return '<div class="rz-next-stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(note||"")+'</small></div>';
+}
+function metricRows(a,c){
+  a=a||{};c=c||{};
+  return stat("Followers",a.followers||0,"Audience size")+
+    stat("Following",a.following||0,"Creator network")+
+    stat("Posts",a.posts||0,"Published RIZORA posts")+
+    stat("Likes",a.likes||0,"Total post likes")+
+    stat("Views",c.profileViews||a.profileViews||0,"Tracked profile views")+
+    stat("Points",a.points||0,"Growth activity");
+}
+function fallbackBrief(a,c){
+  a=a||{};c=c||{};
+  var f=Number(a.followers||0),p=Number(a.posts||0),l=Number(a.likes||0);
+  var ratio=p?Math.round((l/p)*10)/10:0;
+  var lines=[];
+  lines.push("Your current RIZORA snapshot: "+f+" followers, "+p+" posts and "+l+" likes.");
+  if(p===0)lines.push("Next move: publish your first strong post and complete your creator profile.");
+  else if(f<100)lines.push("Next move: turn your strongest post into a repeatable series and invite relevant creators into your network.");
+  else lines.push("Next move: double down on the format that already gets the most response, then test one new angle.");
+  if(ratio>=10)lines.push("Your average-like signal is healthy enough to test stronger distribution through Stories, Channels and Boosts.");
+  else lines.push("Use a stronger opening line, clearer topic and a single call-to-action before increasing posting volume.");
+  if(Number(c.profileViews||0)>0)lines.push("Profile views are an opportunity: keep the first screen focused on who you are, what you make and what to do next.");
+  return lines.join("\n\n");
+}
+async function loadSnapshot(){
+  var out={};
+  var calls=await Promise.allSettled([
+    api("/api/v2/analytics/overview"),
+    api("/api/creator/analytics"),
+    api("/api/v2/opportunities"),
+    api("/api/v2/channels"),
+    api("/api/v2/products"),
+    api("/api/v2/premium/status")
+  ]);
+  out.analytics=calls[0].status==="fulfilled"?calls[0].value:{};
+  out.creator=calls[1].status==="fulfilled"?calls[1].value:{};
+  out.opportunities=calls[2].status==="fulfilled"?calls[2].value:{opportunities:[]};
+  out.channels=calls[3].status==="fulfilled"?calls[3].value:{channels:[]};
+  out.products=calls[4].status==="fulfilled"?calls[4].value:{products:[]};
+  out.premium=calls[5].status==="fulfilled"?calls[5].value:{active:false};
+  return out;
+}
+async function assistant(prefill){
+  var s=await loadSnapshot(),a=s.analytics||{},c=s.creator||{};
+  var prompts=prefill?[]:["What should I do next?","Analyze my growth","Give me 7 content ideas","How can I monetize?"];
+  var body='<div class="rz-next-grid rz-next-grid-6">'+metricRows(a,c)+'</div>'+
+    '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Creator Assistant</strong><p>Personalized guidance built from your current RIZORA activity.</p></div></div>'+
+    '<div class="rz-next-prompts">'+(prompts.map(function(p){return '<button class="rz-next-chip" data-next-prompt="'+esc(p)+'">'+esc(p)+'</button>';}).join(""))+'</div>'+
+    '<form id="rzNextAiForm"><textarea id="rzNextAiInput" class="rz-input rz-next-textarea" placeholder="Ask about content, growth, community or monetization…">'+esc(prefill||"")+'</textarea><button class="rz-btn primary" type="submit">Ask RIZORA AI</button></form><pre id="rzNextAiOut" class="rz-next-output">'+esc(fallbackBrief(a,c))+'</pre></div>';
+  var m=modal("Creator Assistant","PERSONALIZED INTELLIGENCE",body);
+  function ask(q){
+    var input=document.getElementById("rzNextAiInput"),out=document.getElementById("rzNextAiOut");
+    if(input)input.value=q;
+    if(out)out.textContent="Thinking…";
+    api("/api/ai/chat",{method:"POST",body:JSON.stringify({message:
+      "Act as the RIZORA Creator Assistant. Give concise, practical creator advice using this live account context. Do not invent metrics. Context: "+
+      JSON.stringify({analytics:a,creatorAnalytics:c,openOpportunities:(s.opportunities.opportunities||[]).slice(0,8).map(function(x){return {title:x.title,type:x.type};}),
+      channels:(s.channels.channels||[]).slice(0,8).map(function(x){return {name:x.name,members:x.memberCount};}),
+      products:(s.products.products||[]).slice(0,8).map(function(x){return {title:x.title,priceNaira:x.priceNaira};}),
+      premium:Boolean(s.premium.active)})+
+      "\nUser request: "+q
+    })}).then(function(d){if(out)out.textContent=d.reply||d.message||JSON.stringify(d,null,2);}).catch(function(){if(out)out.textContent=fallbackBrief(a,c)+"\n\nAI is unavailable right now, so this guidance is based on your current metrics.";});
+  }
+  m.querySelectorAll("[data-next-prompt]").forEach(function(b){b.onclick=function(){ask(b.getAttribute("data-next-prompt"));};});
+  document.getElementById("rzNextAiForm").onsubmit=function(e){e.preventDefault();var q=document.getElementById("rzNextAiInput").value.trim();if(q)ask(q);};
+}
+async function business(){
+  var s=await loadSnapshot(),a=s.analytics||{},c=s.creator||{},ops=s.opportunities.opportunities||[],chs=s.channels.channels||[],prods=s.products.products||[],p=s.premium||{};
+  var openOps=ops.filter(function(x){return !x.applied;}).slice(0,6);
+  var activeChannels=chs.filter(function(x){return x.joined;}).slice(0,6);
+  var body='<div class="rz-next-grid rz-next-grid-6">'+metricRows(a,c)+'</div>'+
+    '<div class="rz-next-grid rz-next-grid-3">'+
+      '<div class="rz-next-card"><div class="rz-kicker">COMMUNITY</div><h3>'+esc(chs.length)+'</h3><p>creator channels available now</p><button class="rz-btn" data-next-nav="channels">Open Channels</button></div>'+
+      '<div class="rz-next-card"><div class="rz-kicker">SHOP</div><h3>'+esc(prods.length)+'</h3><p>active digital products</p><button class="rz-btn" data-next-nav="products">Open Shop</button></div>'+
+      '<div class="rz-next-card"><div class="rz-kicker">PREMIUM</div><h3>'+esc(p.active?"ACTIVE":"AVAILABLE")+'</h3><p>'+esc(p.active?"Advanced creator intelligence is active.":"Creator monetization tools are ready when billing is configured.")+'</p><button class="rz-btn" data-next-nav="premium">Open Premium</button></div>'+
+    '</div>'+
+    '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Opportunity Radar</strong><p>Current creator opportunities already available inside RIZORA.</p></div></div>'+
+      (openOps.length?openOps.map(function(o){return '<div class="rz-next-list-row"><div><strong>'+esc(o.title)+'</strong><span>'+esc(o.type||"opportunity")+'</span></div><button class="rz-btn" data-next-opp="'+esc(o.id)+'">Apply</button></div>';}).join(""):'<div class="rz-next-empty">No new opportunities right now.</div>')+
+    '</div>'+
+    '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Business setup checklist</strong><p>Build a creator business, not only a feed.</p></div></div>'+
+      '<div class="rz-next-checklist"><label><span>✓</span><b>Creator profile</b><small>Identity, bio and links</small></label><label><span>✓</span><b>Content planning</b><small>Plan and schedule ideas</small></label><label><span>✓</span><b>Community channel</b><small>Own a direct audience space</small></label><label><span>✓</span><b>Digital products</b><small>Sell creator-made downloads</small></label><label><span>✓</span><b>Opportunities</b><small>Apply to creator campaigns</small></label></div>'+
+    '</div>';
+  var m=modal("Creator Business Hub","BUILD • GROW • EARN",body);
+  m.querySelectorAll("[data-next-nav]").forEach(function(b){b.onclick=function(){
+    var x=b.getAttribute("data-next-nav");closeModal();
+    if(x==="channels"&&window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showChannels)return window.RIZORA_ENTERPRISE.showChannels();
+    if(x==="products"&&window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showProducts)return window.RIZORA_ENTERPRISE.showProducts();
+    if(x==="premium"&&window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showPremium)return window.RIZORA_ENTERPRISE.showPremium();
+  };});
+  m.querySelectorAll("[data-next-opp]").forEach(function(b){b.onclick=async function(){
+    try{await api("/api/v2/opportunities/"+encodeURIComponent(b.getAttribute("data-next-opp"))+"/apply",{method:"POST",body:"{}"});b.disabled=true;b.textContent="Applied";}catch(e){alert(e.message);}
+  };});
+}
+function integrity(){
+  var body='<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Pre-publish Integrity Check</strong><p>A fast creator checklist before you publish. This is not a copyright fingerprinting service.</p></div></div>'+
+    '<form id="rzIntegrityForm"><input id="rzIntegrityTitle" class="rz-input" placeholder="Post title / topic"><textarea id="rzIntegrityCaption" class="rz-input rz-next-textarea" placeholder="Paste the caption or script"></textarea><input id="rzIntegrityUrl" class="rz-input" placeholder="Media URL (optional)"><label class="rz-next-check"><input type="checkbox" id="rzIntegrityReuse"> This is adapted or reposted content</label><input id="rzIntegritySource" class="rz-input" placeholder="Source / permission / attribution (required when adapted)" style="display:none"><button class="rz-btn primary" type="submit">Run check</button></form><div id="rzIntegrityOut"></div></div>';
+  var m=modal("Content Integrity","SAFETY • ORIGINALITY • QUALITY",body);
+  var reuse=m.querySelector("#rzIntegrityReuse"),source=m.querySelector("#rzIntegritySource");
+  reuse.onchange=function(){source.style.display=reuse.checked?"block":"none";};
+  m.querySelector("#rzIntegrityForm").onsubmit=function(e){
+    e.preventDefault();
+    var title=m.querySelector("#rzIntegrityTitle").value.trim(),caption=m.querySelector("#rzIntegrityCaption").value.trim(),url=m.querySelector("#rzIntegrityUrl").value.trim(),adapted=reuse.checked,src=source.value.trim();
+    var checks=[
+      ["Topic is clear",title.length>=3,"Use a clear topic so viewers know why they should stop."],
+      ["Caption has enough context",caption.length>=20,"Add enough context for a viewer to understand the post without guessing."],
+      ["No obvious spam pattern",!/^(.)\\1{7,}$/.test(caption)&&!/(.)\\1{5,}/.test(caption),"Avoid repeated characters, empty engagement bait or copy-paste spam."],
+      ["Adapted content is attributed",!adapted||src.length>=3,"Add the original source or permission when you are adapting someone else's work."],
+      ["Media reference is valid",!url||/^https?:\\/\\//i.test(url),"Use a normal HTTPS media URL when attaching remote media."]
+    ];
+    var passed=checks.filter(function(x){return x[1];}).length;
+    m.querySelector("#rzIntegrityOut").innerHTML='<div class="rz-next-result"><strong>'+passed+"/"+checks.length+' checks passed</strong>'+checks.map(function(x){return '<div class="rz-next-result-row"><span class="'+(x[1]?"good":"warn")+'">'+(x[1]?"✓":"!")+'</span><div><b>'+esc(x[0])+'</b><small>'+esc(x[2])+'</small></div></div>';}).join("")+
+      '<p class="rz-muted">RIZORA still applies its platform safety rules at publish time. This tool helps you catch avoidable quality and attribution problems before submission.</p></div>';
+  };
+}
+function inject(){
+  if(document.getElementById("rzNextTools"))return;
+  var aside=document.querySelector(".rz-sidebar");if(!aside)return;
+  var box=document.createElement("div");box.id="rzNextTools";box.className="rz-next-tools";
+  box.innerHTML='<div class="rz-enterprise-heading">NEXT-GEN TOOLS</div><button class="rz-btn" data-next-open="assistant">Creator Assistant</button><button class="rz-btn" data-next-open="business">Business Hub</button><button class="rz-btn" data-next-open="integrity">Pre-publish Check</button>';
+  aside.appendChild(box);
+  box.querySelectorAll("[data-next-open]").forEach(function(b){b.onclick=function(){var x=b.getAttribute("data-next-open");if(x==="assistant")assistant();if(x==="business")business();if(x==="integrity")integrity();};});
+}
+function boot(){
+  inject();
+  var mo=new MutationObserver(function(){inject();});
+  mo.observe(document.body,{childList:true,subtree:true});
+}
+window.RIZORA_NEXT={assistant:assistant,business:business,integrity:integrity};
+setTimeout(boot,140);
+})();
