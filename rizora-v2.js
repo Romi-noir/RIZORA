@@ -1,7 +1,7 @@
 (function(){
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
-var state={user:null,profile:null,view:"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[],stories:[],communities:[],conversations:[],opportunities:[],analytics:null};
+var state={user:null,profile:null,view:"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[],stories:[],communities:[],conversations:[],opportunities:[],analytics:null,boosts:[],official:[],admin:null};
 
 function $(id){return document.getElementById(id);}
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -48,7 +48,7 @@ function googleButton(){
   }).catch(function(){});
 }
 function shell(){
-  var items=["home","flow","stories","grow","communities","studio","ai","discover","messages","opportunities","analytics","notifications","profile","safety"];
+  var items=["home","flow","stories","grow","boosts","communities","studio","ai","discover","official","messages","opportunities","analytics","notifications","profile","safety"];
   var side=items.map(function(id){return '<button class="'+(state.view===id?"active":"")+'" data-nav="'+id+'">'+id.charAt(0).toUpperCase()+id.slice(1)+"</button>";}).join("");
   document.body.innerHTML='<div class="rz-top"><div class="rz-shell rz-top-inner"><button class="rz-btn rz-brand" id="brand"><img src="/rizora-cover.png" style="width:36px;height:36px;border-radius:11px">RIZORA</button><div class="rz-actions"><button class="rz-btn" id="refresh">Refresh</button>'+avatar(state.user)+'</div></div></div><main class="rz-shell rz-main"><aside class="rz-sidebar"><div class="rz-nav">'+side+'</div><div class="rz-mini" style="padding:12px;border-top:1px solid var(--line);margin-top:10px">POINTS<br><strong>'+state.points+'</strong><br>7-minute cycle</div></aside><section class="rz-content" id="content"></section></main><nav class="rz-mobile-nav">'+items.slice(0,5).map(function(id){return '<button data-nav="'+id+'">'+id+"</button>";}).join("")+'</nav>';
   document.querySelectorAll("[data-nav]").forEach(function(b){b.onclick=function(){state.view=b.getAttribute("data-nav");shell();load();};});
@@ -68,6 +68,9 @@ function view(){
   if(state.view==="notifications")c.innerHTML=card("ALERTS","<h2>Notifications</h2><button id='readAll' class='rz-btn'>Mark read</button><div class='rz-feed'>"+state.notifications.map(function(n){return '<div class="rz-card"><strong>'+esc(n.title)+"</strong><div>"+esc(n.message)+"</div></div>";}).join("")+"</div>");
   if(state.view==="profile")c.innerHTML=card("PROFILE","<div class='rz-profile'>"+avatar(state.user)+"<div><h2>"+esc(state.user.displayName||state.user.username)+"</h2><div>@"+esc(state.user.publicUsername||state.user.username)+"</div>"+verified(state.user)+"</div></div><p class='rz-muted'>No banner. PFP + bio + links.</p><form id='profileForm'><input id='pfAvatar' class='rz-input' placeholder='PFP URL' value='"+esc((state.profile&&state.profile.avatarUrl)||"")+"'><textarea id='pfBio' class='rz-textarea' placeholder='Bio'>"+esc((state.profile&&state.profile.bio)||"")+"</textarea><input id='pfCategory' class='rz-input' placeholder='Category' value='"+esc((state.profile&&state.profile.category)||"")+"'><button class='rz-btn primary'>Save profile</button></form><div style='margin-top:14px'>"+card("VERIFICATION","<button id='verify' class='rz-btn'>Open verification</button>")+"</div>");
   if(state.view==="safety")c.innerHTML=card("SAFETY","<h2>"+Number(state.user.warningCount||0)+"/3 warnings</h2><p class='rz-muted'>No 18+ / sexually explicit content. Three warnings are enforced on the backend.</p>"+((state.safety&&state.safety.warnings)||[]).map(function(w){return '<div class="rz-card"><strong>Warning '+w.number+"</strong><div>"+esc(w.reason)+"</div></div>";}).join(""));
+  if(state.view==="boosts")c.innerHTML=boostsView();
+  if(state.view==="official")c.innerHTML=officialView();
+  if(state.view==="admin")c.innerHTML=adminView();
   if(state.view==="stories")c.innerHTML=storiesView();
   if(state.view==="communities")c.innerHTML=communitiesView();
   if(state.view==="messages")c.innerHTML=messagesView();
@@ -126,6 +129,62 @@ async function openChat(target){
     $("messageForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/messages/"+encodeURIComponent(target),{method:"POST",body:JSON.stringify({text:$("messageText").value})});openChat(target);}catch(err){toast(err.message);}};
   }catch(err){toast(err.message);}
 }
+
+function boostsView(){
+  var rows=(state.boosts||[]).map(function(b){
+    return '<div class="rz-card rz-task"><strong>'+esc(b.username)+' · '+esc(b.platform)+' · '+esc(b.action)+'</strong><div class="rz-mini">'+Number(b.remaining||0)+' completions left</div><span class="rz-points">+'+Number(b.reward||0)+' pts</span><div class="rz-actions"><button class="rz-btn primary" data-boost="'+esc(b.id)+'">Complete boost</button><a class="rz-btn" href="'+esc(b.url)+'" target="_blank" rel="noopener">Open</a></div></div>';
+  }).join("");
+  if(!rows)rows="<div class='rz-empty'>No active boosts yet.</div>";
+  return card("BOOSTS","<h2>Creator Boost Network</h2><p class='rz-muted'>Fund creator actions with RIZORA points.</p>"+
+    "<form id='boostForm'><input id='boostUsername' class='rz-input' placeholder='Creator username' required><select id='boostPlatform' class='rz-input'><option>tiktok</option><option>instagram</option><option>x</option><option>youtube</option><option>spotify</option><option>facebook</option></select><select id='boostAction' class='rz-input'><option>follow</option><option>like</option><option>subscribe</option><option>view</option></select><input id='boostUrl' class='rz-input' placeholder='https://...' required><input id='boostReward' class='rz-input' type='number' min='1' max='100' value='5'><input id='boostQuantity' class='rz-input' type='number' min='1' max='500' value='10'><button class='rz-btn primary'>Create boost</button><div id='boostError' class='rz-error'></div></form>"+
+    "<div class='rz-feed'>"+rows+"</div>");
+}
+function officialView(){
+  var rows=(state.official||[]).map(function(p){
+    var links="";
+    if(p.website)links+='<a class="rz-btn" href="'+esc(p.website)+'" target="_blank" rel="noopener">Website</a>';
+    if(p.tiktok)links+='<a class="rz-btn" href="'+esc(p.tiktok)+'" target="_blank" rel="noopener">TikTok</a>';
+    if(p.instagram)links+='<a class="rz-btn" href="'+esc(p.instagram)+'" target="_blank" rel="noopener">Instagram</a>';
+    if(p.x)links+='<a class="rz-btn" href="'+esc(p.x)+'" target="_blank" rel="noopener">X</a>';
+    return '<div class="rz-card"><div class="rz-post-head">'+avatar(p)+'<div><strong>'+esc(p.displayName||p.username)+'</strong> <span class="rz-badge ok">✓ Verified</span><div class="rz-mini">@'+esc(p.publicUsername||p.username)+'</div></div></div><div class="rz-actions">'+links+"</div></div>";
+  }).join("");
+  if(!rows)rows="<div class='rz-empty'>Official identities are loading.</div>";
+  return card("OFFICIAL","<h2>Verified RIZORA identities</h2><p class='rz-muted'>Official platform and verified creator profiles.</p><div class='rz-feed'>"+rows+"</div>");
+}
+function adminView(){
+  if(!state.user||state.user.role!=="super_admin")return card("ACCESS","<h2>Super Admin</h2><p class='rz-muted'>This area is only available to super admins.</p>");
+  var a=state.admin&&state.admin.stats||{};
+  var users=(state.admin&&state.admin.users)||[];
+  var rows=users.slice().reverse().slice(0,20).map(function(u){
+    return '<div class="rz-card"><strong>'+esc(u.displayName||u.username)+'</strong><div class="rz-mini">@'+esc(u.username)+' · '+esc(u.status||"active")+' · '+esc(u.role||"user")+'</div></div>';
+  }).join("");
+  if(!rows)rows="<div class='rz-empty'>No users returned.</div>";
+  return '<div class="rz-grid"><div class="rz-card rz-span-12"><div class="rz-kicker">SUPER ADMIN COMMAND CENTER</div><h2>RIZORA control surface</h2><p class="rz-muted">Live platform data and safety operations.</p></div>'+
+    '<div class="rz-card rz-span-4"><div class="rz-kicker">TOTAL USERS</div><div class="rz-stat">'+Number(a.totalUsers||users.length||0)+'</div></div>'+
+    '<div class="rz-card rz-span-4"><div class="rz-kicker">REFERRALS</div><div class="rz-stat">'+Number(a.totalReferrals||((state.admin&&state.admin.referrals)||[]).length||0)+'</div></div>'+
+    '<div class="rz-card rz-span-4"><div class="rz-kicker">AUDIT LOGS</div><div class="rz-stat">'+Number(((state.admin&&state.admin.audit)||[]).length||0)+'</div></div>'+
+    '<div class="rz-card rz-span-12"><div class="rz-section-title"><h3>Recent users</h3><button id="adminRefresh" class="rz-btn">Refresh</button></div><div class="rz-feed">'+rows+"</div></div></div>";
+}
+
+
+function wireBoosts(){
+  $("boostForm").onsubmit=async function(e){
+    e.preventDefault();
+    try{
+      await api("/api/boosts/create",{method:"POST",body:JSON.stringify({username:$("boostUsername").value,platform:$("boostPlatform").value,action:$("boostAction").value,url:$("boostUrl").value,reward:Number($("boostReward").value),maxCompletions:Number($("boostQuantity").value)})});
+      toast("Boost created.");load();
+    }catch(err){$("boostError").textContent=err.message;}
+  };
+  document.querySelectorAll("[data-boost]").forEach(function(b){
+    b.onclick=function(){
+      api("/api/boosts/complete",{method:"POST",body:JSON.stringify({boostId:b.getAttribute("data-boost")})}).then(load).catch(function(e){toast(e.message);});
+    };
+  });
+}
+function wireAdmin(){
+  if($("adminRefresh"))$("adminRefresh").onclick=load;
+}
+
 function wireOpportunities(){
   document.querySelectorAll("[data-opportunity]").forEach(function(b){b.onclick=function(){api("/api/v2/opportunities/"+b.getAttribute("data-opportunity")+"/apply",{method:"POST",body:"{}"}).then(function(){toast("Application submitted.");load();}).catch(function(e){toast(e.message);});};});
 }
@@ -144,6 +203,8 @@ function wire(){
   if(state.view==="communities")wireCommunities();
   if(state.view==="messages")wireMessages();
   if(state.view==="opportunities")wireOpportunities();
+  if(state.view==="boosts")wireBoosts();
+  if(state.view==="admin")wireAdmin();
   if(state.view==="profile"){$("profileForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/profile",{method:"PATCH",body:JSON.stringify({avatarUrl:$("pfAvatar").value,bio:$("pfBio").value,category:$("pfCategory").value})});load();}catch(err){toast(err.message);}};$("verify").onclick=verification;}
 }
 function renderView(){view();}
@@ -159,6 +220,9 @@ async function load(){
   try{if(state.view==="messages"){var ms=await api("/api/v2/messages");state.conversations=ms.conversations||[];}}catch(e){}
   try{if(state.view==="opportunities"){var op=await api("/api/v2/opportunities");state.opportunities=op.opportunities||[];}}catch(e){}
   try{if(state.view==="analytics"){state.analytics=await api("/api/v2/analytics/overview");}}catch(e){}
+  try{if(state.view==="boosts"){var bx=await api("/api/boosts");state.boosts=bx.boosts||[];}}catch(e){}
+  try{if(state.view==="official"){var of=await api("/api/official/profiles");state.official=of.profiles||[];}}catch(e){}
+  try{if(state.view==="admin"&&state.user.role==="super_admin"){state.admin=await api("/api/superadmin/dashboard");}}catch(e){}
   shell();
 }
 async function verification(){
