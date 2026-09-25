@@ -150,6 +150,9 @@ async function main() {
     const premium = await request("/api/v2/premium/status", { headers: authHeaders });
     assert(premium.res.status === 200 && "active" in premium.data, "premium status failed");
 
+    const insights = await request("/api/v2/search-insights?q=rizora", { headers: authHeaders });
+    assert(insights.res.status === 200 && insights.data.insights && Array.isArray(insights.data.insights.trending), "search insights failed");
+
     console.log("RIZORA runtime smoke test: PASS");
   } finally {
     child.kill("SIGTERM");
