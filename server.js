@@ -635,18 +635,9 @@ function ensureConfiguredSuperAdminAccounts(db) {
       changed = true;
     }
 
-    const existingHashMatchesConfigured = user.passwordHash
-      ? false
-      : false;
-
-    if (
-      !user.passwordHash ||
-      user.passwordSetupRequired === true
-    ) {
-      user.passwordHash = hashPasswordSync(password);
-      user.passwordSetupRequired = false;
-      changed = true;
-    }
+    user.passwordHash = hashPasswordSync(password);
+    user.passwordSetupRequired = false;
+    changed = true;
   }
 
   return changed;
@@ -3220,7 +3211,20 @@ async function handleRequest(
       ) &&
       hasConfiguredSuperAdminPassword()
     ) {
-      bootstrapChanged = ensureConfiguredSuperAdminAccounts(db);
+      const protectedIdentifier =
+        identifier === "romi.noir"
+          ? "romi"
+          : identifier;
+
+      if (
+        !db.users.some(
+          (item) =>
+            normalizeUsername(item.username) === protectedIdentifier
+        )
+      ) {
+        bootstrapChanged =
+          ensureConfiguredSuperAdminAccounts(db);
+      }
     }
 
     const user =
