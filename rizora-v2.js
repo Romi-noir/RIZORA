@@ -60,7 +60,10 @@ function auth(){
       var twoFactor=$("twoFactorCode");if(state.authMode==="login"&&twoFactor)b.twoFactorCode=twoFactor.value;
       var d=await api(state.authMode==="signup"?"/api/auth/signup":"/api/auth/login",{method:"POST",body:JSON.stringify(b)});
       if(d.token)setRizoraAuthToken(d.token);
-      state.user=d.user;window.RIZORA_CURRENT_USER=state.user;await load();toast("Welcome to RIZORA.");
+      state.user=d.user;window.RIZORA_CURRENT_USER=state.user;
+      var loaded=await load();
+      if(loaded!==true)throw new Error("Login succeeded, but the session could not be restored. Please refresh and try again.");
+      toast("Welcome to RIZORA.");
     }catch(err){
       if(state.authMode==="login"&&(err.code==="TWO_FACTOR_REQUIRED"||err.code==="TWO_FACTOR_INVALID")){
         if(!$("twoFactorCode")){
@@ -329,7 +332,7 @@ function wire(){
 }
 function renderView(){view();wire();}
 async function load(){
-  try{if(!state.user){var me=await api("/api/auth/me");state.user=me.user;}var x=await api("/api/v2/me");state.user=x.user;state.profile=x.profile;window.RIZORA_CURRENT_USER=state.user;state.points=Number(x.user.points||0);}catch(e){state.user=null;window.RIZORA_CURRENT_USER=null;auth();return;}
+  try{if(!state.user){var me=await api("/api/auth/me");state.user=me.user;}var x=await api("/api/v2/me");state.user=x.user;state.profile=x.profile;window.RIZORA_CURRENT_USER=state.user;state.points=Number(x.user.points||0);}catch(e){state.user=null;window.RIZORA_CURRENT_USER=null;auth();return false;}
   try{if(state.view==="home"||state.view==="flow"){var f=await api("/api/v2/feed?tab="+state.feedTab);state.feed=f.posts||[];}}catch(e){}
   try{if(state.view==="grow"){var a=await api("/api/tasks");var s=await api("/api/social/tasks");state.tasks=a.tasks||[];state.socialTasks=s.tasks||[];}}catch(e){}
   try{if(state.view==="notifications"){var n=await api("/api/v2/notifications");state.notifications=n.notifications||[];}}catch(e){}
@@ -344,6 +347,7 @@ async function load(){
   try{if(state.view==="official"){var of=await api("/api/official/profiles");state.official=of.profiles||[];}}catch(e){}
   try{if(state.view==="admin"&&state.user.role==="super_admin"){state.admin=await api("/api/superadmin/dashboard");}}catch(e){} try{if(state.view==="admin"&&state.user.role==="super_admin"){var vr=await api("/api/superadmin/verification");state.adminVerification=vr.requests||[];}}catch(e){}
   shell();
+  return true;
 }
 async function verification(){
   var overlay=document.createElement("div");overlay.className="rz-overlay";
