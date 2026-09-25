@@ -18,6 +18,8 @@ jobs:
         run: |
           node --check server.js
           node --check rizora-v2-backend.js
+          node --check rizora-v2-upgrades.js
+          node --check rizora-v2-upgrades-ui.js
           node --check rizora-v2-platform.js
           node --check rizora-v2-enterprise.js
           node --check rizora-v2-suite.js
