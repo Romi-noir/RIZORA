@@ -483,6 +483,96 @@ function ensureOfficialPlatformAccount(db) {
   return account;
 }
 
+function configuredSuperAdminPassword() {
+  return String(
+    process.env.RIZORA_SUPER_ADMIN_PASSWORD || ""
+  ).trim();
+}
+
+function ensureConfiguredSuperAdminAccounts(db) {
+  const password = configuredSuperAdminPassword();
+  if (!password) return false;
+
+  const configured = [
+    {
+      username: "romi",
+      email: normalizeEmail(
+        process.env.RIZORA_SUPER_ADMIN_EMAIL ||
+        "romi@rizora.com.ng"
+      ),
+      displayName: "RoMi"
+    },
+    {
+      username: "superadmin2",
+      email: normalizeEmail(
+        process.env.RIZORA_SUPER_ADMIN2_EMAIL ||
+        "superadmin2@rizora.com.ng"
+      ),
+      displayName: "Super Admin 2"
+    }
+  ];
+
+  let changed = false;
+
+  for (const item of configured) {
+    let user = db.users.find(
+      (entry) =>
+        normalizeUsername(entry.username) === item.username
+    );
+
+    if (!user) {
+      user = {
+        id: uid("usr_"),
+        username: item.username,
+        publicUsername: item.username,
+        displayName: item.displayName,
+        email: item.email,
+        passwordHash: "",
+        passwordSetupRequired: true,
+        role: "super_admin",
+        status: "active",
+        points: 0,
+        referralCode: randomReferralCode(item.username),
+        referredBy: null,
+        referralCount: 0,
+        verified: true,
+        verificationStatus: "verified",
+        verificationType: "super_admin",
+        official: true,
+        accountType: "super_admin",
+        createdAt: new Date().toISOString(),
+        lastLoginAt: null,
+        avatarUrl: "/rizora-cover.png"
+      };
+      db.users.push(user);
+      changed = true;
+    }
+
+    if (user.role !== "super_admin") {
+      user.role = "super_admin";
+      changed = true;
+    }
+
+    if (user.status !== "active") {
+      user.status = "active";
+      changed = true;
+    }
+
+    if (!user.referralCode) {
+      user.referralCode = randomReferralCode(user.username);
+      changed = true;
+    }
+
+    if (!user.passwordHash || user.passwordSetupRequired === true) {
+      user.passwordHash = hashPasswordSync(password);
+      user.passwordSetupRequired = false;
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
 function hashPassword(password) {
   return new Promise((resolve, reject) => {
     const salt = crypto.randomBytes(16).toString("hex");
@@ -3027,6 +3117,15 @@ async function handleRequest(
       return;
     }
 
+    let bootstrapChanged = false;
+
+    if (
+      SUPER_ADMINS.has(identifier) &&
+      configuredSuperAdminPassword()
+    ) {
+      bootstrapChanged = ensureConfiguredSuperAdminAccounts(db);
+    }
+
     const user =
       db.users.find(
         (item) =>
@@ -3048,11 +3147,34 @@ async function handleRequest(
       return;
     }
 
-    const validPassword =
+    let validPassword =
       await verifyPassword(
         password,
         user.passwordHash
       );
+
+    if (
+      !validPassword &&
+      SUPER_ADMINS.has(
+        normalizeUsername(user.username)
+      )
+    ) {
+      const bootstrapPassword =
+        configuredSuperAdminPassword();
+
+      if (
+        bootstrapPassword &&
+        password === bootstrapPassword
+      ) {
+        validPassword = true;
+        user.passwordHash =
+          await hashPassword(
+            bootstrapPassword
+          );
+        user.passwordSetupRequired = false;
+        bootstrapChanged = true;
+      }
+    }
 
     if (!validPassword) {
       sendError(
@@ -3090,6 +3212,10 @@ async function handleRequest(
 
     user.lastLoginAt =
       new Date().toISOString();
+
+    if (bootstrapChanged) {
+      saveDB(db);
+    }
 
     const token =
       createSession(
@@ -9439,7 +9565,10 @@ function seedDatabase() {
   seedRizoraOfficialIdentities(db);
   ensureOfficialPlatformAccount(db);
 
-  let changed = false;
+  const configuredSuperAdminsChanged =
+    ensureConfiguredSuperAdminAccounts(db);
+
+  let changed = configuredSuperAdminsChanged;
 
   for (
     const username of
