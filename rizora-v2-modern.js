@@ -168,6 +168,46 @@ function safeSettingsExport(db,user) {
   };
 }
 
+
+function base32Encode(buffer) {
+  const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits=0,value=0,out="";
+  for(const byte of buffer){
+    value=(value<<8)|byte; bits+=8;
+    while(bits>=5){out+=alphabet[(value>>>(bits-5))&31];bits-=5;}
+  }
+  if(bits>0) out+=alphabet[(value<<(5-bits))&31];
+  return out;
+}
+function base32Decode(input) {
+  const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const clean=String(input||"").replace(/=+$/,"").toUpperCase().replace(/[^A-Z2-7]/g,"");
+  let bits=0,value=0,bytes=[];
+  for(const ch of clean){
+    const idx=alphabet.indexOf(ch); if(idx<0) continue;
+    value=(value<<5)|idx; bits+=5;
+    if(bits>=8){bytes.push((value>>>(bits-8))&255);bits-=8;}
+  }
+  return Buffer.from(bytes);
+}
+function totpCode(secret, timestampMs) {
+  const key=base32Decode(secret);
+  const counter=Math.floor((Number(timestampMs||Date.now())/1000)/30);
+  const buf=Buffer.alloc(8);
+  buf.writeUInt32BE(Math.floor(counter/0x100000000),0);
+  buf.writeUInt32BE(counter>>>0,4);
+  const digest=crypto.createHmac("sha1",key).update(buf).digest();
+  const offset=digest[digest.length-1]&15;
+  const num=((digest[offset]&127)<<24)|(digest[offset+1]<<16)|(digest[offset+2]<<8)|digest[offset+3];
+  return String(num%1000000).padStart(6,"0");
+}
+function verifyTotp(secret, code) {
+  const normalized=String(code||"").replace(/\s/g,"");
+  if(!/^\d{6}$/.test(normalized)) return false;
+  for(const drift of [-1,0,1]) if(totpCode(secret,Date.now()+drift*30000)===normalized) return true;
+  return false;
+}
+
 function passwordHash(password) {
   const salt=crypto.randomBytes(16).toString("hex");
   const derived=crypto.pbkdf2Sync(String(password),salt,120000,64,"sha512");
@@ -271,6 +311,45 @@ async function handleRizoraModern(ctx) {
       else posts.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
     }
     ctx.sendJSON(res,200,{success:true,tab,personalized:tab==="for-you"&&prefs(db,user.id).personalizedFeed,posts:posts.slice(0,50).map(p=>decorate(db,p)).filter(Boolean)});return true;
+  }
+
+
+  if(path==="/api/v2/security/2fa/setup" && method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    if(!user.passwordHash){ctx.sendError(res,400,"Set an RIZORA password before enabling two-factor authentication.");return true;}
+    if(user.twoFactorEnabled){ctx.sendError(res,409,"Two-factor authentication is already enabled.");return true;}
+    let b={};try{b=await bodyFor(req);}catch(e){ctx.sendError(res,400,e.message);return true;}
+    if(!await passwordVerify(String(b.currentPassword||""),user.passwordHash)){ctx.sendError(res,401,"Current password is incorrect.");return true;}
+    const secret=base32Encode(crypto.randomBytes(20));
+    user.pendingTwoFactorSecret=secret;
+    user.twoFactorSetupAt=new Date().toISOString();
+    ctx.saveDB(db);
+    const label=encodeURIComponent("RIZORA:"+String(user.username||user.email||"creator"));
+    const issuer=encodeURIComponent("RIZORA");
+    const uri="otpauth://totp/"+label+"?secret="+secret+"&issuer="+issuer+"&algorithm=SHA1&digits=6&period=30";
+    ctx.sendJSON(res,200,{success:true,secret,otpauthUri:uri});return true;
+  }
+
+  if(path==="/api/v2/security/2fa/confirm" && method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const secret=String(user.pendingTwoFactorSecret||"");
+    if(!secret){ctx.sendError(res,409,"Start two-factor setup first.");return true;}
+    let b={};try{b=await bodyFor(req);}catch(e){ctx.sendError(res,400,e.message);return true;}
+    if(!verifyTotp(secret,b.code)){ctx.sendError(res,401,"Invalid authenticator code.");return true;}
+    user.twoFactorSecret=secret;user.twoFactorEnabled=true;delete user.pendingTwoFactorSecret;user.twoFactorEnabledAt=new Date().toISOString();
+    if(ctx.audit)ctx.audit(db,"two_factor_enabled",user,{method:"totp"});
+    ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,enabled:true});return true;
+  }
+
+  if(path==="/api/v2/security/2fa/disable" && method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    if(!user.twoFactorEnabled){ctx.sendJSON(res,200,{success:true,enabled:false});return true;}
+    let b={};try{b=await bodyFor(req);}catch(e){ctx.sendError(res,400,e.message);return true;}
+    if(!await passwordVerify(String(b.currentPassword||""),user.passwordHash)){ctx.sendError(res,401,"Current password is incorrect.");return true;}
+    if(!verifyTotp(user.twoFactorSecret,String(b.code||""))){ctx.sendError(res,401,"Invalid authenticator code.");return true;}
+    delete user.twoFactorSecret;delete user.pendingTwoFactorSecret;user.twoFactorEnabled=false;user.twoFactorDisabledAt=new Date().toISOString();
+    if(ctx.audit)ctx.audit(db,"two_factor_disabled",user,{method:"totp"});
+    ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,enabled:false});return true;
   }
 
   if(path==="/api/v2/security/sessions" && method==="GET"){
