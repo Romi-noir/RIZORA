@@ -191,6 +191,7 @@ async function handleRizoraGlobal(ctx) {
     if (!target) { ctx.sendError(res, 404, "Channel not found."); return true; }
     var memberRow = db.rzV2.channelMembers.find(function(m) { return m.channelId === target.id && m.userId === user.id; });
     if (!memberRow) { ctx.sendError(res, 403, "Join the channel before posting a reply."); return true; }
+    if (target.ownerId !== user.id) { ctx.sendError(res, 403, "Only the channel owner can broadcast updates."); return true; }
     try { body = await readBody(req); } catch (e2) { ctx.sendError(res, 400, e2.message); return true; }
     var text = clean(ctx, body.text, 2000);
     if (!text && !body.poll) { ctx.sendError(res, 400, "Message text is required."); return true; }
