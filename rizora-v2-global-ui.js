@@ -45,9 +45,10 @@
   async function channels(){
     try{
       var d=await api("/api/v2/channels");
+      var channelCards=(d.channels||[]).map(function(c){return '<div class="rz-global-card"><div class="rz-global-row"><div><h3>'+esc(c.name)+'</h3><p>'+esc(c.description||"")+'</p><span class="rz-mini">'+Number(c.memberCount||0)+' members · @'+esc((c.owner&& (c.owner.publicUsername||c.owner.username))||"creator")+'</span></div><button class="rz-btn" data-global-channel="'+esc(c.id)+'">'+(c.joined?"Open":"Join")+'</button></div></div>';}).join("");
       shell("Broadcast channels",tabs("channels")+
         '<div class="rz-global-card"><form id="rzChannelForm"><input id="rzChannelName" class="rz-input" placeholder="Channel name" maxlength="80" required><textarea id="rzChannelDesc" class="rz-textarea" placeholder="What will this channel be about?" maxlength="500"></textarea><button class="rz-btn primary">Create channel</button></form><p class="rz-mini">Up to 3 channels per creator.</p></div>'+
-        '<div class="rz-global-list">'+(d.channels||[]).map(function(c){return '<div class="rz-global-card"><div class="rz-global-row"><div><h3>'+esc(c.name)+'</h3><p>'+esc(c.description||"")+'</p><span class="rz-mini">'+Number(c.memberCount||0)+' members · @'+esc((c.owner&& (c.owner.publicUsername||c.owner.username))||"creator")+'</span></div><button class="rz-btn" data-global-channel="'+esc(c.id)+'">'+(c.joined?"Open":"Join")+'</button></div></div>';}).join("")||'<div class="rz-empty">No creator channels yet.</div>'+'</div>');
+        '<div class="rz-global-list">'+(channelCards||'<div class="rz-empty">No creator channels yet.</div>')+'</div>');
       bindTabs();
       var f=document.getElementById("rzChannelForm");
       if(f)f.onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/channels",{method:"POST",body:JSON.stringify({name:document.getElementById("rzChannelName").value,description:document.getElementById("rzChannelDesc").value})});notify("Channel created.");channels();}catch(err){notify(err.message);}};
@@ -58,9 +59,10 @@
     try{
       var d=await api("/api/v2/channels/"+encodeURIComponent(id));
       var c=d.channel;
+      var messageCards=(d.messages||[]).map(function(m){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((m.user&&(m.user.publicUsername||m.user.username))||"creator")+'</strong><span class="rz-mini">'+esc(m.createdAt||"")+'</span></div><p>'+esc(m.text||"")+'</p><div class="rz-global-reactions"><button class="rz-btn" data-global-react="'+esc(m.id)+'">♥ '+Number((m.reactions||{}).heart||0)+'</button><button class="rz-btn" data-global-react-value="fire" data-global-react="'+esc(m.id)+'">🔥 '+Number((m.reactions||{}).fire||0)+'</button></div></article>';}).join("");
       shell(c.name,
         '<div class="rz-global-row"><div><span class="rz-mini">'+Number(c.memberCount||0)+' members</span><p>'+esc(c.description||"")+'</p></div><button id="rzChannelMembership" class="rz-btn">'+(c.joined?"Leave":"Join")+'</button></div>'+
-        '<div id="rzChannelMessages" class="rz-global-list">'+(d.messages||[]).map(function(m){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((m.user&&(m.user.publicUsername||m.user.username))||"creator")+'</strong><span class="rz-mini">'+esc(m.createdAt||"")+'</span></div><p>'+esc(m.text||"")+'</p><div class="rz-global-reactions"><button class="rz-btn" data-global-react="'+esc(m.id)+'">♥ '+Number((m.reactions||{}).heart||0)+'</button><button class="rz-btn" data-global-react-value="fire" data-global-react="'+esc(m.id)+'">🔥 '+Number((m.reactions||{}).fire||0)+'</button></div></article>';}).join("")||'<div class="rz-empty">No messages yet.</div>'+'</div>'+
+        '<div id="rzChannelMessages" class="rz-global-list">'+(messageCards||'<div class="rz-empty">No messages yet.</div>')+'</div>'+
         '<form id="rzChannelPost" class="rz-global-compose"><textarea id="rzChannelText" class="rz-textarea" placeholder="Share an update with your channel"></textarea><button class="rz-btn primary">Broadcast</button></form>');
       document.getElementById("rzChannelMembership").onclick=async function(){
         try{await api("/api/v2/channels/"+encodeURIComponent(id)+(c.joined?"/leave":"/join"),{method:"POST"});openChannel(id);}catch(e){notify(e.message);}
@@ -73,9 +75,10 @@
   async function feeds(){
     try{
       var d=await api("/api/v2/feeds");
+      var feedCards=(d.feeds||[]).map(function(f){return '<div class="rz-global-card"><div class="rz-global-row"><div><h3>'+esc(f.name)+'</h3><div class="rz-mini">'+(f.hashtags||[]).map(function(t){return "#"+esc(t);}).join(" ")+'</div></div><div class="rz-actions"><button class="rz-btn" data-global-open-feed="'+esc(f.id)+'">Open</button><button class="rz-btn" data-global-delete-feed="'+esc(f.id)+'">Delete</button></div></div></div>';}).join("");
       shell("Custom feeds",tabs("feeds")+
-        '<div class="rz-global-card"><form id="rzFeedForm"><input id="rzFeedName" class="rz-input" placeholder="Feed name" maxlength="80" required><input id="rzFeedTags" class="rz-input" placeholder="Hashtags, e.g. music,dev,football"><input id="rzFeedCreators" class="rz-input" placeholder="Creator user IDs (advanced), comma separated"><button class="rz-btn primary">Save feed</button></form><p class="rz-mini">Make personal front pages around niches, creators or topics.</p></div>'+
-        '<div class="rz-global-list">'+(d.feeds||[]).map(function(f){return '<div class="rz-global-card"><div class="rz-global-row"><div><h3>'+esc(f.name)+'</h3><div class="rz-mini">'+(f.hashtags||[]).map(function(t){return "#"+esc(t);}).join(" ")+'</div></div><div class="rz-actions"><button class="rz-btn" data-global-open-feed="'+esc(f.id)+'">Open</button><button class="rz-btn" data-global-delete-feed="'+esc(f.id)+'">Delete</button></div></div></div>';}).join("")||'<div class="rz-empty">No custom feeds yet.</div>'+'</div>');
+        '<div class="rz-global-card"><form id="rzFeedForm"><input id="rzFeedName" class="rz-input" placeholder="Feed name" maxlength="80" required><input id="rzFeedTags" class="rz-input" placeholder="Hashtags, e.g. music,dev,football"><input id="rzFeedCreators" class="rz-input" placeholder="Creator username(s), comma separated"><button class="rz-btn primary">Save feed</button></form><p class="rz-mini">Make personal front pages around niches, creators or topics.</p></div>'+
+        '<div class="rz-global-list">'+(feedCards||'<div class="rz-empty">No custom feeds yet.</div>')+'</div>');
       bindTabs();
       var f=document.getElementById("rzFeedForm");
       if(f)f.onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/feeds",{method:"POST",body:JSON.stringify({name:document.getElementById("rzFeedName").value,hashtags:document.getElementById("rzFeedTags").value.split(",").map(function(x){return x.trim();}).filter(Boolean),creatorIds:document.getElementById("rzFeedCreators").value.split(",").map(function(x){return x.trim();}).filter(Boolean)})});notify("Feed saved.");feeds();}catch(err){notify(err.message);}};
@@ -86,7 +89,8 @@
   async function openFeed(id){
     try{
       var d=await api("/api/v2/feeds/"+encodeURIComponent(id)+"/items");
-      shell(d.feed.name,tabs("feeds")+'<div class="rz-global-list">'+(d.posts||[]).map(function(p){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((p.author&&(p.author.publicUsername||p.author.username))||"creator")+'</strong><span class="rz-mini">'+esc(p.createdAt||"")+'</span></div><p>'+esc(p.text||"")+'</p><div class="rz-mini">'+Number(p.likes||0)+' likes · '+Number(p.comments||0)+' comments</div></article>';}).join("")||'<div class="rz-empty">No posts match this feed yet.</div>'+'</div>');
+      var postCards=(d.posts||[]).map(function(p){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((p.author&&(p.author.publicUsername||p.author.username))||"creator")+'</strong><span class="rz-mini">'+esc(p.createdAt||"")+'</span></div><p>'+esc(p.text||"")+'</p><div class="rz-mini">'+Number(p.likes||0)+' likes · '+Number(p.comments||0)+' comments</div></article>';}).join("");
+      shell(d.feed.name,tabs("feeds")+'<div class="rz-global-list">'+(postCards||'<div class="rz-empty">No posts match this feed yet.</div>')+'</div>');
       bindTabs();
     }catch(e){notify(e.message);}
   }
