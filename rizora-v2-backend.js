@@ -68,6 +68,7 @@ function decorate(db,post){
     userId:post.userId,
     text:post.text,
     mediaUrl:post.mediaUrl,
+    aiAssisted:post.aiAssisted===true,
     hashtags:post.hashtags||[],
     mentions:post.mentions||[],
     collaborators:collaborators,
@@ -125,7 +126,7 @@ async function handleRizoraV2(ctx){
     if(!text&&!media){ctx.sendError(res,400,"Add text or media before publishing.");return true;}
     var mm=moderate(db,user,ctx,[text,media],null);
     if(!mm.allowed){ctx.sendJSON(res,422,Object.assign({success:false,code:"CONTENT_POLICY_VIOLATION"},mm));return true;}
-    var hs=tags(text),ms=mentions(text),post={id:ctx.uid("post_"),userId:user.id,text:text,mediaUrl:media,hashtags:hs,mentions:ms,createdAt:new Date().toISOString()};
+    var hs=tags(text),ms=mentions(text),post={id:ctx.uid("post_"),userId:user.id,text:text,mediaUrl:media,aiAssisted:pb.aiAssisted===true,hashtags:hs,mentions:ms,createdAt:new Date().toISOString()};
     db.rzV2.posts.push(post);hs.forEach(function(tag){db.rzV2.hashtags[tag]=Number(db.rzV2.hashtags[tag]||0)+1;});
     ms.forEach(function(handle){var target=db.users.find(function(u){return String(u.username||"").toLowerCase()===handle||String(u.publicUsername||"").toLowerCase()===handle;});if(target&&target.id!==user.id)notify(db,target.id,"You were mentioned","@"+user.username+" mentioned you.","mention");});
     ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,post:decorate(db,post)});return true;
