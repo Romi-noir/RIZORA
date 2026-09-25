@@ -1,0 +1,17 @@
+
+.rz-enterprise-tools{display:grid;gap:5px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.rz-enterprise-tools .rz-btn{width:100%;text-align:left;background:rgba(255,255,255,.025);font-size:12px}
+.rz-enterprise-heading{padding:4px 12px 7px;color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.17em}
+.rz-enterprise-card{margin-bottom:14px}
+.rz-enterprise-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.rz-enterprise-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.rz-enterprise-stats>div{border:1px solid var(--line);background:rgba(255,255,255,.025);border-radius:15px;padding:14px}
+.rz-enterprise-stats strong{display:block;font-size:22px;font-weight:900}
+.rz-enterprise-stats span{display:block;margin-top:4px;color:var(--muted);font-size:11px}
+.rz-enterprise-ticket{margin:0}
+.rz-enterprise-reply{border-left:2px solid rgba(154,114,255,.35);padding:8px 12px;margin:8px 0;background:rgba(255,255,255,.025);border-radius:0 10px 10px 0}
+.rz-enterprise-reply .rz-mini{margin-top:3px}
+@media(max-width:700px){
+  .rz-enterprise-grid{grid-template-columns:1fr}
+  .rz-enterprise-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
