@@ -42,6 +42,10 @@ jobs:
           node --check rizora-v2-business.js
           node --check rizora-v2-business-ui.js
           node --check rizora-v2.js
+          node --check rizora-v2-downloads.js
+          node --check rizora-v2-hub.js
+          node --check rizora-v2-labs.js
+          node --check rizora-v2-labs-ui.js
           node --check rizora-v2-comments.js
           node --check rizora-v2-comments-ui.js
           node --check rizora-v2-series.js
