@@ -92,7 +92,7 @@ async function handleRizoraV2(ctx){
   if(method==="GET"&&path==="/api/v2/me"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     var s=warningState(db,user.id);
-    ctx.sendJSON(res,200,{success:true,user:Object.assign(publicProfile(db,user),{email:user.email||"",role:user.role||"user",status:user.status||"active",warningCount:s.count,postingRestricted:user.postingRestricted===true}),profile:profileFor(db,user)});
+    ctx.sendJSON(res,200,{success:true,user:Object.assign(publicProfile(db,user),{email:user.email||"",role:user.role||"user",status:user.status||"active",warningCount:s.count,postingRestricted:user.postingRestricted===true,twoFactorEnabled:user.twoFactorEnabled===true}),profile:profileFor(db,user)});
     return true;
   }
 
