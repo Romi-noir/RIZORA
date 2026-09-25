@@ -9,6 +9,7 @@ function ensureEnterprise(db) {
   db.rzV2.transactions = db.rzV2.transactions || [];
   db.rzV2.paymentEvents = db.rzV2.paymentEvents || [];
   db.rzV2.profileViews = db.rzV2.profileViews || [];
+  db.rzV2.onboardingCompletions = db.rzV2.onboardingCompletions || [];
 }
 
 async function readBody(req, limit) {
@@ -103,6 +104,99 @@ async function handleRizoraEnterprise(ctx) {
   const user = currentUser(ctx);
 
   ensureEnterprise(db);
+
+
+  // ---------- post-signup onboarding ----------
+  if (path === "/api/v2/onboarding" && method === "GET") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    const targets = ["rizora", "romi.noir"];
+    const tasks = targets.map(function(username) {
+      const target = (db.users || []).find(function(u) {
+        return String(u.username || "").toLowerCase() === username ||
+          String(u.publicUsername || "").toLowerCase() === username;
+      });
+      if (!target) return null;
+      const following = (db.rzV2.follows || []).some(function(f) {
+        return f.followerId === user.id && f.followingId === target.id;
+      });
+      const completed = db.rzV2.onboardingCompletions.some(function(x) {
+        return x.userId === user.id && x.targetUserId === target.id;
+      }) || following;
+      return {
+        id: "follow_" + username.replace(/[^a-z0-9]+/g, "_"),
+        type: "follow_creator",
+        username: target.publicUsername || target.username,
+        title: "Follow @" + (target.publicUsername || target.username) + " on RIZORA",
+        description: "Follow the verified " + (target.official ? "official " : "") + (target.displayName || target.username) + " account.",
+        targetUserId: target.id,
+        points: 100,
+        completed: completed
+      };
+    }).filter(Boolean).filter(function(t) { return t.targetUserId !== user.id; });
+    ctx.sendJSON(res, 200, { success:true, tasks });
+    return true;
+  }
+
+  if (path === "/api/v2/onboarding/follow" && method === "POST") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    const b = await readBody(req, 100000);
+    const targetUsername = safeString(b.username, 80).replace(/^@/, "").toLowerCase();
+    if (!["rizora", "romi.noir"].includes(targetUsername)) {
+      ctx.sendError(res, 400, "Invalid onboarding account.");
+      return true;
+    }
+    const target = (db.users || []).find(function(u) {
+      return String(u.username || "").toLowerCase() === targetUsername ||
+        String(u.publicUsername || "").toLowerCase() === targetUsername;
+    });
+    if (!target) { ctx.sendError(res, 404, "Verified account not found."); return true; }
+    if (target.id === user.id) { ctx.sendError(res, 400, "You cannot follow yourself."); return true; }
+
+    db.rzV2.follows = db.rzV2.follows || [];
+    let relation = db.rzV2.follows.find(function(f) {
+      return f.followerId === user.id && f.followingId === target.id;
+    });
+    if (!relation) {
+      relation = {
+        id: ctx.uid("follow_"),
+        followerId: user.id,
+        followingId: target.id,
+        createdAt: new Date().toISOString()
+      };
+      db.rzV2.follows.push(relation);
+      notifyPlatform(db, target.id, "New follower", "@" + user.username + " followed you.");
+    }
+
+    let completion = db.rzV2.onboardingCompletions.find(function(x) {
+      return x.userId === user.id && x.targetUserId === target.id;
+    });
+    let awarded = 0;
+    if (!completion) {
+      completion = {
+        id: ctx.uid("onboarding_"),
+        userId: user.id,
+        targetUserId: target.id,
+        reward: 100,
+        completedAt: new Date().toISOString()
+      };
+      db.rzV2.onboardingCompletions.push(completion);
+      user.points = Number(user.points || 0) + 100;
+      awarded = 100;
+      if (typeof ctx.audit === "function") {
+        try { ctx.audit(db, user, "onboarding_follow_completed", { targetUserId: target.id, reward: awarded }); } catch (_) {}
+      }
+    }
+
+    ctx.saveDB(db);
+    ctx.sendJSON(res, 200, {
+      success:true,
+      following:true,
+      awarded,
+      points:Number(user.points || 0),
+      username:target.publicUsername || target.username
+    });
+    return true;
+  }
 
   // ---------- creator profile ----------
   const profileMatch = path.match(/^\/api\/v2\/profiles\/([^/]+)$/);
