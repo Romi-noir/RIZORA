@@ -1,6 +1,6 @@
 "use strict";
 (function(){
-  var API=String(window.RIZORA_API_BASE||location.origin).replace(/\\/+$/,"");
+  var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   var WATERMARK_TEXT="RIZORA  •  rizora.com.ng";
   var LOGO_URL="/rizora-cover.png";
 
