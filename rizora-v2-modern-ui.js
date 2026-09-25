@@ -28,29 +28,30 @@ async function preferences(){
 async function security(){
   var s=await api("/api/v2/security/sessions"),sessions=s.sessions||[];
   var twoFactorEnabled=window.RIZORA_CURRENT_USER&&window.RIZORA_CURRENT_USER.twoFactorEnabled===true;
-  var body='<div class="rz-modern-card"><div class="rz-kicker">PASSWORD</div><h3>Change your password</h3><form id="rzPasswordForm" class="rz-modern-form"><input name="currentPassword" type="password" class="rz-input" placeholder="Current password" required><input name="newPassword" type="password" class="rz-input" placeholder="New password" required><button class="rz-btn primary">Update password</button><div id="rzPasswordStatus"></div></form></div>'+
-</div>'+
-    '<div class="rz-modern-card"><div class="rz-kicker">TWO-FACTOR</div><h3>Authenticator protection</h3><p class="rz-modern-note">Use an authenticator app to require a 6-digit code when signing in with your RIZORA password.</p>'+
-    (twoFactorEnabled?
-      '<form id="rz2faDisableForm" class="rz-modern-form"><input name="currentPassword" type="password" class="rz-input" placeholder="Current password" required><input name="code" inputmode="numeric" class="rz-input" placeholder="6-digit authenticator code" required><button class="rz-btn" type="submit">Disable two-factor</button><div id="rz2faStatus"></div></form>':
-      '<form id="rz2faSetupForm" class="rz-modern-form"><input name="currentPassword" type="password" class="rz-input" placeholder="Current password" required><button class="rz-btn" type="submit">Start setup</button><div id="rz2faSecret"></div><input name="code" inputmode="numeric" class="rz-input" placeholder="Enter the 6-digit code from your authenticator" style="display:none"><button id="rz2faConfirm" class="rz-btn primary" type="button" style="display:none">Confirm and enable</button><div id="rz2faStatus"></div></form>')+
-    '</div>'+    '<div class="rz-modern-card"><div class="rz-kicker">SESSIONS</div><h3>Where your RIZORA account is signed in</h3><p class="rz-modern-note">Revoke old sessions after using a shared computer or changing your password.</p>'+
-    sessions.map(function(x){return '<div class="rz-modern-row"><div><strong>'+(x.current?"Current session":"RIZORA session")+'</strong><span>Started '+new Date(x.createdAt).toLocaleString()+' · Expires '+new Date(x.expiresAt).toLocaleString()+'</span></div>'+(x.current?'':'<button class="rz-btn" data-rz-revoke="'+esc(x.id)+'">Revoke</button>')+'</div>';}).join("")+
+  var passwordCard='<div class="rz-modern-card"><div class="rz-kicker">PASSWORD</div><h3>Change your password</h3><form id="rzPasswordForm" class="rz-modern-form"><input name="currentPassword" type="password" class="rz-input" placeholder="Current password" required><input name="newPassword" type="password" class="rz-input" placeholder="New password" required><button class="rz-btn primary">Update password</button><div id="rzPasswordStatus"></div></form></div>';
+  var twoFactorCard='<div class="rz-modern-card"><div class="rz-kicker">TWO-FACTOR</div><h3>Authenticator protection</h3><p class="rz-modern-note">Use an authenticator app to require a 6-digit code when signing in with your RIZORA password.</p>' +
+    (twoFactorEnabled ?
+      '<form id="rz2faDisableForm" class="rz-modern-form"><input name="currentPassword" type="password" class="rz-input" placeholder="Current password" required><input name="code" inputmode="numeric" class="rz-input" placeholder="6-digit authenticator code" required><button class="rz-btn" type="submit">Disable two-factor</button><div id="rz2faStatus"></div></form>' :
+      '<form id="rz2faSetupForm" class="rz-modern-form"><input name="currentPassword" type="password" class="rz-input" placeholder="Current password" required><button class="rz-btn" type="submit">Start setup</button><div id="rz2faSecret"></div><input name="code" inputmode="numeric" class="rz-input" placeholder="Enter the 6-digit code from your authenticator" style="display:none"><button id="rz2faConfirm" class="rz-btn primary" type="button" style="display:none">Confirm and enable</button><div id="rz2faStatus"></div></form>') +
+    '</div>';
+  var sessionsCard='<div class="rz-modern-card"><div class="rz-kicker">SESSIONS</div><h3>Where your RIZORA account is signed in</h3><p class="rz-modern-note">Revoke old sessions after using a shared computer or changing your password.</p>' +
+    sessions.map(function(x){return '<div class="rz-modern-row"><div><strong>'+(x.current?"Current session":"RIZORA session")+'</strong><span>Started '+new Date(x.createdAt).toLocaleString()+' - Expires '+new Date(x.expiresAt).toLocaleString()+'</span></div>'+(x.current?'':'<button class="rz-btn" data-rz-revoke="'+esc(x.id)+'">Revoke</button>')+'</div>';}).join("") +
     '<div class="rz-modern-actions"><button class="rz-btn" id="rzRevokeOthers">Revoke all other sessions</button></div></div>';
-  var m=modal("Security","Password and active-session controls.",body);
-  var setupForm=m.querySelector("#rz2faSetupForm");
-  var disableForm=m.querySelector("#rz2faDisableForm");
+  var m=modal("Security","Password, two-factor authentication and active-session controls.",passwordCard+twoFactorCard+sessionsCard);
+  var setupForm=m.querySelector("#rz2faSetupForm"),disableForm=m.querySelector("#rz2faDisableForm");
   if(setupForm){
     setupForm.onsubmit=async function(e){e.preventDefault();try{
       var d=await api("/api/v2/security/2fa/setup",{method:"POST",body:JSON.stringify({currentPassword:setupForm.currentPassword.value})});
       setupForm.dataset.secret=d.secret;
       m.querySelector("#rz2faSecret").innerHTML='<div class="rz-modern-note">Secret: <strong>'+esc(d.secret)+'</strong><br>Authenticator URI: <a href="'+esc(d.otpauthUri)+'" target="_blank" rel="noopener">Open URI</a></div>';
-      setupForm.querySelector('[name="code"]').style.display="block";m.querySelector("#rz2faConfirm").style.display="inline-block";
+      setupForm.querySelector('[name="code"]').style.display="block";
+      m.querySelector("#rz2faConfirm").style.display="inline-block";
       m.querySelector("#rz2faStatus").textContent="Setup generated. Add it to your authenticator, then enter the code.";
     }catch(err){m.querySelector("#rz2faStatus").textContent=err.message;}};
     m.querySelector("#rz2faConfirm").onclick=async function(){try{
       await api("/api/v2/security/2fa/confirm",{method:"POST",body:JSON.stringify({code:setupForm.querySelector('[name="code"]').value})});
-      m.querySelector("#rz2faStatus").textContent="Two-factor authentication enabled. It will be required at the next password login.";
+      m.querySelector("#rz2faStatus").textContent="Two-factor authentication enabled.";
+      if(window.RIZORA_CURRENT_USER) window.RIZORA_CURRENT_USER.twoFactorEnabled=true;
       setTimeout(security,700);
     }catch(err){m.querySelector("#rz2faStatus").textContent=err.message;}};
   }
@@ -58,10 +59,11 @@ async function security(){
     disableForm.onsubmit=async function(e){e.preventDefault();try{
       await api("/api/v2/security/2fa/disable",{method:"POST",body:JSON.stringify({currentPassword:disableForm.currentPassword.value,code:disableForm.code.value})});
       m.querySelector("#rz2faStatus").textContent="Two-factor authentication disabled.";
+      if(window.RIZORA_CURRENT_USER) window.RIZORA_CURRENT_USER.twoFactorEnabled=false;
       setTimeout(security,700);
     }catch(err){m.querySelector("#rz2faStatus").textContent=err.message;}};
   }
-  m.querySelector("#rzPasswordForm").onsubmit=async function(e){e.preventDefault();var f=e.target;var o=m.querySelector("#rzPasswordStatus");try{await api("/api/v2/security/password",{method:"POST",body:JSON.stringify({currentPassword:f.currentPassword.value,newPassword:f.newPassword.value})});f.reset();o.textContent="Password updated. Other sessions were signed out.";}catch(err){o.textContent=err.message;}};
+  m.querySelector("#rzPasswordForm").onsubmit=async function(e){e.preventDefault();var f=e.target,o=m.querySelector("#rzPasswordStatus");try{await api("/api/v2/security/password",{method:"POST",body:JSON.stringify({currentPassword:f.currentPassword.value,newPassword:f.newPassword.value})});f.reset();o.textContent="Password updated. Other sessions were signed out.";}catch(err){o.textContent=err.message;}};
   m.querySelectorAll("[data-rz-revoke]").forEach(function(b){b.onclick=async function(){try{await api("/api/v2/security/sessions/revoke",{method:"POST",body:JSON.stringify({sessionId:b.getAttribute("data-rz-revoke")})});security();}catch(e){notify(e.message);}};});
   m.querySelector("#rzRevokeOthers").onclick=async function(){try{await api("/api/v2/security/sessions/revoke",{method:"POST",body:JSON.stringify({allOther:true})});security();}catch(e){notify(e.message);}};
 }
