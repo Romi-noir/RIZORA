@@ -13,6 +13,7 @@ const { OAuth2Client } =
 const { handleRizoraV2 } = require("./rizora-v2-backend");
 const { publishDueSchedules } = require("./rizora-v2-growth");
 const { handleRizoraGlobal } = require("./rizora-v2-global");
+const { handleRizoraSeries } = require("./rizora-v2-series");
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -2218,6 +2219,7 @@ async function handleRequest(
 
   if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
   if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+  if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
 
   // ----------------------------------------------------------
   // HEALTH
