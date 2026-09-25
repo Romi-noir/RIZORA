@@ -40,6 +40,7 @@
         '<div class="rz-global-card"><div class="rz-kicker">NEXT MOVE</div><h3>'+esc(b.nextMove.title)+'</h3><p>'+esc(b.nextMove.action)+'</p></div>'+
         '<div class="rz-global-card"><div class="rz-kicker">CREATOR BRIEF</div>'+b.actions.map(function(a){return '<button class="rz-global-action" data-global-action="'+esc(a.type)+'"><strong>'+esc(a.title)+'</strong><span>'+esc(a.action)+'</span></button>';}).join("")+'</div>');
       bindTabs();
+      document.querySelectorAll("[data-global-action]").forEach(function(btn){btn.onclick=function(){var t=btn.getAttribute("data-global-action");var map={content:"studio",profile:"profile",community:"communities",growth:"grow",distribution:"series",safety:"safety"};var target=map[t]||"flow";close();var n=document.querySelector('[data-nav="'+target+'"]');if(n){n.click();return;}if(window.RIZORA_HUB&&window.RIZORA_HUB.open){window.RIZORA_HUB.open();}};});
     }catch(e){notify(e.message);}
   }
   async function channels(){
