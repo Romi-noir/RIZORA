@@ -312,7 +312,7 @@ async function handleRizoraMedia(ctx){
     return true;
   }
 
-  const fileMatch = pathName.match(/^\/api\/v2\/media\/([^/]+)$/);
+  const fileMatch = pathName.match(/^\/api\/v2\/media\/([^/.]+)(?:\.([a-z0-9]+))?$/i);
   if(method === "GET" && fileMatch){
     const id = decodeURIComponent(fileMatch[1]);
     const record = db.rzV2.media.find(x => x.id === id);
