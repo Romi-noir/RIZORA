@@ -257,7 +257,7 @@ async function handleRizoraModern(ctx) {
   if(path==="/api/v2/feed" && method==="GET"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     const tab=String(url.searchParams.get("tab")||"for-you"), blocked=targetSet(db,user.id,"blocks"), muted=targetSet(db,user.id,"mutes");
-    let posts=(db.rzV2.posts||[]).filter(p=>!blocked.has(p.userId)&&!muted.has(p.userId));
+    let posts=(db.rzV2.posts||[]).filter(p=>p.removed!==true&&!blocked.has(p.userId)&&!muted.has(p.userId));
     const following=new Set((db.rzV2.follows||[]).filter(f=>f.followerId===user.id).map(f=>f.followingId));
     if(tab==="following") posts=posts.filter(p=>p.userId===user.id||following.has(p.userId)).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
     else if(tab==="saved"){
