@@ -93,10 +93,10 @@ async function assistant(prefill){
   m.querySelectorAll("[data-next-prompt]").forEach(function(b){b.onclick=function(){ask(b.getAttribute("data-next-prompt"));};});
   document.getElementById("rzNextAiForm").onsubmit=function(e){e.preventDefault();var q=document.getElementById("rzNextAiInput").value.trim();if(q)ask(q);};
 }
-async function supportCreator(){
+async function supportCreator(preferredCreator){
   var body='<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Support a creator</strong><p>Send a one-time thank-you through RIZORA.</p></div></div>'+
     '<form id="rzSupportForm" class="rz-next-form">'+
-    '<input class="rz-input" name="creator" placeholder="@creator username" required>'+
+    '<input class="rz-input" name="creator" value="'+esc(preferredCreator||"")+'" placeholder="@creator username" required>'+
     '<input class="rz-input" name="amount" type="number" min="100" max="1000000" step="100" placeholder="Amount in NGN" required>'+
     '<textarea class="rz-input rz-next-textarea" name="note" maxlength="240" placeholder="Optional note"></textarea>'+
     '<button class="rz-btn primary" type="submit">Continue to Paystack</button><div id="rzSupportStatus" class="rz-muted"></div></form>'+
