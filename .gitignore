@@ -25,3 +25,4 @@ RIZORA-*-BACKUP-*/
 server.syntax-error-*.js
 # Unused local/OneDrive duplicate assets
 public/
+database/db.json
