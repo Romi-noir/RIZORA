@@ -83,11 +83,9 @@ function inject(){
   if(!aside||document.getElementById("rzBusinessTools"))return;
   var box=document.createElement("div");box.id="rzBusinessTools";box.className="rz-business-tools";
   box.innerHTML='<div class="rz-enterprise-heading">BUSINESS TOOLS</div>'+
-    '<button class="rz-btn" data-business="earnings">Creator Earnings</button>'+
     '<button class="rz-btn" data-business="free">Free Membership</button>'+
     '<button class="rz-btn" data-business="gift">Gift Access</button>';
   aside.appendChild(box);
-  box.querySelector('[data-business="earnings"]').onclick=earnings;
   box.querySelector('[data-business="free"]').onclick=freeMembership;
   box.querySelector('[data-business="gift"]').onclick=membershipGift;
 }
