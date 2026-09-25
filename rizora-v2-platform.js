@@ -46,6 +46,10 @@ async function handleRizoraPlatform(ctx){
   var db=ctx.db,res=ctx.res,req=ctx.req,user=ctx.getCurrentUser(db,req),path=new URL(req.url,"http://rizora.local").pathname,method=String(req.method||"GET").toUpperCase();
   ensurePlatform(db);cleanStories(db);
 
+  // Broadcast channels are owned by the global channel service. Let that handler receive these paths
+  // instead of the legacy platform channel implementation below.
+  if(path==="/api/v2/channels" || path.indexOf("/api/v2/channels/")===0) return false;
+
   if(path==="/api/v2/stories"&&method==="GET"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     var groups={};
