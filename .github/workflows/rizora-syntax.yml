@@ -1,0 +1,28 @@
+name: RIZORA syntax check
+
+on:
+  push:
+    branches:
+      - rizora-v2-rebuild
+  pull_request:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          node --check server.js
+          node --check rizora-v2-backend.js
+          node --check rizora-v2-platform.js
+          node --check rizora-v2-enterprise.js
+          node --check rizora-v2-suite.js
+          node --check rizora-v2-next.js
+          node --check rizora-v2-growth.js
+          node --check rizora-v2-growth-ui.js
+          node --check rizora-v2-enterprise-ui.js
+          node --check rizora-v2.js
