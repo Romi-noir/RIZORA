@@ -22,7 +22,9 @@ function verified(u){return u&&u.verified?'<span class="rz-badge ok">✓ Verifie
 function toast(s){var t=$("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rt);window.__rt=setTimeout(function(){t.classList.remove("show");},2400);}
 function textPreview(v){var s=String(v||"").trim().replace(/\s+/g," ");return s.slice(0,70)||"Untitled draft";}
 function bindPasswordToggles(root){(root||document).querySelectorAll("[data-rz-password-toggle]").forEach(function(b){b.onclick=function(){var id=b.getAttribute("data-rz-password-toggle"),i=document.getElementById(id);if(!i)return;var show=i.type==="password";i.type=show?"text":"password";b.textContent=show?"Hide":"Show";b.setAttribute("aria-label",show?"Hide password":"Show password");};});}
-async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var x=await r.text(),d={};try{d=x?JSON.parse(x):{};}catch(e){d={error:x};}if(!r.ok){var err=new Error(d.message||d.error||"Request failed.");err.code=d.code||"";throw err;}return d;}
+function getRizoraAuthToken(){try{return String(window.RIZORA_AUTH_TOKEN||localStorage.getItem("rizora_auth_token")||"").trim();}catch(e){return String(window.RIZORA_AUTH_TOKEN||"").trim();}}
+function setRizoraAuthToken(token){var t=String(token||"").trim();window.RIZORA_AUTH_TOKEN=t;try{if(t)localStorage.setItem("rizora_auth_token",t);else localStorage.removeItem("rizora_auth_token");}catch(e){}}
+async function api(path,opt){opt=opt||{};var headers=Object.assign({"Content-Type":"application/json"},opt.headers||{});var token=getRizoraAuthToken();if(token&&!headers.Authorization)headers.Authorization="Bearer "+token;var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:headers,body:opt.body});var x=await r.text(),d={};try{d=x?JSON.parse(x):{};}catch(e){d={error:x};}if(!r.ok){if(r.status===401&&path!=="/api/auth/login"&&path!=="/api/auth/signup"){try{setRizoraAuthToken("");}catch(_){}}var err=new Error(d.message||d.error||"Request failed.");err.code=d.code||"";throw err;}return d;}
 
 function landing(){
   document.body.innerHTML='<div class="rz-auth rz-landing"><div class="rz-shell rz-landing-shell"><div class="rz-brand"><img src="/rizora-cover.png"><div>RIZORA<small>CREATOR OS</small></div></div><section class="rz-landing-hero"><div class="rz-kicker">CREATOR GROWTH STUDIO</div><h1>Make your presence move.</h1><p class="rz-muted">RIZORA brings creator social, growth missions, AI, analytics, opportunities and community into one platform.</p><div class="rz-actions"><button id="landingSignup" class="rz-btn primary">Start creating</button><button id="landingLogin" class="rz-btn">Log in</button><button id="landingInstall" class="rz-btn">Install RIZORA</button></div></section><section class="rz-grid rz-landing-grid"><div class="rz-card rz-span-6"><div class="rz-kicker">VERIFIED</div><h3>RIZORA · @rizora</h3><p class="rz-muted">Official verified platform account.</p></div><div class="rz-card rz-span-6"><div class="rz-kicker">OFFICIAL CREATOR</div><h3>RoMi · @romi.noir</h3><p class="rz-muted">Artist. Developer. Creator. Builder. Creator of RIZORA.</p></div><div class="rz-card rz-span-4"><div class="rz-kicker">FLOW</div><h3>Social creator platform</h3><p class="rz-muted">Post, discover, follow, message and build community.</p></div><div class="rz-card rz-span-4"><div class="rz-kicker">GROW</div><h3>Creator growth</h3><p class="rz-muted">Missions, referrals, Boosts and creator campaigns.</p></div><div class="rz-card rz-span-4"><div class="rz-kicker">AI</div><h3>RIZORA intelligence</h3><p class="rz-muted">Ideas, analysis, strategy, hooks and creator tools.</p></div></section><footer class="rz-mini rz-landing-footer">RIZORA · Web-first creator platform · rizora.com.ng</footer></div></div>';
@@ -57,6 +59,7 @@ function auth(){
       if(state.authMode==="signup"){b.username=$("username").value;b.displayName=$("displayName").value;b.email=$("email").value;b.confirmPassword=$("confirmPassword").value;}
       var twoFactor=$("twoFactorCode");if(state.authMode==="login"&&twoFactor)b.twoFactorCode=twoFactor.value;
       var d=await api(state.authMode==="signup"?"/api/auth/signup":"/api/auth/login",{method:"POST",body:JSON.stringify(b)});
+      if(d.token)setRizoraAuthToken(d.token);
       state.user=d.user;window.RIZORA_CURRENT_USER=state.user;await load();toast("Welcome to RIZORA.");
     }catch(err){
       if(state.authMode==="login"&&(err.code==="TWO_FACTOR_REQUIRED"||err.code==="TWO_FACTOR_INVALID")){
@@ -79,7 +82,7 @@ function googleButton(){
       if(window.google&&google.accounts&&google.accounts.id){
         clearInterval(tm);
         google.accounts.id.initialize({client_id:c.clientId,callback:function(r){
-          api("/api/auth/google",{method:"POST",body:JSON.stringify({credential:r.credential})}).then(function(d){state.user=d.user;window.RIZORA_CURRENT_USER=state.user;load();}).catch(function(e){$("authError").textContent=e.message;});
+          api("/api/auth/google",{method:"POST",body:JSON.stringify({credential:r.credential})}).then(function(d){if(d.token)setRizoraAuthToken(d.token);state.user=d.user;window.RIZORA_CURRENT_USER=state.user;load();}).catch(function(e){$("authError").textContent=e.message;});
         }});
         google.accounts.id.renderButton($("googleButton"),{theme:"outline",size:"large",width:380,text:"continue_with",shape:"rectangular"});
       }
