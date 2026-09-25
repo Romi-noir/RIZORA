@@ -121,12 +121,13 @@ function injectMobileMenu(){
   top.insertBefore(b,top.firstChild);
 }
 function injectSuite(){
+ injectLogout();injectMobileMenu();
  if(!document.querySelector(".rz-sidebar"))return;
  if(!document.getElementById("rzSuiteTools")){
    var aside=document.querySelector(".rz-sidebar");if(!aside)return;
    var box=document.createElement("div");box.id="rzSuiteTools";box.className="rz-suite-tools";
    box.innerHTML='<div class="rz-enterprise-heading">CREATOR SUITE</div><button class="rz-btn" id="rzSuiteOpen">Open full Creator Suite</button><button class="rz-btn" data-suite-go="premium">Premium</button><button class="rz-btn" data-suite-go="leaderboard">Leaderboard</button><button class="rz-btn" data-suite-go="referrals">Referrals</button>';
-   aside.appendChild(box);bindSuiteButtons(box);
+   aside.appendChild(box);document.getElementById("rzSuiteOpen").onclick=suiteMenu;bindSuiteButtons(box);
  }
  var actions=document.querySelector(".rz-top-inner .rz-actions");
  if(actions&&!document.getElementById("rzSuiteTopButton")){
