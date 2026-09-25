@@ -60,15 +60,16 @@
       var d=await api("/api/v2/channels/"+encodeURIComponent(id));
       var c=d.channel;
       var messageCards=(d.messages||[]).map(function(m){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((m.user&&(m.user.publicUsername||m.user.username))||"creator")+'</strong><span class="rz-mini">'+esc(m.createdAt||"")+'</span></div><p>'+esc(m.text||"")+'</p><div class="rz-global-reactions"><button class="rz-btn" data-global-react="'+esc(m.id)+'">♥ '+Number((m.reactions||{}).heart||0)+'</button><button class="rz-btn" data-global-react-value="fire" data-global-react="'+esc(m.id)+'">🔥 '+Number((m.reactions||{}).fire||0)+'</button></div></article>';}).join("");
+      var canBroadcast=c.ownerId===user.id;
       shell(c.name,
         '<div class="rz-global-row"><div><span class="rz-mini">'+Number(c.memberCount||0)+' members</span><p>'+esc(c.description||"")+'</p></div><button id="rzChannelMembership" class="rz-btn">'+(c.joined?"Leave":"Join")+'</button></div>'+
         '<div id="rzChannelMessages" class="rz-global-list">'+(messageCards||'<div class="rz-empty">No messages yet.</div>')+'</div>'+
-        '<form id="rzChannelPost" class="rz-global-compose"><textarea id="rzChannelText" class="rz-textarea" placeholder="Share an update with your channel"></textarea><button class="rz-btn primary">Broadcast</button></form>');
+        (canBroadcast ? '<form id="rzChannelPost" class="rz-global-compose"><textarea id="rzChannelText" class="rz-textarea" placeholder="Share an update with your channel"></textarea><button class="rz-btn primary">Broadcast</button></form>' : '<div class="rz-global-card"><div class="rz-mini">Channel followers can read and react here. Only the owner can broadcast updates.</div></div>'));
       document.getElementById("rzChannelMembership").onclick=async function(){
         try{await api("/api/v2/channels/"+encodeURIComponent(id)+(c.joined?"/leave":"/join"),{method:"POST"});openChannel(id);}catch(e){notify(e.message);}
       };
       var pf=document.getElementById("rzChannelPost");
-      pf.onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/channels/"+encodeURIComponent(id)+"/messages",{method:"POST",body:JSON.stringify({text:document.getElementById("rzChannelText").value})});openChannel(id);}catch(err){notify(err.message);}};
+      if(pf) pf.onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/channels/"+encodeURIComponent(id)+"/messages",{method:"POST",body:JSON.stringify({text:document.getElementById("rzChannelText").value})});openChannel(id);}catch(err){notify(err.message);}};
       document.querySelectorAll("[data-global-react]").forEach(function(btn){btn.onclick=async function(){try{await api("/api/v2/channels/"+encodeURIComponent(id)+"/messages/"+encodeURIComponent(btn.getAttribute("data-global-react"))+"/react",{method:"POST",body:JSON.stringify({reaction:btn.getAttribute("data-global-react-value")||"heart"})});openChannel(id);}catch(e){notify(e.message);}};});
     }catch(e){notify(e.message);}
   }
