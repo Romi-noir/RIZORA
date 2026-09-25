@@ -2,6 +2,12 @@
 
 const crypto = require("crypto");
 
+function hashPasswordSyncEnterprise(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derived = crypto.pbkdf2Sync(String(password), salt, 120000, 64, "sha512");
+  return salt + ":" + derived.toString("hex");
+}
+
 function ensureEnterprise(db) {
   db.rzV2 = db.rzV2 || {};
   db.rzV2.supportTickets = db.rzV2.supportTickets || [];
@@ -321,6 +327,35 @@ async function handleRizoraEnterprise(ctx) {
     ctx.saveDB(db);
     addAudit(ctx, user, "content_report_created", { reportId: report.id, targetType, targetId });
     ctx.sendJSON(res, 201, { success:true, report });
+    return true;
+  }
+
+
+  if (path === "/api/v2/admin/official/rizora/password" && method === "POST") {
+    if (!admin(ctx, user)) { ctx.sendError(res, 403, "Super Admin access required."); return true; }
+    const target = (db.users || []).find(function(u) {
+      return String(u.username || "").toLowerCase() === "rizora";
+    });
+    if (!target) { ctx.sendError(res, 404, "The RIZORA official account has not been provisioned."); return true; }
+    const b = await readBody(req, 100000);
+    const password = String(b.password || "");
+    if (password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      ctx.sendError(res, 400, "Password must be at least 8 characters and include uppercase, lowercase and a number.");
+      return true;
+    }
+    target.passwordHash = hashPasswordSyncEnterprise(password);
+    target.passwordSetupRequired = false;
+    target.status = "active";
+    target.verified = true;
+    target.verificationStatus = "verified";
+    target.verificationType = "official_platform";
+    target.official = true;
+    target.accountType = "platform";
+    target.role = "official_platform";
+    target.updatedAt = new Date().toISOString();
+    ctx.saveDB(db);
+    addAudit(ctx, user, "official_platform_password_set", { targetUserId: target.id });
+    ctx.sendJSON(res, 200, { success:true, username:"rizora" });
     return true;
   }
 
