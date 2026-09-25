@@ -133,6 +133,28 @@ async function handleRizoraV2(ctx){
     ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,post:decorate(db,post)});return true;
   }
 
+  var commentsRoute=path.match(/^\/api\/v2\/posts\/([^/]+)\/comments$/);
+  if(method==="GET"&&commentsRoute){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    var commentsPost=db.rzV2.posts.find(function(p){return p.id===commentsRoute[1];});
+    if(!commentsPost){ctx.sendError(res,404,"Post not found.");return true;}
+    var rawComments=(db.rzV2.comments||[]).filter(function(c){return c.postId===commentsPost.id;}).slice().sort(function(a,b){return new Date(a.createdAt)-new Date(b.createdAt);});
+    var commentMap={};
+    rawComments.forEach(function(c){
+      var author=db.users.find(function(u){return u.id===c.userId;});
+      if(!author)return;
+      commentMap[c.id]={id:c.id,postId:c.postId,userId:c.userId,text:c.text,parentId:c.parentId||null,createdAt:c.createdAt,author:publicProfile(db,author),replies:[]};
+    });
+    rawComments.forEach(function(c){
+      var row=commentMap[c.id];
+      if(!row)return;
+      if(c.parentId&&commentMap[c.parentId]) commentMap[c.parentId].replies.push(row);
+    });
+    var roots=rawComments.map(function(c){return commentMap[c.id];}).filter(function(c){return c&&!c.parentId;});
+    ctx.sendJSON(res,200,{success:true,comments:roots});
+    return true;
+  }
+
   var match=path.match(/^\/api\/v2\/posts\/([^/]+)\/(like|save|repost|comment)$/);
   if(method==="POST"&&match){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
@@ -140,11 +162,16 @@ async function handleRizoraV2(ctx){
     var postId=match[1],action=match[2],postTarget=db.rzV2.posts.find(function(p){return p.id===postId;});
     if(!postTarget){ctx.sendError(res,404,"Post not found.");return true;}
     if(action==="comment"){
-      var cb=await body(req),ct=ctx.cleanString(cb.text,1000);
+      var cb=await body(req),ct=ctx.cleanString(cb.text,1000),parentId=ctx.cleanString(cb.parentId,120)||null;
+      if(!ct){ctx.sendError(res,400,"Comment text is required.");return true;}
+      if(parentId){
+        var parentComment=(db.rzV2.comments||[]).find(function(c){return c.id===parentId&&c.postId===postId;});
+        if(!parentComment){ctx.sendError(res,400,"Reply target not found.");return true;}
+      }
       var cm=moderate(db,user,ctx,ct,postId);
       if(!cm.allowed){ctx.sendJSON(res,422,Object.assign({success:false,code:"CONTENT_POLICY_VIOLATION"},cm));return true;}
-      db.rzV2.comments.push({id:ctx.uid("comment_"),postId:postId,userId:user.id,text:ct,createdAt:new Date().toISOString()});
-      if(postTarget.userId!==user.id)notify(db,postTarget.userId,"New comment","@"+user.username+" commented on your post.","comment");
+      db.rzV2.comments.push({id:ctx.uid("comment_"),postId:postId,userId:user.id,text:ct,parentId:parentId,createdAt:new Date().toISOString()});
+      if(postTarget.userId!==user.id)notify(db,postTarget.userId,parentId?"New reply":"New comment","@"+user.username+(parentId?" replied to a comment on your post.":" commented on your post."),"comment");
       ctx.saveDB(db);ctx.sendJSON(res,201,{success:true});return true;
     }
     var key=action==="like"?"likes":action==="save"?"saves":"reposts",collection=db.rzV2[key],existing=collection.find(function(x){return x.userId===user.id&&x.postId===postId;});
