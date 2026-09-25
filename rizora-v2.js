@@ -1,7 +1,7 @@
 (function(){
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
-var state={user:null,profile:null,view:"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[],stories:[],communities:[],conversations:[],opportunities:[],analytics:null,boosts:[],official:[],admin:null};
+var state={user:null,profile:null,view:"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[],stories:[],communities:[],conversations:[],opportunities:[],analytics:null,boosts:[],official:[],admin:null,adminVerification:[]};
 
 function $(id){return document.getElementById(id);}
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -156,14 +156,21 @@ function adminView(){
   var a=state.admin&&state.admin.stats||{};
   var users=(state.admin&&state.admin.users)||[];
   var rows=users.slice().reverse().slice(0,20).map(function(u){
-    return '<div class="rz-card"><strong>'+esc(u.displayName||u.username)+'</strong><div class="rz-mini">@'+esc(u.username)+' · '+esc(u.status||"active")+' · '+esc(u.role||"user")+'</div></div>';
+    var action=u.status==="active"?"":"<button class='rz-btn' data-recover='"+esc(u.id)+"'>Recover</button>";
+    return '<div class="rz-card"><strong>'+esc(u.displayName||u.username)+'</strong><div class="rz-mini">@'+esc(u.username)+' · '+esc(u.status||"active")+' · '+esc(u.role||"user")+'</div>'+action+'</div>';
   }).join("");
   if(!rows)rows="<div class='rz-empty'>No users returned.</div>";
-  return '<div class="rz-grid"><div class="rz-card rz-span-12"><div class="rz-kicker">SUPER ADMIN COMMAND CENTER</div><h2>RIZORA control surface</h2><p class="rz-muted">Live platform data and safety operations.</p></div>'+
+  var pending=(state.adminVerification||[]).filter(function(r){return r.status==="pending";}).map(function(r){
+    var id=(r.user&&r.user.id)||r.userId;
+    return '<div class="rz-card"><strong>'+esc((r.user&&r.user.displayName)||"Creator")+'</strong><div class="rz-mini">@'+esc((r.user&&r.user.username)||"unknown")+'</div><button class="rz-btn primary" data-grant="'+esc(id)+'">Grant verification</button></div>';
+  }).join("");
+  if(!pending)pending="<div class='rz-empty'>No pending verification requests.</div>";
+  return '<div class="rz-grid"><div class="rz-card rz-span-12"><div class="rz-kicker">SUPER ADMIN COMMAND CENTER</div><h2>RIZORA control surface</h2><p class="rz-muted">Live platform data, verification and account recovery.</p></div>'+
     '<div class="rz-card rz-span-4"><div class="rz-kicker">TOTAL USERS</div><div class="rz-stat">'+Number(a.totalUsers||users.length||0)+'</div></div>'+
     '<div class="rz-card rz-span-4"><div class="rz-kicker">REFERRALS</div><div class="rz-stat">'+Number(a.totalReferrals||((state.admin&&state.admin.referrals)||[]).length||0)+'</div></div>'+
     '<div class="rz-card rz-span-4"><div class="rz-kicker">AUDIT LOGS</div><div class="rz-stat">'+Number(((state.admin&&state.admin.audit)||[]).length||0)+'</div></div>'+
-    '<div class="rz-card rz-span-12"><div class="rz-section-title"><h3>Recent users</h3><button id="adminRefresh" class="rz-btn">Refresh</button></div><div class="rz-feed">'+rows+"</div></div></div>";
+    '<div class="rz-card rz-span-6"><div class="rz-section-title"><h3>Verification queue</h3><button id="adminRefresh" class="rz-btn">Refresh</button></div><div class="rz-feed">'+pending+'</div></div>'+
+    '<div class="rz-card rz-span-6"><div class="rz-section-title"><h3>Recent users</h3></div><div class="rz-feed">'+rows+'</div></div></div>';
 }
 
 
@@ -183,7 +190,24 @@ function wireBoosts(){
 }
 function wireAdmin(){
   if($("adminRefresh"))$("adminRefresh").onclick=load;
+  document.querySelectorAll("[data-recover]").forEach(function(b){
+    b.onclick=async function(){
+      try{
+        await api("/api/v2/admin/users/"+encodeURIComponent(b.getAttribute("data-recover"))+"/recover",{method:"POST",body:JSON.stringify({resetWarnings:false})});
+        toast("Account restored.");load();
+      }catch(e){toast(e.message);}
+    };
+  });
+  document.querySelectorAll("[data-grant]").forEach(function(b){
+    b.onclick=async function(){
+      try{
+        await api("/api/superadmin/verification/grant",{method:"POST",body:JSON.stringify({userId:b.getAttribute("data-grant")})});
+        toast("Verification granted.");load();
+      }catch(e){toast(e.message);}
+    };
+  });
 }
+
 
 function wireOpportunities(){
   document.querySelectorAll("[data-opportunity]").forEach(function(b){b.onclick=function(){api("/api/v2/opportunities/"+b.getAttribute("data-opportunity")+"/apply",{method:"POST",body:"{}"}).then(function(){toast("Application submitted.");load();}).catch(function(e){toast(e.message);});};});
@@ -222,7 +246,7 @@ async function load(){
   try{if(state.view==="analytics"){state.analytics=await api("/api/v2/analytics/overview");}}catch(e){}
   try{if(state.view==="boosts"){var bx=await api("/api/boosts");state.boosts=bx.boosts||[];}}catch(e){}
   try{if(state.view==="official"){var of=await api("/api/official/profiles");state.official=of.profiles||[];}}catch(e){}
-  try{if(state.view==="admin"&&state.user.role==="super_admin"){state.admin=await api("/api/superadmin/dashboard");}}catch(e){}
+  try{if(state.view==="admin"&&state.user.role==="super_admin"){state.admin=await api("/api/superadmin/dashboard");}}catch(e){} try{if(state.view==="admin"&&state.user.role==="super_admin"){var vr=await api("/api/superadmin/verification");state.adminVerification=vr.requests||[];}}catch(e){}
   shell();
 }
 async function verification(){

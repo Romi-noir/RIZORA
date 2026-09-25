@@ -3415,8 +3415,13 @@ if (
   const user =
     getCurrentUser(db, req);
 
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
   const authenticated =
-    !!user;
+    true;
 
   let body = {};
 
