@@ -31,7 +31,8 @@ function ensureState(db){
 }
 
 function mediaRoot(){
-  return path.join(__dirname, "uploads", "rizora");
+  const configured = String(process.env.RIZORA_MEDIA_ROOT || "").trim();
+  return path.resolve(configured || path.join(__dirname, "uploads", "rizora"));
 }
 
 function safeName(value){
@@ -309,6 +310,17 @@ async function handleRizoraMedia(ctx){
     saveDB(db);
 
     sendJSON(res,201,{success:true,media:publicMedia(record)});
+    return true;
+  }
+
+  if(method === "GET" && pathName === "/api/v2/media/mine"){
+    const rows = (db.rzV2.media || [])
+      .filter(x => x.ownerId === user.id)
+      .slice()
+      .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0,200)
+      .map(publicMedia);
+    sendJSON(res,200,{success:true,media:rows,usage:usageFor(db,user.id)});
     return true;
   }
 

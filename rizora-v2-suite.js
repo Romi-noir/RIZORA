@@ -15,14 +15,114 @@ function card(title,body){return '<section class="rz-suite-card"><div class="rz-
 function stat(v,k){return '<div class="rz-suite-stat"><strong>'+esc(v)+'</strong><span>'+esc(k)+'</span></div>';}
 
 async function premium(){
- var b=modal("Premium Suite","The old RIZORA Premium foundation is preserved and connected to real creator tools.",'<div class="rz-suite-grid rz-suite-grid-3"><div>'+card("ADVANCED AI","<h3>Creator intelligence</h3><p class='rz-muted'>Use RIZORA AI for strategy, ideas, hooks and growth planning.</p><button class='rz-btn primary' data-suite-go='intelligence'>Open AI tools</button>")+'</div><div>'+card("ADVANCED ANALYTICS","<h3>Deeper creator insight</h3><p class='rz-muted'>Combine platform analytics with creator scoring and idea history.</p><button class='rz-btn primary' data-suite-go='analytics'>Open analytics</button>")+'</div><div>'+card("PRO CREATOR TOOLS","<h3>Portfolio + planning</h3><p class='rz-muted'>Maintain a creator portfolio, experiments and a publishing plan.</p><button class='rz-btn primary' data-suite-go='portfolio'>Open tools</button>")+'</div></div><div class="rz-suite-grid rz-suite-grid-2"><div id="rzSuitePremiumStats">'+card("LIVE","<div class='rz-empty'>Loading creator data…</div>")+'</div><div>'+card("STATUS","<p class='rz-muted'>The repository contains a Premium feature foundation. It does <b>not</b> currently contain a subscription/membership billing entitlement, so no false paid-plan gate is being introduced.</p>")+'</div></div>');
+ var premiumBody =
+   '<div id="rzSuitePremiumStatus">'+
+   card("PREMIUM","<div class='rz-empty'>Checking entitlement...</div>")+
+   '</div>'+
+   '<div class="rz-suite-grid rz-suite-grid-3">'+
+     '<div>'+card("ADVANCED AI","<h3>Creator intelligence</h3><p class='rz-muted'>Strategy, ideas, hooks and growth planning powered by RIZORA AI.</p><button class='rz-btn primary' data-suite-go='intelligence'>Open AI tools</button>")+'</div>'+
+     '<div>'+card("ADVANCED ANALYTICS","<h3>Deeper creator insight</h3><p class='rz-muted'>Platform analytics combined with creator scoring and performance history.</p><button class='rz-btn primary' data-suite-go='analytics'>Open analytics</button>")+'</div>'+
+     '<div>'+card("PRO CREATOR TOOLS","<h3>Portfolio + planning</h3><p class='rz-muted'>Portfolio identity, experiments and publishing plans remain available to creators.</p><button class='rz-btn primary' data-suite-go='portfolio'>Open tools</button>")+'</div>'+
+   '</div>'+
+   '<div class="rz-suite-grid rz-suite-grid-2">'+
+     '<div id="rzSuitePremiumStats">'+card("LIVE","<div class='rz-empty'>Loading creator data...</div>")+'</div>'+
+     '<div id="rzSuitePremiumActions">'+card("BILLING","<p class='rz-muted'>Loading billing options...</p>")+'</div>'+
+   '</div>';
+ var b=modal(
+   "Premium Suite",
+   "RIZORA Premium is connected to the live billing entitlement API when Paystack Premium is configured.",
+   premiumBody
+ );
  try{
-   var x=await Promise.all([api("/api/v2/analytics/overview"),api("/api/creator/analytics"),api("/api/referrals/me")]);
-   var a=x[0]||{},c=x[1]||{},r=x[2]||{};
+   var x=await Promise.all([
+     api("/api/v2/premium/status"),
+     api("/api/v2/analytics/overview"),
+     api("/api/creator/analytics"),
+     api("/api/referrals/me")
+   ]);
+   var p=x[0]||{},a=x[1]||{},c=x[2]||{},r=x[3]||{};
+   var ps=document.getElementById("rzSuitePremiumStatus");
+   if(ps){
+     ps.innerHTML=card(
+       "PREMIUM STATUS",
+       '<div class="rz-suite-stats">'+
+         stat(p.active?"ACTIVE":"FREE","Plan")+
+         stat(p.status||"free","Status")+
+         (p.nextPaymentDate?stat(new Date(p.nextPaymentDate).toLocaleDateString(),"Next payment"):"")+
+       '</div>'+
+       '<p class="rz-muted">'+
+         (p.active?
+           "Your Premium entitlement is active. Advanced AI and Advanced Analytics are unlocked.":
+           "Premium is not active on this account yet.")+
+       '</p>'
+     );
+   }
    var s=document.getElementById("rzSuitePremiumStats");
-   if(s)s.innerHTML=card("LIVE METRICS",'<div class="rz-suite-stats">'+stat(a.posts||0,"Posts")+stat(a.followers||0,"Followers")+stat(a.likes||0,"Likes")+stat(a.points||0,"Points")+stat(c.averageScore||0,"Avg score")+stat(r.count||0,"Referrals")+'</div>');
- }catch(e){}
- bindSuiteButtons(b);return b;
+   if(s){
+     s.innerHTML=card(
+       "LIVE METRICS",
+       '<div class="rz-suite-stats">'+
+         stat(a.posts||0,"Posts")+
+         stat(a.followers||0,"Followers")+
+         stat(a.likes||0,"Likes")+
+         stat(a.points||0,"Points")+
+         stat(c.averageScore||0,"Avg score")+
+         stat(r.count||0,"Referrals")+
+       '</div>'
+     );
+   }
+   var actions=document.getElementById("rzSuitePremiumActions");
+   if(actions){
+     var bill="";
+     if(p.active){
+       bill=card(
+         "BILLING",
+         '<p class="rz-muted">Provider: '+esc(p.provider||"Paystack")+' · Status: '+esc(p.status||"active")+'</p>'+
+         (p.canCancel?
+           '<button id="rzPremiumCancel" class="rz-btn">Cancel renewal</button>':
+           '<p class="rz-mini">Cancellation becomes available once the recurring subscription credentials are received.</p>')
+       );
+     }else if(p.configured){
+       bill=card(
+         "UPGRADE",
+         '<p class="rz-muted">Start the RIZORA Premium monthly subscription. You will continue through the secure Paystack checkout.</p>'+
+         '<button id="rzPremiumSubscribe" class="rz-btn primary">Start Premium</button>'
+       );
+     }else{
+       bill=card(
+         "COMING ONLINE",
+         '<p class="rz-muted">Premium billing is not configured on the RIZORA server yet. The feature gate is already wired; no fake payment button is shown.</p>'
+       );
+     }
+     actions.innerHTML=bill;
+     var sub=document.getElementById("rzPremiumSubscribe");
+     if(sub){
+       sub.onclick=async function(){
+         try{
+           var d=await api("/api/v2/premium/subscribe",{method:"POST",body:"{}"});
+           if(d.authorizationUrl) window.location.href=d.authorizationUrl;
+           else toast("Premium checkout could not be started.");
+         }catch(e){toast(e.message);}
+       };
+     }
+     var cancel=document.getElementById("rzPremiumCancel");
+     if(cancel){
+       cancel.onclick=async function(){
+         if(!window.confirm("Stop automatic renewal for RIZORA Premium?"))return;
+         try{
+           await api("/api/v2/premium/cancel",{method:"POST",body:"{}"});
+           toast("Premium renewal cancelled.");
+           premium();
+         }catch(e){toast(e.message);}
+       };
+     }
+   }
+ }catch(e){
+   var errorBox=document.getElementById("rzSuitePremiumStatus");
+   if(errorBox)errorBox.innerHTML=card("PREMIUM STATUS",'<p class="rz-error">'+esc(e.message)+'</p>');
+ }
+ bindSuiteButtons(b);
+ return b;
 }
 async function analytics(){
  var b=modal("Advanced Analytics","Live platform metrics plus the original creator-scoring analytics.",'<div id="rzSuiteAnalytics">'+card("ANALYTICS","<div class='rz-empty'>Loading…</div>")+'</div>');

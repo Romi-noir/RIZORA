@@ -95,8 +95,55 @@
       bindTabs();
     }catch(e){notify(e.message);}
   }
+
+  async function insights(prefill) {
+    var q = String(prefill || "").trim();
+    try {
+      var d = await api("/api/v2/search-insights?q=" + encodeURIComponent(q));
+      var x = d.insights || {};
+      var trending = (x.trending || []).slice(0, 12);
+      var creators = (x.creators || []).slice(0, 8);
+      var prompts = (x.prompts || []).slice(0, 8);
+      shell("Search Insights",
+        '<div class="rz-global-tabs"><button class="rz-btn" data-global-tab="assistant">Assistant</button><button class="rz-btn" data-global-tab="channels">Broadcast</button><button class="rz-btn" data-global-tab="feeds">Custom feeds</button><button class="rz-btn primary" data-global-tab="insights">Search Insights</button></div>' +
+        '<div class="rz-global-card"><form id="rzInsightSearch" class="rz-global-compose"><input id="rzInsightQuery" class="rz-input" value="' + esc(q) + '" maxlength="80" placeholder="Search a topic, niche or hashtag — e.g. afrobeats, coding, football"><button class="rz-btn primary">Explore creator signals</button></form><p class="rz-mini">Built from activity inside RIZORA. This is a discovery signal, not external search-volume data.</p></div>' +
+        '<section class="rz-global-grid">' +
+          '<div class="rz-global-stat"><span>Topic</span><strong>' + esc(q ? "#" + q : "RIZORA") + '</strong></div>' +
+          '<div class="rz-global-stat"><span>Signals</span><strong>' + Number(trending.length) + '</strong></div>' +
+          '<div class="rz-global-stat"><span>Creators</span><strong>' + Number(creators.length) + '</strong></div>' +
+          '<div class="rz-global-stat"><span>Window</span><strong>7d</strong></div>' +
+        '</section>' +
+        '<div class="rz-global-list">' +
+          '<section class="rz-global-card"><div class="rz-kicker">TRENDING TOPICS</div><h3>What is moving inside RIZORA</h3>' +
+            (trending.length ? trending.map(function(t){
+              return '<button class="rz-global-action" data-insight-tag="' + esc(t.tag) + '"><strong>#' + esc(t.tag) + '</strong><span>' +
+                Number(t.recentPosts || 0) + ' recent post(s) · ' + Number(t.engagement || 0) + ' engagement · ' + (Number(t.growthPercent || 0) >= 0 ? "+" : "") + Number(t.growthPercent || 0) + '% vs previous 7d</span></button>';
+            }).join("") : '<div class="rz-empty">No trend signals yet. Post with a clear topic or hashtag to start building the signal.</div>') +
+          '</section>' +
+          '<section class="rz-global-card"><div class="rz-kicker">CREATOR DISCOVERY</div><h3>Creators publishing around this topic</h3>' +
+            (creators.length ? creators.map(function(c){
+              return '<div class="rz-global-action"><strong>@' + esc((c.creator && (c.creator.publicUsername || c.creator.username)) || "creator") + '</strong><span>' +
+                Number(c.posts || 0) + ' matching post(s) · ' + Number(c.engagement || 0) + ' engagement · ' + Number(c.signal || 0) + ' avg signal</span></div>';
+            }).join("") : '<div class="rz-empty">No matching creators yet.</div>') +
+          '</section>' +
+          '<section class="rz-global-card"><div class="rz-kicker">CONTENT STARTERS</div><h3>Turn a signal into your next post</h3>' +
+            (prompts.length ? prompts.map(function(p){
+              return '<button class="rz-global-action" data-insight-prompt="' + esc(p.prompt) + '"><strong>#' + esc(p.tag) + '</strong><span>' + esc(p.prompt) + '</span></button>';
+            }).join("") : '<div class="rz-empty">Publish around a topic to generate starters here.</div>') +
+          '</section>' +
+        '</div>');
+      bindTabs();
+      var form=document.getElementById("rzInsightSearch");
+      if(form)form.onsubmit=function(e){e.preventDefault();insights(document.getElementById("rzInsightQuery").value);};
+      document.querySelectorAll("[data-insight-tag]").forEach(function(btn){btn.onclick=function(){insights(btn.getAttribute("data-insight-tag"));};});
+      document.querySelectorAll("[data-insight-prompt]").forEach(function(btn){btn.onclick=function(){if(window.RIZORA_GLOBAL&&window.RIZORA_GLOBAL.assistant)return window.RIZORA_GLOBAL.assistant(btn.getAttribute("data-insight-prompt"));};});
+    } catch(e) {
+      notify(e.message);
+    }
+  }
+
   function bindTabs(){
-    document.querySelectorAll("[data-global-tab]").forEach(function(btn){btn.onclick=function(){var t=btn.getAttribute("data-global-tab");if(t==="assistant")assistant();if(t==="channels")channels();if(t==="feeds")feeds();};});
+    document.querySelectorAll("[data-global-tab]").forEach(function(btn){btn.onclick=function(){var t=btn.getAttribute("data-global-tab");if(t==="assistant")assistant();if(t==="channels")channels();if(t==="feeds")feeds();if(t==="insights")insights();};});
   }
   async function mount(){
     if(mounted||document.getElementById("rzCreatorDesk"))return;
@@ -109,6 +156,6 @@
     document.body.appendChild(b);
   }
   function boot(){setTimeout(mount,700);setInterval(mount,2000);}
-  window.RIZORA_GLOBAL={assistant:assistant,channels:channels,feeds:feeds};
+  window.RIZORA_GLOBAL={assistant:assistant,channels:channels,feeds:feeds,insights:insights};
   boot();
 })();

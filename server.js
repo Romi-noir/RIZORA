@@ -15,6 +15,7 @@ const { publishDueSchedules } = require("./rizora-v2-growth");
 const { handleRizoraGlobal } = require("./rizora-v2-global");
 const { handleRizoraSeries } = require("./rizora-v2-series");
 const { handleRizoraEvents } = require("./rizora-v2-events");
+const { handleRizoraLabs } = require("./rizora-v2-labs");
 const { handleRizoraEnterprise } = require("./rizora-v2-enterprise");
 
 const PORT = Number(process.env.PORT || 3000);
@@ -2233,6 +2234,7 @@ async function handleRequest(
   if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
   if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
   if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
+  if (await handleRizoraLabs({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
   if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
   if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
 

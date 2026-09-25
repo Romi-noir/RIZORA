@@ -55,7 +55,7 @@ async function freeMembership(){
   m.querySelector("#rzFreeTierForm").onsubmit=async function(e){
     e.preventDefault();var f=e.target,s=m.querySelector("#rzFreeTierStatus");
     try{
-      var d=await api("/api/v2/memberships/tiers",{method:"POST",body:JSON.stringify({
+      var d=await api("/api/v2/memberships/free-tiers",{method:"POST",body:JSON.stringify({
         name:f.name.value,description:f.description.value,perks:f.perks.value.split(",").map(function(x){return x.trim();}).filter(Boolean),priceNaira:0
       })});
       s.textContent=d.existing?"This free tier already exists.":"Free membership tier created.";
@@ -73,7 +73,7 @@ function membershipGift(){
   m.querySelector("#rzGiftForm").onsubmit=async function(e){
     e.preventDefault();var f=e.target,s=m.querySelector("#rzGiftStatus");
     try{
-      await api("/api/v2/memberships/tiers/"+encodeURIComponent(f.tier.value.trim())+"/gift",{method:"POST",body:JSON.stringify({username:f.username.value.trim(),days:Number(f.days.value)})});
+      await api("/api/v2/memberships/free-tiers/"+encodeURIComponent(f.tier.value.trim())+"/gift",{method:"POST",body:JSON.stringify({username:f.username.value.trim(),days:Number(f.days.value)})});
       s.textContent="Gift access created.";
     }catch(err){s.textContent=err.message;}
   };

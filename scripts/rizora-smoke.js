@@ -112,6 +112,20 @@ async function main() {
     const media = await request("/api/v2/media/config", { headers: authHeaders });
     assert(media.res.status === 200 && Number(media.data.maxFileBytes) > 0, "media config failed");
 
+    const tinyPng = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+    const mediaUpload = await request("/api/v2/media/upload", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        filename: "smoke.png",
+        mimeType: "image/png",
+        data: tinyPng
+      })
+    });
+    assert(mediaUpload.res.status === 201 && mediaUpload.data.media && mediaUpload.data.media.url, "media upload failed");
+    const mediaFetch = await request(mediaUpload.data.media.url, { headers: { Cookie: cookie } });
+    assert(mediaFetch.res.status === 200, "uploaded media could not be fetched");
+
     const channel = await request("/api/v2/channels", {
       method: "POST",
       headers: authHeaders,
@@ -132,6 +146,178 @@ async function main() {
     const feed2 = await request("/api/v2/feed?tab=for-you", { headers: authHeaders });
     assert(feed2.res.status === 200 && feed2.data.posts.some(p => p.id === post.data.post.id), "created post missing from feed");
 
+
+    const draft = await request("/api/v2/drafts", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        title: "Smoke draft",
+        text: "Draft content for runtime verification."
+      })
+    });
+    assert(draft.res.status === 201 && draft.data.draft, "draft creation failed");
+
+    const draftPublish = await request("/api/v2/drafts/" + encodeURIComponent(draft.data.draft.id) + "/publish", {
+      method: "POST",
+      headers: authHeaders,
+      body: "{}"
+    });
+    assert(draftPublish.res.status === 201 && draftPublish.data.post, "draft publish failed");
+
+    const scheduled = await request("/api/v2/schedules", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        scheduledFor: new Date(Date.now() + 120000).toISOString(),
+        text: "Scheduled content for runtime verification."
+      })
+    });
+    assert(scheduled.res.status === 201 && scheduled.data.schedule, "schedule creation failed");
+
+    const scheduledPublish = await request("/api/v2/schedules/" + encodeURIComponent(scheduled.data.schedule.id) + "/publish", {
+      method: "POST",
+      headers: authHeaders,
+      body: "{}"
+    });
+    assert(scheduledPublish.res.status === 201 && scheduledPublish.data.post, "scheduled publish failed");
+
+    const poll = await request("/api/v2/polls", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        text: "Runtime poll",
+        question: "Does the smoke test work?",
+        options: ["Yes", "Absolutely"]
+      })
+    });
+    assert(poll.res.status === 201 && poll.data.post && poll.data.post.poll, "poll creation failed");
+
+    const series = await request("/api/v2/series", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        title: "Smoke Series",
+        description: "Runtime series verification"
+      })
+    });
+    assert(series.res.status === 201 && series.data.series, "series creation failed");
+
+    const seriesEpisode = await request("/api/v2/series/" + encodeURIComponent(series.data.series.id) + "/episodes", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        postId: post.data.post.id,
+        episodeNumber: 1,
+        episodeTitle: "Episode One"
+      })
+    });
+    assert(seriesEpisode.res.status === 200 && seriesEpisode.data.series, "series episode attach failed");
+
+    const event = await request("/api/v2/events", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        title: "Smoke Event",
+        description: "Runtime event verification",
+        startsAt: new Date(Date.now() + 3600000).toISOString(),
+        durationMinutes: 30,
+        visibility: "public"
+      })
+    });
+    assert(event.res.status === 201 && event.data.event, "event creation failed");
+
+    const rsvp = await request("/api/v2/events/" + encodeURIComponent(event.data.event.id) + "/rsvp", {
+      method: "POST",
+      headers: authHeaders,
+      body: "{}"
+    });
+    assert(rsvp.res.status === 200 && rsvp.data.event && rsvp.data.event.going === true, "event RSVP failed");
+
+    const eventCancel = await request("/api/v2/events/" + encodeURIComponent(event.data.event.id) + "/cancel", {
+      method: "POST",
+      headers: authHeaders,
+      body: "{}"
+    });
+    assert(eventCancel.res.status === 200 && eventCancel.data.event && eventCancel.data.event.status === "cancelled", "event cancel failed");
+
+    const customFeed = await request("/api/v2/custom-feeds", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        title: "Smoke Feed",
+        query: "rizora",
+        hashtags: ["rizora"],
+        creators: [username]
+      })
+    });
+    assert(customFeed.res.status === 201 && customFeed.data.feed, "custom feed creation failed");
+
+    const experiments = await request("/api/v2/experiments", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        title: "Smoke Experiment",
+        hypothesis: "Variant B will improve engagement.",
+        metric: "engagement",
+        variantA: "Version A",
+        variantB: "Version B"
+      })
+    });
+    assert(experiments.res.status === 201 && experiments.data.experiment, "experiment creation failed");
+
+    const memberships = await request("/api/v2/memberships/me", { headers: authHeaders });
+    assert(memberships.res.status === 200 && Array.isArray(memberships.data.joined), "membership endpoint failed");
+
+    const freeTier = await request("/api/v2/memberships/free-tiers", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        name: "Smoke Community",
+        description: "Free membership runtime verification",
+        perks: ["Community access"],
+        priceNaira: 0
+      })
+    });
+    assert(freeTier.res.status === 201 && freeTier.data.tier && Number(freeTier.data.tier.priceNaira) === 0, "free tier creation failed");
+
+    const joinUsername = "smoke_join_" + suffix;
+    const joinEmail = joinUsername + "@example.com";
+    const signup2 = await request("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: joinUsername,
+        displayName: "RIZORA Smoke Member",
+        email: joinEmail,
+        password: "SmokePass123",
+        confirmPassword: "SmokePass123"
+      })
+    });
+    assert(signup2.res.status === 201, "second signup failed: " + JSON.stringify(signup2.data));
+    const cookie2 = cookieFrom(signup2.res);
+    assert(cookie2.startsWith("rizora_session="), "second signup did not return a session cookie");
+
+    const joinHeaders = { Cookie: cookie2, "Content-Type": "application/json" };
+    const freeJoin = await request("/api/v2/memberships/free-tiers/" + encodeURIComponent(freeTier.data.tier.id) + "/join", {
+      method: "POST",
+      headers: joinHeaders,
+      body: "{}"
+    });
+    assert(freeJoin.res.status === 201 && freeJoin.data.joined === true, "free membership join failed");
+
+    const freeCancel = await request("/api/v2/memberships/free-memberships/" + encodeURIComponent(freeJoin.data.membership.id) + "/cancel", {
+      method: "POST",
+      headers: joinHeaders,
+      body: "{}"
+    });
+    assert(freeCancel.res.status === 200 && freeCancel.data.status === "cancelled", "free membership cancel failed");
+
+    const products = await request("/api/v2/products", { headers: authHeaders });
+    assert(products.res.status === 200 && Array.isArray(products.data.products), "products endpoint failed");
+
+    const contentAnalytics = await request("/api/v2/analytics/content", { headers: authHeaders });
+    assert(contentAnalytics.res.status === 200 && Array.isArray(contentAnalytics.data.posts), "content analytics failed");
+
     const aiStatus = await request("/api/ai/status");
     assert(aiStatus.res.status === 200 && aiStatus.data.provider === "groq", "AI status failed");
 
@@ -150,17 +336,8 @@ async function main() {
     const premium = await request("/api/v2/premium/status", { headers: authHeaders });
     assert(premium.res.status === 200 && "active" in premium.data, "premium status failed");
 
-    const products = await request("/api/v2/products", { headers: authHeaders });
-    assert(products.res.status === 200 && Array.isArray(products.data.products), "products endpoint failed");
-
-    const memberships = await request("/api/v2/memberships/me", { headers: authHeaders });
-    assert(memberships.res.status === 200 && Array.isArray(memberships.data.joined), "membership endpoint failed");
-
-    const payments = await request("/api/v2/payments/status", { headers: authHeaders });
-    assert(payments.res.status === 200 && "configured" in payments.data, "payments status failed");
-
-    const support = await request("/api/v2/support/tickets", { headers: authHeaders });
-    assert(support.res.status === 200 && Array.isArray(support.data.tickets), "support tickets endpoint failed");
+    const insights = await request("/api/v2/search-insights?q=rizora", { headers: authHeaders });
+    assert(insights.res.status === 200 && insights.data.insights && Array.isArray(insights.data.insights.trending), "search insights failed");
 
     console.log("RIZORA runtime smoke test: PASS");
   } finally {

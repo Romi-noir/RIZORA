@@ -109,6 +109,135 @@ function assistantBrief(db, user) {
   };
 }
 
+
+function searchInsights(db, query) {
+  var q = String(query || "").trim().toLowerCase();
+  var posts = db.rzV2.posts || [];
+  var nowMs = Date.now();
+  var day = 24 * 60 * 60 * 1000;
+  var recentStart = nowMs - (7 * day);
+  var previousStart = nowMs - (14 * day);
+
+  var likeCounts = {};
+  var commentCounts = {};
+  var saveCounts = {};
+  var repostCounts = {};
+
+  (db.rzV2.likes || []).forEach(function(x) { likeCounts[x.postId] = Number(likeCounts[x.postId] || 0) + 1; });
+  (db.rzV2.comments || []).forEach(function(x) { commentCounts[x.postId] = Number(commentCounts[x.postId] || 0) + 1; });
+  (db.rzV2.saves || []).forEach(function(x) { saveCounts[x.postId] = Number(saveCounts[x.postId] || 0) + 1; });
+  (db.rzV2.reposts || []).forEach(function(x) { repostCounts[x.postId] = Number(repostCounts[x.postId] || 0) + 1; });
+
+  function engagement(post) {
+    return Number(likeCounts[post.id] || 0) +
+      Number(commentCounts[post.id] || 0) +
+      Number(saveCounts[post.id] || 0) +
+      Number(repostCounts[post.id] || 0);
+  }
+
+  function tagsFor(post) {
+    return (post.hashtags || []).map(function(tag) {
+      return String(tag || "").replace(/^#/, "").trim().toLowerCase();
+    }).filter(function(tag) {
+      return /^[a-z0-9_.-]{2,40}$/.test(tag);
+    });
+  }
+
+  var tagStats = {};
+  function addTagSignals(post, bucket) {
+    tagsFor(post).forEach(function(tag) {
+      tagStats[tag] = tagStats[tag] || {tag:tag,recentPosts:0,previousPosts:0,recentEngagement:0,previousEngagement:0};
+      if (bucket === "recent") {
+        tagStats[tag].recentPosts += 1;
+        tagStats[tag].recentEngagement += engagement(post);
+      } else {
+        tagStats[tag].previousPosts += 1;
+        tagStats[tag].previousEngagement += engagement(post);
+      }
+    });
+  }
+
+  posts.forEach(function(post) {
+    var created = new Date(post.createdAt || 0).getTime();
+    if (!Number.isFinite(created)) return;
+    if (created >= recentStart) addTagSignals(post, "recent");
+    else if (created >= previousStart) addTagSignals(post, "previous");
+  });
+
+  var trending = Object.keys(tagStats).map(function(tag) {
+    var x = tagStats[tag];
+    var growth = x.previousPosts > 0
+      ? Math.round(((x.recentPosts - x.previousPosts) / x.previousPosts) * 100)
+      : (x.recentPosts > 0 ? 100 : 0);
+    var velocity = x.previousPosts > 0 ? x.recentPosts / x.previousPosts : (x.recentPosts ? 1.5 : 0);
+    var score = Math.round(((x.recentPosts * 2) + x.recentEngagement) * velocity * 10) / 10;
+    return {
+      tag:x.tag,
+      recentPosts:x.recentPosts,
+      previousPosts:x.previousPosts,
+      growthPercent:growth,
+      engagement:x.recentEngagement,
+      score:score
+    };
+  }).filter(function(x) {
+    return x.recentPosts > 0;
+  }).sort(function(a,b) {
+    return b.score - a.score || b.recentPosts - a.recentPosts || a.tag.localeCompare(b.tag);
+  }).slice(0, 15);
+
+  function matches(post) {
+    if (!q) return true;
+    var text = String(post.text || "").toLowerCase();
+    if (text.includes(q)) return true;
+    return tagsFor(post).some(function(tag) { return tag.includes(q); });
+  }
+
+  var matched = posts.filter(matches).slice().sort(function(a,b) {
+    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+  }).slice(0, 80);
+
+  var creatorStats = {};
+  matched.forEach(function(post) {
+    var author = publicUser(db, post.userId);
+    if (!author) return;
+    creatorStats[author.id] = creatorStats[author.id] || {creator:author,posts:0,engagement:0};
+    creatorStats[author.id].posts += 1;
+    creatorStats[author.id].engagement += engagement(post);
+  });
+
+  var creators = Object.keys(creatorStats).map(function(id) {
+    var x = creatorStats[id];
+    return {
+      creator:x.creator,
+      posts:x.posts,
+      engagement:x.engagement,
+      signal:x.posts ? Math.round((x.engagement / x.posts) * 10) / 10 : 0
+    };
+  }).sort(function(a,b) {
+    return b.signal - a.signal || b.posts - a.posts;
+  }).slice(0, 10);
+
+  var queryTopics = trending.filter(function(x) { return !q || x.tag.includes(q); }).slice(0, 10);
+  var prompts = (q ? queryTopics : trending.slice(0, 8)).map(function(x) {
+    return {
+      tag:x.tag,
+      prompt:"Create a useful post around #" + x.tag + " with a clear point of view and one call-to-action."
+    };
+  });
+
+  return {
+    generatedAt:isoNow(),
+    query:q,
+    source:"RIZORA on-platform activity",
+    windowDays:7,
+    trending:trending,
+    topics:queryTopics,
+    creators:creators,
+    prompts:prompts,
+    note:"Signals are calculated from activity inside RIZORA. They are not external search-volume measurements."
+  };
+}
+
 async function handleRizoraGlobal(ctx) {
   var req = ctx.req, res = ctx.res, db = ctx.db;
   ensureGlobal(db);
@@ -278,6 +407,14 @@ async function handleRizoraGlobal(ctx) {
       return {id:p.id, text:p.text, mediaUrl:p.mediaUrl || "", hashtags:p.hashtags || [], createdAt:p.createdAt, author:author, likes:likeCount, comments:commentCount};
     }).filter(Boolean);
     ctx.sendJSON(res, 200, {success:true, feed:own, posts:decorated});
+    return true;
+  }
+
+
+  if (pathname === "/api/v2/search-insights" && method === "GET") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    var insightQuery = clean(ctx, new URL(req.url, "http://rizora.local").searchParams.get("q") || "", 80);
+    ctx.sendJSON(res, 200, {success:true, insights:searchInsights(db, insightQuery)});
     return true;
   }
 
