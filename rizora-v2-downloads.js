@@ -58,29 +58,38 @@
   }
 
   function drawWatermark(ctx,w,h,logo){
-    var pad=Math.max(18,Math.round(Math.min(w,h)*0.028));
-    var boxH=Math.max(44,Math.round(Math.min(w,h)*0.095));
-    var logoSize=Math.max(28,Math.round(boxH*0.72));
-    var x=w-pad-logoSize;
-    var y=pad;
+    var min=Math.min(w,h);
+    var pad=Math.max(14,Math.round(min*0.022));
+    var logoSize=Math.max(22,Math.min(52,Math.round(min*0.055)));
+    var fontSize=Math.max(13,Math.min(24,Math.round(min*0.024)));
+    var gap=Math.max(8,Math.round(logoSize*0.28));
+    var textWidth=Math.ceil(ctx.measureText(WATERMARK_TEXT).width);
     ctx.save();
-    ctx.globalAlpha=0.82;
-    ctx.shadowColor="rgba(0,0,0,.35)";
-    ctx.shadowBlur=12;
-    ctx.drawImage(logo,x,y,logoSize,logoSize);
+    ctx.font="800 "+fontSize+"px system-ui,-apple-system,Segoe UI,sans-serif";
+    textWidth=Math.ceil(ctx.measureText(WATERMARK_TEXT).width);
+    var pillH=Math.max(logoSize+12,fontSize+18);
+    var pillW=logoSize+gap+textWidth+26;
+    var x=Math.max(pad,w-pad-pillW);
+    var y=pad;
+    var radius=Math.round(pillH/2);
+    ctx.globalAlpha=0.90;
+    ctx.fillStyle="rgba(7,5,13,.74)";
+    ctx.beginPath();
+    if(ctx.roundRect){
+      ctx.roundRect(x,y,pillW,pillH,radius);
+    }else{
+      ctx.rect(x,y,pillW,pillH);
+    }
+    ctx.fill();
+    ctx.globalAlpha=0.98;
+    ctx.shadowColor="rgba(0,0,0,.28)";
+    ctx.shadowBlur=10;
+    ctx.drawImage(logo,x+13,y+(pillH-logoSize)/2,logoSize,logoSize);
     ctx.shadowBlur=0;
-    ctx.font="700 "+Math.max(14,Math.round(boxH*0.34))+"px system-ui,-apple-system,Segoe UI,sans-serif";
-    ctx.textAlign="right";
+    ctx.fillStyle="rgba(255,255,255,.96)";
+    ctx.textAlign="left";
     ctx.textBaseline="middle";
-    ctx.fillStyle="rgba(255,255,255,.94)";
-    ctx.fillText(WATERMARK_TEXT,w-pad,y+logoSize+Math.max(18,Math.round(boxH*.5)));
-    ctx.globalAlpha=0.15;
-    ctx.fillStyle="#ffffff";
-    ctx.fillRect(w-pad-260,h-pad-34,260,34);
-    ctx.globalAlpha=0.72;
-    ctx.fillStyle="#ffffff";
-    ctx.font="800 12px system-ui,-apple-system,Segoe UI,sans-serif";
-    ctx.fillText("RIZORA",w-pad-14,h-pad-14);
+    ctx.fillText(WATERMARK_TEXT,x+13+logoSize+gap,y+pillH/2);
     ctx.restore();
   }
 
@@ -102,7 +111,7 @@
         canvas.toBlob(function(b){b?resolve(b):reject(new Error("Could not encode the watermarked image."));},mime,0.94);
       });
       var original=filenameFromUrl(url,"rizora-image");
-      var base=original.replace(/.[^.]+$/,"");
+      var base=original.replace(/\\.[^.]+$/,"");
       trigger(out,base+"-RIZORA-watermarked."+(mime==="image/webp"?"webp":"png"));
       toast("Watermarked RIZORA download ready.");
     }finally{URL.revokeObjectURL(src);}
@@ -162,7 +171,7 @@
       await done;
       var out=new Blob(chunks,{type:mime});
       var original=filenameFromUrl(url,"rizora-video");
-      var base=original.replace(/.[^.]+$/,"");
+      var base=original.replace(/\\.[^.]+$/,"");
       trigger(out,base+"-RIZORA-watermarked.webm");
       toast("Watermarked RIZORA video ready.");
     }catch(e){
