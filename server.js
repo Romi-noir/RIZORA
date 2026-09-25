@@ -11,6 +11,7 @@ require("dotenv").config();
 const { OAuth2Client } =
   require("google-auth-library");
 const { handleRizoraV2 } = require("./rizora-v2-backend");
+const { publishDueSchedules } = require("./rizora-v2-growth");
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -9723,6 +9724,15 @@ function rzSocialNotify(
 
 }
 
+const RIZORA_SCHEDULE_PUBLISHER = setInterval(() => {
+  try {
+    const scheduledDb = loadDB();
+    publishDueSchedules(scheduledDb, { saveDB, cleanString, uid });
+  } catch (error) {
+    console.error("RIZORA scheduler error:", error);
+  }
+}, 30000);
+
 const server =
   http.createServer(
     requestHandler
@@ -9782,6 +9792,8 @@ function shutdown(signal) {
   console.log(
     `\n${signal} received. Shutting down...`
   );
+
+  clearInterval(RIZORA_SCHEDULE_PUBLISHER);
 
   server.close(
     () => {
