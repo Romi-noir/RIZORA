@@ -398,10 +398,18 @@ async function handleRizoraEnterprise(ctx) {
   // Paystack webhook: no user session is required.
   if (path === "/api/paystack/webhook" && method === "POST") {
     if (!paystackConfigured()) { ctx.sendError(res, 503, "Paystack webhook is not configured."); return true; }
-    const raw = await readBody(req, 500000);
+    let rawText = "";
+    for await (const chunk of req) {
+      rawText += chunk.toString();
+      if (rawText.length > 500000) { ctx.sendError(res, 413, "Webhook body too large."); return true; }
+    }
+    let raw;
+    try { raw = rawText ? JSON.parse(rawText) : {}; } catch (_) { ctx.sendError(res, 400, "Invalid webhook JSON."); return true; }
     const signature = String(req.headers["x-paystack-signature"] || "");
-    const expected = crypto.createHmac("sha512", String(process.env.PAYSTACK_SECRET_KEY)).update(JSON.stringify(raw)).digest("hex");
-    if (!signature || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+    const expected = crypto.createHmac("sha512", String(process.env.PAYSTACK_SECRET_KEY)).update(rawText, "utf8").digest("hex");
+    const sigBuf = Buffer.from(signature, "utf8");
+    const expBuf = Buffer.from(expected, "utf8");
+    if (!signature || sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
       ctx.sendError(res, 401, "Invalid webhook signature."); return true;
     }
     const event = raw && raw.event ? raw.event : "";
