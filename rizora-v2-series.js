@@ -98,6 +98,15 @@ async function handleRizoraSeries(ctx) {
     return true;
   }
 
+  if (path === "/api/v2/series/posts/mine" && method === "GET") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    const posts = (db.rzV2.posts || []).filter(function(p) { return p.userId === user.id; })
+      .slice().sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); }).slice(0,100)
+      .map(function(p){ return {id:p.id,text:p.text||"",mediaUrl:p.mediaUrl||"",createdAt:p.createdAt,seriesId:p.seriesId||null,seriesEpisodeNumber:p.seriesEpisodeNumber||null}; });
+    ctx.sendJSON(res,200,{success:true,posts:posts});
+    return true;
+  }
+
   if (path === "/api/v2/series" && method === "POST") {
     if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
     if (user.status !== "active" || user.postingRestricted === true) {
