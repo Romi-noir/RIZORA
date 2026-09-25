@@ -399,6 +399,82 @@ function getPublicBaseURL(req) {
 // PASSWORD HASHING
 // ============================================================
 
+
+function hashPasswordSync(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derived = crypto.pbkdf2Sync(
+    String(password),
+    salt,
+    120000,
+    64,
+    "sha512"
+  );
+  return salt + ":" + derived.toString("hex");
+}
+
+function ensureOfficialPlatformAccount(db) {
+  let account = db.users.find(function(user) {
+    return normalizeUsername(user.username) === "rizora";
+  });
+
+  const configuredPassword = String(
+    process.env.RIZORA_OFFICIAL_PASSWORD || ""
+  ).trim();
+  const configuredEmail = normalizeEmail(
+    process.env.RIZORA_OFFICIAL_EMAIL ||
+    "official@rizora.com.ng"
+  );
+
+  if (!account) {
+    account = {
+      id: "usr_rizora",
+      username: "rizora",
+      publicUsername: "rizora",
+      displayName: "RIZORA",
+      email: configuredEmail,
+      passwordHash: configuredPassword
+        ? hashPasswordSync(configuredPassword)
+        : "",
+      passwordSetupRequired: !configuredPassword,
+      role: "official_platform",
+      status: "active",
+      points: 0,
+      referralCode: randomReferralCode("rizora"),
+      referredBy: null,
+      referralCount: 0,
+      verified: true,
+      verificationStatus: "verified",
+      verificationType: "official_platform",
+      official: true,
+      accountType: "platform",
+      createdAt: new Date().toISOString(),
+      lastLoginAt: null,
+      avatarUrl: "/rizora-cover.png"
+    };
+
+    db.users.push(account);
+  } else {
+    account.publicUsername = "rizora";
+    account.displayName = "RIZORA";
+    account.email = account.email || configuredEmail;
+    account.role = "official_platform";
+    account.status = "active";
+    account.verified = true;
+    account.verificationStatus = "verified";
+    account.verificationType = "official_platform";
+    account.official = true;
+    account.accountType = "platform";
+    account.avatarUrl = account.avatarUrl || "/rizora-cover.png";
+
+    if (configuredPassword) {
+      account.passwordHash = hashPasswordSync(configuredPassword);
+      account.passwordSetupRequired = false;
+    }
+  }
+
+  return account;
+}
+
 function hashPassword(password) {
   return new Promise((resolve, reject) => {
     const salt = crypto.randomBytes(16).toString("hex");
@@ -9296,7 +9372,8 @@ function seedDatabase() {
   const db = loadDB();
 
   seedTasks(db);
-seedRizoraOfficialIdentities(db);
+  seedRizoraOfficialIdentities(db);
+  ensureOfficialPlatformAccount(db);
 
   let changed = false;
 
