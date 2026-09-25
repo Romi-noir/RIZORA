@@ -179,7 +179,17 @@ function injectTools(){
   box.innerHTML='<div class="rz-enterprise-heading">PLATFORM</div>'+btn("Help Center","support")+btn("Premium","premium")+btn("Channels","channels")+btn("Creator Shop","shop")+btn("Wallet & Payments","wallet")+btn("Creator Profiles","creator")+btn("Report & Safety","report")+btn("Boost Network","boosts")+btn("Super Admin","admin");
   aside.appendChild(box);bindView();
 }
+async function premiumReturnCheck(){
+  var q=new URLSearchParams(location.search);
+  var ref=q.get("reference")||q.get("trxref");
+  if(!ref)return;
+  try{
+    var d=await api("/api/v2/premium/verify/"+encodeURIComponent(ref));
+    if(d.active){toast("RIZORA Premium is now active.");if(history&&history.replaceState)history.replaceState({},document.title,location.pathname);}
+  }catch(_){}
+}
 function boot(){
+  premiumReturnCheck();
   injectTools();
   injectPasswordToggles();
   var mo=new MutationObserver(function(){injectTools();injectPasswordToggles();});
