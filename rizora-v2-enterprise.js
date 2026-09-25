@@ -254,7 +254,7 @@ async function handleRizoraEnterprise(ctx) {
     ctx.sendJSON(res,201,{success:true,plan});
     return true;
   }
-  const planMatch = path.match(/^/api/v2/plans/([^/]+)/cancel$/);
+  const planMatch = path.match(/^\/api\/v2\/plans\/([^/]+)\/cancel$/);
   if (planMatch && method === "POST") {
     if (!user) { ctx.sendError(res,401,"Authentication required."); return true; }
     const plan=db.rzV2.creatorPlans.find(x=>x.id===planMatch[1]&&x.userId===user.id);
