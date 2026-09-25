@@ -1,0 +1,22 @@
+.rz-business-overlay{position:fixed;inset:0;z-index:10000;background:rgba(3,2,8,.82);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:18px}
+.rz-business-panel{width:min(980px,100%);max-height:92vh;overflow:auto;background:linear-gradient(145deg,rgba(20,14,32,.98),rgba(10,8,18,.99));border:1px solid rgba(168,114,255,.28);box-shadow:0 30px 90px rgba(0,0,0,.5);border-radius:24px;padding:22px}
+.rz-business-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.rz-business-head h2{margin:.25rem 0 0}
+.rz-business-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.rz-business-stat{padding:16px;border:1px solid var(--line,#282033);background:rgba(255,255,255,.025);border-radius:16px}
+.rz-business-stat span,.rz-business-stat small{display:block;color:var(--muted,#a9a0b8);font-size:.82rem}
+.rz-business-stat strong{display:block;font-size:1.35rem;margin:.25rem 0}
+.rz-business-card{padding:18px;border:1px solid var(--line,#282033);background:rgba(255,255,255,.02);border-radius:18px;margin-top:12px}
+.rz-business-card h3{margin:.35rem 0}
+.rz-business-card p{color:var(--muted,#a9a0b8);line-height:1.6}
+.rz-business-card-head{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.rz-business-card-head span{color:var(--muted,#a9a0b8);font-size:.85rem}
+.rz-business-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.rz-business-table{display:flex;flex-direction:column;gap:8px}
+.rz-business-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line,#282033);border-radius:14px}
+.rz-business-row strong{display:block}
+.rz-business-row small{display:block;color:var(--muted,#a9a0b8);font-size:.78rem}
+.rz-business-empty{padding:20px;color:var(--muted,#a9a0b8);text-align:center}
+.rz-business-form{display:grid;gap:10px;margin-top:12px}
+@media(max-width:720px){.rz-business-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rz-business-row{grid-template-columns:1fr auto}.rz-business-row>small{grid-column:1/-1}.rz-business-panel{padding:16px;border-radius:18px}}
+@media(max-width:460px){.rz-business-grid{grid-template-columns:1fr}.rz-business-head{align-items:center}.rz-business-head .rz-btn{flex:none}}
