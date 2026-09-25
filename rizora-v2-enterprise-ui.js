@@ -191,7 +191,7 @@ function injectTools(){
   if(document.body.classList.contains("rz-auth")||!document.querySelector(".rz-sidebar")||document.getElementById("rzEnterpriseTools"))return;
   var aside=document.querySelector(".rz-sidebar");if(!aside)return;
   var box=document.createElement("div");box.id="rzEnterpriseTools";box.className="rz-enterprise-tools";
-  box.innerHTML='<div class="rz-enterprise-heading">PLATFORM</div>'+btn("Help Center","support")+btn("Premium","premium")+btn("Channels","channels")+btn("Creator Shop","shop")+btn("Wallet & Payments","wallet")+btn("Creator Profiles","creator")+btn("Report & Safety","report")+btn("Boost Network","boosts")+btn("Super Admin","admin");
+  box.innerHTML='<div class="rz-enterprise-heading">PLATFORM</div>'+btn("Help Center","support")+btn("Premium","premium")+btn("Channels","channels")+btn("Creator Profiles","creator")+btn("Report & Safety","report")+btn("Boost Network","boosts")+btn("Super Admin","admin");
   aside.appendChild(box);bindView();
 }
 async function premiumReturnCheck(){
