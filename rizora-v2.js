@@ -1,6 +1,7 @@
 (function(){
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
+window.RIZORA_CURRENT_USER=null;
 var state={user:null,profile:null,view:"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[],stories:[],communities:[],conversations:[],opportunities:[],analytics:null,boosts:[],official:[],admin:null,adminVerification:[],onboarding:[]};
 
 function $(id){return document.getElementById(id);}
@@ -40,7 +41,7 @@ function auth(){
       var b={identifier:$("identifier").value,password:$("password").value};
       if(state.authMode==="signup"){b.username=$("username").value;b.displayName=$("displayName").value;b.email=$("email").value;b.confirmPassword=$("confirmPassword").value;}
       var d=await api(state.authMode==="signup"?"/api/auth/signup":"/api/auth/login",{method:"POST",body:JSON.stringify(b)});
-      state.user=d.user;await load();toast("Welcome to RIZORA.");
+      state.user=d.user;window.RIZORA_CURRENT_USER=state.user;await load();toast("Welcome to RIZORA.");
     }catch(err){$("authError").textContent=err.message;}
   };
   googleButton();
@@ -53,7 +54,7 @@ function googleButton(){
       if(window.google&&google.accounts&&google.accounts.id){
         clearInterval(tm);
         google.accounts.id.initialize({client_id:c.clientId,callback:function(r){
-          api("/api/auth/google",{method:"POST",body:JSON.stringify({credential:r.credential})}).then(function(d){state.user=d.user;load();}).catch(function(e){$("authError").textContent=e.message;});
+          api("/api/auth/google",{method:"POST",body:JSON.stringify({credential:r.credential})}).then(function(d){state.user=d.user;window.RIZORA_CURRENT_USER=state.user;load();}).catch(function(e){$("authError").textContent=e.message;});
         }});
         google.accounts.id.renderButton($("googleButton"),{theme:"outline",size:"large",width:380,text:"continue_with",shape:"rectangular"});
       }
