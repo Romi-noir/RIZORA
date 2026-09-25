@@ -251,7 +251,10 @@ async function handleRizoraEnterprise(ctx) {
         openTickets: tickets.filter(t => t.status !== "resolved").length,
         successfulPayments: tx.filter(t => t.status === "success").length,
         pendingPayments: tx.filter(t => ["initialized","pending"].includes(t.status)).length,
-        totalPoints: users.reduce((n,u) => n + Number(u.points || 0), 0)
+        totalPoints: users.reduce((n,u) => n + Number(u.points || 0), 0),
+        totalReferrals: Array.isArray(db.referrals) ? db.referrals.length : 0,
+        referralPoints: Array.isArray(db.referrals) ? db.referrals.reduce((n,r) => n + Number(r.reward || r.points || 0), 0) : 0,
+        totalAudits: Array.isArray(db.auditLogs) ? db.auditLogs.length : 0
       },
       latestReports: reports.slice().reverse().slice(0, 20),
       latestTickets: tickets.slice().reverse().slice(0, 20),
