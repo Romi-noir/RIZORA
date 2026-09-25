@@ -1,0 +1,51 @@
+name: RIZORA syntax check
+
+on:
+  push:
+    branches:
+      - rizora-v2-rebuild
+  pull_request:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Check JavaScript syntax
+        run: |
+          node --check server.js
+          node --check rizora-v2-media-backend.js
+          node --check rizora-v2-fans.js
+          node --check rizora-v2-backend.js
+          node --check rizora-v2-growth.js
+          node --check rizora-v2-modern.js
+          node --check rizora-v2-upgrades.js
+          node --check rizora-v2-upgrades-ui.js
+          node --check rizora-v2-platform.js
+          node --check rizora-v2-enterprise.js
+          node --check rizora-v2-suite.js
+          node --check rizora-v2-next.js
+          node --check rizora-v2-growth-ui.js
+          node --check rizora-v2-enterprise-ui.js
+          node --check rizora-v2-global.js
+          node --check rizora-v2-global-ui.js
+          node --check rizora-v2-modern-ui.js
+          node --check rizora-v2-media.js
+          node --check rizora-v2-business.js
+          node --check rizora-v2-business-ui.js
+          node --check rizora-v2.js
+          node --check rizora-v2-comments.js
+          node --check rizora-v2-comments-ui.js
+          node --check rizora-v2-series.js
+          node --check rizora-v2-series-ui.js
+          node --check rizora-v2-events.js
+          node --check rizora-v2-events-ui.js
+
+      - name: Runtime smoke test
+        run: node scripts/rizora-smoke.js

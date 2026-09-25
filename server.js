@@ -1,4 +1,4 @@
-// RIZORA Backend Ã¢â‚¬â€ Version 8.1.0
+// RIZORA Backend — Version 8.1.0
 // Clean copy-paste version
 
 "use strict";
@@ -10,6 +10,11 @@ const crypto = require("crypto");
 require("dotenv").config();
 const { OAuth2Client } =
   require("google-auth-library");
+const { handleRizoraV2 } = require("./rizora-v2-backend");
+const { publishDueSchedules } = require("./rizora-v2-growth");
+const { handleRizoraGlobal } = require("./rizora-v2-global");
+const { handleRizoraSeries } = require("./rizora-v2-series");
+const { handleRizoraEvents } = require("./rizora-v2-events");
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -205,19 +210,18 @@ function cleanString(value, max = 500) {
 
 function json(res, statusCode, data, extraHeaders = {}) {
   const body = JSON.stringify(data);
+  const origin = res.getHeader("Access-Control-Allow-Origin") || "https://rizora.com.ng";
 
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
-    "Access-Control-Allow-Origin":
-      "https://rizora.com.ng",
-    "Access-Control-Allow-Headers":
-      "Content-Type, Authorization",
-        "Access-Control-Allow-Credentials": "true",
-
-    "Access-Control-Allow-Methods":
-      "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Credentials": "true",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
     ...extraHeaders
   });
 
@@ -328,7 +332,10 @@ function safeUser(user) {
       user.official === true,
 
     accountType:
-      user.accountType || null
+      user.accountType || null,
+
+    twoFactorEnabled:
+      user.twoFactorEnabled === true
   };
 }
 function isSuperAdmin(user) {
@@ -397,6 +404,82 @@ function getPublicBaseURL(req) {
 // ============================================================
 // PASSWORD HASHING
 // ============================================================
+
+
+function hashPasswordSync(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derived = crypto.pbkdf2Sync(
+    String(password),
+    salt,
+    120000,
+    64,
+    "sha512"
+  );
+  return salt + ":" + derived.toString("hex");
+}
+
+function ensureOfficialPlatformAccount(db) {
+  let account = db.users.find(function(user) {
+    return normalizeUsername(user.username) === "rizora";
+  });
+
+  const configuredPassword = String(
+    process.env.RIZORA_OFFICIAL_PASSWORD || ""
+  ).trim();
+  const configuredEmail = normalizeEmail(
+    process.env.RIZORA_OFFICIAL_EMAIL ||
+    "official@rizora.com.ng"
+  );
+
+  if (!account) {
+    account = {
+      id: "usr_rizora",
+      username: "rizora",
+      publicUsername: "rizora",
+      displayName: "RIZORA",
+      email: configuredEmail,
+      passwordHash: configuredPassword
+        ? hashPasswordSync(configuredPassword)
+        : "",
+      passwordSetupRequired: !configuredPassword,
+      role: "official_platform",
+      status: "active",
+      points: 0,
+      referralCode: randomReferralCode("rizora"),
+      referredBy: null,
+      referralCount: 0,
+      verified: true,
+      verificationStatus: "verified",
+      verificationType: "official_platform",
+      official: true,
+      accountType: "platform",
+      createdAt: new Date().toISOString(),
+      lastLoginAt: null,
+      avatarUrl: "/rizora-cover.png"
+    };
+
+    db.users.push(account);
+  } else {
+    account.publicUsername = "rizora";
+    account.displayName = "RIZORA";
+    account.email = account.email || configuredEmail;
+    account.role = "official_platform";
+    account.status = "active";
+    account.verified = true;
+    account.verificationStatus = "verified";
+    account.verificationType = "official_platform";
+    account.official = true;
+    account.accountType = "platform";
+    account.avatarUrl = account.avatarUrl || "/rizora-cover.png";
+
+    if (configuredPassword) {
+      account.passwordHash = hashPasswordSync(configuredPassword);
+      account.passwordSetupRequired = false;
+    }
+  }
+
+  return account;
+}
 
 function hashPassword(password) {
   return new Promise((resolve, reject) => {
@@ -476,6 +559,36 @@ function verifyPassword(password, storedHash) {
 }
 
 
+
+function base32Decode(input) {
+  const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const clean=String(input||"").replace(/=+$/,"").toUpperCase().replace(/[^A-Z2-7]/g,"");
+  let bits=0,value=0,bytes=[];
+  for(const ch of clean){
+    const idx=alphabet.indexOf(ch); if(idx<0) continue;
+    value=(value<<5)|idx; bits+=5;
+    if(bits>=8){bytes.push((value>>>(bits-8))&255);bits-=8;}
+  }
+  return Buffer.from(bytes);
+}
+function totpCodeForServer(secret, timestampMs) {
+  const key=base32Decode(secret);
+  const counter=Math.floor((Number(timestampMs||Date.now())/1000)/30);
+  const buf=Buffer.alloc(8);
+  buf.writeUInt32BE(Math.floor(counter/0x100000000),0);
+  buf.writeUInt32BE(counter>>>0,4);
+  const digest=crypto.createHmac("sha1",key).update(buf).digest();
+  const offset=digest[digest.length-1]&15;
+  const num=((digest[offset]&127)<<24)|(digest[offset+1]<<16)|(digest[offset+2]<<8)|digest[offset+3];
+  return String(num%1000000).padStart(6,"0");
+}
+function verifyTotpCode(secret, code) {
+  const normalized=String(code||"").replace(/\s/g,"");
+  if(!/^\d{6}$/.test(normalized)) return false;
+  for(const drift of [-1,0,1]) if(totpCodeForServer(secret,Date.now()+drift*30000)===normalized) return true;
+  return false;
+}
+
 // ============================================================
 // REQUEST BODY
 // ============================================================
@@ -483,21 +596,28 @@ function verifyPassword(password, storedHash) {
 async function readBody(req) {
   return new Promise((resolve, reject) => {
     let raw = "";
+    let settled = false;
 
     req.setEncoding("utf8");
 
     req.on("data", chunk => {
+      if (settled) return;
       raw += chunk;
+      if (Buffer.byteLength(raw, "utf8") > MAX_BODY_SIZE) {
+        settled = true;
+        reject(new Error("Request body too large."));
+        try { req.destroy(); } catch (_) {}
+      }
     });
 
     req.on("end", () => {
+      if (settled) return;
+      settled = true;
       const body = raw.trim();
-
       if (!body) {
         resolve({});
         return;
       }
-
       try {
         resolve(JSON.parse(body));
       } catch (error) {
@@ -505,7 +625,12 @@ async function readBody(req) {
       }
     });
 
-    req.on("error", reject);
+    req.on("error", error => {
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    });
   });
 }
 
@@ -728,7 +853,7 @@ function getCurrentUser(
 // ============================================================
 
 
-const TASK_COOLDOWN_MS = 45 * 60 * 1000;
+const TASK_COOLDOWN_MS = 7 * 60 * 1000;
 
 const RIZORA_FEATURE_LAYER_V1 = true;
 
@@ -2104,6 +2229,11 @@ async function handleRequest(
 
   cleanupSessions(db);
 
+  if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
+  if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+  if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+  if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+
   // ----------------------------------------------------------
   // HEALTH
   // ----------------------------------------------------------
@@ -2941,6 +3071,18 @@ async function handleRequest(
 
       return;
     }
+    if (user.twoFactorEnabled === true) {
+      const twoFactorCode = cleanString(body.twoFactorCode || "", 20);
+      if (!twoFactorCode) {
+        sendJSON(res, 401, { success:false, code:"TWO_FACTOR_REQUIRED", error:"Two-factor authentication code required." });
+        return;
+      }
+      if (!verifyTotpCode(user.twoFactorSecret || "", twoFactorCode)) {
+        sendJSON(res, 401, { success:false, code:"TWO_FACTOR_INVALID", error:"Invalid two-factor authentication code." });
+        return;
+      }
+    }
+
 
     user.lastLoginAt =
       new Date().toISOString();
@@ -3157,7 +3299,7 @@ if (method === "GET" && pathname === "/api/tasks") {
    * History prevents reuse of the same action/platform pair.
    */
   // ----------------------------------------------------------
-  // TASKS Ã¢â‚¬â€ START
+  // TASKS — START
   // ----------------------------------------------------------
 
   if (
@@ -3395,7 +3537,7 @@ if (method === "GET" && pathname === "/api/tasks") {
     ],
 
     cooldown,
-    cooldownMinutes: 4,
+    cooldownMinutes: 7,
     generatedCount: generatedTasks.length,
 
     message:
@@ -3412,8 +3554,13 @@ if (
   const user =
     getCurrentUser(db, req);
 
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
   const authenticated =
-    !!user;
+    true;
 
   let body = {};
 
@@ -3452,17 +3599,6 @@ if (
     return;
   }
 
-  if (
-    task.creatorId &&
-    task.creatorId === user.id
-  ) {
-    sendError(
-      res,
-      403,
-      "You cannot complete your own task."
-    );
-    return;
-  }
   const cooldown =
     getCooldown(
       db,
@@ -3477,7 +3613,7 @@ if (
         error:
           "Your next RIZORA task is still on cooldown.",
         cooldown,
-        cooldownMinutes: 4
+        cooldownMinutes: 7
       }
     );
     return;
@@ -3626,7 +3762,7 @@ const completion = {
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: 4,
+      cooldownMinutes: 7,
       cooldown:
         getCooldown(
           db,
@@ -3642,7 +3778,7 @@ const completion = {
 
 
 /* ============================================================
-   COMMUNITY TASK Ã¢â‚¬â€ CREATE
+   COMMUNITY TASK — CREATE
 ============================================================ */
 
 if (
@@ -3811,7 +3947,7 @@ if (
 }
 
 /* ============================================================
-   BOOSTS Ã¢â‚¬â€ AVAILABLE
+   BOOSTS — AVAILABLE
 ============================================================ */
 
 if (
@@ -3858,7 +3994,7 @@ if (
 
 
 /* ============================================================
-   BOOSTS Ã¢â‚¬â€ CREATE
+   BOOSTS — CREATE
 ============================================================ */
 
 if (
@@ -3868,9 +4004,6 @@ if (
 
   const user =
     getCurrentUser(db, req);
-
-  const authenticated =
-    !!user;
 
   let body = {};
 
@@ -4081,7 +4214,7 @@ if (
 
 
 /* ============================================================
-   BOOSTS Ã¢â‚¬â€ COMPLETE
+   BOOSTS — COMPLETE
 ============================================================ */
 
 if (
@@ -4106,6 +4239,11 @@ if (
       400,
       error.message
     );
+    return;
+  }
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
     return;
   }
 
@@ -4169,7 +4307,7 @@ if (
         error:
           "Your next task is still on cooldown.",
         cooldown,
-        cooldownMinutes: 4
+        cooldownMinutes: 7
       }
     );
     return;
@@ -4292,7 +4430,7 @@ if (
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: 4,
+      cooldownMinutes: 7,
       cooldown:
         getCooldown(
           db,
@@ -4627,7 +4765,7 @@ if (
   return;
 }
 
-// REFERRALS Ã¢â‚¬â€ ME
+// REFERRALS — ME
   // ----------------------------------------------------------
 
   if (
@@ -4859,7 +4997,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN Ã¢â‚¬â€ STATS
+  // ADMIN — STATS
   // ----------------------------------------------------------
 
   if (
@@ -4893,7 +5031,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN Ã¢â‚¬â€ USERS
+  // ADMIN — USERS
   // ----------------------------------------------------------
 
   if (
@@ -4929,7 +5067,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN Ã¢â‚¬â€ REFERRALS
+  // ADMIN — REFERRALS
   // ----------------------------------------------------------
 
   if (
@@ -4963,7 +5101,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN Ã¢â‚¬â€ AUDIT
+  // ADMIN — AUDIT
   // ----------------------------------------------------------
 
   if (
@@ -4997,7 +5135,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN Ã¢â‚¬â€ TASKS
+  // ADMIN — TASKS
   // ----------------------------------------------------------
 
   if (
@@ -5031,7 +5169,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN Ã¢â‚¬â€ CHANGE ROLE
+  // ADMIN — CHANGE ROLE
   // ----------------------------------------------------------
 
   if (
@@ -5160,7 +5298,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN Ã¢â‚¬â€ CHANGE STATUS
+  // ADMIN — CHANGE STATUS
   // ----------------------------------------------------------
 
   if (
@@ -5289,7 +5427,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN Ã¢â‚¬â€ POINTS
+  // ADMIN — POINTS
   // ----------------------------------------------------------
 
   if (
@@ -5403,7 +5541,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN Ã¢â‚¬â€ DASHBOARD
+  // SUPER ADMIN — DASHBOARD
   // ----------------------------------------------------------
 
   if (
@@ -5454,7 +5592,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN Ã¢â‚¬â€ USERS
+  // SUPER ADMIN — USERS
   // ----------------------------------------------------------
 
   if (
@@ -5490,7 +5628,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN Ã¢â‚¬â€ AUDIT
+  // SUPER ADMIN — AUDIT
   // ----------------------------------------------------------
 
   if (
@@ -5524,7 +5662,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN Ã¢â‚¬â€ REFERRALS
+  // SUPER ADMIN — REFERRALS
   // ----------------------------------------------------------
 
   if (
@@ -5558,7 +5696,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN Ã¢â‚¬â€ ROLE
+  // SUPER ADMIN — ROLE
   // ----------------------------------------------------------
 
   if (
@@ -5684,7 +5822,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN Ã¢â‚¬â€ STATUS
+  // SUPER ADMIN — STATUS
   // ----------------------------------------------------------
 
   if (
@@ -5810,7 +5948,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN Ã¢â‚¬â€ POINTS
+  // SUPER ADMIN — POINTS
   // ----------------------------------------------------------
 
   if (
@@ -5921,7 +6059,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN Ã¢â‚¬â€ TASKS
+  // SUPER ADMIN — TASKS
   // ----------------------------------------------------------
 
   if (
@@ -5955,7 +6093,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN Ã¢â‚¬â€ TASK STATUS
+  // SUPER ADMIN — TASK STATUS
   // ----------------------------------------------------------
 
   if (
@@ -6045,7 +6183,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN Ã¢â‚¬â€ TASK LIST
+  // SUPER ADMIN — TASK LIST
   // ----------------------------------------------------------
 
   if (
@@ -7145,7 +7283,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION Ã¢â‚¬â€ MY STATUS
+   VERIFICATION — MY STATUS
 ------------------------------------------------------------ */
 
 if (
@@ -7246,7 +7384,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION Ã¢â‚¬â€ APPLY
+   VERIFICATION — APPLY
 ------------------------------------------------------------ */
 
 if (
@@ -7513,7 +7651,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION Ã¢â‚¬â€ PUBLIC USER STATUS
+   VERIFICATION — PUBLIC USER STATUS
 ------------------------------------------------------------ */
 
 if (
@@ -7583,7 +7721,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   SUPER ADMIN Ã¢â‚¬â€ VERIFICATION QUEUE
+   SUPER ADMIN — VERIFICATION QUEUE
 ------------------------------------------------------------ */
 
 if (
@@ -7699,7 +7837,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   SUPER ADMIN Ã¢â‚¬â€ VERIFICATION ACTION
+   SUPER ADMIN — VERIFICATION ACTION
 ------------------------------------------------------------ */
 
 if (
@@ -9055,6 +9193,12 @@ async function requestHandler(
     res.end();
     return;
   }
+
+  if (!res.headersSent) {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=()");
+  }
   try {
 
     await handleRequest(
@@ -9288,7 +9432,8 @@ function seedDatabase() {
   const db = loadDB();
 
   seedTasks(db);
-seedRizoraOfficialIdentities(db);
+  seedRizoraOfficialIdentities(db);
+  ensureOfficialPlatformAccount(db);
 
   let changed = false;
 
@@ -9367,7 +9512,7 @@ seedDatabase();
    ============================================================ */
 
 const RIZORA_SOCIAL_COOLDOWN_MS =
-  45 * 60 * 1000;
+  7 * 60 * 1000;
 
 const RIZORA_SOCIAL_MIN_REWARD =
   5;
@@ -9638,6 +9783,15 @@ function rzSocialNotify(
 
 }
 
+const RIZORA_SCHEDULE_PUBLISHER = setInterval(() => {
+  try {
+    const scheduledDb = loadDB();
+    publishDueSchedules(scheduledDb, { saveDB, cleanString, uid });
+  } catch (error) {
+    console.error("RIZORA scheduler error:", error);
+  }
+}, 30000);
+
 const server =
   http.createServer(
     requestHandler
@@ -9697,6 +9851,8 @@ function shutdown(signal) {
   console.log(
     `\n${signal} received. Shutting down...`
   );
+
+  clearInterval(RIZORA_SCHEDULE_PUBLISHER);
 
   server.close(
     () => {
