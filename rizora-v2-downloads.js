@@ -199,18 +199,6 @@
     toast("RIZORA download ready.");
   }
 
-  function brandTextBlob(blob){
-    var type=String(blob.type||"application/octet-stream").toLowerCase();
-    if(type.indexOf("json")>=0){
-      try{
-        var parsed=JSON.parse(awaitTextSync(blob));
-      }catch(_){return blob;}
-      parsed={rizora:{downloadedFrom:"rizora.com.ng",watermark:"RIZORA",watermarkedAt:new Date().toISOString()},data:parsed};
-      return new Blob([JSON.stringify(parsed,null,2)],{type:"application/json;charset=utf-8"});
-    }
-    return blob;
-  }
-
   function readAsText(blob){
     return blob.text();
   }
