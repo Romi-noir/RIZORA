@@ -209,7 +209,7 @@ async function handleRizoraBusiness(ctx) {
 
   // Optional free community membership. Paid tiers remain handled by the normal
   // Paystack membership flow in rizora-v2-enterprise.js.
-  if (path === "/api/v2/memberships/tiers" && method === "POST") {
+  if (path === "/api/v2/memberships/free-tiers" && method === "POST") {
     if (!user) {
       ctx.sendError(res, 401, "Authentication required.");
       return true;
@@ -280,7 +280,7 @@ async function handleRizoraBusiness(ctx) {
     return true;
   }
 
-  var join = path.match(/^\/api\/v2\/memberships\/tiers\/([^/]+)\/join$/);
+  var join = path.match(/^\/api\/v2\/memberships\/free-tiers\/([^/]+)\/join$/);
   if (join && method === "POST") {
     var tier = db.rzV2.creatorMembershipTiers.find(function (t) {
       return t.id === join[1] && t.status === "active";
@@ -357,7 +357,7 @@ async function handleRizoraBusiness(ctx) {
     return true;
   }
 
-  var cancel = path.match(/^\/api\/v2\/memberships\/([^/]+)\/cancel$/);
+  var cancel = path.match(/^\/api\/v2\/memberships\/free-memberships\/([^/]+)\/cancel$/);
   if (cancel && method === "POST") {
     var ownMembership = db.rzV2.creatorMemberships.find(function (m) {
       return m.id === cancel[1] && m.memberId === user?.id;
@@ -370,7 +370,7 @@ async function handleRizoraBusiness(ctx) {
     return true;
   }
 
-  var gift = path.match(/^\/api\/v2\/memberships\/tiers\/([^/]+)\/gift$/);
+  var gift = path.match(/^\/api\/v2\/memberships\/free-tiers\/([^/]+)\/gift$/);
   if (gift && method === "POST") {
     if (!user) {
       ctx.sendError(res, 401, "Authentication required.");
