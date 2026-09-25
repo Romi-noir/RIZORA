@@ -9,6 +9,7 @@ function ensure(db){
   db.rzV2.likes=db.rzV2.likes||[];
   db.rzV2.saves=db.rzV2.saves||[];
   db.rzV2.reposts=db.rzV2.reposts||[];
+  db.rzV2.pollVotes=db.rzV2.pollVotes||[];
   db.rzV2.follows=db.rzV2.follows||[];
   db.rzV2.hashtags=db.rzV2.hashtags||{};
   db.rzV2.policy=db.rzV2.policy||{};
@@ -48,7 +49,36 @@ function mentions(text){var out={};String(text||"").split(/\s+/).forEach(functio
 function decorate(db,post){
   var author=db.users.find(function(u){return u.id===post.userId;});
   if(!author)return null;
-  return {id:post.id,userId:post.userId,text:post.text,mediaUrl:post.mediaUrl,hashtags:post.hashtags||[],mentions:post.mentions||[],createdAt:post.createdAt,author:publicProfile(db,author),metrics:{likes:db.rzV2.likes.filter(function(x){return x.postId===post.id;}).length,comments:db.rzV2.comments.filter(function(x){return x.postId===post.id;}).length,reposts:db.rzV2.reposts.filter(function(x){return x.postId===post.id;}).length,saves:db.rzV2.saves.filter(function(x){return x.postId===post.id;}).length}};
+  var collaborators=(post.collaboratorIds||[]).map(function(id){
+    return db.users.find(function(u){return u.id===id;});
+  }).filter(Boolean).map(function(u){return publicProfile(db,u);});
+  var poll=post.poll?{
+    question:post.poll.question||"",
+    expiresAt:post.poll.expiresAt||null,
+    options:(post.poll.options||[]).map(function(option){
+      var votes=db.rzV2.pollVotes.filter(function(v){return v.postId===post.id&&v.optionId===option.id;}).length;
+      return {id:option.id,label:option.label,votes:votes};
+    })
+  }:null;
+  return {
+    id:post.id,
+    userId:post.userId,
+    text:post.text,
+    mediaUrl:post.mediaUrl,
+    hashtags:post.hashtags||[],
+    mentions:post.mentions||[],
+    collaborators:collaborators,
+    poll:poll,
+    createdAt:post.createdAt,
+    author:publicProfile(db,author),
+    metrics:{
+      likes:db.rzV2.likes.filter(function(x){return x.postId===post.id;}).length,
+      comments:db.rzV2.comments.filter(function(x){return x.postId===post.id;}).length,
+      reposts:db.rzV2.reposts.filter(function(x){return x.postId===post.id;}).length,
+      saves:db.rzV2.saves.filter(function(x){return x.postId===post.id;}).length,
+      pollVotes:db.rzV2.pollVotes.filter(function(x){return x.postId===post.id;}).length
+    }
+  };
 }
 async function body(req){var raw="";for await(var c of req){raw+=c.toString();if(raw.length>1100000)throw new Error("Request body too large.");}return raw?JSON.parse(raw):{};}
 function active(user){return !!user&&user.status==="active"&&user.postingRestricted!==true;}
