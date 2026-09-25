@@ -17,7 +17,10 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check server.js
+          node --check rizora-v2-media-backend.js
           node --check rizora-v2-backend.js
+          node --check rizora-v2-growth.js
+          node --check rizora-v2-modern.js
           node --check rizora-v2-upgrades.js
           node --check rizora-v2-upgrades-ui.js
           node --check rizora-v2-platform.js
@@ -29,4 +32,6 @@ jobs:
           node --check rizora-v2-enterprise-ui.js
           node --check rizora-v2-global.js
           node --check rizora-v2-global-ui.js
+          node --check rizora-v2-modern-ui.js
+          node --check rizora-v2-media.js
           node --check rizora-v2.js
