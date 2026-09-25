@@ -17,8 +17,14 @@ function auth(){
   $("tabLogin").className=state.authMode==="login"?"active":"";
   $("tabSignup").className=state.authMode==="signup"?"active":"";
   if(state.authMode==="signup"){
+    $("identifier").required=false;
+    $("identifier").parentElement.style.display="none";
     $("signupBox").innerHTML='<div class="rz-field"><label class="rz-label">Username</label><input id="username" class="rz-input" required></div><div class="rz-field"><label class="rz-label">Display name</label><input id="displayName" class="rz-input"></div><div class="rz-field"><label class="rz-label">Email</label><input id="email" class="rz-input" type="email" required></div><div class="rz-field"><label class="rz-label">Confirm password</label><input id="confirmPassword" class="rz-input" type="password" required></div>';
     $("authSubmit").textContent="Create account";
+    $("email").oninput=function(){ $("identifier").value=this.value; };
+  }else{
+    $("identifier").required=true;
+    $("identifier").parentElement.style.display="";
   }
   $("authForm").onsubmit=async function(e){
     e.preventDefault();$("authError").textContent="";
