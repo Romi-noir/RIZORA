@@ -55,7 +55,8 @@ async function loadSnapshot(){
     api("/api/v2/opportunities"),
     api("/api/v2/channels"),
     api("/api/v2/products"),
-    api("/api/v2/premium/status")
+    api("/api/v2/premium/status"),
+    api("/api/v2/memberships/me")
   ]);
   out.analytics=calls[0].status==="fulfilled"?calls[0].value:{};
   out.creator=calls[1].status==="fulfilled"?calls[1].value:{};
@@ -63,6 +64,7 @@ async function loadSnapshot(){
   out.channels=calls[3].status==="fulfilled"?calls[3].value:{channels:[]};
   out.products=calls[4].status==="fulfilled"?calls[4].value:{products:[]};
   out.premium=calls[5].status==="fulfilled"?calls[5].value:{active:false};
+  out.memberships=calls[6].status==="fulfilled"?calls[6].value:{owned:[],joined:[]};
   return out;
 }
 async function assistant(prefill){
@@ -116,6 +118,53 @@ async function business(){
     try{await api("/api/v2/opportunities/"+encodeURIComponent(b.getAttribute("data-next-opp"))+"/apply",{method:"POST",body:"{}"});b.disabled=true;b.textContent="Applied";}catch(e){alert(e.message);}
   };});
 }
+async function memberships(){
+  var d=await api("/api/v2/memberships/me"),owned=d.owned||[],joined=d.joined||[];
+  var body='<div class="rz-next-grid rz-next-grid-2">'+
+    '<div class="rz-next-card"><div class="rz-kicker">CREATOR MEMBERSHIP</div><h3>Create a monthly fan tier</h3><p>Give supporters a recurring way to back your work. Paystack handles the billing cycle after checkout.</p><form id="rzMembershipTierForm">'+
+    '<input name="name" class="rz-input" placeholder="Tier name" required>'+
+    '<input name="priceNaira" class="rz-input" type="number" min="100" max="1000000" placeholder="Monthly price in Naira" required>'+
+    '<input name="perks" class="rz-input" placeholder="Perks, separated by commas">'+
+    '<textarea name="description" class="rz-input rz-next-textarea" placeholder="What members get"></textarea>'+
+    '<button class="rz-btn primary" type="submit">Create monthly tier</button></form><div id="rzMembershipTierStatus" class="rz-muted"></div></div>'+
+    '<div class="rz-next-card"><div class="rz-kicker">JOIN A CREATOR</div><h3>Support a creator you follow</h3><p>Enter a RIZORA username to see any public membership tiers.</p><form id="rzMembershipDiscoverForm"><input name="creator" class="rz-input" placeholder="@creator" required><button class="rz-btn" type="submit">Find tiers</button></form><div id="rzMembershipDiscover"></div></div>'+
+  '</div>'+
+  '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Your tiers</strong><p>'+owned.length+' tier(s) created</p></div></div>'+
+    (owned.length?owned.map(function(t){return '<div class="rz-next-list-row"><div><strong>'+esc(t.name)+'</strong><span>₦'+esc(Number(t.priceNaira||0).toLocaleString())+'/month · '+esc(t.memberCount||0)+' active member(s)</span></div></div>';}).join(""):'<div class="rz-next-empty">You have not created a membership tier yet.</div>')+
+  '</div>'+
+  '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Your memberships</strong><p>'+joined.length+' subscription(s)</p></div></div>'+
+    (joined.length?joined.map(function(m){return '<div class="rz-next-list-row"><div><strong>'+esc((m.tier&&m.tier.name)||"Membership")+'</strong><span>@'+esc((m.creator&&m.creator.username)||"creator")+' · '+esc(m.status)+'</span></div>'+((["active","attention","non-renewing"].indexOf(m.status)>=0)?'<button class="rz-btn" data-next-membership-cancel="'+esc(m.id)+'">Cancel</button>':"")+'</div>';}).join(""):'<div class="rz-next-empty">You have not joined a creator membership yet.</div>')+
+  '</div>';
+
+  var m=modal("Creator Memberships","RECURRING SUPPORT",body);
+  m.querySelector("#rzMembershipTierForm").onsubmit=async function(e){
+    e.preventDefault();var f=e.target;
+    try{
+      var x=await api("/api/v2/memberships/tiers",{method:"POST",body:JSON.stringify({name:f.name.value,priceNaira:Number(f.priceNaira.value),description:f.description.value,perks:f.perks.value.split(",").map(function(v){return v.trim();}).filter(Boolean)})});
+      m.querySelector("#rzMembershipTierStatus").textContent="Tier created: "+x.tier.name+".";
+      setTimeout(function(){memberships();},700);
+    }catch(err){m.querySelector("#rzMembershipTierStatus").textContent=err.message;}
+  };
+  m.querySelector("#rzMembershipDiscoverForm").onsubmit=async function(e){
+    e.preventDefault();var creator=e.target.creator.value.trim().replace(/^@/,""),box=m.querySelector("#rzMembershipDiscover");
+    box.innerHTML='<div class="rz-next-empty">Loading…</div>';
+    try{
+      var x=await api("/api/v2/memberships/tiers?creator="+encodeURIComponent(creator));
+      box.innerHTML=(x.tiers||[]).length?(x.tiers||[]).map(function(t){
+        return '<div class="rz-next-list-row"><div><strong>'+esc(t.name)+'</strong><span>₦'+esc(Number(t.priceNaira||0).toLocaleString())+'/month · '+esc(t.memberCount||0)+' member(s)</span><small>'+esc(t.description||"")+'</small></div><button class="rz-btn primary" data-next-membership-join="'+esc(t.id)+'">'+(t.joined?"Joined":"Join")+'</button></div>';
+      }).join(""):'<div class="rz-next-empty">That creator has no public membership tiers.</div>';
+      box.querySelectorAll("[data-next-membership-join]").forEach(function(b){b.onclick=async function(){
+        try{var y=await api("/api/v2/memberships/tiers/"+encodeURIComponent(b.getAttribute("data-next-membership-join"))+"/join",{method:"POST",body:"{}"});if(y.authorizationUrl)location.href=y.authorizationUrl;}
+        catch(err){b.textContent=err.message;}
+      };});
+    }catch(err){box.innerHTML='<div class="rz-error">'+esc(err.message)+'</div>';}
+  };
+  m.querySelectorAll("[data-next-membership-cancel]").forEach(function(b){b.onclick=async function(){
+    if(!confirm("Cancel this recurring membership?"))return;
+    try{await api("/api/v2/memberships/"+encodeURIComponent(b.getAttribute("data-next-membership-cancel"))+"/cancel",{method:"POST",body:"{}"});memberships();}
+    catch(err){alert(err.message);}
+  };});
+}
 function integrity(){
   var body='<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Pre-publish Integrity Check</strong><p>A fast creator checklist before you publish. This is not a copyright fingerprinting service.</p></div></div>'+
     '<form id="rzIntegrityForm"><input id="rzIntegrityTitle" class="rz-input" placeholder="Post title / topic"><textarea id="rzIntegrityCaption" class="rz-input rz-next-textarea" placeholder="Paste the caption or script"></textarea><input id="rzIntegrityUrl" class="rz-input" placeholder="Media URL (optional)"><label class="rz-next-check"><input type="checkbox" id="rzIntegrityReuse"> This is adapted or reposted content</label><input id="rzIntegritySource" class="rz-input" placeholder="Source / permission / attribution (required when adapted)" style="display:none"><button class="rz-btn primary" type="submit">Run check</button></form><div id="rzIntegrityOut"></div></div>';
@@ -141,15 +190,15 @@ function inject(){
   if(document.getElementById("rzNextTools"))return;
   var aside=document.querySelector(".rz-sidebar");if(!aside)return;
   var box=document.createElement("div");box.id="rzNextTools";box.className="rz-next-tools";
-  box.innerHTML='<div class="rz-enterprise-heading">NEXT-GEN TOOLS</div><button class="rz-btn" data-next-open="assistant">Creator Assistant</button><button class="rz-btn" data-next-open="business">Business Hub</button><button class="rz-btn" data-next-open="integrity">Pre-publish Check</button>';
+  box.innerHTML='<div class="rz-enterprise-heading">NEXT-GEN TOOLS</div><button class="rz-btn" data-next-open="assistant">Creator Assistant</button><button class="rz-btn" data-next-open="business">Business Hub</button><button class="rz-btn" data-next-open="memberships">Memberships</button><button class="rz-btn" data-next-open="integrity">Pre-publish Check</button>';
   aside.appendChild(box);
-  box.querySelectorAll("[data-next-open]").forEach(function(b){b.onclick=function(){var x=b.getAttribute("data-next-open");if(x==="assistant")assistant();if(x==="business")business();if(x==="integrity")integrity();};});
+  box.querySelectorAll("[data-next-open]").forEach(function(b){b.onclick=function(){var x=b.getAttribute("data-next-open");if(x==="assistant")assistant();if(x==="business")business();if(x==="memberships")memberships();if(x==="integrity")integrity();};});
 }
 function boot(){
   inject();
   var mo=new MutationObserver(function(){inject();});
   mo.observe(document.body,{childList:true,subtree:true});
 }
-window.RIZORA_NEXT={assistant:assistant,business:business,integrity:integrity};
+window.RIZORA_NEXT={assistant:assistant,business:business,memberships:memberships,integrity:integrity};
 setTimeout(boot,140);
 })();
