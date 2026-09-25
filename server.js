@@ -330,7 +330,10 @@ function safeUser(user) {
       user.official === true,
 
     accountType:
-      user.accountType || null
+      user.accountType || null,
+
+    twoFactorEnabled:
+      user.twoFactorEnabled === true
   };
 }
 function isSuperAdmin(user) {
@@ -553,6 +556,36 @@ function verifyPassword(password, storedHash) {
   });
 }
 
+
+
+function base32Decode(input) {
+  const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const clean=String(input||"").replace(/=+$/,"").toUpperCase().replace(/[^A-Z2-7]/g,"");
+  let bits=0,value=0,bytes=[];
+  for(const ch of clean){
+    const idx=alphabet.indexOf(ch); if(idx<0) continue;
+    value=(value<<5)|idx; bits+=5;
+    if(bits>=8){bytes.push((value>>>(bits-8))&255);bits-=8;}
+  }
+  return Buffer.from(bytes);
+}
+function totpCodeForServer(secret, timestampMs) {
+  const key=base32Decode(secret);
+  const counter=Math.floor((Number(timestampMs||Date.now())/1000)/30);
+  const buf=Buffer.alloc(8);
+  buf.writeUInt32BE(Math.floor(counter/0x100000000),0);
+  buf.writeUInt32BE(counter>>>0,4);
+  const digest=crypto.createHmac("sha1",key).update(buf).digest();
+  const offset=digest[digest.length-1]&15;
+  const num=((digest[offset]&127)<<24)|(digest[offset+1]<<16)|(digest[offset+2]<<8)|digest[offset+3];
+  return String(num%1000000).padStart(6,"0");
+}
+function verifyTotpCode(secret, code) {
+  const normalized=String(code||"").replace(/\s/g,"");
+  if(!/^\d{6}$/.test(normalized)) return false;
+  for(const drift of [-1,0,1]) if(totpCodeForServer(secret,Date.now()+drift*30000)===normalized) return true;
+  return false;
+}
 
 // ============================================================
 // REQUEST BODY
@@ -3021,6 +3054,18 @@ async function handleRequest(
 
       return;
     }
+    if (user.twoFactorEnabled === true) {
+      const twoFactorCode = cleanString(body.twoFactorCode || "", 20);
+      if (!twoFactorCode) {
+        sendJSON(res, 401, { success:false, code:"TWO_FACTOR_REQUIRED", error:"Two-factor authentication code required." });
+        return;
+      }
+      if (!verifyTotpCode(user.twoFactorSecret || "", twoFactorCode)) {
+        sendJSON(res, 401, { success:false, code:"TWO_FACTOR_INVALID", error:"Invalid two-factor authentication code." });
+        return;
+      }
+    }
+
 
     user.lastLoginAt =
       new Date().toISOString();
