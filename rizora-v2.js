@@ -264,6 +264,29 @@ function post(p){
     : "";
   return '<article class="rz-card"><div class="rz-post-head">'+avatar(p.author)+'<div><strong>'+esc(p.author.displayName)+'</strong> '+verified(p.author)+'<div class="rz-mini">@'+esc(p.author.publicUsername||p.author.username)+"</div>"+collabHtml+"</div></div><div class='rz-post-body'>"+esc(p.text||"")+"</div>"+(p.aiAssisted?'<span class="rz-badge">AI-assisted</span>':"")+renderMedia(p.mediaUrl)+pollHtml+"<div class='rz-tags'>"+(p.hashtags||[]).map(function(t){return '<span class="rz-tag">#'+esc(t)+"</span>";}).join("")+"</div><div class='rz-post-actions'><button data-like='"+p.id+"'>Like "+Number((p.metrics||{}).likes||0)+"</button><button data-comment='"+p.id+"'>Comment "+Number((p.metrics||{}).comments||0)+"</button><button data-save='"+p.id+"'>Save "+Number((p.metrics||{}).saves||0)+"</button><button data-share-post='"+p.id+"'>Share</button></div></article>";
 }
+async function openComments(postId){
+  var old=$("rzCommentsModal");if(old)old.remove();
+  try{
+    var d=await api("/api/v2/posts/"+encodeURIComponent(postId)+"/comments"),comments=d.comments||[];
+    var wrap=document.createElement("div");wrap.id="rzCommentsModal";wrap.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:16px;";
+    function commentHtml(c,depth){
+      var pad=Math.min(Number(depth||0),3)*18;
+      return '<div style="margin-left:'+pad+'px;padding:11px 0;border-bottom:1px solid var(--line)"><div><strong>'+esc(c.author&&c.author.displayName||c.author&&c.author.username||"Creator")+'</strong> <span class="rz-mini">@'+esc(c.author&&(c.author.publicUsername||c.author.username)||"")+'</span></div><div style="margin:5px 0 8px">'+esc(c.text||"")+'</div><button class="rz-btn" data-comment-reply="'+esc(c.id)+'" data-comment-user="'+esc(c.author&&(c.author.publicUsername||c.author.username)||"creator")+'">Reply</button>'+(c.replies||[]).map(function(r){return commentHtml(r,Number(depth||0)+1);}).join("")+'</div>';
+    }
+    wrap.innerHTML='<section class="rz-card" style="width:min(720px,100%);max-height:82vh;overflow:auto;margin:0"><div class="rz-actions" style="justify-content:space-between"><div><div class="rz-kicker">COMMENTS</div><h2 style="margin:4px 0">Join the conversation</h2></div><button id="rzCommentsClose" class="rz-btn">Close</button></div><div style="margin:8px 0 14px">'+(comments.length?comments.map(function(c){return commentHtml(c,0);}).join(""):'<div class="rz-mini">No comments yet. Start the conversation.</div>')+'</div><form id="rzCommentForm"><textarea id="rzCommentText" class="rz-textarea" maxlength="1000" placeholder="Write a comment…" required></textarea><button class="rz-btn primary" style="margin-top:8px">Comment</button><div id="rzCommentStatus" class="rz-error"></div></form></section>';
+    document.body.appendChild(wrap);
+    wrap.querySelector("#rzCommentsClose").onclick=function(){wrap.remove();};
+    wrap.onclick=function(e){if(e.target===wrap)wrap.remove();};
+    wrap.querySelector("#rzCommentForm").onsubmit=async function(e){
+      e.preventDefault();var text=wrap.querySelector("#rzCommentText").value.trim();if(!text)return;
+      try{await api("/api/v2/posts/"+encodeURIComponent(postId)+"/comment",{method:"POST",body:JSON.stringify({text:text})});await openComments(postId);}catch(err){wrap.querySelector("#rzCommentStatus").textContent=err.message;}
+    };
+    wrap.querySelectorAll("[data-comment-reply]").forEach(function(btn){btn.onclick=async function(){
+      var text=window.prompt("Reply to @"+btn.getAttribute("data-comment-user"));if(!text||!text.trim())return;
+      try{await api("/api/v2/posts/"+encodeURIComponent(postId)+"/comment",{method:"POST",body:JSON.stringify({text:text.trim(),parentId:btn.getAttribute("data-comment-reply")})});await openComments(postId);}catch(err){toast(err.message);}
+    };});
+  }catch(err){toast(err.message);}
+}
 function task(t){return '<div class="rz-card rz-task"><strong>'+esc(t.title)+"</strong><div>"+esc(t.description||"")+"</div><span class='rz-points'>+"+Number(t.points||t.reward||0)+" pts</span><button class='rz-btn primary' data-task='"+esc(t.id)+"'>Complete</button></div>";}
 function socialTask(t){return '<div class="rz-card rz-task"><strong>'+esc(t.title)+"</strong><div>"+esc(t.description||"")+"</div><span class='rz-points'>+"+Number(t.reward||0)+" pts</span><button class='rz-btn primary' data-social='"+esc(t.id)+"'>Complete</button></div>";}
 function wire(){
@@ -273,6 +296,7 @@ function wire(){
     document.querySelectorAll("[data-tab]").forEach(function(b){b.onclick=function(){state.feedTab=b.getAttribute("data-tab");load();};});
     $("postForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/posts",{method:"POST",body:JSON.stringify({text:$("postText").value,mediaUrl:$("postMedia").value,aiAssisted:$("postAiAssisted")&&$("postAiAssisted").checked})});$("postText").value="";load();}catch(err){$("postError").textContent=err.message;}};bindMediaPicker("postMediaFile","postMediaStatus","postMedia");
     document.querySelectorAll("[data-like]").forEach(function(b){b.onclick=function(){api("/api/v2/posts/"+b.getAttribute("data-like")+"/like",{method:"POST"}).then(load).catch(function(e){toast(e.message);});}});
+    document.querySelectorAll("[data-comment]").forEach(function(b){b.onclick=function(){openComments(b.getAttribute("data-comment"));};});
     document.querySelectorAll("[data-save]").forEach(function(b){b.onclick=function(){api("/api/v2/posts/"+b.getAttribute("data-save")+"/save",{method:"POST"}).then(load).catch(function(e){toast(e.message);});}});
     document.querySelectorAll("[data-poll-vote]").forEach(function(b){b.onclick=function(){api("/api/v2/polls/"+encodeURIComponent(b.getAttribute("data-poll-vote"))+"/vote",{method:"POST",body:JSON.stringify({optionId:b.getAttribute("data-poll-option")})}).then(load).catch(function(e){toast(e.message);});}});
     document.querySelectorAll("[data-share-post]").forEach(function(b){b.onclick=async function(){var target=window.prompt("Send this post to which RIZORA username?");if(!target)return;try{await api("/api/v2/messages/share",{method:"POST",body:JSON.stringify({recipientUsername:target,postId:b.getAttribute("data-share-post")})});toast("Post shared in DMs.");}catch(e){toast(e.message);}};});
