@@ -112,6 +112,20 @@ async function main() {
     const media = await request("/api/v2/media/config", { headers: authHeaders });
     assert(media.res.status === 200 && Number(media.data.maxFileBytes) > 0, "media config failed");
 
+    const tinyPng = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+    const mediaUpload = await request("/api/v2/media/upload", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        filename: "smoke.png",
+        mimeType: "image/png",
+        data: tinyPng
+      })
+    });
+    assert(mediaUpload.res.status === 201 && mediaUpload.data.media && mediaUpload.data.media.url, "media upload failed");
+    const mediaFetch = await request(mediaUpload.data.media.url, { headers: { Cookie: cookie } });
+    assert(mediaFetch.res.status === 200, "uploaded media could not be fetched");
+
     const channel = await request("/api/v2/channels", {
       method: "POST",
       headers: authHeaders,
@@ -253,6 +267,50 @@ async function main() {
 
     const memberships = await request("/api/v2/memberships/me", { headers: authHeaders });
     assert(memberships.res.status === 200 && Array.isArray(memberships.data.joined), "membership endpoint failed");
+
+    const freeTier = await request("/api/v2/memberships/free-tiers", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        name: "Smoke Community",
+        description: "Free membership runtime verification",
+        perks: ["Community access"],
+        priceNaira: 0
+      })
+    });
+    assert(freeTier.res.status === 201 && freeTier.data.tier && Number(freeTier.data.tier.priceNaira) === 0, "free tier creation failed");
+
+    const joinUsername = "smoke_join_" + suffix;
+    const joinEmail = joinUsername + "@example.com";
+    const signup2 = await request("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: joinUsername,
+        displayName: "RIZORA Smoke Member",
+        email: joinEmail,
+        password: "SmokePass123",
+        confirmPassword: "SmokePass123"
+      })
+    });
+    assert(signup2.res.status === 201, "second signup failed: " + JSON.stringify(signup2.data));
+    const cookie2 = cookieFrom(signup2.res);
+    assert(cookie2.startsWith("rizora_session="), "second signup did not return a session cookie");
+
+    const joinHeaders = { Cookie: cookie2, "Content-Type": "application/json" };
+    const freeJoin = await request("/api/v2/memberships/free-tiers/" + encodeURIComponent(freeTier.data.tier.id) + "/join", {
+      method: "POST",
+      headers: joinHeaders,
+      body: "{}"
+    });
+    assert(freeJoin.res.status === 201 && freeJoin.data.joined === true, "free membership join failed");
+
+    const freeCancel = await request("/api/v2/memberships/free-memberships/" + encodeURIComponent(freeJoin.data.membership.id) + "/cancel", {
+      method: "POST",
+      headers: joinHeaders,
+      body: "{}"
+    });
+    assert(freeCancel.res.status === 200 && freeCancel.data.status === "cancelled", "free membership cancel failed");
 
     const products = await request("/api/v2/products", { headers: authHeaders });
     assert(products.res.status === 200 && Array.isArray(products.data.products), "products endpoint failed");
