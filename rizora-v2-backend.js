@@ -2,6 +2,7 @@ const { handleRizoraMedia } = require("./rizora-v2-media-backend");
 const { handleRizoraGrowth } = require("./rizora-v2-growth");
 const { handleRizoraPlatform } = require("./rizora-v2-platform");
 const { handleRizoraUpgrades } = require("./rizora-v2-upgrades");
+const { handleRizoraFans } = require("./rizora-v2-fans");
 "use strict";
 const { handleRizoraModern } = require("./rizora-v2-modern");
 
@@ -218,6 +219,7 @@ async function handleRizoraV2(ctx){
   if (await handleRizoraPlatform(ctx)) return true;
   if (await handleRizoraModern(ctx)) return true;
   if (await handleRizoraUpgrades(ctx)) return true;
+  if (await handleRizoraFans(ctx)) return true;
   return false;
 }
 module.exports={handleRizoraV2};
