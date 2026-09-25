@@ -16,6 +16,8 @@ function ensureEnterprise(db) {
   db.rzV2.paymentEvents = db.rzV2.paymentEvents || [];
   db.rzV2.profileViews = db.rzV2.profileViews || [];
   db.rzV2.onboardingCompletions = db.rzV2.onboardingCompletions || [];
+  db.rzV2.creatorPortfolio = db.rzV2.creatorPortfolio || {};
+  db.rzV2.creatorPlans = db.rzV2.creatorPlans || [];
 }
 
 async function readBody(req, limit) {
@@ -202,6 +204,63 @@ async function handleRizoraEnterprise(ctx) {
       username:target.publicUsername || target.username
     });
     return true;
+  }
+
+
+  // ---------- premium creator planning + portfolio ----------
+  if (path === "/api/v2/portfolio" && method === "GET") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    ctx.sendJSON(res, 200, { success:true, portfolio: db.rzV2.creatorPortfolio[user.id] || {
+      headline:"", bio:"", category:"", skills:[], links:[]
+    }});
+    return true;
+  }
+  if (path === "/api/v2/portfolio" && method === "POST") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    const b = await readBody(req, 200000);
+    const p = db.rzV2.creatorPortfolio[user.id] || {};
+    p.headline = safeString(b.headline, 160);
+    p.bio = safeString(b.bio, 800);
+    p.category = safeString(b.category, 100);
+    p.skills = Array.isArray(b.skills) ? b.skills.slice(0, 20).map(x => safeString(x, 50)) : [];
+    p.links = Array.isArray(b.links) ? b.links.slice(0, 10).map(x => safeString(x, 500)) : [];
+    p.updatedAt = new Date().toISOString();
+    db.rzV2.creatorPortfolio[user.id] = p;
+    ctx.saveDB(db);
+    ctx.sendJSON(res, 200, { success:true, portfolio:p });
+    return true;
+  }
+  if (path === "/api/v2/plans" && method === "GET") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    ctx.sendJSON(res, 200, { success:true, plans: db.rzV2.creatorPlans.filter(x => x.userId === user.id).slice().reverse().slice(0, 100) });
+    return true;
+  }
+  if (path === "/api/v2/plans" && method === "POST") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    const b = await readBody(req, 200000);
+    const plan = {
+      id: ctx.uid("plan_"),
+      userId:user.id,
+      title:safeString(b.title,160),
+      platform:safeString(b.platform || "general",40),
+      scheduledFor:safeString(b.scheduledFor,80),
+      status:"planned",
+      notes:safeString(b.notes,1500),
+      createdAt:new Date().toISOString()
+    };
+    if(!plan.title){ctx.sendError(res,400,"Plan title is required.");return true;}
+    db.rzV2.creatorPlans.push(plan);
+    ctx.saveDB(db);
+    ctx.sendJSON(res,201,{success:true,plan});
+    return true;
+  }
+  const planMatch = path.match(/^/api/v2/plans/([^/]+)/cancel$/);
+  if (planMatch && method === "POST") {
+    if (!user) { ctx.sendError(res,401,"Authentication required."); return true; }
+    const plan=db.rzV2.creatorPlans.find(x=>x.id===planMatch[1]&&x.userId===user.id);
+    if(!plan){ctx.sendError(res,404,"Plan not found.");return true;}
+    plan.status="cancelled"; plan.updatedAt=new Date().toISOString(); ctx.saveDB(db);
+    ctx.sendJSON(res,200,{success:true,plan}); return true;
   }
 
   // ---------- creator profile ----------
