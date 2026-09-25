@@ -335,10 +335,15 @@ async function handleRizoraEnterprise(ctx) {
     const active=db.rzV2.premiumSubscriptions.find(x=>x.userId===user.id&&["active","non-renewing","attention"].includes(x.status));
     const configured=!!String(process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
     const isPremium=!!active;
-    ctx.sendJSON(res,200,{success:true,plan:isPremium?(active.plan||"premium"):"free",active:isPremium,configured,provider:"paystack",features:{
-      advancedAI:isPremium,advancedAnalytics:isPremium,creatorPortfolio:true,experiments:true,contentPlanning:true,
-      broadcastChannels:true,digitalProducts:true,creatorPayouts:false
-    },premiumOnly:["advancedAI","advancedAnalytics"]}); return true;
+    ctx.sendJSON(res,200,{success:true,plan:isPremium?(active.plan||"premium"):"free",active:isPremium,configured,provider:"paystack",
+      status:active?active.status:"free",
+      reference:active?active.reference:null,
+      nextPaymentDate:active?active.nextPaymentDate||null:null,
+      canCancel:!!(active&&active.subscriptionCode&&active.emailToken&&["active","attention"].includes(active.status)),
+      features:{
+        advancedAI:isPremium,advancedAnalytics:isPremium,creatorPortfolio:true,experiments:true,contentPlanning:true,
+        broadcastChannels:true,digitalProducts:true,creatorPayouts:false
+      },premiumOnly:["advancedAI","advancedAnalytics"]}); return true;
   }
   const premiumVerifyMatch=path.match(/^\/api\/v2\/premium\/verify\/([^/]+)$/);
   if(premiumVerifyMatch&&method==="GET"){
@@ -349,10 +354,19 @@ async function handleRizoraEnterprise(ctx) {
     if(!sub){ctx.sendError(res,404,"Premium payment reference not found.");return true;}
     const ps=await paystackRequest("/transaction/verify/"+encodeURIComponent(reference),{method:"GET"});
     if(!ps.response.ok||!ps.data.status){ctx.sendError(res,502,ps.data.message||"Unable to verify Premium payment.");return true;}
-    const paid=String(ps.data.data&&ps.data.data.status||"").toLowerCase()==="success";
-    sub.status=paid?"active":"pending";sub.verifiedAt=new Date().toISOString();sub.updatedAt=new Date().toISOString();
+    const data=ps.data.data||{};
+    const paymentStatus=String(data.status||"").toLowerCase();
+    const paid=paymentStatus==="success";
+    sub.status=paid?"active":paymentStatus==="failed"?"attention":"pending";
+    sub.subscriptionCode=sub.subscriptionCode||data.subscription_code||"";
+    sub.emailToken=sub.emailToken||data.email_token||"";
+    sub.nextPaymentDate=sub.next_payment_date||data.next_payment_date||null;
+    sub.paystackPlanCode=sub.paystackPlanCode||((data.plan&&data.plan.plan_code)||"");
+    sub.paystackCustomerCode=sub.paystackCustomerCode||((data.customer&&data.customer.customer_code)||"");
+    sub.verifiedAt=new Date().toISOString();sub.updatedAt=new Date().toISOString();
+    db.rzV2.premiumEvents.push({event:"transaction.verify",reference:sub.reference,status:sub.status,userId:user.id,createdAt:new Date().toISOString()});
     ctx.saveDB(db);
-    ctx.sendJSON(res,200,{success:true,active:paid,status:sub.status,reference});return true;
+    ctx.sendJSON(res,200,{success:true,active:paid,status:sub.status,reference,subscriptionCode:sub.subscriptionCode||null});return true;
   }
 
   if(path==="/api/v2/premium/subscribe"&&method==="POST"){
@@ -371,6 +385,29 @@ async function handleRizoraEnterprise(ctx) {
     ctx.sendJSON(res,200,{success:true,authorizationUrl:ps.data.data.authorization_url,reference:sub.reference});return true;
   }
 
+  const premiumCancelPath="/api/v2/premium/cancel";
+  if(path===premiumCancelPath&&method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    if(!paystackConfigured()){ctx.sendError(res,503,"Paystack is not configured on the RIZORA server yet.");return true;}
+    const sub=db.rzV2.premiumSubscriptions.slice().reverse().find(function(x){
+      return x.userId===user.id&&["active","attention","non-renewing"].includes(x.status);
+    });
+    if(!sub){ctx.sendError(res,404,"No active Premium subscription was found.");return true;}
+    if(sub.status==="non-renewing"){ctx.sendJSON(res,200,{success:true,status:sub.status});return true;}
+    if(!sub.subscriptionCode||!sub.emailToken){
+      ctx.sendError(res,409,"Premium is active, but the recurring subscription credentials have not reached RIZORA yet. Try again after the payment webhook is received.");
+      return true;
+    }
+    const ps=await paystackRequest("/subscription/disable",{method:"POST",body:JSON.stringify({code:sub.subscriptionCode,token:sub.emailToken})});
+    if(!ps.response.ok||!ps.data.status){ctx.sendError(res,502,ps.data.message||"Unable to cancel Premium.");return true;}
+    sub.status="non-renewing";sub.updatedAt=new Date().toISOString();sub.cancelledAt=new Date().toISOString();
+    db.rzV2.premiumEvents.push({event:"subscription.cancel",reference:sub.reference,userId:user.id,createdAt:new Date().toISOString()});
+    db.notifications=db.notifications||[];
+    db.notifications.push({id:ctx.uid("notif_"),userId:user.id,title:"Premium cancellation scheduled",message:"Your RIZORA Premium subscription will not renew.",type:"billing",read:false,createdAt:new Date().toISOString()});
+    ctx.saveDB(db);
+    ctx.sendJSON(res,200,{success:true,status:sub.status,reference:sub.reference});return true;
+  }
+
   // ---------- digital products / creator commerce foundation ----------
   if(path==="/api/v2/products"&&method==="GET"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
@@ -385,6 +422,15 @@ async function handleRizoraEnterprise(ctx) {
     db.rzV2.products.push(product);ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,product});return true;
   }
   const buyMatch=path.match(/^\/api\/v2\/products\/([^/]+)\/buy$/);
+  if(path==="/api/v2/products/purchases"&&method==="GET"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const mine=db.rzV2.productPurchases.filter(x=>x.buyerId===user.id).slice().reverse().slice(0,100).map(function(p){
+      const product=db.rzV2.products.find(x=>x.id===p.productId);
+      return Object.assign({},p,{product:product?{id:product.id,title:product.title,description:product.description,assetUrl:product.assetUrl}:null});
+    });
+    ctx.sendJSON(res,200,{success:true,purchases:mine});return true;
+  }
+
   if(buyMatch&&method==="POST"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     const product=db.rzV2.products.find(x=>x.id===buyMatch[1]&&x.status==="active");if(!product){ctx.sendError(res,404,"Product not found.");return true;}
@@ -929,12 +975,64 @@ async function handleRizoraEnterprise(ctx) {
         String(m.memberEmail || "").toLowerCase() === String((data.customer && data.customer.email) || "").toLowerCase()
       );
     }
+    // Premium subscription lifecycle.
+    let premiumSub = reference ? db.rzV2.premiumSubscriptions.find(x => x.reference === reference) : null;
+    if (!premiumSub && ["subscription.create","invoice.create","invoice.update","invoice.payment_failed","subscription.not_renew","subscription.disable"].includes(event)) {
+      const planCode = String((data.plan && (data.plan.plan_code || data.plan.code)) || data.plan_code || "");
+      const customerEmail = String((data.customer && data.customer.email) || data.customer_email || "").toLowerCase();
+      premiumSub = db.rzV2.premiumSubscriptions.slice().reverse().find(x =>
+        ["pending","active","attention","non-renewing"].includes(x.status) &&
+        (!planCode || x.planCode === planCode || x.paystackPlanCode === planCode) &&
+        (!customerEmail || String((db.users||[]).find(u=>u.id===x.userId)?.email||"").toLowerCase()===customerEmail)
+      );
+    }
+    if (premiumSub) {
+      if (event === "charge.success" || event === "subscription.create" || event === "invoice.update") {
+        premiumSub.status = "active";
+      } else if (event === "invoice.payment_failed") {
+        premiumSub.status = "attention";
+      } else if (event === "subscription.not_renew") {
+        premiumSub.status = "non-renewing";
+      } else if (event === "subscription.disable") {
+        premiumSub.status = String(data.status||"").toLowerCase()==="complete" ? "completed" : "cancelled";
+      }
+      if (data.subscription_code) premiumSub.subscriptionCode = data.subscription_code;
+      if (data.email_token) premiumSub.emailToken = data.email_token;
+      if (data.next_payment_date) premiumSub.nextPaymentDate = data.next_payment_date;
+      if (data.subscription) {
+        premiumSub.subscriptionCode = premiumSub.subscriptionCode || data.subscription.subscription_code || "";
+        premiumSub.emailToken = premiumSub.emailToken || data.subscription.email_token || "";
+        premiumSub.nextPaymentDate = premiumSub.nextPaymentDate || data.subscription.next_payment_date || null;
+      }
+      if (data.plan && data.plan.plan_code) premiumSub.paystackPlanCode = premiumSub.paystackPlanCode || data.plan.plan_code;
+      premiumSub.lastEvent=event;
+      premiumSub.updatedAt=new Date().toISOString();
+      db.rzV2.premiumEvents.push({event,reference:premiumSub.reference,userId:premiumSub.userId,status:premiumSub.status,createdAt:new Date().toISOString()});
+      db.notifications=db.notifications||[];
+      if(["active","attention","non-renewing","cancelled"].includes(premiumSub.status)){
+        db.notifications.push({id:ctx.uid("notif_"),userId:premiumSub.userId,title:"Premium billing update",message:"Your RIZORA Premium subscription is now "+premiumSub.status+".",type:"billing",read:false,createdAt:new Date().toISOString()});
+      }
+    }
+
+    // Digital product purchases.
+    const purchase = reference ? db.rzV2.productPurchases.find(x => x.reference === reference) : null;
+    if (purchase) {
+      if (event === "charge.success") purchase.status = "success";
+      else if (["charge.failed","transaction.failed"].includes(event)) purchase.status = "failed";
+      purchase.paystackId = data.id || purchase.paystackId || null;
+      purchase.updatedAt = new Date().toISOString();
+      if (purchase.status === "success") {
+        db.notifications=db.notifications||[];
+        db.notifications.push({id:ctx.uid("notif_"),userId:purchase.buyerId,title:"Purchase confirmed",message:"Your RIZORA digital product purchase is confirmed.",type:"billing",read:false,createdAt:new Date().toISOString()});
+      }
+    }
+
     if (membership) {
-      if (event === "charge.success" || event === "subscription.create" || event === "invoice.create") {
+      if (event === "charge.success" || event === "subscription.create" || event === "invoice.create" || event === "invoice.update") {
         membership.status = "active";
         membership.updatedAt = new Date().toISOString();
       } else if (["invoice.payment_failed","subscription.disable","subscription.not_renew"].includes(event)) {
-        membership.status = event === "subscription.disable" ? "cancelled" : "attention";
+        membership.status = event === "subscription.disable" ? "cancelled" : event === "subscription.not_renew" ? "non-renewing" : "attention";
         membership.updatedAt = new Date().toISOString();
       }
       if (data.subscription_code) membership.subscriptionCode = data.subscription_code;
@@ -942,7 +1040,9 @@ async function handleRizoraEnterprise(ctx) {
       if (data.subscription) {
         membership.subscriptionCode = membership.subscriptionCode || data.subscription.subscription_code || "";
         membership.emailToken = membership.emailToken || data.subscription.email_token || "";
+        membership.nextPaymentDate = membership.nextPaymentDate || data.subscription.next_payment_date || null;
       }
+      if (data.next_payment_date) membership.nextPaymentDate = data.next_payment_date;
       membership.lastEvent=event;
       db.rzV2.creatorMembershipEvents.push({id:ctx.uid("mevent_"),event,membershipId:membership.id,reference:reference||null,createdAt:new Date().toISOString()});
     }
