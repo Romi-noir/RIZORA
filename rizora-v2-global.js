@@ -237,7 +237,13 @@ async function handleRizoraGlobal(ctx) {
     try { body = await readBody(req); } catch (e4) { ctx.sendError(res, 400, e4.message); return true; }
     var feedName = clean(ctx, body.name, 80);
     var hashtags = Array.isArray(body.hashtags) ? body.hashtags.map(function(x) { return clean(ctx, x, 40).replace(/^#/, "").toLowerCase(); }).filter(Boolean).slice(0, 12) : [];
-    var creatorIds = Array.isArray(body.creatorIds) ? body.creatorIds.map(String).slice(0, 20) : [];
+    var creatorRefs = Array.isArray(body.creatorIds) ? body.creatorIds.map(function(x) { return String(x).trim(); }).filter(Boolean).slice(0, 20) : [];
+    var creatorIds = creatorRefs.map(function(ref) {
+      var found = (db.users || []).find(function(u) {
+        return u.id === ref || String(u.username || "").toLowerCase() === ref.toLowerCase() || String(u.publicUsername || "").toLowerCase() === ref.toLowerCase();
+      });
+      return found ? found.id : null;
+    }).filter(Boolean);
     if (!feedName) { ctx.sendError(res, 400, "Feed name is required."); return true; }
     var custom = {id:ctx.uid("feed_"), userId:user.id, name:feedName, hashtags:hashtags, creatorIds:creatorIds, createdAt:isoNow()};
     db.rzV2.creatorFeeds.push(custom);
