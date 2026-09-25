@@ -31,7 +31,8 @@ function ensureState(db){
 }
 
 function mediaRoot(){
-  return path.join(__dirname, "uploads", "rizora");
+  const configured = String(process.env.RIZORA_MEDIA_ROOT || "").trim();
+  return path.resolve(configured || path.join(__dirname, "uploads", "rizora"));
 }
 
 function safeName(value){
