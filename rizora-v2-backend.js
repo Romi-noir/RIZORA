@@ -91,8 +91,6 @@ async function body(req){var raw="";for await(var c of req){raw+=c.toString();if
 function active(user){return !!user&&user.status==="active"&&user.postingRestricted!==true;}
 
 async function handleRizoraV2(ctx){
-  if (await handleRizoraUpgrades(ctx)) return true;
-  if (await handleRizoraModern(ctx)) return true;
   ensure(ctx.db);
   var db=ctx.db,req=ctx.req,res=ctx.res,user=ctx.getCurrentUser(db,req),url=new URL(req.url,"http://rizora.local"),path=url.pathname,method=String(req.method||"GET").toUpperCase();
 
@@ -250,8 +248,6 @@ async function handleRizoraV2(ctx){
   if (await handleRizoraMedia(ctx)) return true;
   if (await handleRizoraGrowth(ctx)) return true;
   if (await handleRizoraPlatform(ctx)) return true;
-  if (await handleRizoraModern(ctx)) return true;
-  if (await handleRizoraUpgrades(ctx)) return true;
   if (await handleRizoraFans(ctx)) return true;
   return false;
 }
