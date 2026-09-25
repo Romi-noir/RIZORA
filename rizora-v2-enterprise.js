@@ -18,6 +18,13 @@ function ensureEnterprise(db) {
   db.rzV2.onboardingCompletions = db.rzV2.onboardingCompletions || [];
   db.rzV2.creatorPortfolio = db.rzV2.creatorPortfolio || {};
   db.rzV2.creatorPlans = db.rzV2.creatorPlans || [];
+  db.rzV2.channels = db.rzV2.channels || [];
+  db.rzV2.channelPosts = db.rzV2.channelPosts || [];
+  db.rzV2.channelMembers = db.rzV2.channelMembers || [];
+  db.rzV2.premiumSubscriptions = db.rzV2.premiumSubscriptions || [];
+  db.rzV2.premiumEvents = db.rzV2.premiumEvents || [];
+  db.rzV2.products = db.rzV2.products || [];
+  db.rzV2.productPurchases = db.rzV2.productPurchases || [];
 }
 
 async function readBody(req, limit) {
@@ -261,6 +268,115 @@ async function handleRizoraEnterprise(ctx) {
     if(!plan){ctx.sendError(res,404,"Plan not found.");return true;}
     plan.status="cancelled"; plan.updatedAt=new Date().toISOString(); ctx.saveDB(db);
     ctx.sendJSON(res,200,{success:true,plan}); return true;
+  }
+
+
+  // ---------- creator channels / broadcast spaces ----------
+  if (path === "/api/v2/channels" && method === "GET") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    const channels = db.rzV2.channels.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,100).map(function(ch){
+      const owner=(db.users||[]).find(u=>u.id===ch.ownerId);
+      const memberCount=db.rzV2.channelMembers.filter(x=>x.channelId===ch.id).length;
+      const joined=db.rzV2.channelMembers.some(x=>x.channelId===ch.id&&x.userId===user.id);
+      return Object.assign({},ch,{owner:owner?{username:owner.publicUsername||owner.username,displayName:owner.displayName,verified:!!owner.verified}:null,memberCount,joined});
+    });
+    ctx.sendJSON(res,200,{success:true,channels}); return true;
+  }
+  if (path === "/api/v2/channels" && method === "POST") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    const b=await readBody(req,200000);
+    const name=safeString(b.name,100), description=safeString(b.description,500);
+    if(!name){ctx.sendError(res,400,"Channel name is required.");return true;}
+    const channel={id:ctx.uid("channel_"),ownerId:user.id,name,description,visibility:["public","followers"].includes(b.visibility)?b.visibility:"public",createdAt:new Date().toISOString()};
+    db.rzV2.channels.push(channel);
+    db.rzV2.channelMembers.push({id:ctx.uid("cm_"),channelId:channel.id,userId:user.id,role:"owner",createdAt:new Date().toISOString()});
+    ctx.saveDB(db); ctx.sendJSON(res,201,{success:true,channel}); return true;
+  }
+  const channelMatch=path.match(/^\/api\/v2\/channels\/([^/]+)$/);
+  if(channelMatch&&method==="GET"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const ch=db.rzV2.channels.find(x=>x.id===channelMatch[1]); if(!ch){ctx.sendError(res,404,"Channel not found.");return true;}
+    const member=db.rzV2.channelMembers.some(x=>x.channelId===ch.id&&x.userId===user.id);
+    if(ch.visibility==="followers"){
+      const owner=(db.users||[]).find(u=>u.id===ch.ownerId);
+      const following=owner&&(db.rzV2.follows||[]).some(x=>x.followerId===user.id&&x.followingId===owner.id);
+      if(!following&&!member&&owner?.id!==user.id){ctx.sendError(res,403,"Follow this creator to join the channel.");return true;}
+    }
+    const posts=db.rzV2.channelPosts.filter(x=>x.channelId===ch.id).slice().reverse().slice(0,100);
+    ctx.sendJSON(res,200,{success:true,channel:ch,member,posts}); return true;
+  }
+  if(channelMatch&&method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const ch=db.rzV2.channels.find(x=>x.id===channelMatch[1]); if(!ch){ctx.sendError(res,404,"Channel not found.");return true;}
+    const b=await readBody(req,100000); const text=safeString(b.text,3000);
+    if(!text){ctx.sendError(res,400,"Message is required.");return true;}
+    const member=db.rzV2.channelMembers.some(x=>x.channelId===ch.id&&x.userId===user.id);
+    if(!member){ctx.sendError(res,403,"Join the channel first.");return true;}
+    const post={id:ctx.uid("chpost_"),channelId:ch.id,userId:user.id,text,createdAt:new Date().toISOString()};
+    db.rzV2.channelPosts.push(post); if(db.rzV2.channelPosts.length>10000)db.rzV2.channelPosts=db.rzV2.channelPosts.slice(-10000);
+    ctx.saveDB(db); ctx.sendJSON(res,201,{success:true,post}); return true;
+  }
+  const channelJoin=path.match(/^\/api\/v2\/channels\/([^/]+)\/join$/);
+  if(channelJoin&&method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const ch=db.rzV2.channels.find(x=>x.id===channelJoin[1]);if(!ch){ctx.sendError(res,404,"Channel not found.");return true;}
+    const exists=db.rzV2.channelMembers.find(x=>x.channelId===ch.id&&x.userId===user.id);
+    if(exists){db.rzV2.channelMembers.splice(db.rzV2.channelMembers.indexOf(exists),1);ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,joined:false});return true;}
+    db.rzV2.channelMembers.push({id:ctx.uid("cm_"),channelId:ch.id,userId:user.id,role:"member",createdAt:new Date().toISOString()});
+    ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,joined:true});return true;
+  }
+
+  // ---------- premium entitlement + subscription foundation ----------
+  if(path==="/api/v2/premium/status"&&method==="GET"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const active=db.rzV2.premiumSubscriptions.find(x=>x.userId===user.id&&["active","non-renewing","attention"].includes(x.status));
+    const configured=!!String(process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
+    ctx.sendJSON(res,200,{success:true,plan:active?active.plan:"free",active:!!active,configured,provider:"paystack",features:{
+      advancedAI:true,advancedAnalytics:true,creatorPortfolio:true,experiments:true,contentPlanning:true,
+      broadcastChannels:true,digitalProducts:true,creatorPayouts:true
+    }}); return true;
+  }
+  if(path==="/api/v2/premium/subscribe"&&method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const planCode=String(process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
+    if(!planCode){ctx.sendError(res,503,"RIZORA Premium billing is not configured yet.");return true;}
+    if(!paystackConfigured()){ctx.sendError(res,503,"Paystack is not configured on the RIZORA server yet.");return true;}
+    const email=safeString(user.email,180); if(!email||!email.includes("@")){ctx.sendError(res,400,"A valid account email is required.");return true;}
+    const ref="RZP-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
+    const payload={email,amount:String(Number(process.env.RIZORA_PREMIUM_INITIAL_AMOUNT||0)),currency:String(process.env.RIZORA_CURRENCY||"NGN"),reference:ref,plan:planCode,callback_url:String(process.env.RIZORA_PAYMENT_CALLBACK||"https://rizora.com.ng/")};
+    if(!payload.amount||Number(payload.amount)<=0){ctx.sendError(res,503,"Premium initial amount is not configured.");return true;}
+    const ps=await paystackRequest("/transaction/initialize",{method:"POST",body:JSON.stringify(payload)});
+    if(!ps.response.ok||!ps.data.status){ctx.sendError(res,502,ps.data.message||"Unable to initialize Premium payment.");return true;}
+    const sub={id:"prem_"+Date.now().toString(36),userId:user.id,plan:"premium",planCode,provider:"paystack",reference:ps.data.data.reference,status:"pending",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+    db.rzV2.premiumSubscriptions.push(sub);db.rzV2.premiumEvents.push({event:"subscription.initialize",reference:sub.reference,userId:user.id,createdAt:new Date().toISOString()});ctx.saveDB(db);
+    ctx.sendJSON(res,200,{success:true,authorizationUrl:ps.data.data.authorization_url,reference:sub.reference});return true;
+  }
+
+  // ---------- digital products / creator commerce foundation ----------
+  if(path==="/api/v2/products"&&method==="GET"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const products=db.rzV2.products.filter(x=>x.status!=="archived").slice().reverse().slice(0,100);
+    ctx.sendJSON(res,200,{success:true,products});return true;
+  }
+  if(path==="/api/v2/products"&&method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const b=await readBody(req,200000),title=safeString(b.title,160),description=safeString(b.description,1000),price=Number(b.priceNaira);
+    if(!title||!Number.isFinite(price)||price<=0){ctx.sendError(res,400,"Product title and valid price are required.");return true;}
+    const product={id:ctx.uid("product_"),creatorId:user.id,title,description,priceNaira:price,currency:"NGN",assetUrl:safeString(b.assetUrl,1000),status:"active",createdAt:new Date().toISOString()};
+    db.rzV2.products.push(product);ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,product});return true;
+  }
+  const buyMatch=path.match(/^\/api\/v2\/products\/([^/]+)\/buy$/);
+  if(buyMatch&&method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    const product=db.rzV2.products.find(x=>x.id===buyMatch[1]&&x.status==="active");if(!product){ctx.sendError(res,404,"Product not found.");return true;}
+    if(product.creatorId===user.id){ctx.sendError(res,400,"You cannot purchase your own product.");return true;}
+    if(!paystackConfigured()){ctx.sendError(res,503,"Payments are not configured yet.");return true;}
+    const ref="RZX-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
+    const payload={email:safeString(user.email,180),amount:String(Math.round(Number(product.priceNaira)*100)),currency:"NGN",reference:ref,metadata:JSON.stringify({type:"digital_product",productId:product.id,buyerId:user.id,creatorId:product.creatorId}),callback_url:String(process.env.RIZORA_PAYMENT_CALLBACK||"https://rizora.com.ng/")};
+    const ps=await paystackRequest("/transaction/initialize",{method:"POST",body:JSON.stringify(payload)});
+    if(!ps.response.ok||!ps.data.status){ctx.sendError(res,502,ps.data.message||"Unable to initialize product payment.");return true;}
+    db.rzV2.productPurchases.push({id:ctx.uid("purchase_"),productId:product.id,buyerId:user.id,creatorId:product.creatorId,reference:ps.data.data.reference,status:"pending",amountNaira:product.priceNaira,createdAt:new Date().toISOString()});
+    ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,authorizationUrl:ps.data.data.authorization_url,reference:ps.data.data.reference});return true;
   }
 
   // ---------- creator profile ----------
