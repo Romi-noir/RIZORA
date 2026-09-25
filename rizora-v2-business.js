@@ -5,6 +5,7 @@ function ensureBusiness(db) {
   db.rzV2.businessEvents = db.rzV2.businessEvents || [];
   db.rzV2.creatorMemberships = db.rzV2.creatorMemberships || [];
   db.rzV2.creatorMembershipTiers = db.rzV2.creatorMembershipTiers || [];
+  db.rzV2.creatorMembershipEvents = db.rzV2.creatorMembershipEvents || [];
   db.rzV2.tips = db.rzV2.tips || [];
   db.rzV2.productPurchases = db.rzV2.productPurchases || [];
   db.rzV2.products = db.rzV2.products || [];
