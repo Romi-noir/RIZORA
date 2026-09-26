@@ -4698,7 +4698,18 @@ await rizoraGroqCompletion({
     },
     {
       role: "user",
-      content: message
+      content:
+        JSON.stringify({
+          account: {
+            username: user.username,
+            publicUsername: user.publicUsername || user.username,
+            displayName: user.displayName || user.username,
+            verified: user.verified === true || user.verificationStatus === "verified",
+            points: Number(user.points || 0)
+          }
+        }) +
+        "\nUser request: " +
+        message
     }
   ]
 });const data =
@@ -9528,6 +9539,8 @@ async function rizoraGroqCompletion(options) {
           model: modelName,
           messages,
           temperature: 0.7,
+          reasoning_effort: "low",
+          include_reasoning: false,
           max_completion_tokens: 1200
         })
       }
