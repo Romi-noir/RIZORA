@@ -3851,7 +3851,7 @@ if (
         error:
           "Your next RIZORA task is still on cooldown.",
         cooldown,
-        cooldownMinutes: 7
+        cooldownMinutes: 45
       }
     );
     return;
@@ -4545,7 +4545,7 @@ if (
         error:
           "Your next task is still on cooldown.",
         cooldown,
-        cooldownMinutes: 7
+        cooldownMinutes: 45
       }
     );
     return;
