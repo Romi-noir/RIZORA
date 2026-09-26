@@ -2,7 +2,7 @@
 (function(){
   var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-  async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var t=await r.text(),d={};try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}if(!r.ok)throw new Error(d.message||d.error||"Request failed.");return d;}
+  async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
   function toast(s){if(window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.toast)return window.RIZORA_ENTERPRISE.toast(s);var t=document.getElementById("toast");if(!t)return;t.textContent=s;t.classList.add("show");setTimeout(function(){t.classList.remove("show");},2400);}
   function close(){var x=document.getElementById("rzCommentStudio");if(x)x.remove();}
   function modal(body){close();var m=document.createElement("div");m.id="rzCommentStudio";m.className="rz-comment-overlay";m.innerHTML='<div class="rz-comment-panel"><div class="rz-comment-head"><div><div class="rz-kicker">RIZORA COMMENT STUDIO</div><h2>Comment Control Center</h2><p class="rz-muted">Filter, review and manage conversations on your posts.</p></div><button class="rz-btn" id="rzCommentClose">Close</button></div><div id="rzCommentBody">'+body+'</div></div>';document.body.appendChild(m);document.getElementById("rzCommentClose").onclick=close;m.addEventListener("click",function(e){if(e.target===m)close();});return m;}

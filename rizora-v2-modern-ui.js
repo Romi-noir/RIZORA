@@ -2,7 +2,7 @@
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var t=await r.text(),d={};try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}if(!r.ok)throw new Error(d.message||d.error||"Request failed.");return d;}
+async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
 function close(){var x=document.getElementById("rzModernOverlay");if(x)x.remove();}
 function modal(title,sub,body){close();var m=document.createElement("div");m.id="rzModernOverlay";m.className="rz-modern-overlay";m.innerHTML='<div class="rz-modern-panel"><div class="rz-modern-head"><div><div class="rz-kicker">RIZORA CONTROL CENTER</div><h2>'+esc(title)+'</h2><p>'+esc(sub||"")+'</p></div><button class="rz-btn" id="rzModernClose">Close</button></div><div id="rzModernBody">'+body+'</div></div>';document.body.appendChild(m);document.getElementById("rzModernClose").onclick=close;m.addEventListener("click",function(e){if(e.target===m)close();});return m;}
 function notify(s){if(window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.toast)return window.RIZORA_ENTERPRISE.toast(s);alert(s);}

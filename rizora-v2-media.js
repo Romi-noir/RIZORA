@@ -19,7 +19,7 @@
     opt=opt||{};
     const res=await fetch(API+path,Object.assign({
       credentials:"include",
-      headers:{"Content-Type":"application/json"}
+      headers:window.RIZORA_AUTH_HEADERS?window.RIZORA_AUTH_HEADERS({"Content-Type":"application/json"}):{"Content-Type":"application/json"}
     },opt));
     const text=await res.text();
     let data={};
