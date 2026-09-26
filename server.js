@@ -4706,9 +4706,7 @@ if (
       );
     }
 
-    const rateKey =
-      req.socket.remoteAddress ||
-      user.id;
+    const rateKey = user.id;
 
     if (
       !checkRateLimit(
