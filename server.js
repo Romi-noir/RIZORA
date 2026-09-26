@@ -3505,6 +3505,7 @@ if (method === "GET" && pathname === "/api/tasks") {
   const normalTasks = db.tasks
     .filter(task => task.active !== false)
     .filter(task => task.type !== "generated")
+    .filter(task => task.type !== "social_follow")
     .filter(task => !(task.type === "community" && task.creatorId === user.id))
     .filter(task => !completedIds.has(task.id))
     .map(task => ({
