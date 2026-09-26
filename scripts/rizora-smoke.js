@@ -31,6 +31,15 @@ function cookieFrom(response) {
 }
 
 async function main() {
+  const indexSource = require("fs").readFileSync("index.html", "utf8");
+  const suiteSource = require("fs").readFileSync("rizora-v2-suite.js", "utf8");
+  const serviceWorkerSource = require("fs").readFileSync("service-worker.js", "utf8");
+
+  assert(!indexSource.includes("/rizora-v2-growth.js"), "frontend must not load the backend-only rizora-v2-growth.js module");
+  assert(suiteSource.includes("function modal("), "Creator Suite modal constructor is missing");
+  assert(serviceWorkerSource.includes('RIZORA_CACHE="rizora-v2-shell-v22-runtimeauth"'), "PWA cache version must be v22");
+  assert(!serviceWorkerSource.includes('"/rizora-v2-growth.js"'), "PWA cache must not contain the backend-only growth module");
+
   const child = spawn(process.execPath, ["server.js"], {
     cwd: process.cwd(),
     env: {
