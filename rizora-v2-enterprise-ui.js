@@ -161,7 +161,26 @@ function adminReport(r){return '<article class="rz-card"><strong>'+esc(r.targetT
 function bindAdmin(){
   document.querySelectorAll("[data-admin-ticket]").forEach(function(f){f.onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/admin/support/"+encodeURIComponent(f.getAttribute("data-admin-ticket")),{method:"POST",body:JSON.stringify({status:f.status.value,message:f.message.value})});toast("Support ticket updated.");showAdmin();}catch(x){toast(x.message);}};});
   document.querySelectorAll("[data-admin-report]").forEach(function(f){f.onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/admin/reports/"+encodeURIComponent(f.getAttribute("data-admin-report")),{method:"POST",body:JSON.stringify({action:f.action.value})});toast("Moderation action applied.");showAdmin();}catch(x){toast(x.message);}};});
+  document.querySelectorAll("[data-user-save]").forEach(function(b){b.onclick=async function(){
+    var id=b.getAttribute("data-user-save");
+    var statusEl=document.querySelector('[data-user-status="'+id+'"]');
+    var roleEl=document.querySelector('[data-user-role="'+id+'"]');
+    try{
+      await api("/api/superadmin/users/status",{method:"POST",body:JSON.stringify({userId:id,status:statusEl&&statusEl.value||"active"})});
+      await api("/api/superadmin/users/role",{method:"POST",body:JSON.stringify({userId:id,role:roleEl&&roleEl.value||"user"})});
+      toast("User permissions updated.");showAdmin();
+    }catch(x){toast(x.message);}
+  };});
+  document.querySelectorAll("[data-task-toggle]").forEach(function(b){b.onclick=async function(){
+    var id=b.getAttribute("data-task-toggle");
+    var nextActive=b.textContent.trim().toLowerCase()==="activate";
+    try{
+      await api("/api/superadmin/tasks/status",{method:"POST",body:JSON.stringify({taskId:id,active:nextActive})});
+      toast(nextActive?"Mission activated.":"Mission disabled.");showAdmin();
+    }catch(x){toast(x.message);}
+  };});
 }
+
 async function verifyPayment(ref){try{var d=await api("/api/v2/payments/verify/"+encodeURIComponent(ref));toast("Payment status: "+d.status);loadWallet();}catch(x){toast(x.message);}}
 function bindView(){
   document.querySelectorAll("[data-rzx-action]").forEach(function(b){b.onclick=async function(){var a=b.getAttribute("data-rzx-action");if(a==="premium")return showPremium();if(a==="premium-cancel")return; if(a==="channels")return showChannels();if(a==="shop")return showShop();if(a==="support")return showSupport();if(a==="wallet")return showWallet();if(a==="creator")return showCreatorLookup();if(a==="report")return showReport();if(a==="admin")return showAdmin();if(a==="boosts"){var n=document.querySelector('[data-nav="boosts"]');if(n)n.click();return;}if(a==="back")return backHome();if(a==="refresh-support")return loadSupport();if(a==="refresh-wallet")return loadWallet();if(a==="refresh-admin")return showAdmin();if(a.indexOf("verify-payment:")===0)return verifyPayment(a.slice(15));};});
