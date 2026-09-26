@@ -40,6 +40,7 @@ async function premium(){
    "RIZORA Premium is connected to the live billing entitlement API when Paystack Premium is configured.",
    premiumBody
  );
+ bindSuiteButtons(b);
  try{
    var x=await Promise.all([
      api("/api/v2/premium/status"),
@@ -128,7 +129,6 @@ async function premium(){
    var errorBox=document.getElementById("rzSuitePremiumStatus");
    if(errorBox)errorBox.innerHTML=card("PREMIUM STATUS",'<p class="rz-error">'+esc(e.message)+'</p>');
  }
- bindSuiteButtons(b);
  return b;
 }
 async function analytics(){
