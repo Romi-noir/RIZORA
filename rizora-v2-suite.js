@@ -4,15 +4,7 @@ var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var t=await r.text(),d={};try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}if(!r.ok)throw new Error(d.message||d.error||"Request failed.");return d;}
-function toast(s){if(window.RIZORA_ENTERPRISE&&typeof window.RIZORA_ENTERPRISE.toast==="function")return window.RIZORA_ENTERPRISE.toast(s);var t=document.getElementById("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rzSuiteToast);window.__rzSuiteToast=setTimeout(function(){t.classList.remove("show");},2400);}
-function modal(title,sub,body){
- var old=document.getElementById("rzSuiteModal");if(old)old.remove();
- var m=document.createElement("div");m.id="rzSuiteModal";m.className="rz-suite-overlay";
- m.innerHTML='<div class="rz-suite-panel"><div class="rz-suite-head"><div><div class="rz-kicker">RIZORA CREATOR SUITE</div><h2>'+esc(title)+'</h2><p class="rz-muted">'+esc(sub||"")+'</p></div><button class="rz-btn" id="rzSuiteClose">Close</button></div><div id="rzSuiteBody">'+body+'</div></div>';
- document.body.appendChild(m);document.getElementById("rzSuiteClose").onclick=function(){m.remove();};m.addEventListener("click",function(e){if(e.target===m)m.remove();});
- return document.getElementById("rzSuiteBody");
-}
+async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
 function card(title,body){return '<section class="rz-suite-card"><div class="rz-kicker">'+esc(title)+'</div>'+body+'</section>';}
 function stat(v,k){return '<div class="rz-suite-stat"><strong>'+esc(v)+'</strong><span>'+esc(k)+'</span></div>';}
 
