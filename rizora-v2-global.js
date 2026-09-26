@@ -57,6 +57,7 @@ function channelDecorated(db, channel, viewerId) {
     owner: owner,
     name: channel.name,
     description: channel.description,
+    visibility: channel.visibility || "public",
     createdAt: channel.createdAt,
     memberCount: members.length,
     joined: members.some(function(m) { return m.userId === viewerId; })
@@ -261,12 +262,14 @@ async function handleRizoraGlobal(ctx) {
     try { body = await readBody(req); } catch (e) { ctx.sendError(res, 400, e.message); return true; }
     var name = clean(ctx, body.name, 80);
     var description = clean(ctx, body.description, 500);
+    var visibility = clean(ctx, body.visibility, 20).toLowerCase();
+    if (!["public", "followers"].includes(visibility)) visibility = "public";
     if (!name) { ctx.sendError(res, 400, "Channel name is required."); return true; }
     if (db.rzV2.channels.filter(function(c) { return c.ownerId === user.id; }).length >= 3) {
       ctx.sendError(res, 400, "You can create up to 3 broadcast channels.");
       return true;
     }
-    var channel = {id:ctx.uid("chn_"), ownerId:user.id, name:name, description:description, createdAt:isoNow()};
+    var channel = {id:ctx.uid("chn_"), ownerId:user.id, name:name, description:description, visibility:visibility, createdAt:isoNow()};
     db.rzV2.channels.push(channel);
     db.rzV2.channelMembers.push({id:ctx.uid("chnm_"), channelId:channel.id, userId:user.id, createdAt:isoNow(), role:"owner"});
     ctx.saveDB(db);
@@ -279,13 +282,28 @@ async function handleRizoraGlobal(ctx) {
     if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
     var channel = db.rzV2.channels.find(function(c) { return c.id === cm[1]; });
     if (!channel) { ctx.sendError(res, 404, "Channel not found."); return true; }
+    if (channel.visibility === "followers" && channel.ownerId !== user.id) {
+      var followsOwner = db.rzV2.channelMembers.some(function(m) { return m.channelId === channel.id && m.userId === user.id; });
+      var followsCreator = (db.rzV2.follows || []).some(function(f) { return f.followerId === user.id && f.followingId === channel.ownerId; });
+      if (!followsOwner && !followsCreator) { ctx.sendError(res, 403, "Follow this creator or join the channel before viewing it."); return true; }
+    }
     var messages = db.rzV2.channelMessages.filter(function(m) { return m.channelId === channel.id; }).slice(-50).map(function(m) {
       var actor = publicUser(db, m.userId);
       var reactions = {};
       db.rzV2.channelReactions.filter(function(r) { return r.messageId === m.id; }).forEach(function(r) { reactions[r.reaction] = Number(reactions[r.reaction] || 0) + 1; });
       return {id:m.id, channelId:m.channelId, user:actor, text:m.text, poll:m.poll || null, createdAt:m.createdAt, reactions:reactions};
     });
-    ctx.sendJSON(res, 200, {success:true, channel:channelDecorated(db, channel, user.id), messages:messages});
+    var posts = messages.map(function(m) {
+      return {
+        id:m.id,
+        username:(m.user && (m.user.publicUsername || m.user.username)) || "",
+        text:m.text || "",
+        createdAt:m.createdAt,
+        userId:m.user ? m.user.id : null,
+        poll:m.poll || null
+      };
+    });
+    ctx.sendJSON(res, 200, {success:true, channel:channelDecorated(db, channel, user.id), messages:messages, posts:posts});
     return true;
   }
 
@@ -295,7 +313,14 @@ async function handleRizoraGlobal(ctx) {
     var targetChannel = db.rzV2.channels.find(function(c) { return c.id === cj[1]; });
     if (!targetChannel) { ctx.sendError(res, 404, "Channel not found."); return true; }
     var member = db.rzV2.channelMembers.find(function(m) { return m.channelId === targetChannel.id && m.userId === user.id; });
-    if (!member) db.rzV2.channelMembers.push({id:ctx.uid("chnm_"), channelId:targetChannel.id, userId:user.id, createdAt:isoNow(), role:"member"});
+    if (member) {
+      if (targetChannel.ownerId === user.id) { ctx.sendError(res, 400, "Owners cannot leave their own channel."); return true; }
+      db.rzV2.channelMembers = db.rzV2.channelMembers.filter(function(row) { return !(row.channelId === targetChannel.id && row.userId === user.id); });
+      ctx.saveDB(db);
+      ctx.sendJSON(res, 200, {success:true, joined:false});
+      return true;
+    }
+    db.rzV2.channelMembers.push({id:ctx.uid("chnm_"), channelId:targetChannel.id, userId:user.id, createdAt:isoNow(), role:"member"});
     ctx.saveDB(db);
     ctx.sendJSON(res, 200, {success:true, joined:true});
     return true;
@@ -310,6 +335,24 @@ async function handleRizoraGlobal(ctx) {
     db.rzV2.channelMembers = db.rzV2.channelMembers.filter(function(m) { return !(m.channelId === leaveChannel.id && m.userId === user.id); });
     ctx.saveDB(db);
     ctx.sendJSON(res, 200, {success:true, joined:false});
+    return true;
+  }
+
+  var broadcast = pathname.match(/^\/api\/v2\/channels\/([^/]+)$/);
+  if (broadcast && method === "POST") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    var broadcastChannel = db.rzV2.channels.find(function(c) { return c.id === broadcast[1]; });
+    if (!broadcastChannel) { ctx.sendError(res, 404, "Channel not found."); return true; }
+    var broadcastMember = db.rzV2.channelMembers.find(function(m) { return m.channelId === broadcastChannel.id && m.userId === user.id; });
+    if (!broadcastMember) { ctx.sendError(res, 403, "Join the channel before posting an update."); return true; }
+    if (broadcastChannel.ownerId !== user.id) { ctx.sendError(res, 403, "Only the channel owner can broadcast updates."); return true; }
+    try { body = await readBody(req); } catch (e0) { ctx.sendError(res, 400, e0.message); return true; }
+    var broadcastText = clean(ctx, body.text, 2000);
+    if (!broadcastText) { ctx.sendError(res, 400, "Message text is required."); return true; }
+    var broadcastMessage = {id:ctx.uid("chnmsg_"), channelId:broadcastChannel.id, userId:user.id, text:broadcastText, poll:null, createdAt:isoNow()};
+    db.rzV2.channelMessages.push(broadcastMessage);
+    ctx.saveDB(db);
+    ctx.sendJSON(res, 201, {success:true, message:broadcastMessage});
     return true;
   }
 
