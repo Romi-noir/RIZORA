@@ -2,14 +2,7 @@
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-async function api(path,opt){
-  opt=opt||{};
-  var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});
-  var t=await r.text(),d={};
-  try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}
-  if(!r.ok)throw new Error(d.message||d.error||"Request failed.");
-  return d;
-}
+async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
 function close(){var x=document.getElementById("rzBusinessModal");if(x)x.remove();}
 function modal(title,kicker,body){
   close();
@@ -39,7 +32,7 @@ async function earnings(){
       '<section class="rz-business-card"><div class="rz-business-card-head"><div><strong>Confirmed transactions</strong><span>Recent gross creator revenue recorded by RIZORA.</span></div></div>'+
       '<div class="rz-business-table">'+(rows.length?rows.map(function(r){return '<div class="rz-business-row"><div><strong>'+esc(r.description||r.kind)+'</strong><small>'+esc(r.kind||"transaction")+' · '+esc(r.status||"")+'</small></div><strong>'+naira(r.grossNaira)+'</strong><small>'+esc(r.createdAt?new Date(r.createdAt).toLocaleString():"")+'</small></div>';}).join(""):'<div class="rz-business-empty">No confirmed creator transactions yet.</div>')+'</div></section>';
     var m=modal("Creator Earnings","BUSINESS • TRANSPARENCY",body);
-    m.querySelector("#rzBusinessExport").onclick=async function(){try{var rr=await fetch(API+"/api/v2/business/export",{credentials:"include"});if(!rr.ok)throw new Error("Export failed.");var blob=await rr.blob(),name="rizora-business-ledger.csv";if(window.RIZORA_DOWNLOAD&&window.RIZORA_DOWNLOAD.blob)window.RIZORA_DOWNLOAD.blob(blob,name,"business-ledger");else{var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}}catch(e){toast(e.message);}};
+    m.querySelector("#rzBusinessExport").onclick=async function(){try{var rr=await fetch(API+"/api/v2/business/export",{credentials:"include",headers:window.RIZORA_AUTH_HEADERS?window.RIZORA_AUTH_HEADERS():{}});if(!rr.ok)throw new Error("Export failed.");var blob=await rr.blob(),name="rizora-business-ledger.csv";if(window.RIZORA_DOWNLOAD&&window.RIZORA_DOWNLOAD.blob)window.RIZORA_DOWNLOAD.blob(blob,name,"business-ledger");else{var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}}catch(e){toast(e.message);}};
     m.querySelector("#rzBusinessRefresh").onclick=earnings;
   }catch(e){
     modal("Creator Earnings","BUSINESS",'<div class="rz-error">'+esc(e.message)+'</div>');
