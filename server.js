@@ -4645,6 +4645,61 @@ if (
       );
     }
 
+    const knownRizoraIdentityAnswer =
+      message
+        .toLowerCase()
+        .replace(/[^a-z0-9@]+/g, " ")
+        .replace(/\\s+/g, " ")
+        .trim();
+
+    if (
+      /^(who owns rizora|who is the owner of rizora|owner of rizora|who created rizora|who made rizora|who built rizora)$/.test(knownRizoraIdentityAnswer)
+    ) {
+      return sendJSON(
+        res,
+        200,
+        {
+          success: true,
+          provider: "rizora",
+          deterministic: true,
+          reply:
+            "RIZORA is a private creator platform created by RoMi (@romi.noir). RoMi is Ajiboye Hallelujah Oluwaronmi, an artist, developer, creator and builder. The current RIZORA context does not specify legal ownership percentages or a shareholder breakdown."
+        }
+      );
+    }
+
+    if (
+      /^(who is romi|who is @romi|who s romi|tell me about romi)$/.test(knownRizoraIdentityAnswer)
+    ) {
+      return sendJSON(
+        res,
+        200,
+        {
+          success: true,
+          provider: "rizora",
+          deterministic: true,
+          reply:
+            "RoMi (@romi.noir) is Ajiboye Hallelujah Oluwaronmi — an artist, developer, creator and builder, and the creator of RIZORA."
+        }
+      );
+    }
+
+    if (
+      /^(what is rizora|what does rizora do)$/.test(knownRizoraIdentityAnswer)
+    ) {
+      return sendJSON(
+        res,
+        200,
+        {
+          success: true,
+          provider: "rizora",
+          deterministic: true,
+          reply:
+            "RIZORA is a creator platform built by RoMi (@romi.noir) for social growth, missions, creator tools, AI support, analytics, referrals, boosts, community and creator campaigns."
+        }
+      );
+    }
+
     const groqKey =
       String(
         process.env.GROQ_API_KEY || ""
