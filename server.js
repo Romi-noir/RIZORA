@@ -9629,7 +9629,7 @@ async function rizoraGroqCompletion(options) {
           messages,
           temperature: 0.7,
           reasoning_effort: "low",
-          reasoning_format: "hidden",
+          include_reasoning: false,
           max_completion_tokens: 1200
         })
       }
