@@ -34,6 +34,7 @@ async function main() {
   const indexSource = require("fs").readFileSync("index.html", "utf8");
   const suiteSource = require("fs").readFileSync("rizora-v2-suite.js", "utf8");
   const serviceWorkerSource = require("fs").readFileSync("service-worker.js", "utf8");
+  const vercelConfig = JSON.parse(require("fs").readFileSync("vercel.json", "utf8"));
 
   assert(!indexSource.includes("/rizora-v2-growth.js"), "frontend must not load the backend-only rizora-v2-growth.js module");
   assert(suiteSource.includes("function modal("), "Creator Suite modal constructor is missing");
@@ -41,6 +42,11 @@ async function main() {
   assert(suiteSource.includes("bindSuiteButtons(b);"), "Creator Suite controls are not bound");
   assert(serviceWorkerSource.includes('RIZORA_CACHE="rizora-v2-shell-v22-runtimeauth"'), "PWA cache version must be v22");
   assert(!serviceWorkerSource.includes('"/rizora-v2-growth.js"'), "PWA cache must not contain the backend-only growth module");
+  assert(vercelConfig.framework === null, "Vercel framework must be explicit static/Other"); 
+  assert(vercelConfig.buildCommand === "", "Vercel build command must be empty for the root static app");
+  assert(vercelConfig.installCommand === "", "Vercel install command must be empty for the root static app");
+  assert(vercelConfig.outputDirectory === ".", "Vercel output directory must be the repository root");
+  assert(Array.isArray(vercelConfig.rewrites) && vercelConfig.rewrites.some(x => x.source === "/login" && x.destination === "/"), "Vercel login rewrite is missing");
 
   const child = spawn(process.execPath, ["server.js"], {
     cwd: process.cwd(),
