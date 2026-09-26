@@ -32,7 +32,7 @@
   async function getBlob(url){
     var target=String(url||"").trim();
     if(!target)throw new Error("Media URL is missing.");
-    var res=await fetch(target.startsWith("http")?target:(API+target),{credentials:"include"});
+    var res=await fetch(target.startsWith("http")?target:(API+target),{credentials:"include",headers:window.RIZORA_AUTH_HEADERS?window.RIZORA_AUTH_HEADERS():{}});
     if(!res.ok)throw new Error("RIZORA could not fetch that file.");
     return await res.blob();
   }
