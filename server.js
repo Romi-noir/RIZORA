@@ -4804,7 +4804,18 @@ await rizoraGroqCompletion({
     },
     {
       role: "user",
-      content: message
+      content:
+        JSON.stringify({
+          account: {
+            username: user.username,
+            publicUsername: user.publicUsername || user.username,
+            displayName: user.displayName || user.username,
+            verified: user.verified === true || user.verificationStatus === "verified",
+            points: Number(user.points || 0)
+          }
+        }) +
+        "\nUser request: " +
+        message
     }
   ]
 });const data =
