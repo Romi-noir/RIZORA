@@ -2,6 +2,8 @@
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
+function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var t=await r.text(),d={};try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}if(!r.ok)throw new Error(d.message||d.error||"Request failed.");return d;}
 function toast(s){if(window.RIZORA_ENTERPRISE&&typeof window.RIZORA_ENTERPRISE.toast==="function")return window.RIZORA_ENTERPRISE.toast(s);var t=document.getElementById("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rzSuiteToast);window.__rzSuiteToast=setTimeout(function(){t.classList.remove("show");},2400);}
 function modal(title,sub,body){
@@ -199,8 +201,8 @@ function bindSuiteButtons(root){
  (root||document).querySelectorAll("[data-suite-go]").forEach(function(el){el.onclick=function(){var a=el.getAttribute("data-suite-go");if(a==="premium")return premium();if(a==="analytics")return analytics();if(a==="intelligence")return intelligence();if(a==="leaderboard")return leaderboard();if(a==="referrals")return referrals();if(a==="history")return history();if(a==="experiments")return experiments();if(a==="settings")return settings();if(a==="portfolio")return portfolio();if(a==="campaigns")return campaigns();if(a==="community")return community();if(a==="install")return install();if(a==="romi")return romi();if(a==="verification"){var pv=document.querySelector('[data-nav="profile"]');if(pv){var mm=document.getElementById("rzSuiteModal");if(mm)mm.remove();pv.click();}}if(a==="flow"||a==="grow"||a==="boosts"){var n=document.querySelector('[data-nav="'+a+'"]');if(n){var m=document.getElementById("rzSuiteModal");if(m)m.remove();n.click();}}};});
 }
 function logout(){
-  fetch(API+"/api/auth/logout",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"}}).catch(function(){});
-  try{localStorage.removeItem("rizoraToken");localStorage.removeItem("rizora_token");}catch(_){}
+  if(window.RIZORA_API_CALL)window.RIZORA_API_CALL("/api/auth/logout",{method:"POST"}).catch(function(){});else fetch(API+"/api/auth/logout",{method:"POST",credentials:"include",headers:window.RIZORA_AUTH_HEADERS?window.RIZORA_AUTH_HEADERS({"Content-Type":"application/json"}):{"Content-Type":"application/json"}}).catch(function(){});
+  if(window.RIZORA_CLEAR_AUTH_TOKEN)window.RIZORA_CLEAR_AUTH_TOKEN();try{localStorage.removeItem("rizoraToken");localStorage.removeItem("rizora_token");}catch(_){}
   location.reload();
 }
 function injectLogout(){
