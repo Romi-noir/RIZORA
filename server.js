@@ -2321,12 +2321,18 @@ async function handleRequest(
 
   cleanupSessions(db);
 
-  if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
-  if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
-  if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
-  if (await handleRizoraLabs({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
-  if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
-  if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+  const isRizoraAiChat =
+    method === "POST" &&
+    pathname === "/api/ai/chat";
+
+  if (!isRizoraAiChat) {
+    if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
+    if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+    if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
+    if (await handleRizoraLabs({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+    if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+    if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+  }
 
   // ----------------------------------------------------------
   // HEALTH
