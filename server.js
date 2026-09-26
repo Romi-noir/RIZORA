@@ -1016,7 +1016,7 @@ function getCurrentUser(
 // ============================================================
 
 
-const TASK_COOLDOWN_MS = 7 * 60 * 1000;
+const TASK_COOLDOWN_MS = 45 * 60 * 1000;
 
 const RIZORA_FEATURE_LAYER_V1 = true;
 
@@ -3774,7 +3774,7 @@ if (method === "GET" && pathname === "/api/tasks") {
     ],
 
     cooldown,
-    cooldownMinutes: 7,
+    cooldownMinutes: 45,
     generatedCount: generatedTasks.length,
 
     message:
@@ -3999,7 +3999,7 @@ const completion = {
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: 7,
+      cooldownMinutes: 45,
       cooldown:
         getCooldown(
           db,
@@ -4667,7 +4667,7 @@ if (
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: 7,
+      cooldownMinutes: 45,
       cooldown:
         getCooldown(
           db,
@@ -9754,7 +9754,7 @@ seedDatabase();
    ============================================================ */
 
 const RIZORA_SOCIAL_COOLDOWN_MS =
-  7 * 60 * 1000;
+  45 * 60 * 1000;
 
 const RIZORA_SOCIAL_MIN_REWARD =
   5;
