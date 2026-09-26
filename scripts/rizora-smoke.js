@@ -114,7 +114,7 @@ async function main() {
       headers: authHeaders,
       body: JSON.stringify({ message: "who is romi" })
     });
-    assert(aiIdentity.res.status === 200 && aiIdentity.data.deterministic === true && /creator of RIZORA/i.test(aiIdentity.data.reply || ""), "RIZORA AI identity answer failed");
+    assert(aiIdentity.res.status === 200 && aiIdentity.data.deterministic === true && /creator of RIZORA/i.test(aiIdentity.data.reply || ""), "RIZORA AI identity answer failed: " + aiIdentity.res.status + " " + JSON.stringify(aiIdentity.data));
 
     const media = await request("/api/v2/media/config", { headers: authHeaders });
     assert(media.res.status === 200 && Number(media.data.maxFileBytes) > 0, "media config failed");
