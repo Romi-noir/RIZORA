@@ -9628,6 +9628,8 @@ async function rizoraGroqCompletion(options) {
           model: modelName,
           messages,
           temperature: 0.7,
+          reasoning_effort: "low",
+          reasoning_format: "hidden",
           max_completion_tokens: 1200
         })
       }
