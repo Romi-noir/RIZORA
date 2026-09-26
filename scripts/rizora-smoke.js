@@ -109,6 +109,13 @@ async function main() {
     const tasks = await request("/api/tasks", { headers: authHeaders });
     assert(tasks.res.status === 200 && Array.isArray(tasks.data.tasks), "tasks failed");
 
+    const aiIdentity = await request("/api/ai/chat", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ message: "who is romi" })
+    });
+    assert(aiIdentity.res.status === 200 && aiIdentity.data.deterministic === true && /creator of RIZORA/i.test(aiIdentity.data.reply || ""), "RIZORA AI identity answer failed");
+
     const media = await request("/api/v2/media/config", { headers: authHeaders });
     assert(media.res.status === 200 && Number(media.data.maxFileBytes) > 0, "media config failed");
 
