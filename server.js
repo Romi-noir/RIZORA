@@ -50,6 +50,7 @@ const SUPER_ADMINS = new Set([
 
 const loginAttempts = new Map();
 const signupAttempts = new Map();
+const aiRateLimits = new Map();
 
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_ATTEMPTS = 10;
