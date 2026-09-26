@@ -3,6 +3,7 @@
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
+function toast(s){var t=document.getElementById("toast");if(!t)return;t.textContent=String(s||"");t.classList.add("show");clearTimeout(window.__rzSuiteToast);window.__rzSuiteToast=setTimeout(function(){t.classList.remove("show");},2600);}
 function card(title,body){return '<section class="rz-suite-card"><div class="rz-kicker">'+esc(title)+'</div>'+body+'</section>';}
 function closeSuiteModal(){var old=document.getElementById("rzSuiteModal");if(old)old.remove();}
 function modal(title,sub,body){
