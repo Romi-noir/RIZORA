@@ -5,6 +5,20 @@ function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"
 async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function card(title,body){return '<section class="rz-suite-card"><div class="rz-kicker">'+esc(title)+'</div>'+body+'</section>';}
+function closeSuiteModal(){var old=document.getElementById("rzSuiteModal");if(old)old.remove();}
+function modal(title,sub,body){
+  closeSuiteModal();
+  var m=document.createElement("div");
+  m.id="rzSuiteModal";
+  m.className="rz-suite-overlay";
+  m.innerHTML='<div class="rz-suite-panel"><div class="rz-suite-head"><div><div class="rz-kicker">RIZORA CREATOR SUITE</div><h2>'+esc(title)+'</h2><p class="rz-muted">'+esc(sub||"")+'</p></div><button class="rz-btn" id="rzSuiteClose">Close</button></div><div id="rzSuiteBody">'+body+'</div></div>';
+  document.body.appendChild(m);
+  var closeBtn=m.querySelector("#rzSuiteClose");
+  if(closeBtn)closeBtn.onclick=closeSuiteModal;
+  m.addEventListener("click",function(e){if(e.target===m)closeSuiteModal();});
+  return m;
+}
+
 function stat(v,k){return '<div class="rz-suite-stat"><strong>'+esc(v)+'</strong><span>'+esc(k)+'</span></div>';}
 
 async function premium(){
