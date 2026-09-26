@@ -37,6 +37,8 @@ async function main() {
 
   assert(!indexSource.includes("/rizora-v2-growth.js"), "frontend must not load the backend-only rizora-v2-growth.js module");
   assert(suiteSource.includes("function modal("), "Creator Suite modal constructor is missing");
+  assert(suiteSource.includes("function toast("), "Creator Suite toast helper is missing");
+  assert(suiteSource.includes("bindSuiteButtons(b);"), "Creator Suite controls are not bound");
   assert(serviceWorkerSource.includes('RIZORA_CACHE="rizora-v2-shell-v22-runtimeauth"'), "PWA cache version must be v22");
   assert(!serviceWorkerSource.includes('"/rizora-v2-growth.js"'), "PWA cache must not contain the backend-only growth module");
 
