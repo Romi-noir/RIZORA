@@ -2,7 +2,7 @@
 (function(){
   var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-  async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var t=await r.text(),d={};try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}if(!r.ok)throw new Error(d.message||d.error||"Request failed.");return d;}
+  async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
   function close(){var x=document.getElementById("rzLabsOverlay");if(x)x.remove();}
   function modal(title,body){close();var x=document.createElement("div");x.id="rzLabsOverlay";x.className="rz-labs-overlay";x.innerHTML='<div class="rz-labs-panel"><div class="rz-labs-head"><div><div class="rz-kicker">RIZORA CREATOR LAB</div><h2>'+esc(title)+'</h2><p class="rz-muted">Turn discovery, experimentation and creator partnerships into one working system.</p></div><button class="rz-btn" id="rzLabsClose">Close</button></div><div id="rzLabsBody">'+body+'</div></div>';document.body.appendChild(x);document.getElementById("rzLabsClose").onclick=close;x.addEventListener("click",function(e){if(e.target===x)close();});return x;}
   function tabs(active){return '<div class="rz-labs-tabs"><button class="rz-btn '+(active==="feeds"?"primary":"")+'" data-labs-tab="feeds">Custom Feeds</button><button class="rz-btn '+(active==="experiments"?"primary":"")+'" data-labs-tab="experiments">A/B Lab</button><button class="rz-btn '+(active==="deals"?"primary":"")+'" data-labs-tab="deals">Deal Room</button></div>';}
