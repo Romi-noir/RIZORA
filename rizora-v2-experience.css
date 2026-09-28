@@ -139,6 +139,13 @@ body{
   .rz-top-inner{padding-inline:2px}
 }
 @media(max-width:640px){
+  .rz-grid{grid-template-columns:1fr}
+  .rz-span-12,.rz-span-8,.rz-span-6,.rz-span-4{grid-column:span 1}
+  .rz-section-title{align-items:flex-start;flex-direction:column}
+  .rz-post-actions{gap:3px}
+  .rz-post-actions button{padding:8px 7px;font-size:12px}
+  .rz-top .rz-brand{font-size:13px;padding:7px 9px}
+
   .rz-shell{width:min(100% - 14px,var(--max))}
   .rz-card{border-radius:18px;padding:15px}
   .rz-auth{padding:16px}
