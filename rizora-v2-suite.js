@@ -85,34 +85,33 @@ async function premium(){
      if(p.active){
        bill=card(
          "BILLING",
-         '<p class="rz-muted">Provider: '+esc(p.provider||"Paystack")+' · Status: '+esc(p.status||"active")+'</p>'+
+         '<p class="rz-muted">Plan: <b>'+esc((p.plan||"premium").replace("_"," "))+'</b> · Provider: '+esc(p.provider||"Paystack")+' · Status: '+esc(p.status||"active")+'</p>'+
          (p.canCancel?
            '<button id="rzPremiumCancel" class="rz-btn">Cancel renewal</button>':
            '<p class="rz-mini">Cancellation becomes available once the recurring subscription credentials are received.</p>')
        );
-     }else if(p.configured){
-       bill=card(
-         "UPGRADE",
-         '<p class="rz-muted">Start the RIZORA Premium monthly subscription. You will continue through the secure Paystack checkout.</p>'+
-         '<button id="rzPremiumSubscribe" class="rz-btn primary">Start Premium</button>'
-       );
      }else{
+       var premiumReady=!!(p.plans&&p.plans.premium&&p.plans.premium.configured);
+       var plusReady=!!(p.plans&&p.plans.premium_plus&&p.plans.premium_plus.configured);
        bill=card(
-         "COMING ONLINE",
-         '<p class="rz-muted">Premium billing is not configured on the RIZORA server yet. The feature gate is already wired; no fake payment button is shown.</p>'
+         "CHOOSE YOUR TIER",
+         '<div class="rz-suite-grid rz-suite-grid-2">'+
+           '<div class="rz-suite-card"><div class="rz-kicker">PREMIUM</div><h3>₦4,000</h3><p class="rz-muted">Advanced creator intelligence, analytics and Pro tools.</p><button id="rzPremiumSubscribe" class="rz-btn primary" '+(premiumReady?"":"disabled")+'>Get Premium</button>'+(!premiumReady?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
+           '<div class="rz-suite-card"><div class="rz-kicker">PREMIUM+</div><h3>₦13,000</h3><p class="rz-muted">Everything in Premium, with the expanded premium tier for your creator workflow.</p><button id="rzPremiumPlusSubscribe" class="rz-btn primary" '+(plusReady?"":"disabled")+'>Get Premium+</button>'+(!plusReady?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
+         '</div>'+
+         '<p class="rz-mini">Secure checkout is handled by Paystack. RIZORA never exposes your payment credentials.</p>'
        );
      }
      actions.innerHTML=bill;
-     var sub=document.getElementById("rzPremiumSubscribe");
-     if(sub){
-       sub.onclick=async function(){
-         try{
-           var d=await api("/api/v2/premium/subscribe",{method:"POST",body:"{}"});
-           if(d.authorizationUrl) window.location.href=d.authorizationUrl;
-           else toast("Premium checkout could not be started.");
-         }catch(e){toast(e.message);}
-       };
+     async function startPremium(plan){
+       try{
+         var d=await api("/api/v2/premium/subscribe",{method:"POST",body:JSON.stringify({plan:plan})});
+         if(d.authorizationUrl) window.location.href=d.authorizationUrl;
+         else toast("Premium checkout could not be started.");
+       }catch(e){toast(e.message);}
      }
+     var sub=document.getElementById("rzPremiumSubscribe");if(sub)sub.onclick=function(){startPremium("premium");};
+     var plus=document.getElementById("rzPremiumPlusSubscribe");if(plus)plus.onclick=function(){startPremium("premium_plus");};
      var cancel=document.getElementById("rzPremiumCancel");
      if(cancel){
        cancel.onclick=async function(){
