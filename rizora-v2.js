@@ -18,7 +18,7 @@ function renderMedia(url){
 function bindMediaPicker(fileId,statusId,urlId){
   if(window.RIZORA_MEDIA_BIND) window.RIZORA_MEDIA_BIND(fileId,statusId,urlId);
 }
-function verified(u){return u&&u.verified?'<span class="rz-verified" aria-label="Verified creator" title="Verified creator"><span class="rz-verified-mark" aria-hidden="true">✓</span></span>':"";}
+function verified(u){return u&&u.verified?'<img class="rz-verified" src="/assets/rizora_verified_badge.svg" alt="RIZORA Verified" aria-label="Verified creator" title="RIZORA Verified">':"";}
 function toast(s){var t=$("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rt);window.__rt=setTimeout(function(){t.classList.remove("show");},2400);}
 function textPreview(v){var s=String(v||"").trim().replace(/\s+/g," ");return s.slice(0,70)||"Untitled draft";}
 function bindPasswordToggles(root){(root||document).querySelectorAll("[data-rz-password-toggle]").forEach(function(b){b.onclick=function(){var id=b.getAttribute("data-rz-password-toggle"),i=document.getElementById(id);if(!i)return;var show=i.type==="password";i.type=show?"text":"password";b.textContent=show?"Hide":"Show";b.setAttribute("aria-label",show?"Hide password":"Show password");};});}
@@ -101,13 +101,78 @@ function googleButton(){
   }).catch(function(){});
 }
 function shell(){
-  var items=["home","flow","grow","ai","profile"];
-  var side=items.map(function(id){return '<button class="'+(state.view===id?"active":"")+'" data-nav="'+id+'">'+id.charAt(0).toUpperCase()+id.slice(1)+"</button>";}).join("");
-  document.body.innerHTML='<div class="rz-top"><div class="rz-shell rz-top-inner"><button class="rz-btn rz-brand" id="brand"><img src="/rizora-cover.png" style="width:36px;height:36px;border-radius:11px">RIZORA</button><div class="rz-actions"><button class="rz-btn" id="rzTopAi">AI</button><button class="rz-btn" id="refresh">Refresh</button>'+avatar(state.user)+'</div></div></div><main class="rz-shell rz-main"><aside class="rz-sidebar"><div class="rz-nav">'+side+'</div><button class="rz-btn" id="rzDesktopSuite" style="width:100%;margin-top:9px">More</button><div class="rz-mini" style="padding:12px;border-top:1px solid var(--line);margin-top:10px">POINTS<br><strong>'+state.points+'</strong><br>7-minute cycle</div></aside><section class="rz-content" id="content"></section></main><nav class="rz-mobile-nav">'+items.map(function(id){var label={home:"Home",flow:"Flow",grow:"Grow",ai:"AI",profile:"Profile"}[id]||id;return '<button data-nav="'+id+'">'+label+"</button>";}).join("")+'</nav>';
+  var desktopItems=[
+    {id:"home",label:"Home",icon:"H"},
+    {id:"flow",label:"For You",icon:"F"},
+    {id:"discover",label:"Explore",icon:"E"},
+    {id:"notifications",label:"Notifications",icon:"N"},
+    {id:"messages",label:"Messages",icon:"M"},
+    {id:"grow",label:"Grow",icon:"G"},
+    {id:"ai",label:"RIZORA AI",icon:"AI"},
+    {id:"profile",label:"Profile",icon:"P"}
+  ];
+  var side=desktopItems.map(function(item){
+    return '<button class="rz-xnav-item '+(state.view===item.id?"active":"")+'" data-nav="'+item.id+'"><span class="rz-xnav-icon" aria-hidden="true">'+item.icon+'</span><span>'+item.label+'</span></button>';
+  }).join("");
+  var mobile=[
+    {id:"home",label:"Home",icon:"H"},
+    {id:"discover",label:"Explore",icon:"E"},
+    {id:"flow",label:"Create",icon:"+"},
+    {id:"messages",label:"Inbox",icon:"M"},
+    {id:"profile",label:"Profile",icon:"P"}
+  ];
+  document.body.innerHTML=
+    '<div class="rz-top"><div class="rz-shell rz-top-inner">'+
+      '<button class="rz-btn rz-brand rz-top-brand" id="brand"><img src="/rizora-cover.png" alt="RIZORA"><span>RIZORA</span><small>CREATOR OS</small></button>'+
+      '<div class="rz-top-search"><input id="rzGlobalSearch" class="rz-input" placeholder="Search creators, posts, hashtags" aria-label="Search RIZORA"><button id="rzGlobalSearchBtn" class="rz-btn">Search</button></div>'+
+      '<div class="rz-actions"><button class="rz-btn rz-top-ai" id="rzTopAi">AI</button><button class="rz-btn" id="refresh">Refresh</button><button class="rz-top-avatar" id="rzTopProfile">'+avatar(state.user)+'</button></div>'+
+    '</div></div>'+
+    '<main class="rz-shell rz-social-main">'+
+      '<aside class="rz-sidebar rz-x-sidebar">'+
+        '<div class="rz-xnav">'+side+'</div>'+
+        '<button class="rz-btn primary rz-create-post" id="rzCreatePost">Create</button>'+
+        '<div class="rz-x-profile-mini"><button class="rz-x-profile-button" id="rzMiniProfile">'+avatar(state.user)+'<span><strong>'+esc((state.user&&state.user.displayName)||"Creator")+'</strong><small>@'+esc((state.user&&(state.user.publicUsername||state.user.username))||"creator")+'</small></span><b>...</b></button></div>'+
+        '<button class="rz-btn" id="rzDesktopSuite" style="width:100%">Creator Suite</button>'+
+      '</aside>'+
+      '<section class="rz-content rz-social-content" id="content"></section>'+
+      '<aside class="rz-right-rail">'+
+        '<div class="rz-card rz-search-card"><div class="rz-kicker">RIZORA SEARCH</div><h3>Find creators</h3><p class="rz-muted">Discover profiles, posts and hashtags.</p><button class="rz-btn primary" id="rzRailExplore">Explore RIZORA</button></div>'+
+        '<div class="rz-card rz-account-card"><div class="rz-kicker">YOUR ACCOUNT</div><div class="rz-right-account">'+avatar(state.user)+'<div><strong>'+esc((state.user&&state.user.displayName)||"Creator")+'</strong><div class="rz-mini">@'+esc((state.user&&(state.user.publicUsername||state.user.username))||"creator")+'</div></div></div><div class="rz-right-stats"><span><b>'+Number(state.points||0)+'</b><small>points</small></span><span><b>'+Number((state.user&&state.user.followers)||0)+'</b><small>followers</small></span><span><b>'+Number((state.user&&state.user.posts)||0)+'</b><small>posts</small></span></div><div class="rz-actions"><button class="rz-btn" id="rzRailProfile">Profile</button><button class="rz-btn" id="rzRailSettings">Settings</button></div></div>'+
+        '<div class="rz-card rz-right-growth"><div class="rz-kicker">BUILD MOMENTUM</div><h3>Grow your presence</h3><p class="rz-muted">Use missions, Boosts, AI and analytics to move your creator account.</p><div class="rz-actions"><button class="rz-btn" id="rzRailGrow">Grow</button><button class="rz-btn" id="rzRailAi">Ask AI</button></div></div>'+
+        '<div class="rz-mini rz-right-footer">RIZORA · CREATE. GROW. EARN.</div>'+
+      '</aside>'+
+    '</main>'+
+    '<nav class="rz-mobile-nav">'+mobile.map(function(item){return '<button class="'+(state.view===item.id?"active":"")+'" data-nav="'+item.id+'"><span>'+item.icon+'</span><small>'+item.label+'</small></button>';}).join("")+'</nav>';
+
   document.querySelectorAll("[data-nav]").forEach(function(b){b.onclick=function(){state.view=b.getAttribute("data-nav");shell();load();};});
   $("refresh").onclick=load;
   $("brand").onclick=function(){state.view="home";shell();load();};
   $("rzTopAi").onclick=function(){state.view="ai";shell();load();};
+  $("rzCreatePost").onclick=function(){state.view="flow";shell();load();};
+  $("rzTopProfile").onclick=function(){state.view="profile";shell();load();};
+  $("rzMiniProfile").onclick=function(){state.view="profile";shell();load();};
+  $("rzRailProfile").onclick=function(){state.view="profile";shell();load();};
+  $("rzRailExplore").onclick=function(){state.view="discover";shell();load();};
+  $("rzRailGrow").onclick=function(){state.view="grow";shell();load();};
+  $("rzRailAi").onclick=function(){state.view="ai";shell();load();};
+  $("rzRailSettings").onclick=function(){if(window.RIZORA_CONTROL_CENTER&&window.RIZORA_CONTROL_CENTER.preferences){window.RIZORA_CONTROL_CENTER.preferences();}else{toast("Profile settings are loading.");}};
+  var searchInput=$("rzGlobalSearch"),searchBtn=$("rzGlobalSearchBtn");
+  function runGlobalSearch(){
+    var q=String(searchInput&&searchInput.value||"").trim();
+    state.query=q;
+    state.search=null;
+    state.view="discover";
+    shell();
+    if($("q"))$("q").value=q;
+    wire();
+    if(q){
+      api("/api/v2/search?q="+encodeURIComponent(q)).then(function(d){state.search=d;view();wire();}).catch(function(e){toast(e.message);});
+    } else {
+      view();wire();
+    }
+  }
+  if(searchBtn)searchBtn.onclick=runGlobalSearch;
+  if(searchInput)searchInput.onkeydown=function(e){if(e.key==="Enter")runGlobalSearch();};
   var ds=$("rzDesktopSuite");if(ds)ds.onclick=function(){if(window.RIZORA_SUITE&&window.RIZORA_SUITE.open)window.RIZORA_SUITE.open();};
   view();
 }
@@ -127,7 +192,7 @@ function view(){
       (((state.search&&state.search.users)||[]).length||((state.search&&state.search.hashtags)||[]).length||((state.search&&state.search.posts)||[]).length?"":"<div class='rz-empty'>No results yet.</div>")+
     "</div>");
   if(state.view==="notifications")c.innerHTML=card("ALERTS","<h2>Notifications</h2><button id='readAll' class='rz-btn'>Mark read</button><div class='rz-feed'>"+state.notifications.map(function(n){return '<div class="rz-card"><strong>'+esc(n.title)+"</strong><div>"+esc(n.message)+"</div></div>";}).join("")+"</div>");
-  if(state.view==="profile"){var u=state.user||{},p=state.profile||{},followers=Number(u.followers||0),following=Number(u.following||0),posts=Number(u.posts||0),likes=Number(u.likes||0),showPremiumSuggestion=true;try{showPremiumSuggestion=sessionStorage.getItem("rz_premium_suggestion_dismissed")!=="1";}catch(_){showPremiumSuggestion=true;}c.innerHTML='<section class="rz-card rz-profile-card"><div class="rz-profile-cover"></div><div class="rz-profile-inner"><div class="rz-profile-top"><div>'+avatar(u).replace('class="rz-avatar"','class="rz-avatar rz-profile-avatar"')+'</div><div class="rz-profile-actions"><button id="verify" class="rz-btn">'+(u.verified?"Verified":"Get verified")+'</button><button id="editProfile" class="rz-btn">Edit profile</button></div></div><div class="rz-profile-name"><h2>'+esc(u.displayName||u.username)+'</h2>'+verified(u)+'</div><div class="rz-mini">@'+esc(u.publicUsername||u.username)+'</div><p class="rz-profile-bio">'+esc(p.bio||"Creator on RIZORA. Build. Post. Grow.")+'</p><div class="rz-profile-stats"><span><strong>'+posts+'</strong> posts</span><span><strong>'+followers+'</strong> followers</span><span><strong>'+following+'</strong> following</span><span><strong>'+likes+'</strong> likes</span></div><div class="rz-profile-tabs"><button class="active">Posts</button><button>Media</button><button>About</button></div></div></section>'+(showPremiumSuggestion?'<section class="rz-card rz-premium-hint" id="rzPremiumVerificationHint"><div class="rz-section-title"><div><div class="rz-kicker">CREATOR UPGRADE</div><h3>Strengthen your creator setup</h3></div><button id="rzDismissPremiumSuggestion" class="rz-btn" type="button" aria-label="Hide Premium suggestion">Hide</button></div><p class="rz-muted">Premium adds advanced creator tools and deeper insights. It may help you present a stronger creator profile, but verification is reviewed separately and Premium does not guarantee verification.</p><button id="rzOpenPremiumFromProfile" class="rz-btn primary">Explore Premium</button></section>':'')+'<section class="rz-card" id="rzProfileEditor" style="display:none"><div class="rz-section-title"><div><div class="rz-kicker">EDIT PROFILE</div><h3>Creator identity</h3></div><button id="closeProfileEditor" class="rz-btn">Close</button></div><form id="profileForm"><input id="pfAvatar" class="rz-input" placeholder="PFP URL" value="'+esc(p.avatarUrl||"")+'"><div class="rz-media-picker"><input id="pfAvatarFile" class="rz-media-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><div id="pfAvatarStatus" class="rz-media-status"></div></div><textarea id="pfBio" class="rz-textarea" placeholder="Bio">'+esc(p.bio||"")+'</textarea><input id="pfCategory" class="rz-input" placeholder="Category" value="'+esc(p.category||"")+'"><button class="rz-btn primary">Save profile</button></form></section>';}
+  if(state.view==="profile"){var u=state.user||{},p=state.profile||{},followers=Number(u.followers||0),following=Number(u.following||0),posts=Number(u.posts||0),likes=Number(u.likes||0),showPremiumSuggestion=true;try{showPremiumSuggestion=sessionStorage.getItem("rz_premium_suggestion_dismissed")!=="1";}catch(_){showPremiumSuggestion=true;}c.innerHTML='<section class="rz-card rz-profile-card"><div class="rz-profile-cover"></div><div class="rz-profile-inner"><div class="rz-profile-top"><div>'+avatar(u).replace('class="rz-avatar"','class="rz-avatar rz-profile-avatar"')+'</div><div class="rz-profile-actions"><button id="verify" class="rz-btn">'+(u.verified?"Verified":"Get verified")+'</button><button id="editProfile" class="rz-btn">Edit profile</button><button id="profileSettings" class="rz-btn">Settings</button></div></div><div class="rz-profile-name"><h2>'+esc(u.displayName||u.username)+'</h2>'+verified(u)+'</div><div class="rz-mini">@'+esc(u.publicUsername||u.username)+'</div><p class="rz-profile-bio">'+esc(p.bio||"Creator on RIZORA. Build. Post. Grow.")+'</p><div class="rz-profile-stats"><span><strong>'+posts+'</strong> posts</span><span><strong>'+followers+'</strong> followers</span><span><strong>'+following+'</strong> following</span><span><strong>'+likes+'</strong> likes</span></div><div class="rz-profile-tabs"><button class="active">Posts</button><button>Media</button><button>About</button></div></div></section>'+(showPremiumSuggestion?'<section class="rz-card rz-premium-hint" id="rzPremiumVerificationHint"><div class="rz-section-title"><div><div class="rz-kicker">CREATOR UPGRADE</div><h3>Strengthen your creator setup</h3></div><button id="rzDismissPremiumSuggestion" class="rz-btn" type="button" aria-label="Hide Premium suggestion">Hide</button></div><p class="rz-muted">Premium adds advanced creator tools and deeper insights. It may help you present a stronger creator profile, but verification is reviewed separately and Premium does not guarantee verification.</p><button id="rzOpenPremiumFromProfile" class="rz-btn primary">Explore Premium</button></section>':'')+'<section class="rz-card" id="rzProfileEditor" style="display:none"><div class="rz-section-title"><div><div class="rz-kicker">EDIT PROFILE</div><h3>Creator identity</h3></div><button id="closeProfileEditor" class="rz-btn">Close</button></div><form id="profileForm"><input id="pfAvatar" class="rz-input" placeholder="PFP URL" value="'+esc(p.avatarUrl||"")+'"><div class="rz-media-picker"><input id="pfAvatarFile" class="rz-media-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><div id="pfAvatarStatus" class="rz-media-status"></div></div><textarea id="pfBio" class="rz-textarea" placeholder="Bio">'+esc(p.bio||"")+'</textarea><input id="pfCategory" class="rz-input" placeholder="Category" value="'+esc(p.category||"")+'"><button class="rz-btn primary">Save profile</button></form></section>';}
   if(state.view==="safety")c.innerHTML=card("SAFETY","<h2>"+Number(state.user.warningCount||0)+"/3 warnings</h2><p class='rz-muted'>No 18+ / sexually explicit content. Three warnings are enforced on the backend.</p>"+((state.safety&&state.safety.warnings)||[]).map(function(w){return '<div class="rz-card"><strong>Warning '+w.number+"</strong><div>"+esc(w.reason)+"</div></div>";}).join(""));
   if(state.view==="boosts")c.innerHTML=boostsView();
   if(state.view==="official")c.innerHTML=officialView();
@@ -337,7 +402,7 @@ function wire(){
   if(state.view==="opportunities")wireOpportunities();
   if(state.view==="boosts")wireBoosts();
   if(state.view==="admin")wireAdmin();
-  if(state.view==="profile"){var editor=$("rzProfileEditor"),edit=$("editProfile"),closeEditor=$("closeProfileEditor");if(edit&&editor)edit.onclick=function(){editor.style.display="block";};if(closeEditor&&editor)closeEditor.onclick=function(){editor.style.display="none";};$("profileForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/profile",{method:"PATCH",body:JSON.stringify({avatarUrl:$("pfAvatar").value,bio:$("pfBio").value,category:$("pfCategory").value})});toast("Profile updated.");load();}catch(err){toast(err.message);}};bindMediaPicker("pfAvatarFile","pfAvatarStatus","pfAvatar");var verifyBtn=$("verify");if(verifyBtn)verifyBtn.onclick=verification;var premiumHint=$("rzOpenPremiumFromProfile");if(premiumHint)premiumHint.onclick=function(){if(window.RIZORA_SUITE&&window.RIZORA_SUITE.open){window.RIZORA_SUITE.open();}else{toast("Premium is available from Creator Suite.");}};var dismissPremiumSuggestion=$("rzDismissPremiumSuggestion");if(dismissPremiumSuggestion)dismissPremiumSuggestion.onclick=function(){try{sessionStorage.setItem("rz_premium_suggestion_dismissed","1");}catch(_){ }var hint=$("rzPremiumVerificationHint");if(hint)hint.remove();};}
+  if(state.view==="profile"){var editor=$("rzProfileEditor"),edit=$("editProfile"),closeEditor=$("closeProfileEditor");if(edit&&editor)edit.onclick=function(){editor.style.display="block";};var profileSettings=$("profileSettings");if(profileSettings)profileSettings.onclick=function(){if(window.RIZORA_CONTROL_CENTER&&window.RIZORA_CONTROL_CENTER.preferences){window.RIZORA_CONTROL_CENTER.preferences();}else{toast("Profile settings are loading.");}};if(closeEditor&&editor)closeEditor.onclick=function(){editor.style.display="none";};$("profileForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/profile",{method:"PATCH",body:JSON.stringify({avatarUrl:$("pfAvatar").value,bio:$("pfBio").value,category:$("pfCategory").value})});toast("Profile updated.");load();}catch(err){toast(err.message);}};bindMediaPicker("pfAvatarFile","pfAvatarStatus","pfAvatar");var verifyBtn=$("verify");if(verifyBtn)verifyBtn.onclick=verification;var premiumHint=$("rzOpenPremiumFromProfile");if(premiumHint)premiumHint.onclick=function(){if(window.RIZORA_SUITE&&window.RIZORA_SUITE.open){window.RIZORA_SUITE.open();}else{toast("Premium is available from Creator Suite.");}};var dismissPremiumSuggestion=$("rzDismissPremiumSuggestion");if(dismissPremiumSuggestion)dismissPremiumSuggestion.onclick=function(){try{sessionStorage.setItem("rz_premium_suggestion_dismissed","1");}catch(_){ }var hint=$("rzPremiumVerificationHint");if(hint)hint.remove();};}
 }
 function renderView(){view();wire();}
 async function load(){
