@@ -1,3 +1,54 @@
+"use strict";
+
+const { spawn } = require("child_process");
+
+const port = 3410;
+const base = "http://127.0.0.1:" + port;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function request(path, options) {
+  const res = await fetch(base + path, options || {});
+  const text = await res.text();
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { raw: text }; }
+  return { res, data };
+}
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+function cookieFrom(response) {
+  const getter = response.headers.getSetCookie;
+  const values = typeof getter === "function" ? getter.call(response.headers) : [];
+  const joined = values.join("; ");
+  if (joined) return joined.split(";")[0];
+  const raw = response.headers.get("set-cookie") || "";
+  return raw.split(";")[0];
+}
+
+async function main() {
+  const indexSource = require("fs").readFileSync("index.html", "utf8");
+  const suiteSource = require("fs").readFileSync("rizora-v2-suite.js", "utf8");
+  const serviceWorkerSource = require("fs").readFileSync("service-worker.js", "utf8");
+  const vercelConfig = JSON.parse(require("fs").readFileSync("vercel.json", "utf8"));
+
+  assert(!indexSource.includes("/rizora-v2-growth.js"), "frontend must not load the backend-only rizora-v2-growth.js module");
+  assert(suiteSource.includes("function modal("), "Creator Suite modal constructor is missing");
+  assert(suiteSource.includes("function toast("), "Creator Suite toast helper is missing");
+  assert(suiteSource.includes("bindSuiteButtons(b);"), "Creator Suite controls are not bound");
+  assert(serviceWorkerSource.includes('RIZORA_CACHE="rizora-v2-shell-v23-runtimeauth"'), "PWA cache version must be v23");
+  assert(!serviceWorkerSource.includes('"/rizora-v2-growth.js"'), "PWA cache must not contain the backend-only growth module");
+  assert(vercelConfig.framework === null, "Vercel framework must be explicit static/Other"); 
+  assert(vercelConfig.buildCommand === "", "Vercel build command must be empty for the root static app");
+  assert(vercelConfig.installCommand === "", "Vercel install command must be empty for the root static app");
+  assert(vercelConfig.outputDirectory === ".", "Vercel output directory must be the repository root");
+  assert(vercelConfig.framework === null, "Vercel framework must stay explicitly static/Other");
+  assert(Array.isArray(vercelConfig.rewrites) && vercelConfig.rewrites.some(x => x.source === "/login" && x.destination === "/"), "Vercel login rewrite is missing");
+  const assetRefs = [
     ...Array.from(indexSource.matchAll(/src=["']\/([^"'?]+\.js)(?:\?[^"']*)?["']/g)).map(m => m[1]),
     ...Array.from(indexSource.matchAll(/href=["']\/([^"'?]+\.css)(?:\?[^"']*)?["']/g)).map(m => m[1])
   ].filter(Boolean);
