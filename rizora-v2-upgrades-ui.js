@@ -58,7 +58,7 @@ function publicProfileFromHash(){
     };
   }).catch(function(){});
 }
-function inject(){if(document.getElementById("rzCreatorLabButton"))return;var aside=document.querySelector(".rz-sidebar");if(!aside)return;var box=document.createElement("div");box.className="rz-upgrade-tools";box.innerHTML='<div class="rz-enterprise-heading">CREATOR LAB</div><button class="rz-btn" id="rzCreatorLabButton">Open Creator Lab</button>';aside.appendChild(box);document.getElementById("rzCreatorLabButton").onclick=open;}
+function inject(){return;}
 function boot(){inject();publicProfileFromHash();window.addEventListener("hashchange",publicProfileFromHash);var mo=new MutationObserver(inject);mo.observe(document.body,{childList:true,subtree:true});}
 window.RIZORA_UPGRADES={open:open,share:shareNow};
 setTimeout(boot,150);
