@@ -1,0 +1,153 @@
+/* RIZORA EXPERIENCE LAYER — social-first responsive UI */
+:root{
+  --rz-black:#06050a;
+  --rz-panel:#0d0a13;
+  --rz-panel-2:#15101e;
+  --rz-purple:#9b6cff;
+  --rz-purple-2:#6f3ff5;
+  --rz-pink:#e45cff;
+  --rz-blue:#7bb7ff;
+  --rz-line:rgba(255,255,255,.09);
+}
+body{
+  background:
+    radial-gradient(circle at 50% -10%,rgba(145,88,255,.14),transparent 30%),
+    linear-gradient(180deg,#07050b 0%,#050409 100%);
+}
+.rz-top{background:rgba(5,4,9,.9);border-bottom:1px solid rgba(255,255,255,.06)}
+.rz-top-inner{min-height:64px}
+.rz-sidebar{background:rgba(12,9,17,.82);border-color:rgba(255,255,255,.07);padding:8px}
+.rz-nav{gap:3px}
+.rz-nav button{
+  border-radius:14px;
+  padding:11px 13px;
+  font-weight:750;
+  letter-spacing:.01em;
+  transition:background .18s ease,transform .18s ease,color .18s ease;
+}
+.rz-nav button:hover{transform:translateX(2px)}
+.rz-nav button.active{background:linear-gradient(90deg,rgba(126,76,246,.2),rgba(126,76,246,.06));color:#fff}
+.rz-content>.rz-card:first-child{
+  background:
+    radial-gradient(circle at 80% 0%,rgba(167,105,255,.12),transparent 30%),
+    linear-gradient(145deg,rgba(22,16,34,.96),rgba(10,8,14,.98));
+}
+.rz-card{box-shadow:0 14px 40px rgba(0,0,0,.12)}
+.rz-actions{align-items:center}
+.rz-btn{transition:transform .16s ease,border-color .16s ease,background .16s ease}
+.rz-btn:hover{transform:translateY(-1px);border-color:rgba(155,108,255,.42)}
+.rz-btn.primary{box-shadow:0 10px 30px rgba(111,63,245,.18)}
+/* X + TikTok-inspired verification badge */
+.rz-verified{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-left:5px;
+  vertical-align:middle;
+  line-height:1;
+}
+.rz-verified-mark{
+  width:18px;
+  height:18px;
+  border-radius:6px;
+  display:inline-grid;
+  place-items:center;
+  position:relative;
+  background:linear-gradient(135deg,#8b5cf6 0%,#b94cff 48%,#5b43ff 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.18),0 0 16px rgba(165,92,255,.3);
+  transform:rotate(45deg);
+}
+.rz-verified-mark:before{
+  content:"";
+  width:8px;
+  height:4px;
+  border-left:2px solid #fff;
+  border-bottom:2px solid #fff;
+  transform:rotate(-45deg) translate(-1px,-1px);
+}
+.rz-verified-mark:after{
+  content:"";
+  position:absolute;
+  right:-3px;
+  top:-3px;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:-7px 8px 0 -1px rgba(0,0,0,.5);
+}
+.rz-verified-label{font-size:10px;font-weight:850;color:#d9c7ff;letter-spacing:.05em}
+.rz-profile-card{
+  overflow:hidden;
+  padding:0;
+}
+.rz-profile-cover{
+  height:128px;
+  background:
+    radial-gradient(circle at 20% 20%,rgba(228,92,255,.35),transparent 34%),
+    radial-gradient(circle at 80% 10%,rgba(123,183,255,.2),transparent 28%),
+    linear-gradient(120deg,#17102a,#0d0816 55%,#180c25);
+  border-bottom:1px solid var(--rz-line);
+  position:relative;
+}
+.rz-profile-cover:after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0;
+  height:45%;
+  background:linear-gradient(transparent,rgba(6,5,10,.82));
+}
+.rz-profile-inner{padding:0 20px 20px}
+.rz-profile-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;margin-top:-38px;position:relative;z-index:2}
+.rz-profile-avatar{
+  width:92px!important;height:92px!important;border:4px solid #0b0810;
+  box-shadow:0 10px 30px rgba(0,0,0,.3);
+}
+.rz-profile-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;padding-bottom:4px}
+.rz-profile-name{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:10px}
+.rz-profile-name h2{margin:0;font-size:25px}
+.rz-profile-bio{margin:8px 0 12px;line-height:1.55;color:#ded8e8}
+.rz-profile-stats{display:flex;gap:22px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.rz-profile-stats strong{color:#fff;font-size:15px;margin-right:4px}
+.rz-profile-tabs{display:flex;gap:4px;margin-top:18px;border-top:1px solid var(--rz-line);padding-top:8px}
+.rz-profile-tabs button{border:0;background:transparent;color:var(--muted);padding:10px 14px;border-radius:10px;font-weight:750}
+.rz-profile-tabs button.active{background:rgba(155,108,255,.12);color:#fff}
+.rz-suite-tools{
+  margin-top:10px;
+  padding:9px 0 0;
+}
+.rz-suite-tools .rz-btn{text-align:left}
+.rz-suite-overlay{backdrop-filter:blur(16px)}
+.rz-suite-panel{background:linear-gradient(145deg,#120d1b,#09070d);box-shadow:0 30px 100px rgba(0,0,0,.55)}
+/* Keep the desktop menu intentional: core nav only, everything else is in Suite. */
+@media(min-width:981px){
+  .rz-main{grid-template-columns:210px minmax(0,1fr);gap:20px}
+  .rz-sidebar{top:80px}
+}
+@media(max-width:980px){
+  body{padding-bottom:76px}
+  .rz-mobile-nav{
+    left:10px;right:10px;bottom:10px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:18px;
+    box-shadow:0 14px 50px rgba(0,0,0,.38);
+    backdrop-filter:blur(18px);
+    padding:6px;
+  }
+  .rz-mobile-nav button{border-radius:12px;font-weight:750}
+  .rz-main{padding-top:10px}
+  .rz-top-inner{padding-inline:2px}
+}
+@media(max-width:640px){
+  .rz-shell{width:min(100% - 14px,var(--max))}
+  .rz-card{border-radius:18px;padding:15px}
+  .rz-auth{padding:16px}
+  .rz-profile-cover{height:108px}
+  .rz-profile-inner{padding:0 14px 16px}
+  .rz-profile-top{margin-top:-31px;align-items:flex-end}
+  .rz-profile-avatar{width:76px!important;height:76px!important}
+  .rz-profile-actions .rz-btn{padding:9px 11px}
+  .rz-profile-name h2{font-size:21px}
+  .rz-profile-stats{gap:14px}
+  .rz-suite-panel{border-radius:18px;padding:14px}
+}
