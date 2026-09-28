@@ -158,3 +158,12 @@ body{
   .rz-profile-stats{gap:14px}
   .rz-suite-panel{border-radius:18px;padding:14px}
 }
+
+.rz-post-media{margin:10px 0;border-radius:16px;overflow:hidden;background:#050409}
+.rz-post-media img,.rz-post-media video{display:block;width:100%;max-height:680px;object-fit:cover;background:#050409}
+.rz-post-media audio{display:block;width:100%}
+.rz-feed{gap:10px}
+.rz-feed>.rz-card{margin-bottom:0}
+@media(max-width:640px){
+  .rz-post-media img,.rz-post-media video{max-height:72vh;object-fit:cover}
+}
