@@ -67,5 +67,8 @@
         }
       ]
     }
-  ]
+  ],
+  "framework": null,
+  "buildCommand": null,
+  "installCommand": ""
 }
