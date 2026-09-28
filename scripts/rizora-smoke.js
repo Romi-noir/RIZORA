@@ -46,7 +46,15 @@ async function main() {
   assert(vercelConfig.buildCommand === "", "Vercel build command must be empty for the root static app");
   assert(vercelConfig.installCommand === "", "Vercel install command must be empty for the root static app");
   assert(vercelConfig.outputDirectory === ".", "Vercel output directory must be the repository root");
+  assert(vercelConfig.framework === null, "Vercel framework must stay explicitly static/Other");
   assert(Array.isArray(vercelConfig.rewrites) && vercelConfig.rewrites.some(x => x.source === "/login" && x.destination === "/"), "Vercel login rewrite is missing");
+  const assetRefs = [
+    ...Array.from(indexSource.matchAll(/<script[^>]+src="\\/([^"?]+\\.js)(?:\\?[^"]*)?"/g)).map(m => m[1]),
+    ...Array.from(indexSource.matchAll(/<link[^>]+href="\\/([^"?]+\\.css)(?:\\?[^"]*)?"/g)).map(m => m[1])
+  ].filter(Boolean);
+  for (const asset of new Set(assetRefs)) {
+    assert(require("fs").existsSync(asset), "Indexed frontend asset is missing: " + asset);
+  }
 
   const child = spawn(process.execPath, ["server.js"], {
     cwd: process.cwd(),
