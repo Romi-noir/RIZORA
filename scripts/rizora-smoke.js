@@ -58,6 +58,7 @@ async function main() {
     assert(require("fs").existsSync(fsPath), "Service worker asset is missing: " + assetPath);
   }
   assert(indexSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not linked");
+  assert(require("fs").existsSync("assets/rizora_verified_badge.svg"), "RIZORA verified badge asset is missing");
   assert(serviceWorkerSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not cached by the PWA shell");
   assert(premiumUiSource.includes("premium_plus"), "Premium+ UI wiring is missing");
   assert(premiumUiSource.includes('plan:"premium_plus"'), "Premium+ checkout plan is missing");
