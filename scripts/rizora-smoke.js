@@ -36,6 +36,29 @@ async function main() {
   const serviceWorkerSource = require("fs").readFileSync("service-worker.js", "utf8");
   const vercelConfig = JSON.parse(require("fs").readFileSync("vercel.json", "utf8"));
   const vercelIgnore = require("fs").readFileSync(".vercelignore", "utf8");
+  const frontendModules = [
+    "rizora-v2.js",
+    "rizora-v2-enterprise-ui.js",
+    "rizora-v2-suite.js",
+    "rizora-v2-next.js",
+    "rizora-v2-growth-ui.js",
+    "rizora-v2-modern-ui.js",
+    "rizora-v2-upgrades-ui.js",
+    "rizora-v2-global-ui.js",
+    "rizora-v2-media.js",
+    "rizora-v2-series-ui.js",
+    "rizora-v2-events-ui.js",
+    "rizora-v2-business-ui.js",
+    "rizora-v2-comments-ui.js",
+    "rizora-v2-labs-ui.js",
+    "rizora-v2-hub.js",
+    "rizora-v2-downloads.js"
+  ];
+  for (const modulePath of frontendModules) {
+    const checked = require("child_process").spawnSync(process.execPath, ["--check", modulePath], { encoding: "utf8" });
+    assert(checked.status === 0, "Frontend module syntax check failed: " + modulePath + "\n" + (checked.stderr || checked.stdout || ""));
+  }
+
   assert(/(^|\n)database\/(?:\r?\n|$)/.test(vercelIgnore) || /(^|\n)database\/\*\*(?:\r?\n|$)/.test(vercelIgnore), "Vercel ignore must block the backend database directory");
   const serviceWorkerAssets = Array.from(serviceWorkerSource.matchAll(/["']\/(?:[^"'?]+\.(?:js|css|png|json|html))["']/g)).map(m => m[1] || m[0].slice(1,-1));
   const premiumUiSource = require("fs").readFileSync("rizora-v2-enterprise-ui.js", "utf8");
