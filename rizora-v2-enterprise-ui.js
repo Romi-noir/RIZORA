@@ -202,13 +202,7 @@ function injectPasswordToggles(){
   });
 }
 
-function injectTools(){
-  if(document.body.classList.contains("rz-auth")||!document.querySelector(".rz-sidebar")||document.getElementById("rzEnterpriseTools"))return;
-  var aside=document.querySelector(".rz-sidebar");if(!aside)return;
-  var box=document.createElement("div");box.id="rzEnterpriseTools";box.className="rz-enterprise-tools";
-  box.innerHTML='<div class="rz-enterprise-heading">PLATFORM</div>'+btn("Help Center","support")+btn("Premium","premium")+btn("Channels","channels")+btn("Creator Profiles","creator")+btn("Report & Safety","report")+btn("Boost Network","boosts")+btn("Super Admin","admin");
-  aside.appendChild(box);bindView();
-}
+function injectTools(){if(document.body.classList.contains("rz-auth"))return;bindView();}
 async function premiumReturnCheck(){
   var q=new URLSearchParams(location.search);
   var ref=q.get("reference")||q.get("trxref");
