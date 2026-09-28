@@ -6,6 +6,8 @@ android/build
 .vercel
 .env
 .env.*
+package.json
+package-lock.json
 server.js
 database/
 database/**
