@@ -67,5 +67,7 @@
         }
       ]
     }
-  ]
+  ],
+  "framework": null,
+  "buildCommand": ""
 }
