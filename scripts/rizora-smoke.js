@@ -35,6 +35,9 @@ async function main() {
   const suiteSource = require("fs").readFileSync("rizora-v2-suite.js", "utf8");
   const serviceWorkerSource = require("fs").readFileSync("service-worker.js", "utf8");
   const vercelConfig = JSON.parse(require("fs").readFileSync("vercel.json", "utf8"));
+  const serviceWorkerAssets = Array.from(serviceWorkerSource.matchAll(/["']\/(?:[^"'?]+\.(?:js|css|png|json|html))["']/g)).map(m => m[1] || m[0].slice(1,-1));
+  const premiumUiSource = require("fs").readFileSync("rizora-v2-enterprise-ui.js", "utf8");
+  const coreUiSource = require("fs").readFileSync("rizora-v2.js", "utf8");
 
   assert(!indexSource.includes("/rizora-v2-growth.js"), "frontend must not load the backend-only rizora-v2-growth.js module");
   assert(suiteSource.includes("function modal("), "Creator Suite modal constructor is missing");
@@ -48,6 +51,15 @@ async function main() {
   assert(vercelConfig.outputDirectory === ".", "Vercel output directory must be the repository root");
   assert(vercelConfig.framework === null, "Vercel framework must stay explicitly static/Other");
   assert(Array.isArray(vercelConfig.rewrites) && vercelConfig.rewrites.some(x => x.source === "/login" && x.destination === "/"), "Vercel login rewrite is missing");
+  for (const assetPath of new Set(serviceWorkerAssets)) {
+    assert(require("fs").existsSync(assetPath), "Service worker asset is missing: " + assetPath);
+  }
+  assert(indexSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not linked");
+  assert(serviceWorkerSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not cached by the PWA shell");
+  assert(premiumUiSource.includes("premium_plus"), "Premium+ UI wiring is missing");
+  assert(premiumUiSource.includes('plan:"premium_plus"'), "Premium+ checkout plan is missing");
+  assert(coreUiSource.includes("rzPremiumVerificationHint"), "Premium suggestion block is missing");
+  assert(coreUiSource.includes("rzDismissPremiumSuggestion"), "Premium suggestion dismiss control is missing");
   const assetRefs = [
     ...Array.from(indexSource.matchAll(/src=["']\/([^"'?]+\.js)(?:\?[^"']*)?["']/g)).map(m => m[1]),
     ...Array.from(indexSource.matchAll(/href=["']\/([^"'?]+\.css)(?:\?[^"']*)?["']/g)).map(m => m[1])
