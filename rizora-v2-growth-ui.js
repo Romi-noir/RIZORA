@@ -1,7 +1,7 @@
 "use strict";
 (function(){
   var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
-  function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+  function toast(s){var t=document.getElementById("toast");if(!t)return;t.textContent=String(s||"");t.classList.add("show");clearTimeout(window.__rzLocalToast);window.__rzLocalToast=setTimeout(function(){t.classList.remove("show");},2600);}function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
   async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
   function close(){var x=document.getElementById("rzGrowthOverlay");if(x)x.remove();}
   function modal(title,sub,body){close();var m=document.createElement("div");m.id="rzGrowthOverlay";m.className="rz-growth-overlay";m.innerHTML='<div class="rz-growth-panel"><div class="rz-growth-head"><div><div class="rz-kicker">RIZORA CREATOR STUDIO</div><h2>'+esc(title)+'</h2><div class="rz-growth-muted">'+esc(sub||"")+'</div></div><button class="rz-btn" id="rzGrowthClose">Close</button></div><div id="rzGrowthBody">'+body+'</div></div>';document.body.appendChild(m);document.getElementById("rzGrowthClose").onclick=close;m.addEventListener("click",function(e){if(e.target===m)close();});return m;}
