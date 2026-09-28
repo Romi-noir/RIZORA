@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "node -e \"console.log('RIZORA static frontend: no compilation step required')\""
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
