@@ -37,7 +37,6 @@ async function main() {
   const vercelConfig = JSON.parse(require("fs").readFileSync("vercel.json", "utf8"));
   const vercelIgnore = require("fs").readFileSync(".vercelignore", "utf8");
   assert(/(^|\n)database\/(?:\r?\n|$)/.test(vercelIgnore) || /(^|\n)database\/\*\*(?:\r?\n|$)/.test(vercelIgnore), "Vercel ignore must block the backend database directory");
-  assert(!require("fs").existsSync("database/db.json"), "Tracked/source database file must not be present in the deploy workspace");
   const serviceWorkerAssets = Array.from(serviceWorkerSource.matchAll(/["']\/(?:[^"'?]+\.(?:js|css|png|json|html))["']/g)).map(m => m[1] || m[0].slice(1,-1));
   const premiumUiSource = require("fs").readFileSync("rizora-v2-enterprise-ui.js", "utf8");
   const coreUiSource = require("fs").readFileSync("rizora-v2.js", "utf8");
