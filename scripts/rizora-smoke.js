@@ -52,7 +52,8 @@ async function main() {
   assert(vercelConfig.framework === null, "Vercel framework must stay explicitly static/Other");
   assert(Array.isArray(vercelConfig.rewrites) && vercelConfig.rewrites.some(x => x.source === "/login" && x.destination === "/"), "Vercel login rewrite is missing");
   for (const assetPath of new Set(serviceWorkerAssets)) {
-    assert(require("fs").existsSync(assetPath), "Service worker asset is missing: " + assetPath);
+    const fsPath = String(assetPath).replace(/^\//, "");
+    assert(require("fs").existsSync(fsPath), "Service worker asset is missing: " + assetPath);
   }
   assert(indexSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not linked");
   assert(serviceWorkerSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not cached by the PWA shell");
