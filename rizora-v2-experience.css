@@ -162,3 +162,151 @@ body{
 @media(max-width:640px){
   .rz-post-media img,.rz-post-media video{max-height:72vh;object-fit:cover}
 }
+
+/* RIZORA SOCIAL CORE — TikTok feed + X desktop shell */
+.rz-social-main{
+  display:grid;
+  grid-template-columns:220px minmax(0,680px) 300px;
+  justify-content:center;
+  align-items:start;
+  gap:22px;
+  padding:18px 0 40px;
+}
+.rz-x-sidebar{
+  position:sticky;
+  top:82px;
+  background:transparent;
+  border:0;
+  padding:0 4px;
+  box-shadow:none;
+}
+.rz-xnav{display:grid;gap:3px}
+.rz-xnav-item{
+  display:flex!important;
+  align-items:center;
+  gap:14px;
+  width:100%;
+  min-height:48px;
+  padding:10px 14px!important;
+  border:0!important;
+  border-radius:15px!important;
+  color:var(--muted)!important;
+  background:transparent!important;
+  font-size:15px;
+  font-weight:780;
+  text-align:left;
+}
+.rz-xnav-item:hover{transform:none!important;background:rgba(255,255,255,.055)!important;color:var(--text)!important}
+.rz-xnav-item.active{background:rgba(155,108,255,.14)!important;color:#fff!important}
+.rz-xnav-icon{
+  width:25px;
+  height:25px;
+  display:grid;
+  place-items:center;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:950;
+  color:#fff;
+  background:linear-gradient(135deg,#27124f,#7544e9);
+  box-shadow:0 6px 18px rgba(117,68,233,.18);
+}
+.rz-create-post{width:100%;margin:10px 0 12px;min-height:46px;border-radius:999px!important}
+.rz-x-profile-mini{padding-top:10px;border-top:1px solid var(--line);margin-top:8px}
+.rz-x-profile-button{
+  display:grid;
+  grid-template-columns:42px 1fr auto;
+  width:100%;
+  align-items:center;
+  gap:9px;
+  padding:8px;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  border-radius:14px;
+  text-align:left;
+}
+.rz-x-profile-button:hover{background:rgba(255,255,255,.05)}
+.rz-x-profile-button .rz-avatar{width:40px;height:40px}
+.rz-x-profile-button span{min-width:0}
+.rz-x-profile-button strong,.rz-x-profile-button small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rz-x-profile-button small{color:var(--muted);font-size:11px;margin-top:2px}
+.rz-top-search{display:flex;gap:8px;align-items:center;width:min(430px,42vw);margin-left:auto;margin-right:auto}
+.rz-top-search .rz-input{border-radius:999px;background:rgba(255,255,255,.055);min-width:0}
+.rz-top-brand{position:relative;display:flex!important;align-items:center;gap:8px;padding:6px 9px!important}
+.rz-top-brand img{width:36px!important;height:36px!important;border-radius:11px}
+.rz-top-brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:.16em}
+.rz-top-avatar{
+  border:0;
+  padding:0;
+  background:transparent;
+  border-radius:50%;
+}
+.rz-top-avatar .rz-avatar{width:38px;height:38px}
+.rz-right-rail{position:sticky;top:82px}
+.rz-right-rail .rz-card{margin-bottom:12px}
+.rz-right-account{display:flex;gap:10px;align-items:center;margin:12px 0}
+.rz-right-account .rz-avatar{width:46px;height:46px}
+.rz-right-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}
+.rz-right-stats span{padding:9px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025);text-align:center}
+.rz-right-stats b,.rz-right-stats small{display:block}
+.rz-right-stats small{color:var(--muted);font-size:10px;margin-top:2px}
+.rz-right-footer{text-align:center;padding:8px 0 0}
+.rz-social-content{width:100%}
+.rz-social-content>.rz-card:first-child{border-radius:20px}
+.rz-social-content .rz-feed{gap:0}
+.rz-social-content .rz-feed>.rz-card{
+  border-radius:0;
+  margin:0;
+  border-left:0;
+  border-right:0;
+  border-top:0;
+  box-shadow:none;
+  padding:18px 12px;
+}
+.rz-social-content .rz-feed>.rz-card:first-child{border-top:1px solid var(--line)}
+.rz-social-content .rz-post-body{font-size:15px}
+.rz-social-content .rz-post-head .rz-avatar{width:44px;height:44px}
+.rz-social-content .rz-post-actions{justify-content:space-between}
+.rz-social-content .rz-post-actions button{flex:1;text-align:center;border-radius:999px}
+.rz-verified{
+  width:18px;
+  height:18px;
+  object-fit:contain;
+  display:inline-block;
+  vertical-align:-4px;
+  margin-left:4px;
+  filter:drop-shadow(0 0 7px rgba(155,108,255,.3));
+}
+@media(max-width:1180px){
+  .rz-social-main{grid-template-columns:200px minmax(0,680px);gap:18px}
+  .rz-right-rail{display:none}
+}
+@media(max-width:900px){
+  .rz-social-main{display:block;padding-top:10px}
+  .rz-x-sidebar{display:none}
+  .rz-social-content{padding-bottom:84px}
+  .rz-top-search{width:min(390px,48vw)}
+}
+@media(max-width:640px){
+  .rz-top-search{display:none}
+  .rz-top .rz-actions{gap:5px}
+  .rz-top .rz-btn{padding:9px 10px}
+  .rz-top-ai,.rz-top #refresh{display:none}
+  .rz-mobile-nav{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:2px;
+    background:rgba(10,7,16,.93);
+  }
+  .rz-mobile-nav button{
+    display:grid;
+    place-items:center;
+    gap:2px;
+    color:var(--muted);
+  }
+  .rz-mobile-nav button.active{color:#fff;background:rgba(155,108,255,.11)}
+  .rz-mobile-nav button span{font-weight:900;font-size:15px;line-height:1}
+  .rz-mobile-nav button small{font-size:9px;font-weight:800}
+  .rz-social-content>.rz-card:first-child{border-radius:18px}
+  .rz-social-content .rz-feed>.rz-card{padding:15px 9px}
+}
