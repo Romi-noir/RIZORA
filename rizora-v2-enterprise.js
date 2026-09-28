@@ -414,13 +414,15 @@ async function handleRizoraEnterprise(ctx) {
     let b={};try{b=await readBody(req,50000);}catch(e){ctx.sendError(res,400,e.message);return true;}
     const requestedPlan=String(b.plan||"premium").trim().toLowerCase()==="premium_plus"?"premium_plus":"premium";
     const planCode=String(requestedPlan==="premium_plus"?process.env.PAYSTACK_PREMIUM_PLUS_PLAN_CODE:process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
-    const defaultAmount=requestedPlan==="premium_plus"?"13000":"4000";
+    const defaultAmountKobo=requestedPlan==="premium_plus"?1300000:400000;
     const amountEnv=requestedPlan==="premium_plus"?process.env.RIZORA_PREMIUM_PLUS_INITIAL_AMOUNT:process.env.RIZORA_PREMIUM_INITIAL_AMOUNT;
-    const amountNaira=Number(amountEnv||defaultAmount);
+    const amountKobo=Number(amountEnv||defaultAmountKobo);
+    const amountNaira=amountKobo/100;
     if(!planCode){ctx.sendError(res,503,requestedPlan==="premium_plus"?"RIZORA Premium+ billing is not configured yet.":"RIZORA Premium billing is not configured yet.");return true;}
+    if(!Number.isFinite(amountKobo)||amountKobo<=0){ctx.sendError(res,503,"Premium pricing is not configured correctly.");return true;}
     const email=safeString(user.email,180); if(!email||!email.includes("@")){ctx.sendError(res,400,"A valid account email is required.");return true;}
     const ref="RZP-"+requestedPlan.toUpperCase()+"-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
-    const payload={email,amount:String(Math.round(amountNaira*100)),currency:String(process.env.RIZORA_CURRENCY||"NGN"),reference:ref,plan:planCode,callback_url:String(process.env.RIZORA_PAYMENT_CALLBACK||"https://rizora.com.ng/")};
+    const payload={email,amount:String(Math.round(amountKobo)),currency:String(process.env.RIZORA_CURRENCY||"NGN"),reference:ref,plan:planCode,callback_url:String(process.env.RIZORA_PAYMENT_CALLBACK||"https://rizora.com.ng/")};
     const ps=await paystackRequest("/transaction/initialize",{method:"POST",body:JSON.stringify(payload)});
     if(!ps.response.ok||!ps.data.status){ctx.sendError(res,502,ps.data.message||"Unable to initialize Premium payment.");return true;}
     const sub={id:"prem_"+Date.now().toString(36),userId:user.id,plan:requestedPlan,planCode,provider:"paystack",reference:ps.data.data.reference,status:"pending",amountNaira,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
