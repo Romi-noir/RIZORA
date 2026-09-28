@@ -82,26 +82,27 @@ async function premium(){
    var actions=document.getElementById("rzSuitePremiumActions");
    if(actions){
      var bill="";
-     if(p.active){
-       bill=card(
-         "BILLING",
-         '<p class="rz-muted">Plan: <b>'+esc((p.plan||"premium").replace("_"," "))+'</b> · Provider: '+esc(p.provider||"Paystack")+' · Status: '+esc(p.status||"active")+'</p>'+
-         (p.canCancel?
-           '<button id="rzPremiumCancel" class="rz-btn">Cancel renewal</button>':
-           '<p class="rz-mini">Cancellation becomes available once the recurring subscription credentials are received.</p>')
-       );
-     }else{
-       var premiumReady=!!(p.plans&&p.plans.premium&&p.plans.premium.configured);
-       var plusReady=!!(p.plans&&p.plans.premium_plus&&p.plans.premium_plus.configured);
-       bill=card(
-         "CHOOSE YOUR TIER",
-         '<div class="rz-suite-grid rz-suite-grid-2">'+
-           '<div class="rz-suite-card"><div class="rz-kicker">PREMIUM</div><h3>₦4,000</h3><p class="rz-muted">Advanced creator intelligence, analytics and Pro tools.</p><button id="rzPremiumSubscribe" class="rz-btn primary" '+(premiumReady?"":"disabled")+'>Get Premium</button>'+(!premiumReady?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
-           '<div class="rz-suite-card"><div class="rz-kicker">PREMIUM+</div><h3>₦13,000</h3><p class="rz-muted">Everything in Premium, with the expanded premium tier for your creator workflow.</p><button id="rzPremiumPlusSubscribe" class="rz-btn primary" '+(plusReady?"":"disabled")+'>Get Premium+</button>'+(!plusReady?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
-         '</div>'+
-         '<p class="rz-mini">Secure checkout is handled by Paystack. RIZORA never exposes your payment credentials.</p>'
-       );
-     }
+     var premiumReady=!!(p.plans&&p.plans.premium&&p.plans.premium.configured);
+     var plusReady=!!(p.plans&&p.plans.premium_plus&&p.plans.premium_plus.configured);
+     var isPlus=p.active&&String(p.plan||"").toLowerCase()==="premium_plus";
+     var premiumLabel=p.active&&!isPlus?"CURRENT PLAN":"PREMIUM";
+     var plusLabel=isPlus?"CURRENT PLAN":"PREMIUM+";
+     var premiumAction=p.active&&!isPlus
+       ? '<span class="rz-badge">Active</span>'
+       : '<button id="rzPremiumSubscribe" class="rz-btn primary" '+(premiumReady&&!p.active?"":"disabled")+'>Get Premium</button>';
+     var plusAction=isPlus
+       ? '<span class="rz-badge">Active</span>'
+       : '<button id="rzPremiumPlusSubscribe" class="rz-btn primary" '+(plusReady?"":"disabled")+'>Get Premium+</button>';
+     bill=card(
+       p.active?"YOUR PREMIUM TIERS":"CHOOSE YOUR TIER",
+       '<div class="rz-suite-grid rz-suite-grid-2">'+
+         '<div class="rz-suite-card"><div class="rz-kicker">'+premiumLabel+'</div><h3>₦4,000</h3><p class="rz-muted">Advanced creator intelligence, analytics and Pro tools.</p>'+premiumAction+(!premiumReady&&!p.active?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
+         '<div class="rz-suite-card"><div class="rz-kicker">'+plusLabel+'</div><h3>₦13,000</h3><p class="rz-muted">Everything in Premium, with the expanded premium tier for your creator workflow.</p>'+plusAction+(!plusReady&&!isPlus?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
+       '</div>'+
+       '<p class="rz-mini">Secure checkout is handled by Paystack. Premium and Premium+ remain visible after subscription so the upgrade path is never removed.</p>'+
+       (p.active
+         ? card("BILLING",'<p class="rz-muted">Current plan: <b>'+esc((p.plan||"premium").replace("_"," "))+'</b> · Provider: '+esc(p.provider||"Paystack")+' · Status: '+esc(p.status||"active")+'</p>'+(p.canCancel?'<button id="rzPremiumCancel" class="rz-btn">Cancel renewal</button>':'<p class="rz-mini">Cancellation becomes available once the recurring subscription credentials are received.</p>'))
+         : "");
      actions.innerHTML=bill;
      async function startPremium(plan){
        try{
