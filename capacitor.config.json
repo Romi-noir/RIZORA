@@ -1,5 +1,13 @@
-﻿{
+{
   "appId": "com.rizora.app",
   "appName": "RIZORA",
-  "webDir": "www"
+  "webDir": "www",
+  "server": {
+    "url": "https://rizora.com.ng",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
 }
