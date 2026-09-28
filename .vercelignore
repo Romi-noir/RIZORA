@@ -7,8 +7,6 @@ android/build
 .env
 .env.*
 server.js
-package.json
-package-lock.json
 BACKUP_*
 *.backup
 *.bak
