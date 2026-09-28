@@ -31,6 +31,30 @@ function cookieFrom(response) {
 }
 
 async function main() {
+  const fs = require("fs");
+  const vercelConfig = JSON.parse(fs.readFileSync("vercel.json", "utf8"));
+  const vercelIgnore = fs.readFileSync(".vercelignore", "utf8").split(/\r?\n/);
+  assert(vercelConfig.framework === null, "Vercel framework must be null/Other for the production static app");
+  assert(vercelConfig.buildCommand === null, "Vercel build command must be null for the production static app");
+  assert(vercelConfig.installCommand === "", "Vercel install command must be empty for the production static app");
+  assert(vercelConfig.outputDirectory === ".", "Vercel output directory must be the repository root");
+  for (const backendFile of [
+    "server.js",
+    "rizora-v2-backend.js",
+    "rizora-v2-enterprise.js",
+    "rizora-v2-global.js",
+    "rizora-v2-labs.js",
+    "rizora-v2-series.js",
+    "rizora-v2-events.js",
+    "rizora-v2-platform.js",
+    "rizora-v2-growth.js",
+    "rizora-v2-modern.js",
+    "rizora-v2-upgrades.js",
+    "rizora-v2-fans.js",
+    "rizora-v2-comments.js",
+    "rizora-v2-media-backend.js",
+    "rizora-v2-business.js"
+  ]) assert(vercelIgnore.includes(backendFile), "Vercel ignore must block backend module: " + backendFile);
   const child = spawn(process.execPath, ["server.js"], {
     cwd: process.cwd(),
     env: {
