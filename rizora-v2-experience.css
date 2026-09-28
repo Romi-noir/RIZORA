@@ -37,46 +37,41 @@ body{
 .rz-btn{transition:transform .16s ease,border-color .16s ease,background .16s ease}
 .rz-btn:hover{transform:translateY(-1px);border-color:rgba(155,108,255,.42)}
 .rz-btn.primary{box-shadow:0 10px 30px rgba(111,63,245,.18)}
-/* X + TikTok-inspired verification badge */
+/* RIZORA purple verification tick */
 .rz-verified{
   display:inline-flex;
   align-items:center;
-  gap:5px;
+  justify-content:center;
+  width:20px;
+  height:20px;
   margin-left:5px;
-  vertical-align:middle;
-  line-height:1;
+  vertical-align:-4px;
+  flex:none;
+  filter:drop-shadow(0 0 10px rgba(163,102,255,.34));
 }
 .rz-verified-mark{
-  width:18px;
-  height:18px;
-  border-radius:6px;
-  display:inline-grid;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  display:grid;
   place-items:center;
   position:relative;
-  background:linear-gradient(135deg,#8b5cf6 0%,#b94cff 48%,#5b43ff 100%);
-  box-shadow:0 0 0 1px rgba(255,255,255,.18),0 0 16px rgba(165,92,255,.3);
-  transform:rotate(45deg);
-}
-.rz-verified-mark:before{
-  content:"";
-  width:8px;
-  height:4px;
-  border-left:2px solid #fff;
-  border-bottom:2px solid #fff;
-  transform:rotate(-45deg) translate(-1px,-1px);
+  background:linear-gradient(135deg,#7c3aed 0%,#a855f7 48%,#c084fc 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.22),0 0 18px rgba(168,85,247,.34);
+  color:#fff;
+  font-size:12px;
+  font-weight:950;
+  line-height:1;
 }
 .rz-verified-mark:after{
   content:"";
   position:absolute;
-  right:-3px;
-  top:-3px;
-  width:5px;
-  height:5px;
+  inset:-2px;
   border-radius:50%;
-  background:#fff;
-  box-shadow:-7px 8px 0 -1px rgba(0,0,0,.5);
+  border:1px solid rgba(216,180,254,.42);
 }
-.rz-verified-label{font-size:10px;font-weight:850;color:#d9c7ff;letter-spacing:.05em}
+.rz-account-badge{display:flex;align-items:center;min-height:24px}
+.rz-unverified{font-size:12px;color:var(--muted)}
 .rz-profile-card{
   overflow:hidden;
   padding:0;
