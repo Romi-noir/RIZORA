@@ -59,7 +59,27 @@ async function main() {
     assert(checked.status === 0, "Frontend module syntax check failed: " + modulePath + "\n" + (checked.stderr || checked.stdout || ""));
   }
 
-  assert(/(^|\n)database\/(?:\r?\n|$)/.test(vercelIgnore) || /(^|\n)database\/\*\*(?:\r?\n|$)/.test(vercelIgnore), "Vercel ignore must block the backend database directory");
+  assert(/(^|\n)database\/(?:\r?\n|$)/.test(vercelIgnore), "Vercel ignore must block the backend database directory");
+  const backendFiles = [
+    "server.js",
+    "rizora-v2-backend.js",
+    "rizora-v2-enterprise.js",
+    "rizora-v2-global.js",
+    "rizora-v2-labs.js",
+    "rizora-v2-series.js",
+    "rizora-v2-events.js",
+    "rizora-v2-platform.js",
+    "rizora-v2-growth.js",
+    "rizora-v2-modern.js",
+    "rizora-v2-upgrades.js",
+    "rizora-v2-fans.js",
+    "rizora-v2-comments.js",
+    "rizora-v2-media-backend.js",
+    "rizora-v2-business.js"
+  ];
+  for (const backendFile of backendFiles) {
+    assert(vercelIgnore.split(/\r?\n/).includes(backendFile), "Vercel ignore must block backend module: " + backendFile);
+  }
   const serviceWorkerAssets = Array.from(serviceWorkerSource.matchAll(/["']\/(?:[^"'?]+\.(?:js|css|png|json|html))["']/g)).map(m => m[1] || m[0].slice(1,-1));
   const premiumUiSource = require("fs").readFileSync("rizora-v2-enterprise-ui.js", "utf8");
   const coreUiSource = require("fs").readFileSync("rizora-v2.js", "utf8");
@@ -70,9 +90,9 @@ async function main() {
   assert(suiteSource.includes("bindSuiteButtons(b);"), "Creator Suite controls are not bound");
   assert(serviceWorkerSource.includes('RIZORA_CACHE="rizora-v2-shell-v25-socialcore-badge"'), "PWA cache version must be v25");
   assert(!serviceWorkerSource.includes('"/rizora-v2-growth.js"'), "PWA cache must not contain the backend-only growth module");
-  assert(!Object.prototype.hasOwnProperty.call(vercelConfig, "framework"), "Vercel framework override should stay unset for the static root app");
-  assert(!Object.prototype.hasOwnProperty.call(vercelConfig, "buildCommand"), "Vercel build command override should stay unset for the static root app");
-  assert(!Object.prototype.hasOwnProperty.call(vercelConfig, "installCommand"), "Vercel install command override should stay unset for the static root app");
+  assert(vercelConfig.framework === null, "Vercel framework must be explicitly set to Other/null for the static root app");
+  assert(vercelConfig.buildCommand === null, "Vercel build command must be null to skip the static build step");
+  assert(vercelConfig.installCommand === "", "Vercel install command must be empty to skip dependency installation for the static frontend");
   assert(vercelConfig.outputDirectory === ".", "Vercel output directory must be the repository root");
   assert(Array.isArray(vercelConfig.rewrites) && vercelConfig.rewrites.some(x => x.source === "/login" && x.destination === "/"), "Vercel login rewrite is missing");
   for (const assetPath of new Set(serviceWorkerAssets)) {
