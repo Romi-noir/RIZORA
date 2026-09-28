@@ -214,7 +214,7 @@ function bindSuiteButtons(root){
 }
 function logout(){
   if(window.RIZORA_API_CALL)window.RIZORA_API_CALL("/api/auth/logout",{method:"POST"}).catch(function(){});else fetch(API+"/api/auth/logout",{method:"POST",credentials:"include",headers:window.RIZORA_AUTH_HEADERS?window.RIZORA_AUTH_HEADERS({"Content-Type":"application/json"}):{"Content-Type":"application/json"}}).catch(function(){});
-  if(window.RIZORA_CLEAR_AUTH_TOKEN)window.RIZORA_CLEAR_AUTH_TOKEN();try{localStorage.removeItem("rizoraToken");localStorage.removeItem("rizora_token");}catch(_){}
+  if(window.RIZORA_CLEAR_AUTH_TOKEN)window.RIZORA_CLEAR_AUTH_TOKEN();try{localStorage.removeItem("rizoraToken");localStorage.removeItem("rizora_token");}catch(_){}try{sessionStorage.removeItem("rz_premium_suggestion_dismissed");}catch(_){}
   location.reload();
 }
 function injectLogout(){
