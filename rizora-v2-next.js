@@ -206,14 +206,7 @@ function integrity(){
       '<p class="rz-muted">RIZORA still applies its platform safety rules at publish time. This tool helps you catch avoidable quality and attribution problems before submission.</p></div>';
   };
 }
-function inject(){
-  if(document.getElementById("rzNextTools"))return;
-  var aside=document.querySelector(".rz-sidebar");if(!aside)return;
-  var box=document.createElement("div");box.id="rzNextTools";box.className="rz-next-tools";
-  box.innerHTML='<div class="rz-enterprise-heading">NEXT-GEN TOOLS</div><button class="rz-btn" data-next-open="assistant">Creator Assistant</button><button class="rz-btn" data-next-open="business">Business Hub</button><button class="rz-btn" data-next-open="integrity">Content Integrity</button><button class="rz-btn" data-next-open="integrity">Pre-publish Check</button>';
-  aside.appendChild(box);
-  box.querySelectorAll("[data-next-open]").forEach(function(b){b.onclick=function(){var x=b.getAttribute("data-next-open");if(x==="assistant")assistant();if(x==="business")business();if(x==="memberships")memberships();if(x==="integrity")integrity();};});
-}
+function inject(){return;}
 async function verifyTipCallback(){
   var ref=new URLSearchParams(location.search).get("reference");
   if(!ref||ref.indexOf("tip_")!==0)return;
