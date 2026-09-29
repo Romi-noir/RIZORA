@@ -3681,6 +3681,39 @@ if (
       return;
     }
 
+    if (task.type === "social_follow") {
+      sendError(
+        res,
+        409,
+        "Use the Social Tasks mission for this action."
+      );
+      return;
+    }
+
+    if (
+      task.type === "generated" &&
+      task.createdForUserId !== user.id
+    ) {
+      sendError(
+        res,
+        403,
+        "This generated task is not assigned to your account."
+      );
+      return;
+    }
+
+    if (
+      task.type === "community" &&
+      task.creatorId === user.id
+    ) {
+      sendError(
+        res,
+        403,
+        "You cannot claim your own community task."
+      );
+      return;
+    }
+
     const alreadyCompleted =
       db.taskCompletions.some(
         (completion) =>
