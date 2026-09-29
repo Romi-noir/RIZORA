@@ -18,7 +18,7 @@ function renderMedia(url){
 function bindMediaPicker(fileId,statusId,urlId){
   if(window.RIZORA_MEDIA_BIND) window.RIZORA_MEDIA_BIND(fileId,statusId,urlId);
 }
-function verified(u){return u&&u.verified?'<img class="rz-verified" src="/assets/rizora_verified_mark.svg" alt="RIZORA Verified" aria-label="Verified creator" title="RIZORA Verified">':"";}
+function verified(u){return u&&u.verified?'<img class="rz-verified" src="/assets/rizora_verified_badge.svg" alt="RIZORA Verified" aria-label="Verified creator" title="RIZORA Verified">':"";}
 function toast(s){var t=$("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rt);window.__rt=setTimeout(function(){t.classList.remove("show");},2400);}function popup(title,message,kind){
   var old=document.getElementById("rzGlobalPopup");if(old)old.remove();
   var overlay=document.createElement("div");
