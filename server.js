@@ -415,38 +415,19 @@ function queueRizoraWelcomeEmail(db,user,req){
 }
 
 function getPublicBaseURL(req) {
-  const forwardedProto =
-    String(
-      req.headers["x-forwarded-proto"] || ""
-    ).split(",")[0].trim();
+  const configured =
+    String(process.env.RIZORA_PUBLIC_URL || "").trim().replace(/\/+$/,"");
+  if (configured) return configured;
 
-  const protocol =
-    forwardedProto ||
-    (
-      process.env.RIZORA_PUBLIC_URL
-        ? (() => {
-            try {
-              return new URL(
-                process.env.RIZORA_PUBLIC_URL
-              ).protocol.replace(":", "");
-            } catch {
-              return "http";
-            }
-          })()
-        : "http"
-    );
+  const forwardedHost =
+    String(req.headers["x-forwarded-host"] || "").split(",")[0].trim();
+  const host = forwardedHost || String(req.headers.host || "").trim();
 
-  if (process.env.RIZORA_PUBLIC_URL) {
-    return String(
-      process.env.RIZORA_PUBLIC_URL
-    ).replace(/\/+$/, "");
+  if (host && /(^|\.)rizora\.com\.ng$/i.test(host)) {
+    return "https://" + host.replace(/\/+$/,"");
   }
 
-  const host =
-    req.headers.host ||
-    `localhost:${PORT}`;
-
-  return `${protocol}://${host}`;
+  return "https://rizora.com.ng";
 }
 
 
