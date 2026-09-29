@@ -132,6 +132,9 @@ async function main() {
   for (const asset of new Set(assetRefs)) {
     assert(require("fs").existsSync(asset), "Indexed frontend asset is missing: " + asset);
   }
+  assert(!("buildCommand" in vercelConfig), "Static Vercel config should not force a Node build command");
+  assert(!("installCommand" in vercelConfig), "Static Vercel config should not force dependency installation");
+  assert(!("outputDirectory" in vercelConfig), "Static Vercel config should serve the repository root directly");
 
   const child = spawn(process.execPath, ["server.js"], {
     cwd: process.cwd(),
@@ -177,6 +180,13 @@ async function main() {
       }
     }
 
+    const officialProfiles = await request("/api/official/profiles");
+    assert(officialProfiles.res.status === 200 && Array.isArray(officialProfiles.data.profiles), "official profiles endpoint failed");
+    const officialHandles = new Set((officialProfiles.data.profiles || []).map(p => String(p.publicUsername || p.username || "").toLowerCase()));
+    assert(officialHandles.has("rizora"), "RIZORA official verified profile is missing");
+    assert(officialHandles.has("romi.noir"), "RoMi official verified profile is missing");
+    assert((officialProfiles.data.profiles || []).filter(p => p.verified === true).length >= 2, "Expected two verified official identities");
+
     const suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     const username = "smoke_" + suffix;
     const email = username + "@example.com";
@@ -218,6 +228,22 @@ async function main() {
 
     const tasks = await request("/api/tasks", { headers: authHeaders });
     assert(tasks.res.status === 200 && Array.isArray(tasks.data.tasks), "tasks failed");
+    assert(!(tasks.data.tasks || []).some(t => t.type === "social_follow"), "legacy social missions are still duplicated in the general task feed");
+    const exploreTask = (tasks.data.tasks || []).find(t => t.id === "rizora_explore");
+    assert(exploreTask && Number(exploreTask.points || exploreTask.reward || 0) === 50, "Explore task reward is not 50 points");
+    const taskStart = await request("/api/tasks/start", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ taskId: exploreTask.id })
+    });
+    assert(taskStart.res.status === 200 && taskStart.data.success === true, "task start route is not working");
+    await sleep(21000);
+    const taskComplete = await request("/api/tasks/complete", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ taskId: exploreTask.id })
+    });
+    assert(taskComplete.res.status === 200 && Number(taskComplete.data.reward) === 50, "task completion/reward flow failed: " + JSON.stringify(taskComplete.data));
 
     const aiIdentity = await request("/api/ai/chat", {
       method: "POST",
