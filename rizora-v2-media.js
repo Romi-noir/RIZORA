@@ -73,6 +73,35 @@
     return done.media;
   }
 
+  async function objectUrl(url){
+    var raw=String(url||"");
+    if(!raw)return "";
+    var parsed;
+    try{parsed=new URL(raw,API);}catch(_){throw new Error("Invalid media URL.");}
+    var path=parsed.origin===new URL(API).origin?parsed.pathname+parsed.search:parsed.pathname+parsed.search;
+    var headers=window.RIZORA_AUTH_HEADERS?window.RIZORA_AUTH_HEADERS({}):{};
+    var res=await fetch(API+path,{credentials:"include",headers:headers});
+    if(!res.ok)throw new Error("Media could not be loaded.");
+    var blob=await res.blob();
+    return URL.createObjectURL(blob);
+  }
+
+  function bindPlayback(root){
+    root=root||document;
+    root.querySelectorAll("[data-rz-media-src]").forEach(function(el){
+      if(el.getAttribute("data-rz-media-ready")==="1")return;
+      el.setAttribute("data-rz-media-ready","1");
+      var raw=el.getAttribute("data-rz-media-src");
+      objectUrl(raw).then(function(src){el.src=src;}).catch(function(){
+        el.removeAttribute("data-rz-media-ready");
+        var s=document.createElement("span");s.className="rz-error";s.textContent="Media unavailable.";el.replaceWith(s);
+      });
+      el.addEventListener("emptied",function(){
+        if(el.src&&el.src.indexOf("blob:")===0){try{URL.revokeObjectURL(el.src);}catch(_){}}
+      });
+    });
+  }
+
   function bind(fileId,statusId,urlId){
     const file=document.getElementById(fileId);
     const status=document.getElementById(statusId);
@@ -90,6 +119,10 @@
     });
   }
 
+  window.RIZORA_MEDIA_OBJECT_URL=objectUrl;
+  window.RIZORA_MEDIA_BIND_PLAYBACK=bindPlayback;
+  var observer=new MutationObserver(function(){bindPlayback(document);});
+  observer.observe(document.documentElement,{childList:true,subtree:true});
   window.RIZORA_UPLOAD_FILE=upload;
   window.RIZORA_MEDIA_BIND=bind;
 })();
