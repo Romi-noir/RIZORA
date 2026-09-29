@@ -129,14 +129,22 @@ async function handleRizoraPlatform(ctx){
   var thread=path.match(/^\/api\/v2\/messages\/([^/]+)$/);
   if(thread&&method==="GET"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
-    var otherUser=db.users.find(function(u){return u.id===thread[1]||String(u.username||"").toLowerCase()===thread[1].toLowerCase();});
+    var otherUser=db.users.find(function(u){
+      return u.id===thread[1] ||
+        String(u.username||"").toLowerCase()===thread[1].toLowerCase() ||
+        String(u.publicUsername||"").toLowerCase()===thread[1].toLowerCase();
+    });
     if(!otherUser){ctx.sendError(res,404,"Creator not found.");return true;}
     db.rzV2.messages.forEach(function(m){if(m.fromUserId===otherUser.id&&m.toUserId===user.id)m.read=true;});ctx.saveDB(db);
     ctx.sendJSON(res,200,{success:true,user:currentProfile(db,otherUser),messages:db.rzV2.messages.filter(function(m){return (m.fromUserId===user.id&&m.toUserId===otherUser.id)||(m.fromUserId===otherUser.id&&m.toUserId===user.id);}).slice(-200)});return true;
   }
   if(thread&&method==="POST"){
     if(!user||!activePlatformUser(user)){ctx.sendError(res,403,"Your account cannot send messages right now.");return true;}
-    var recipient=db.users.find(function(u){return u.id===thread[1]||String(u.username||"").toLowerCase()===thread[1].toLowerCase();});
+    var recipient=db.users.find(function(u){
+      return u.id===thread[1] ||
+        String(u.username||"").toLowerCase()===thread[1].toLowerCase() ||
+        String(u.publicUsername||"").toLowerCase()===thread[1].toLowerCase();
+    });
     if(!recipient){ctx.sendError(res,404,"Creator not found.");return true;}
     var mb=await readBodyPlatform(req),mt=String(mb.text||"").trim().slice(0,2000),mediaId=String(mb.mediaId||"").trim().slice(0,160),voiceMedia=null;
     if(mediaId){voiceMedia=(db.rzV2.media||[]).find(function(m){return m.id===mediaId&&m.ownerId===user.id&&String(m.mimeType||"").indexOf("audio/")===0;})||null;if(!voiceMedia){ctx.sendError(res,404,"Voice media not found.");return true;}}
