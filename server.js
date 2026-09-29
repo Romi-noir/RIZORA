@@ -9782,11 +9782,40 @@ function seedRizoraOfficialIdentities(db) {
 
   db.officialProfiles ||= [];
 
-  const romiUser =
+  let romiUser =
     db.users.find(
       user =>
-        normalizeUsername(user.username) === "romi"
+        normalizeUsername(user.username) === "romi" ||
+        normalizeUsername(user.publicUsername) === "romi.noir"
     );
+
+  if (!romiUser) {
+    romiUser = {
+      id: uid("usr_"),
+      username: "romi",
+      publicUsername: "romi.noir",
+      displayName: "RoMi",
+      email: normalizeEmail(process.env.RIZORA_SUPER_ADMIN_EMAIL || "romi@rizora.com.ng"),
+      socialHandle: "romi.noir",
+      passwordHash: "",
+      passwordSetupRequired: true,
+      role: "super_admin",
+      status: "active",
+      points: 0,
+      referralCode: randomReferralCode("romi"),
+      referredBy: null,
+      referralCount: 0,
+      verified: true,
+      verificationStatus: "verified",
+      verificationType: "official_creator",
+      official: true,
+      accountType: "creator",
+      createdAt: new Date().toISOString(),
+      lastLoginAt: null,
+      avatarUrl: "/rizora-cover.png"
+    };
+    db.users.push(romiUser);
+  }
 
   if (romiUser) {
 
