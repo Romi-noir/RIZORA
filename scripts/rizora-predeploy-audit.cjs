@@ -65,7 +65,7 @@ assert(server.includes('rz_official_tiktok'),"Official TikTok task is missing.")
 assert(server.includes('rz_official_instagram'),"Official Instagram task is missing.");
 assert(server.includes('rz_official_x'),"Official X task is missing.");
 assert(server.includes('rz_romi_tiktok'),"Official RoMi TikTok task is missing.");
-assert(server.includes("45 * 60 * 1000"),"45-minute social task cooldown is missing.");
+assert(server.includes("7 * 60 * 1000"),"7-minute social task cooldown is missing.");
 assert(server.includes('require("./rizora-email")'),"Transactional email helper is not wired to backend.");
 assert(server.includes("sendRizoraWelcomeEmail"),"Welcome email delivery is not wired.");
 assert(email.includes("RESEND_API_KEY"),"Resend API key support is missing.");
@@ -80,10 +80,10 @@ assert(verifiedPath.test(server),"Backend public profile does not expose verifie
 assert(server.includes('pathname === "/api/verification/apply"'),"Verification apply route is missing.");
 assert(server.includes('rzVerificationPath === "/api/verification/request"'),"Verification request route is missing.");
 assert(server.includes("proofUrl"),"Verification proof URL support is missing.");
-assert(server.includes("45 * 60 * 1000"),"45-minute task cooldown is missing.");
+assert(server.includes("7 * 60 * 1000"),"7-minute task cooldown is missing.");
 assert(server.includes("function isAllowedBrowserOrigin"),"CSRF origin guard is missing.");
 assert(server.includes("!isAllowedBrowserOrigin(req)"),"CSRF origin guard is not enforced.");
-assert(server.includes('cooldownMinutes: Math.ceil(TASK_COOLDOWN_MS / 60000)'),"Task cooldown response still reports the old duration.");
+assert(server.includes('cooldownMinutes: Math.ceil(TASK_COOLDOWN_MS / 60000)'),"Task cooldown response duration is not derived from the configured cooldown.");
 assert(server.includes("publishDueSchedules("),"Schedule publisher wiring is missing.");
 assert(server.includes("db.rzV2.schedules = db.rzV2.schedules || []"),"Schedule storage initialization is missing.");
 
