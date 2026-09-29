@@ -181,6 +181,9 @@ async function main() {
       }
     }
 
+    const badgeAsset = await request("/assets/rizora_verified_badge.svg");
+    assert(badgeAsset.res.status === 200, "RIZORA verified badge asset is not publicly available");
+
     const officialProfiles = await request("/api/official/profiles");
     assert(officialProfiles.res.status === 200 && Array.isArray(officialProfiles.data.profiles), "official profiles endpoint failed");
     const officialHandles = new Set((officialProfiles.data.profiles || []).map(p => String(p.publicUsername || p.username || "").toLowerCase()));
@@ -208,6 +211,7 @@ async function main() {
       })
     });
     assert(signup.res.status === 201, "signup failed: " + JSON.stringify(signup.data));
+    assert(signup.data.emailDelivery && typeof signup.data.emailDelivery.configured === "boolean", "signup email delivery status is missing");
 
     const cookie = cookieFrom(signup.res);
     assert(cookie.startsWith("rizora_session="), "signup did not return a session cookie");
@@ -215,6 +219,8 @@ async function main() {
     const authHeaders = { Cookie: cookie, "Content-Type": "application/json" };
 
     const me = await request("/api/auth/me", { headers: authHeaders });
+    const welcomeNotifications = await request("/api/v2/notifications", { headers: authHeaders });
+    assert(welcomeNotifications.res.status === 200 && (welcomeNotifications.data.notifications || []).some(n => n.type === "system" && /welcome/i.test(String(n.title || ""))), "welcome notification was not created");
     assert(me.res.status === 200 && me.data.user && me.data.user.username === username, "auth/me cookie session failed");
 
     const bearerHeaders = {
@@ -251,6 +257,7 @@ async function main() {
       body: JSON.stringify({ taskId: exploreTask.id })
     });
     assert(taskStart.res.status === 200 && taskStart.data.success === true, "task start route is not working");
+    assert(Number(taskStart.data.cooldownMinutes || 7) === 7, "task cooldown is not 7 minutes");
     await sleep(21000);
     const taskComplete = await request("/api/tasks/complete", {
       method: "POST",
