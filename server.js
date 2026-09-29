@@ -4067,6 +4067,15 @@ if (
     return;
   }
 
+  if (task.type === "social_follow") {
+    sendError(
+      res,
+      409,
+      "Use the Social Tasks mission for this action."
+    );
+    return;
+  }
+
   const cooldown =
     getCooldown(
       db,
