@@ -10,7 +10,7 @@ const crypto = require("crypto");
 require("dotenv").config();
 const { OAuth2Client } =
   require("google-auth-library");
-const { configured: rizoraEmailConfigured, sendRizoraWelcomeEmail } = require("./rizora-email");
+const { configured: rizoraEmailConfigured, sendRizoraWelcomeEmail, sendRizoraEmail } = require("./rizora-email");
 const { handleRizoraV2 } = require("./rizora-v2-backend");
 const { publishDueSchedules } = require("./rizora-v2-growth");
 const { handleRizoraGlobal } = require("./rizora-v2-global");
@@ -411,6 +411,27 @@ function queueRizoraWelcomeEmail(db,user,req){
     try{saveDB(db);}catch(_){}
   });
 
+  return {configured:true,queued:true,status:event.status};
+}
+
+function queueRizoraVerificationEmail(db,user,action,reason,req){
+  db.emailEvents ||= [];
+  const normalizedAction=String(action||"").toLowerCase();
+  const event={id:uid("email_"),type:"verification_"+normalizedAction,userId:user.id,to:normalizeEmail(user.email),status:"queued",createdAt:new Date().toISOString()};
+  db.emailEvents.unshift(event);
+  if(db.emailEvents.length>2000)db.emailEvents=db.emailEvents.slice(0,2000);
+  if(!rizoraEmailConfigured()){event.status="skipped";event.reason="EMAIL_PROVIDER_NOT_CONFIGURED";return {configured:false,queued:false,status:event.status};}
+  const name=String(user.displayName||user.username||"Creator").trim().slice(0,120);
+  const username=String(user.publicUsername||user.username||"creator").replace(/^@/,"").trim().slice(0,80);
+  const why=String(reason||"").trim().slice(0,500);
+  const isVerified=normalizedAction==="approve"||normalizedAction==="verify";
+  const statusLabel=isVerified?"verified":normalizedAction;
+  const safe=function(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");};
+  const base=getPublicBaseURL(req);
+  const subject=isVerified?"Your RIZORA verification is approved":"RIZORA verification update";
+  const text=["Hi "+name+",","",isVerified?"Your RIZORA creator account @"+username+" is now verified.":"Your RIZORA verification request for @"+username+" is now "+statusLabel+".",why?"Review note: "+why:"","Open RIZORA: "+base,"","RIZORA · CREATE. GROW. EARN."].filter(Boolean).join("\n");
+  const html='<div style="margin:0;background:#07050d;color:#f8f6ff;font-family:Arial,Helvetica,sans-serif;padding:32px 16px"><div style="max-width:620px;margin:0 auto;background:#100b1d;border:1px solid #33215a;border-radius:22px;padding:30px"><div style="font-size:12px;letter-spacing:4px;color:#bba8ff;font-weight:800">RIZORA</div><h1 style="margin:12px 0 8px;font-size:30px">'+(isVerified?"Verification approved":"Verification update")+'</h1><p style="color:#b8aec9;line-height:1.7">Hi '+safe(name)+', your account @'+safe(username)+' has a verification status update: <b>'+safe(statusLabel)+'</b>.</p>'+(why?'<div style="margin:18px 0;padding:14px;border-radius:14px;background:#090611;border:1px solid #2a1a49;color:#c8bfd8">Review note: '+safe(why)+'</div>':"")+'<a href="'+safe(base)+'" style="display:inline-block;padding:13px 19px;background:#7b4dff;color:#fff;text-decoration:none;border-radius:12px;font-weight:800">Open RIZORA</a></div></div>';
+  Promise.resolve().then(function(){return sendRizoraEmail({to:user.email,subject:subject,text:text,html:html});}).then(function(result){event.status="sent";event.provider=result&&result.provider||"resend";event.providerId=result&&result.id||"";event.sentAt=new Date().toISOString();saveDB(db);}).catch(function(error){event.status="failed";event.reason=String(error&&error.message||"Email delivery failed").slice(0,300);event.failedAt=new Date().toISOString();console.error("RIZORA verification email failed:",event.reason);try{saveDB(db);}catch(_){}});
   return {configured:true,queued:true,status:event.status};
 }
 
@@ -8612,6 +8633,20 @@ if (
   target.updatedAt =
     now;
 
+  db.notifications ||= [];
+  db.notifications.unshift({
+    id:uid("notif_"),
+    userId:target.id,
+    title:(action === "approve" || action === "verify") ? "RIZORA verification approved" : "RIZORA verification update",
+    message:(action === "approve" || action === "verify") ? "Your creator account is now RIZORA Verified." : "Your verification request is now "+String(action||"updated")+".",
+    type:"verification",
+    read:false,
+    createdAt:now
+  });
+
+  const verificationEmailDelivery =
+    queueRizoraVerificationEmail(db,target,action,request.reviewNote || request.reason || "",req);
+
   saveDB(db);
 
   sendJSON(
@@ -8628,7 +8663,12 @@ if (
           ? "Account verified successfully."
           : action === "reject"
             ? "Verification request rejected."
-            : "Verification revoked."
+            : "Verification revoked.",
+      emailDelivery: {
+        status: verificationEmailDelivery.status,
+        queued: verificationEmailDelivery.queued,
+        configured: verificationEmailDelivery.configured
+      }
     }
   );
 
