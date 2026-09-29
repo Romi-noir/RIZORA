@@ -171,12 +171,12 @@
     form.setAttribute("data-rz-voice-wired","1");
     var button=document.createElement("button");
     button.type="button";
-    button.className="rz-btn";
+    button.className="rz-btn rz-voice-button";
     button.textContent=kind==="ai"?"🎙 Talk to AI":"🎙 Voice";
     button.setAttribute("data-rz-voice-button","");
     button.setAttribute("aria-label",kind==="ai"?"Record a voice question for RIZORA AI":"Record a RIZORA voice message");
     button.setAttribute("aria-pressed","false");
-    button.title=kind==="ai"?"Hold a voice question for RIZORA AI":"Record a voice message";
+    button.title=kind==="ai"?"Record a voice question for RIZORA AI":"Record a voice message";
     form.appendChild(button);
     button.addEventListener("click",function(){start(form,button,kind);});
   }
