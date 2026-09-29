@@ -249,6 +249,23 @@ async function main() {
     });
     assert(taskComplete.res.status === 200 && Number(taskComplete.data.reward) === 50, "task completion/reward flow failed: " + JSON.stringify(taskComplete.data));
 
+    const socialTasks = await request("/api/social/tasks", { headers: authHeaders });
+    assert(socialTasks.res.status === 200 && Array.isArray(socialTasks.data.tasks), "social tasks endpoint failed");
+    const officialSocial = (socialTasks.data.tasks || []).filter(t => ["rz_official_tiktok","rz_official_instagram","rz_official_x","rz_romi_tiktok"].includes(t.id));
+    assert(officialSocial.length === 4, "official social mission set is incomplete");
+    const socialRewards = Object.fromEntries(officialSocial.map(t => [t.id, Number(t.reward || 0)]));
+    assert(socialRewards.rz_official_tiktok === 100, "official TikTok social reward is not 100");
+    assert(socialRewards.rz_official_instagram === 75, "official Instagram social reward is not 75");
+    assert(socialRewards.rz_official_x === 75, "official X social reward is not 75");
+    assert(socialRewards.rz_romi_tiktok === 75, "RoMi TikTok social reward is not 75");
+    const socialComplete = await request("/api/social/tasks/complete", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ taskId: "rz_official_tiktok" })
+    });
+    assert(socialComplete.res.status === 200 && Number(socialComplete.data.reward) === 100, "official social task completion failed");
+    assert(!socialComplete.data.user || !Object.prototype.hasOwnProperty.call(socialComplete.data.user, "passwordHash"), "social task response leaked passwordHash");
+
     const aiIdentity = await request("/api/ai/chat", {
       method: "POST",
       headers: authHeaders,
