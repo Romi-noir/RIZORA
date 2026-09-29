@@ -110,8 +110,8 @@ async function main() {
   assert(voiceSource.includes('id="aiInput"') || voiceSource.includes("#aiInput"), "Voice module is not wired to the AI composer");
   assert(voiceSource.includes("RIZORA_UPLOAD_FILE"), "Voice module is not wired to the media uploader");
   assert(voiceSource.includes("RIZORA_AI_SPEAK"), "AI voice playback helper is missing");
-  assert(coreUiSource.includes("data-ai-speak"), "AI voice playback controls are missing from the AI UI");
-  const mediaSource = require("fs").readFileSync("rizora-v2-media.js", "utf8");
+   assert(coreUiSource.includes("data-ai-speak"), "AI voice playback controls are missing from the AI UI");
+   assert(coreUiSource.includes('src="\'+esc(m.mediaUrl)\'+"') || /<audio controls/.test(coreUiSource), "Chat/comment voice players must bind a playable audio source");  const mediaSource = require("fs").readFileSync("rizora-v2-media.js", "utf8");
   assert(mediaSource.includes('"audio/webm"'), "Media uploader must allow recorded WebM voice notes");
   assert(commentsSource.includes("mediaUrl:comment.mediaUrl||\"\""), "Comment moderation formatter must preserve voice media URL");
   assert(commentsSource.includes("messageType:comment.messageType||\"text\""), "Comment moderation formatter must preserve message type");
