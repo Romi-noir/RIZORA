@@ -9304,7 +9304,7 @@ if(
           0
         ),
 
-      user,
+      user: safeUser(user),
 
       completion
     }
