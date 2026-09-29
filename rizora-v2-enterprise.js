@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
+const { configured: remitaConfigured, createInvoice: createRemitaInvoice, verifyOrder: verifyRemitaOrder, verifyRrr: verifyRemitaRrr } = require("./rizora-remita");
 
 function hashPasswordSyncEnterprise(password) {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -380,10 +381,10 @@ async function handleRizoraEnterprise(ctx) {
       canCancel:!!(active&&active.subscriptionCode&&active.emailToken&&["active","attention"].includes(active.status)),
       plans,
       features:{
-        advancedAI:isPremium,advancedAnalytics:isPremium,creatorPortfolio:true,experiments:true,contentPlanning:true,
+        advancedAI:isPremium,advancedAnalytics:isPremium,creatorPortfolio:isPremium,experiments:isPremium,contentPlanning:true,
         broadcastChannels:true,digitalProducts:true,creatorPayouts:false,
         premiumPlus:currentPlan==="premium_plus"
-      },premiumOnly:["advancedAI","advancedAnalytics"]}); return true;
+      },premiumOnly:["advancedAI","advancedAnalytics","creatorPortfolio","experiments"]}); return true;
   }
   const premiumVerifyMatch=path.match(/^\/api\/v2\/premium\/verify\/([^/]+)$/);
   if(premiumVerifyMatch&&method==="GET"){
@@ -913,6 +914,99 @@ async function handleRizoraEnterprise(ctx) {
     ctx.saveDB(db);
     addAudit(ctx, user, "moderation_action", { reportId: report.id, action });
     ctx.sendJSON(res, 200, { success:true, report });
+    return true;
+  }
+
+  // ---------- Remita payments ----------
+  if (path === "/api/remita/status" && method === "GET") {
+    ctx.sendJSON(res, 200, { success:true, provider:"remita", configured:remitaConfigured(), currency:"NGN" });
+    return true;
+  }
+
+  if (path === "/api/remita/initialize" && method === "POST") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    if (!remitaConfigured()) { ctx.sendError(res, 503, "Remita is not configured on the RIZORA server yet."); return true; }
+    const b = await readBody(req, 100000);
+    const amountNaira = Number(b.amountNaira);
+    if (!Number.isFinite(amountNaira) || amountNaira <= 0 || amountNaira > 10000000) {
+      ctx.sendError(res, 400, "Enter a valid amount."); return true;
+    }
+    const email = safeString(b.email || user.email, 240);
+    if (!email || !email.includes("@")) { ctx.sendError(res, 400, "A valid email is required for payment."); return true; }
+    const orderId = ("RZ-" + Date.now() + "-" + Math.random().toString(36).slice(2,8)).replace(/[^A-Za-z0-9_-]/g, "");
+    const invoice = await createRemitaInvoice({
+      amountNaira,
+      orderId,
+      payerName: safeString(b.payerName || user.displayName || user.username, 160),
+      payerEmail: email,
+      payerPhone: safeString(b.phone || b.payerPhone || "", 50),
+      description: safeString(b.description || b.purpose || "RIZORA Creator payment", 300)
+    });
+    db.rzV2.transactions.push({
+      id:"tx_"+Date.now().toString(36),
+      userId:user.id,
+      provider:"remita",
+      reference:invoice.rrr || invoice.orderId,
+      orderId:invoice.orderId,
+      rrr:invoice.rrr || "",
+      amountNaira,
+      amountSubunit:Math.round(amountNaira * 100),
+      currency:"NGN",
+      purpose:safeString(b.purpose || "rizora_creator",80),
+      campaignId:safeString(b.campaignId || "",120) || null,
+      status:"initialized",
+      authorizationUrl:invoice.paymentUrl || "",
+      createdAt:new Date().toISOString(),
+      updatedAt:new Date().toISOString()
+    });
+    ctx.saveDB(db);
+    ctx.sendJSON(res, 200, {
+      success:true,
+      provider:"remita",
+      orderId:invoice.orderId,
+      rrr:invoice.rrr,
+      status:invoice.status,
+      authorizationUrl:invoice.paymentUrl
+    });
+    return true;
+  }
+
+  const remitaVerifyMatch = path.match(/^\/api\/remita\/verify\/([^/]+)$/);
+  if (remitaVerifyMatch && method === "GET") {
+    if (!user) { ctx.sendError(res, 401, "Authentication required."); return true; }
+    const orderId = decodeURIComponent(remitaVerifyMatch[1]);
+    const tx = db.rzV2.transactions.find(t => t.userId === user.id && t.provider === "remita" && (t.orderId === orderId || t.reference === orderId));
+    if (!tx) { ctx.sendError(res, 404, "Remita payment reference not found."); return true; }
+    const result = await verifyRemitaOrder(tx.orderId || tx.reference);
+    tx.status = result.paid ? "success" : (result.statuscode === "02" ? "failed" : "pending");
+    tx.remitaStatusCode = result.statuscode;
+    tx.updatedAt = new Date().toISOString();
+    tx.verifiedAt = new Date().toISOString();
+    ctx.saveDB(db);
+    ctx.sendJSON(res, 200, { success:true, provider:"remita", status:tx.status, transaction:tx, remita:result });
+    return true;
+  }
+
+  if (path === "/api/remita/webhook" && method === "POST") {
+    const b = await readBody(req, 100000);
+    const rows = Array.isArray(b) ? b : [b];
+    let updated = 0;
+    for (const row of rows) {
+      const rrr = safeString(row && (row.rrr || row.RRR || row.reference),120);
+      if (!rrr) continue;
+      const result = await verifyRemitaRrr(rrr);
+      if (!result.paid) continue;
+      const tx = db.rzV2.transactions.find(t => t.provider === "remita" && (t.rrr === rrr || t.reference === rrr));
+      if (!tx) continue;
+      tx.status = "success";
+      tx.remitaStatusCode = result.statuscode;
+      tx.updatedAt = new Date().toISOString();
+      tx.verifiedAt = new Date().toISOString();
+      updated++;
+    }
+    if (updated) ctx.saveDB(db);
+    res.writeHead(200, { "Content-Type":"text/plain; charset=utf-8" });
+    res.end("Ok");
     return true;
   }
 
