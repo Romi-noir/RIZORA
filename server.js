@@ -2792,6 +2792,13 @@ async function handleRequest(
           ) === googleEmail
       );
 
+    let googleCreated = false;
+    let googleEmailDelivery = {
+      configured: rizoraEmailConfigured(),
+      queued: false,
+      status: "existing_account"
+    };
+
     if(user){
 
       if(
@@ -2918,6 +2925,8 @@ async function handleRequest(
         user
       );
 
+      googleCreated = true;
+
       const referral =
         applyReferral(
           db,
@@ -2940,6 +2949,19 @@ async function handleRequest(
             Boolean(referral)
         }
       );
+
+      googleEmailDelivery = queueRizoraWelcomeEmail(db,user,req);
+
+      db.notifications ||= [];
+      db.notifications.unshift({
+        id:uid("notif_"),
+        userId:user.id,
+        title:"Welcome to RIZORA",
+        message:"Your Google creator account is ready. Explore your profile, missions, AI, messages and growth tools.",
+        type:"system",
+        read:false,
+        createdAt:new Date().toISOString()
+      });
     }
 
     if(
@@ -2984,7 +3006,9 @@ async function handleRequest(
         user:
           safeUser(
             user
-          )
+          ),
+        created: googleCreated,
+        emailDelivery: googleEmailDelivery
       }
     );
 
