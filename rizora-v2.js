@@ -19,7 +19,28 @@ function bindMediaPicker(fileId,statusId,urlId){
   if(window.RIZORA_MEDIA_BIND) window.RIZORA_MEDIA_BIND(fileId,statusId,urlId);
 }
 function verified(u){return u&&u.verified?'<img class="rz-verified" src="/assets/rizora_verified_mark.svg" alt="RIZORA Verified" aria-label="Verified creator" title="RIZORA Verified">':"";}
-function toast(s){var t=$("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rt);window.__rt=setTimeout(function(){t.classList.remove("show");},2400);}
+function toast(s){var t=$("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rt);window.__rt=setTimeout(function(){t.classList.remove("show");},2400);}function popup(title,message,kind){
+  var old=document.getElementById("rzGlobalPopup");if(old)old.remove();
+  var overlay=document.createElement("div");
+  overlay.id="rzGlobalPopup";
+  overlay.className="rz-overlay";
+  var tone=kind==="error"?"#ff8d9d":kind==="success"?"#bda7ff":"#d9ccff";
+  overlay.innerHTML='<div class="rz-modal" role="dialog" aria-modal="true" aria-labelledby="rzPopupTitle" style="max-width:520px;position:relative">'+
+    '<button type="button" id="rzPopupClose" class="rz-btn" style="position:absolute;right:14px;top:14px" aria-label="Close popup">×</button>'+
+    '<div class="rz-kicker" style="color:'+tone+'">RIZORA</div>'+
+    '<h2 id="rzPopupTitle" style="margin:8px 42px 8px 0">'+esc(title||"RIZORA")+'</h2>'+
+    '<p class="rz-muted" style="line-height:1.7;margin:0 0 18px">'+esc(message||"")+'</p>'+
+    '<button type="button" id="rzPopupOkay" class="rz-btn primary">Continue</button>'+
+  '</div>';
+  document.body.appendChild(overlay);
+  var close=function(){overlay.remove();};
+  overlay.addEventListener("click",function(e){if(e.target===overlay)close();});
+  document.getElementById("rzPopupClose").onclick=close;
+  document.getElementById("rzPopupOkay").onclick=close;
+  return overlay;
+}
+window.RIZORA_POPUP=popup;
+window.RIZORA_TOAST=toast;
 function textPreview(v){var s=String(v||"").trim().replace(/\s+/g," ");return s.slice(0,70)||"Untitled draft";}
 function bindPasswordToggles(root){(root||document).querySelectorAll("[data-rz-password-toggle]").forEach(function(b){b.onclick=function(){var id=b.getAttribute("data-rz-password-toggle"),i=document.getElementById(id);if(!i)return;var show=i.type==="password";i.type=show?"text":"password";b.textContent=show?"Hide":"Show";b.setAttribute("aria-label",show?"Hide password":"Show password");};});}
 function getRizoraAuthToken(){try{return String(window.RIZORA_AUTH_TOKEN||localStorage.getItem("rizora_auth_token")||"").trim();}catch(e){return String(window.RIZORA_AUTH_TOKEN||"").trim();}}
@@ -70,7 +91,14 @@ function auth(){
       state.user=d.user;window.RIZORA_CURRENT_USER=state.user;try{sessionStorage.removeItem("rz_premium_suggestion_dismissed");}catch(_){}
       var loaded=await load();
       if(loaded!==true)throw new Error("Login succeeded, but the session could not be restored. Please refresh and try again.");
-      toast("Welcome to RIZORA.");
+      if(state.authMode==="signup"){
+        var emailInfo=d.emailDelivery||{};
+        var emailText=emailInfo.configured
+          ? "Your account is ready. A welcome email has been queued for your registered email address."
+          : "Your account is ready. Add the RIZORA email provider configuration to enable welcome emails.";
+        if(window.RIZORA_POPUP)window.RIZORA_POPUP("Welcome to RIZORA","@"+(state.user.publicUsername||state.user.username)+" is now live. "+emailText,"success");
+        else toast("Welcome to RIZORA.");
+      }else toast("Welcome back to RIZORA.");
     }catch(err){
       if(state.authMode==="login"&&(err.code==="TWO_FACTOR_REQUIRED"||err.code==="TWO_FACTOR_INVALID")){
         if(!$("twoFactorCode")){
@@ -442,7 +470,11 @@ function wire(){
           clearInterval(timer);
           b.textContent="Claiming…";
           api("/api/tasks/complete",{method:"POST",body:JSON.stringify({taskId:id})})
-            .then(load)
+            .then(function(d){
+              var reward=Number(d.reward||d.points||0);
+              if(window.RIZORA_POPUP)window.RIZORA_POPUP("Task complete",reward>0?"You earned +"+reward+" points.":"Task completed successfully.","success");
+              return load();
+            })
             .catch(function(e){b.disabled=false;b.textContent="Start task";toast(e.message);});
         },1000);
       }catch(e){
@@ -458,7 +490,11 @@ function wire(){
       b.disabled=true;
       b.textContent="Completing…";
       api("/api/social/tasks/complete",{method:"POST",body:JSON.stringify({taskId:b.getAttribute("data-social")})})
-        .then(load)
+        .then(function(d){
+          var reward=Number(d.reward||d.points||0);
+          if(window.RIZORA_POPUP)window.RIZORA_POPUP("Mission complete",reward>0?"You earned +"+reward+" points.":"Mission completed successfully.","success");
+          return load();
+        })
         .catch(function(e){b.disabled=false;b.textContent="Complete";toast(e.message);});
     };
   });
@@ -498,7 +534,7 @@ async function load(){
 async function verification(){
   var overlay=document.createElement("div");overlay.className="rz-overlay";
   overlay.innerHTML='<div class="rz-modal"><h2>Creator verification</h2><p class="rz-muted">Status: '+esc(state.verification&&state.verification.status||"not_submitted")+'</p><textarea id="verifyReason" class="rz-textarea" placeholder="Why should we verify you?"></textarea><input id="verifyUrl" class="rz-input" placeholder="Public proof URL"><button id="sendVerify" class="rz-btn primary">Submit</button><button id="closeVerify" class="rz-btn">Close</button></div>';
-  document.body.appendChild(overlay);$("closeVerify").onclick=function(){overlay.remove();};$("sendVerify").onclick=async function(){try{await api("/api/verification/apply",{method:"POST",body:JSON.stringify({reason:$("verifyReason").value,proofUrl:$("verifyUrl").value})});overlay.remove();toast("Verification submitted.");load();}catch(err){toast(err.message);}};
+  document.body.appendChild(overlay);$("closeVerify").onclick=function(){overlay.remove();};$("sendVerify").onclick=async function(){try{await api("/api/verification/apply",{method:"POST",body:JSON.stringify({reason:$("verifyReason").value,proofUrl:$("verifyUrl").value})});overlay.remove();if(window.RIZORA_POPUP)window.RIZORA_POPUP("Verification submitted","Your creator verification request is now under review.","success");else toast("Verification submitted.");load();}catch(err){toast(err.message);}};
 }
 boot();
 async function boot(){if(navigator.serviceWorker)navigator.serviceWorker.register("/service-worker.js").catch(function(){});try{var m=await api("/api/auth/me");state.user=m.user;load();}catch(e){landing();}}
