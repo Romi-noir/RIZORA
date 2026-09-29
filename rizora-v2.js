@@ -296,8 +296,8 @@ function adminView(){
   }).join("");
   if(!rows)rows="<div class='rz-empty'>No users returned.</div>";
   var pending=(state.adminVerification||[]).filter(function(r){return r.status==="pending";}).map(function(r){
-    var id=(r.user&&r.user.id)||r.userId;
-    return '<div class="rz-card"><strong>'+esc((r.user&&r.user.displayName)||"Creator")+'</strong><div class="rz-mini">@'+esc((r.user&&r.user.username)||"unknown")+'</div><button class="rz-btn primary" data-grant="'+esc(id)+'">Grant verification</button></div>';
+    var requestId=r.id||"";
+    return '<div class="rz-card"><strong>'+esc((r.user&&r.user.displayName)||"Creator")+'</strong><div class="rz-mini">@'+esc((r.user&&r.user.username)||"unknown")+'</div><button class="rz-btn primary" data-grant="'+esc(requestId)+'">Grant verification</button></div>';
   }).join("");
   if(!pending)pending="<div class='rz-empty'>No pending verification requests.</div>";
   return '<div class="rz-grid"><div class="rz-card rz-span-12"><div class="rz-kicker">SUPER ADMIN COMMAND CENTER</div><h2>RIZORA control surface</h2><p class="rz-muted">Live platform data, verification and account recovery.</p></div>'+
@@ -336,7 +336,7 @@ function wireAdmin(){
   document.querySelectorAll("[data-grant]").forEach(function(b){
     b.onclick=async function(){
       try{
-        await api("/api/superadmin/verification/grant",{method:"POST",body:JSON.stringify({userId:b.getAttribute("data-grant")})});
+        await api("/api/superadmin/verification/action",{method:"POST",body:JSON.stringify({requestId:b.getAttribute("data-grant"),action:"approve"})});
         toast("Verification granted.");load();
       }catch(e){toast(e.message);}
     };
