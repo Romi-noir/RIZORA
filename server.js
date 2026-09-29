@@ -1093,7 +1093,7 @@ const DEFAULT_TASKS = [
     id: "rizora_instagram",
     title: "Follow @rizora.hq on Instagram",
     description: "Follow the official RIZORA Instagram account.",
-    points: 50,
+    points: 75,
     type: "social_follow",
     platform: "instagram",
     url: "https://www.instagram.com/rizora.hq",
@@ -1103,7 +1103,7 @@ const DEFAULT_TASKS = [
     id: "rizora_x",
     title: "Follow @Rizora_hq on X",
     description: "Follow the official RIZORA X account.",
-    points: 50,
+    points: 75,
     type: "social_follow",
     platform: "x",
     url: "https://x.com/Rizora_hq",
@@ -1113,7 +1113,7 @@ const DEFAULT_TASKS = [
     id: "romi_tiktok",
     title: "Follow @romi.noir on TikTok",
     description: "Follow RoMi on TikTok.",
-    points: 50,
+    points: 75,
     type: "social_follow",
     platform: "tiktok",
     url: "https://www.tiktok.com/@romi.noir",
@@ -1123,7 +1123,7 @@ const DEFAULT_TASKS = [
     id: "rizora_explore",
     title: "Explore RIZORA",
     description: "Explore the RIZORA creator platform.",
-    points: 25,
+    points: 50,
     type: "engagement",
     url: "/",
     active: true
@@ -1159,7 +1159,7 @@ const DEFAULT_TASKS = [
     id: "rizora_invite",
     title: "Invite a creator",
     description: "Invite another creator to RIZORA.",
-    points: 100,
+    points: 150,
     type: "referral",
     url: "/",
     active: true
@@ -3399,7 +3399,10 @@ async function handleRequest(
 // RIZORA FEATURE LAYER
 // ============================================================
 
-if (method === "GET" && pathname === "/api/tasks") {
+if (
+  (method === "GET" && pathname === "/api/tasks") ||
+  (method === "POST" && pathname === "/api/tasks/start")
+) {
   const user = getCurrentUser(db, req);
 
   if (!user) {
@@ -3431,6 +3434,7 @@ if (method === "GET" && pathname === "/api/tasks") {
     .filter(task => task.active !== false)
     .filter(task => task.type !== "generated")
     .filter(task => !(task.type === "community" && task.creatorId === user.id))
+    .filter(task => task.type !== "social_follow")
     .filter(task => !completedIds.has(task.id))
     .map(task => ({
       ...task,
@@ -3512,6 +3516,16 @@ if (method === "GET" && pathname === "/api/tasks") {
         "Task ID is required."
       );
 
+      return;
+    }
+
+    const startCooldown = getCooldown(db, user.id);
+    if (startCooldown.active) {
+      sendJSON(res, 429, {
+        error: "Your next RIZORA task is still on cooldown.",
+        cooldown: startCooldown,
+        cooldownMinutes: 7
+      });
       return;
     }
 
@@ -4630,9 +4644,7 @@ if (
       );
     }
 
-    const rateKey =
-      req.socket.remoteAddress ||
-      user.id;
+    const rateKey = user.id;
 
     if (
       !checkRateLimit(
