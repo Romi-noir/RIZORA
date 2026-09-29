@@ -251,10 +251,19 @@ function wireMessages(){
 async function openChat(target){
   try{
     var d=await api("/api/v2/messages/"+encodeURIComponent(target));
-    $("chatBox").innerHTML='<div class="rz-card" style="margin-top:14px"><h3>'+esc(d.user.displayName)+'</h3><div class="rz-mini">@'+esc(d.user.publicUsername||d.user.username)+'</div><div class="rz-feed">'+d.messages.map(function(m){return '<div class="rz-card"><div class="rz-mini">'+(m.fromUserId===state.user.id?"You":"Creator")+'</div>'+esc(m.text)+"</div>";}).join("")+'</div><form id="messageForm" class="rz-actions"><input id="messageText" class="rz-input" placeholder="Write a message" required><button class="rz-btn primary">Send</button></form></div>';
-    $("messageForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/messages/"+encodeURIComponent(target),{method:"POST",body:JSON.stringify({text:$("messageText").value})});openChat(target);}catch(err){toast(err.message);}};
+    var messageHtml=d.messages.map(function(m){
+      var audio="";
+      if(m.mediaUrl){
+        var src=String(m.mediaUrl).indexOf("http")===0?m.mediaUrl:API+String(m.mediaUrl);
+        audio='<audio controls preload="metadata" style="width:100%;margin-top:8px" src="'+esc(src)+'"></audio>';
+      }
+      return '<div class="rz-card"><div class="rz-mini">'+(m.fromUserId===state.user.id?"You":"Creator")+(m.messageType==="voice"?" · Voice":"")+'</div>'+(m.text?'<div>'+esc(m.text)+'</div>':"")+audio+'</div>';
+    }).join("");
+    $("chatBox").innerHTML='<div class="rz-card" style="margin-top:14px"><h3>'+esc(d.user.displayName)+'</h3><div class="rz-mini">@'+esc(d.user.publicUsername||d.user.username)+'</div><div class="rz-feed">'+messageHtml+'</div><form id="messageForm" data-chat-target="'+esc(target)+'" class="rz-actions"><input id="messageText" class="rz-input" placeholder="Write a message"><button class="rz-btn primary">Send</button></form></div>';
+    $("messageForm").onsubmit=async function(e){e.preventDefault();var text=$("messageText").value.trim();if(!text)return;try{await api("/api/v2/messages/"+encodeURIComponent(target),{method:"POST",body:JSON.stringify({text:text})});openChat(target);}catch(err){toast(err.message);}};
   }catch(err){toast(err.message);}
 }
+window.RIZORA_OPEN_CHAT=openChat;
 
 function boostsView(){
   var rows=(state.boosts||[]).map(function(b){
@@ -361,9 +370,14 @@ async function openComments(postId){
     var wrap=document.createElement("div");wrap.id="rzCommentsModal";wrap.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:16px;";
     function commentHtml(c,depth){
       var pad=Math.min(Number(depth||0),3)*18;
-      return '<div style="margin-left:'+pad+'px;padding:11px 0;border-bottom:1px solid var(--line)"><div><strong>'+esc(c.author&&c.author.displayName||c.author&&c.author.username||"Creator")+'</strong> <span class="rz-mini">@'+esc(c.author&&(c.author.publicUsername||c.author.username)||"")+'</span></div><div style="margin:5px 0 8px">'+esc(c.text||"")+'</div><button class="rz-btn" data-comment-reply="'+esc(c.id)+'" data-comment-user="'+esc(c.author&&(c.author.publicUsername||c.author.username)||"creator")+'">Reply</button>'+(c.replies||[]).map(function(r){return commentHtml(r,Number(depth||0)+1);}).join("")+'</div>';
+      var audio="";
+      if(c.mediaUrl){
+        var src=String(c.mediaUrl).indexOf("http")===0?c.mediaUrl:API+String(c.mediaUrl);
+        audio='<audio controls preload="metadata" style="width:100%;margin-top:8px" src="'+esc(src)+'"></audio>';
+      }
+      return '<div style="margin-left:'+pad+'px;padding:11px 0;border-bottom:1px solid var(--line)"><div><strong>'+esc(c.author&&c.author.displayName||c.author&&c.author.username||"Creator")+'</strong> <span class="rz-mini">@'+esc(c.author&&(c.author.publicUsername||c.author.username)||"")+'</span></div>'+(c.text?'<div style="margin:5px 0 8px">'+esc(c.text)+'</div>':"")+(c.messageType==="voice"?'<div class="rz-mini">Voice comment</div>':"")+audio+'<button class="rz-btn" data-comment-reply="'+esc(c.id)+'" data-comment-user="'+esc(c.author&&(c.author.publicUsername||c.author.username)||"creator")+'">Reply</button>'+(c.replies||[]).map(function(r){return commentHtml(r,Number(depth||0)+1);}).join("")+'</div>';
     }
-    wrap.innerHTML='<section class="rz-card" style="width:min(720px,100%);max-height:82vh;overflow:auto;margin:0"><div class="rz-actions" style="justify-content:space-between"><div><div class="rz-kicker">COMMENTS</div><h2 style="margin:4px 0">Join the conversation</h2></div><button id="rzCommentsClose" class="rz-btn">Close</button></div><div style="margin:8px 0 14px">'+(comments.length?comments.map(function(c){return commentHtml(c,0);}).join(""):'<div class="rz-mini">No comments yet. Start the conversation.</div>')+'</div><form id="rzCommentForm"><textarea id="rzCommentText" class="rz-textarea" maxlength="1000" placeholder="Write a comment…" required></textarea><button class="rz-btn primary" style="margin-top:8px">Comment</button><div id="rzCommentStatus" class="rz-error"></div></form></section>';
+    wrap.innerHTML='<section class="rz-card" style="width:min(720px,100%);max-height:82vh;overflow:auto;margin:0"><div class="rz-actions" style="justify-content:space-between"><div><div class="rz-kicker">COMMENTS</div><h2 style="margin:4px 0">Join the conversation</h2></div><button id="rzCommentsClose" class="rz-btn">Close</button></div><div style="margin:8px 0 14px">'+(comments.length?comments.map(function(c){return commentHtml(c,0);}).join(""):'<div class="rz-mini">No comments yet. Start the conversation.</div>')+'</div><form id="rzCommentForm" data-post-id="'+esc(postId)+'"><textarea id="rzCommentText" class="rz-textarea" maxlength="1000" placeholder="Write a comment…"></textarea><button class="rz-btn primary" style="margin-top:8px">Comment</button><div id="rzCommentStatus" class="rz-error"></div></form></section>';
     document.body.appendChild(wrap);
     wrap.querySelector("#rzCommentsClose").onclick=function(){wrap.remove();};
     wrap.onclick=function(e){if(e.target===wrap)wrap.remove();};
@@ -377,6 +391,8 @@ async function openComments(postId){
     };});
   }catch(err){toast(err.message);}
 }
+window.RIZORA_REOPEN_COMMENTS=openComments;
+
 function task(t){return '<div class="rz-card rz-task"><strong>'+esc(t.title)+"</strong><div>"+esc(t.description||"")+"</div><span class='rz-points'>+"+Number(t.points||t.reward||0)+" pts</span><button class='rz-btn primary' data-task='"+esc(t.id)+"'>Complete</button></div>";}
 function socialTask(t){return '<div class="rz-card rz-task"><strong>'+esc(t.title)+"</strong><div>"+esc(t.description||"")+"</div><span class='rz-points'>+"+Number(t.reward||0)+" pts</span><button class='rz-btn primary' data-social='"+esc(t.id)+"'>Complete</button></div>";}
 function wire(){
@@ -393,7 +409,7 @@ function wire(){
   }
   if(state.view==="grow"){document.querySelectorAll("[data-task]").forEach(function(b){b.onclick=function(){var id=b.getAttribute("data-task");api("/api/tasks/start",{method:"POST",body:JSON.stringify({taskId:id})}).then(function(){return api("/api/tasks/complete",{method:"POST",body:JSON.stringify({taskId:id})});}).then(load).catch(function(e){toast(e.message);});};});document.querySelectorAll("[data-social]").forEach(function(b){b.onclick=function(){api("/api/social/tasks/complete",{method:"POST",body:JSON.stringify({taskId:b.getAttribute("data-social")})}).then(load).catch(function(e){toast(e.message);});};});}
   if(state.view==="studio"){$("hooks").onclick=async function(){var d=await api("/api/generate/hooks",{method:"POST",body:"{}"});$("studioOut").textContent=(d.hooks||[]).join("\n");};$("hash").onclick=async function(){var d=await api("/api/generate/hashtags",{method:"POST",body:"{}"});$("studioOut").textContent=(d.hashtags||[]).join(" ");};$("captions").onclick=async function(){var d=await api("/api/generate/captions",{method:"POST",body:"{}"});$("studioOut").textContent=(d.captions||[]).join("\n");};}
-  if(state.view==="ai")$("aiForm").onsubmit=async function(e){e.preventDefault();var q=$("aiInput").value.trim();if(!q)return;state.aiMessages.push({role:"you",text:q});renderView();try{var d=await api("/api/ai/chat",{method:"POST",body:JSON.stringify({message:q})});state.aiMessages.push({role:"ai",text:d.reply||"No response."});}catch(err){state.aiMessages.push({role:"ai",text:err.message});}renderView();};
+  if(state.view==="ai")$("aiForm").onsubmit=async function(e){e.preventDefault();var q=$("aiInput").value.trim();if(!q)return;var history=state.aiMessages.slice(-8);state.aiMessages.push({role:"you",text:q});renderView();try{var d=await api("/api/ai/chat",{method:"POST",body:JSON.stringify({message:q,history:history})});state.aiMessages.push({role:"ai",text:d.reply||"No response."});}catch(err){state.aiMessages.push({role:"ai",text:err.message});}renderView();};
   if(state.view==="discover")$("doSearch").onclick=async function(){state.query=$("q").value;state.search=await api("/api/v2/search?q="+encodeURIComponent(state.query));view();};
   if(state.view==="notifications")$("readAll").onclick=function(){api("/api/v2/notifications/read",{method:"POST"}).then(load);};
   if(state.view==="stories")wireStories();
