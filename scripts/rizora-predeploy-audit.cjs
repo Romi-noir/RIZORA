@@ -41,8 +41,7 @@ for(const p of [...scripts,...styles,"manifest.json","service-worker.js","rizora
 }
 
 const jsFiles=scripts.filter(p=>fs.existsSync(path.join(root,p)));
-const source=jsFiles.map(p=>fs.readFileSync(path.join(root,p),"utf8")).join("
-");
+const source=jsFiles.map(p=>fs.readFileSync(path.join(root,p),"utf8")).join("\n");
 const exportNames=new Set();
 for(const m of source.matchAll(/window\.([A-Z][A-Z0-9_]+)\s*=/g)) exportNames.add(m[1]);
 const refs=new Set();
