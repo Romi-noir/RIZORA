@@ -73,6 +73,6 @@
     }
   ],
   "framework": null,
-  "buildCommand": null,
-  "installCommand": ""
+  "buildCommand": "node -e \"console.log('RIZORA static frontend: no compilation step required')\"",
+  "installCommand": "echo RIZORA static frontend - no dependency install required"
 }
