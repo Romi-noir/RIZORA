@@ -20,7 +20,8 @@ const MIME_EXT = {
   "audio/mpeg": "mp3",
   "audio/mp4": "m4a",
   "audio/wav": "wav",
-  "audio/ogg": "ogg"
+  "audio/ogg": "ogg",
+  "audio/webm": "webm"
 };
 
 function ensureState(db){
@@ -156,7 +157,7 @@ async function handleRizoraMedia(ctx){
     try { body = await readBody(req); } catch(e) { sendError(res,400,e.message); return true; }
 
     const filename = String(body.filename || "media").slice(0,100);
-    const mimeType = String(body.mimeType || "").toLowerCase().trim();
+    const mimeType = String(body.mimeType || "").toLowerCase().trim().split(";")[0];
     if(!allowedMime(mimeType)){ sendError(res,415,"That media type is not supported."); return true; }
 
     let buffer;
