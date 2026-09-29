@@ -307,6 +307,7 @@ function safeUser(user) {
   return {
     id: user.id,
     username: user.username,
+    publicUsername: user.publicUsername || user.username,
     displayName: user.displayName || user.username,
     email: user.email || "",
     role: user.role || "user",
@@ -324,6 +325,12 @@ function safeUser(user) {
     verified:
       user.verified === true ||
       user.verificationStatus === "verified",
+
+    verifiedBadgeUrl:
+      (user.verified === true ||
+       user.verificationStatus === "verified")
+        ? "/assets/rizora_verified_mark.svg"
+        : "",
 
     verificationStatus:
       user.verificationStatus || "unverified",
