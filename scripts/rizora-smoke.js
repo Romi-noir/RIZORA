@@ -291,7 +291,21 @@ async function main() {
     });
     assert(voiceUpload.res.status === 201 && voiceUpload.data.media && voiceUpload.data.media.id, "voice media upload failed");
 
-    const voiceRecipient = "romi.noir";
+    const voicePeerUsername = "voicepeer_" + suffix;
+    const voicePeerEmail = voicePeerUsername + "@example.com";
+    const voicePeerSignup = await request("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: voicePeerUsername,
+        displayName: "RIZORA Voice Peer",
+        email: voicePeerEmail,
+        password: "SmokePass123",
+        confirmPassword: "SmokePass123"
+      })
+    });
+    assert(voicePeerSignup.res.status === 201, "voice peer signup failed: " + JSON.stringify(voicePeerSignup.data));
+    const voiceRecipient = voicePeerUsername;
     const voiceMessage = await request("/api/v2/messages/" + encodeURIComponent(voiceRecipient), {
       method: "POST",
       headers: authHeaders,
