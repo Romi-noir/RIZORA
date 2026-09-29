@@ -1094,6 +1094,127 @@ function getCurrentUser(
 }
 
 // ============================================================
+// EMAILS
+// ============================================================
+
+function escEmail(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+async function sendRizoraEmail(options) {
+  const to = normalizeEmail(options && options.to);
+  const apiKey = String(process.env.RESEND_API_KEY || "").trim();
+
+  if (!to || !apiKey) {
+    return { sent: false, configured: false };
+  }
+
+  const from = String(
+    process.env.RESEND_FROM_EMAIL ||
+    "RIZORA <noreply@rizora.com.ng>"
+  ).trim();
+
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + apiKey
+    };
+
+    if (options.idempotencyKey) {
+      headers["Idempotency-Key"] = String(options.idempotencyKey);
+    }
+
+    const response = await fetch(
+      "https://api.resend.com/emails",
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          from,
+          to: [to],
+          subject: String(options.subject || "RIZORA"),
+          html: String(options.html || ""),
+          text: String(options.text || "")
+        })
+      }
+    );
+
+    const data = await response.json().catch(function() {
+      return {};
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+        "RIZORA email provider rejected the request."
+      );
+    }
+
+    return {
+      sent: true,
+      configured: true,
+      id: data.id || null
+    };
+  } catch (error) {
+    console.error(
+      "RIZORA EMAIL ERROR",
+      error && error.message ? error.message : error
+    );
+
+    return {
+      sent: false,
+      configured: true,
+      error:
+        error && error.message
+          ? error.message
+          : "Email delivery failed."
+    };
+  }
+}
+
+function scheduleWelcomeEmail(user) {
+  const configured = Boolean(
+    process.env.RESEND_API_KEY &&
+    String(user && user.email || "").trim()
+  );
+
+  if (!configured) return false;
+
+  const displayName = cleanString(
+    user.displayName || user.username || "Creator",
+    80
+  );
+  const username = normalizeUsername(user.username);
+
+  void sendRizoraEmail({
+    to: user.email,
+    subject: "Welcome to RIZORA — your creator account is ready",
+    idempotencyKey: "rizora-welcome-" + user.id,
+    text:
+      "Welcome to RIZORA, " + displayName + ".\n\n" +
+      "Your @" + username + " creator account is ready. " +
+      "Create, grow and earn with RIZORA.\n\n" +
+      "Open RIZORA: https://rizora.com.ng/",
+    html:
+      '<div style="background:#08060f;color:#f8f6ff;padding:32px;font-family:Arial,sans-serif">' +
+      '<div style="max-width:620px;margin:auto;background:#120d1b;border:1px solid #2a1f3d;border-radius:20px;padding:28px">' +
+      '<div style="font-size:12px;letter-spacing:.18em;color:#bda7ff">RIZORA · CREATOR OS</div>' +
+      '<h1 style="margin:10px 0 8px">Welcome to RIZORA, ' + escEmail(displayName) + '.</h1>' +
+      '<p style="color:#cfc6dc;line-height:1.7">Your <strong>@' + escEmail(username) + '</strong> creator account is ready. Create, grow and earn with RIZORA.</p>' +
+      '<a href="https://rizora.com.ng/" style="display:inline-block;padding:12px 18px;border-radius:12px;background:#7c3aed;color:#fff;text-decoration:none;font-weight:800">Open RIZORA</a>' +
+      '<p style="margin-top:24px;color:#9389a4;font-size:12px">You received this email because this address was used to create your RIZORA account.</p>' +
+      '</div></div>'
+  });
+
+  return true;
+}
+
+// ============================================================
 // TASKS
 // ============================================================
 
@@ -3296,6 +3417,17 @@ async function handleRequest(
     };
 
     db.users.push(user);
+
+    db.notifications ||= [];
+    db.notifications.push({
+      id: uid("notif_"),
+      userId: user.id,
+      title: "Welcome to RIZORA",
+      message: "Your creator account is ready. Start creating, growing and earning.",
+      type: "welcome",
+      read: false,
+      createdAt: new Date().toISOString()
+    });
 
     const referral =
       applyReferral(
