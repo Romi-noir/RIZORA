@@ -41,7 +41,8 @@ for(const p of [...scripts,...styles,"manifest.json","service-worker.js","rizora
 }
 
 const jsFiles=scripts.filter(p=>fs.existsSync(path.join(root,p)));
-const source=jsFiles.map(p=>fs.readFileSync(path.join(root,p),"utf8")).join("\n");
+const source=jsFiles.map(p=>fs.readFileSync(path.join(root,p),"utf8")).join("
+");
 const exportNames=new Set();
 for(const m of source.matchAll(/window\.([A-Z][A-Z0-9_]+)\s*=/g)) exportNames.add(m[1]);
 const refs=new Set();
@@ -80,7 +81,8 @@ assert(verifiedPath.test(server),"Backend public profile does not expose verifie
 assert(server.includes('pathname === "/api/verification/apply"'),"Verification apply route is missing.");
 assert(server.includes('rzVerificationPath === "/api/verification/request"'),"Verification request route is missing.");
 assert(server.includes("proofUrl"),"Verification proof URL support is missing.");
-assert(server.includes("7 * 60 * 1000"),"7-minute task cooldown is missing.");\nassert(server.includes("refusing to continue with an empty database"),"Database corruption must fail closed instead of resetting to an empty state.");
+assert(server.includes("7 * 60 * 1000"),"7-minute task cooldown is missing.");
+assert(server.includes("refusing to continue with an empty database"),"Database corruption must fail closed instead of resetting to an empty state.");
 assert(server.includes("function isAllowedBrowserOrigin"),"CSRF origin guard is missing.");
 assert(server.includes("!isAllowedBrowserOrigin(req)"),"CSRF origin guard is not enforced.");
 assert(server.includes('cooldownMinutes: Math.ceil(TASK_COOLDOWN_MS / 60000)'),"Task cooldown response duration is not derived from the configured cooldown.");
@@ -88,4 +90,10 @@ assert(server.includes("publishDueSchedules("),"Schedule publisher wiring is mis
 assert(server.includes("db.rzV2.schedules = db.rzV2.schedules || []"),"Schedule storage initialization is missing.");
 
 assert(read("vercel.json").includes('"outputDirectory": "."'),"Vercel static deployment config is missing.");
-const rootEntries=fs.readdirSync(root);\nfor(const name of rootEntries){\n  assert(!/(^|[._-])(backup|before-|quarantine)([._-]|$)/i.test(name),"Legacy backup artifact is tracked at repository root: "+name);\n  assert(name !== "sw.js","Duplicate legacy service worker sw.js is present; use service-worker.js only.");\n}\nassert(!index.includes("RIZORA — Creator OS"),"Legacy Creator OS title remains in the production shell.");\nconsole.log("RIZORA predeploy audit: PASS");
+const rootEntries=fs.readdirSync(root);
+for(const name of rootEntries){
+  assert(!/(^|[._-])(backup|before-|quarantine)([._-]|$)/i.test(name),"Legacy backup artifact is tracked at repository root: "+name);
+  assert(name !== "sw.js","Duplicate legacy service worker sw.js is present; use service-worker.js only.");
+}
+assert(!index.includes("RIZORA — Creator OS"),"Legacy Creator OS title remains in the production shell.");
+console.log("RIZORA predeploy audit: PASS");
