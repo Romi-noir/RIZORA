@@ -281,7 +281,7 @@ async function handleRizoraBusiness(ctx) {
       reference: "",
       status: "active",
       durationDays: Math.round(durationDays),
-      expiresAt: null,
+      expiresAt: new Date(Date.now() + Math.round(durationDays) * 86400000).toISOString(),
       impressions: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
