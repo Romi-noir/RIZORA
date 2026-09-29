@@ -38,6 +38,14 @@ async function main() {
   assert(vercelConfig.buildCommand === null, "Vercel build command must be null for the production static app");
   assert(vercelConfig.installCommand === "", "Vercel install command must be empty for the production static app");
   assert(vercelConfig.outputDirectory === ".", "Vercel output directory must be the repository root");
+  const voiceSource = fs.readFileSync("rizora-v2-voice.js", "utf8");
+  const commentSource = fs.readFileSync("rizora-v2-comments.js", "utf8");
+  assert(voiceSource.includes("/api/ai/transcribe"), "AI voice transcription wiring is missing");
+  assert(voiceSource.includes("data-chat-target"), "One-to-one voice chat wiring is missing");
+  assert(voiceSource.includes("data-post-id"), "Voice comment wiring is missing");
+  assert(voiceSource.includes("RIZORA_UPLOAD_FILE"), "Voice media upload wiring is missing");
+  assert(commentSource.includes('mediaUrl:comment.mediaUrl||""'), "Voice comment media URL is not preserved");
+  assert(commentSource.includes('messageType:comment.messageType||"text"'), "Voice comment message type is not preserved");
   for (const backendFile of [
     "server.js",
     "rizora-v2-backend.js",
@@ -156,6 +164,57 @@ async function main() {
     assert(mediaUpload.res.status === 201 && mediaUpload.data.media && mediaUpload.data.media.url, "media upload failed");
     const mediaFetch = await request(mediaUpload.data.media.url, { headers: { Cookie: cookie } });
     assert(mediaFetch.res.status === 200, "uploaded media could not be fetched");
+
+    const voiceUpload = await request("/api/v2/media/upload", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        filename: "smoke-voice.webm",
+        mimeType: "audio/webm",
+        data: "AAAA"
+      })
+    });
+    assert(voiceUpload.res.status === 201 && voiceUpload.data.media && voiceUpload.data.media.id, "voice media upload failed");
+
+    const voiceMessage = await request("/api/v2/messages/" + encodeURIComponent(username), {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        mediaId: voiceUpload.data.media.id,
+        messageType: "voice"
+      })
+    });
+    assert(voiceMessage.res.status === 201, "voice one-to-one message failed");
+
+    const voiceThread = await request("/api/v2/messages/" + encodeURIComponent(username), { headers: authHeaders });
+    assert(voiceThread.res.status === 200 && voiceThread.data.messages.some(m => m.messageType === "voice" && m.mediaUrl), "voice one-to-one message did not round-trip");
+
+    const postForVoice = await request("/api/v2/posts", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ text: "Voice comment smoke test" })
+    });
+    assert(postForVoice.res.status === 201 && postForVoice.data.post, "voice comment post creation failed");
+
+    const voiceComment = await request("/api/v2/posts/" + encodeURIComponent(postForVoice.data.post.id) + "/comment", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        mediaId: voiceUpload.data.media.id,
+        messageType: "voice"
+      })
+    });
+    assert(voiceComment.res.status === 201, "voice comment creation failed");
+
+    const voiceComments = await request("/api/v2/posts/" + encodeURIComponent(postForVoice.data.post.id) + "/comments", { headers: authHeaders });
+    assert(voiceComments.res.status === 200 && voiceComments.data.comments.some(m => m.messageType === "voice" && m.mediaUrl), "voice comment did not round-trip");
+
+    const transcribeReject = await request("/api/ai/transcribe", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ audio: "not-a-data-url", mimeType: "audio/webm" })
+    });
+    assert(transcribeReject.res.status === 400, "AI voice transcription validation route failed");
 
     const channel = await request("/api/v2/channels", {
       method: "POST",
