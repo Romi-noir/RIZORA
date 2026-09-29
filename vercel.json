@@ -70,7 +70,5 @@
         }
       ]
     }
-  ],
-  "buildCommand": "npm run build",
-  "outputDirectory": "."
+  ]
 }
