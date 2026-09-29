@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": ".",
   "rewrites": [
     {
       "source": "/creator/:handle",
@@ -71,8 +70,5 @@
         }
       ]
     }
-  ],
-  "framework": null,
-  "buildCommand": "node -e \"console.log('RIZORA static frontend: no compilation step required')\"",
-  "installCommand": "echo RIZORA static frontend - no dependency install required"
+  ]
 }
