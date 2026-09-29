@@ -2,6 +2,8 @@
 (function(){
   var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   var active=null;
+  var MAX_RECORDING_SECONDS=90;
+  var MAX_AI_AUDIO_BYTES=5.5*1024*1024;
 
   function api(path,opt){
     if(window.RIZORA_API_CALL)return window.RIZORA_API_CALL(path,opt||{});
@@ -45,9 +47,17 @@
     el.style.color=error?"#ff8d9d":"";
   }
 
+  function resetButton(button,kind){
+    if(!button)return;
+    button.disabled=false;
+    button.textContent=kind==="ai"?"🎙 Talk to AI":"🎙 Voice";
+    button.setAttribute("aria-pressed","false");
+  }
+
   function stopActive(){
     if(active&&active.recorder&&active.recorder.state!=="inactive"){
       active.button.textContent="Stopping…";
+      active.button.disabled=true;
       active.recorder.stop();
     }
   }
@@ -83,12 +93,14 @@
     try{recorder=new MediaRecorder(stream,{mimeType:chosen});}
     catch(e){stream.getTracks().forEach(function(t){t.stop();});setState(form,"Could not start voice recording.",true);return;}
 
-    active={recorder:recorder,button:button,form:form};
+    active={recorder:recorder,button:button,form:form,kind:kind};
+    button.disabled=false;
+    button.setAttribute("aria-pressed","true");
     var started=Date.now();
     var timer=setInterval(function(){
       var sec=Math.floor((Date.now()-started)/1000);
       button.textContent="■ Stop "+Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0");
-      if(sec>=120)stopActive();
+      if(sec>=MAX_RECORDING_SECONDS)stopActive();
     },250);
 
     recorder.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};
@@ -96,26 +108,31 @@
       clearInterval(timer);
       stream.getTracks().forEach(function(t){t.stop();});
       active=null;
-      button.textContent=kind==="ai"?"🎙 Talk to AI":"🎙 Voice";
+      resetButton(button,kind);
       setState(form,"Recording failed.",true);
     };
     recorder.onstop=async function(){
       clearInterval(timer);
       stream.getTracks().forEach(function(t){t.stop();});
       active=null;
-      button.textContent=kind==="ai"?"🎙 Talk to AI":"🎙 Voice";
+      button.disabled=true;
+      button.setAttribute("aria-pressed","false");
       var blob=new Blob(chunks,{type:chosen});
       if(!blob.size){setState(form,"No audio was captured.",true);return;}
 
       try{
         setState(form,"Processing voice…",false);
         if(kind==="ai"){
+          if(blob.size>MAX_AI_AUDIO_BYTES)throw new Error("That recording is too large for RIZORA AI. Keep voice notes under 90 seconds.");
           var audio=await dataURL(blob);
           var d=await api("/api/ai/transcribe",{method:"POST",body:JSON.stringify({audio:audio,mimeType:chosen})});
           var text=String(d.text||"").trim();
           if(!text)throw new Error("I could not hear clear speech in that recording.");
           var input=form.querySelector("#aiInput");
-          if(input){input.value=text;form.requestSubmit();}
+          if(!input)throw new Error("RIZORA AI composer is unavailable. Reopen AI and try again.");
+          input.value=text;
+          if(typeof form.requestSubmit==="function")form.requestSubmit();
+          else form.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));
           setState(form,"Voice sent to RIZORA AI.",false);
           return;
         }
@@ -135,11 +152,13 @@
         }else{
           var postId=form.getAttribute("data-post-id");
           if(!postId)throw new Error("Comment post could not be identified.");
-          await api("/api/v2/posts/"+encodeURIComponent(postId)+"/comment",{method:"POST",body:JSON.stringify({mediaId:media.id,messageType:"voice"})});
+          var parentId=form.getAttribute("data-comment-parent")||"";
+          await api("/api/v2/posts/"+encodeURIComponent(postId)+"/comment",{method:"POST",body:JSON.stringify({mediaId:media.id,messageType:"voice",parentId:parentId||null})});
           setState(form,"Voice comment posted.",false);
           if(window.RIZORA_REOPEN_COMMENTS)window.RIZORA_REOPEN_COMMENTS(postId);
         }
       }catch(e){setState(form,e.message,true);}
+      finally{resetButton(button,kind);}
     };
 
     recorder.start(250);
@@ -155,6 +174,9 @@
     button.className="rz-btn";
     button.textContent=kind==="ai"?"🎙 Talk to AI":"🎙 Voice";
     button.setAttribute("data-rz-voice-button","");
+    button.setAttribute("aria-label",kind==="ai"?"Record a voice question for RIZORA AI":"Record a RIZORA voice message");
+    button.setAttribute("aria-pressed","false");
+    button.title=kind==="ai"?"Hold a voice question for RIZORA AI":"Record a voice message";
     form.appendChild(button);
     button.addEventListener("click",function(){start(form,button,kind);});
   }
