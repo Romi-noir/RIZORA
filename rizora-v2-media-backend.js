@@ -90,6 +90,31 @@ async function readBody(req){
   return raw ? JSON.parse(raw) : {};
 }
 
+function mediaIsAccessible(db, user, record){
+  if(!user||!record)return false;
+  if(record.ownerId===user.id)return true;
+  const url=String(record.url||"");
+  const users=db.users||[];
+  const activeUserId=function(id){const u=users.find(function(x){return x.id===id;});return !!u&&u.status==="active";};
+  const messages=db.rzV2.messages||[];
+  if(messages.some(function(m){return m.mediaUrl===url&&(m.fromUserId===user.id||m.toUserId===user.id);}))return true;
+  const posts=db.rzV2.posts||[];
+  if(posts.some(function(p){return p.mediaUrl===url&&activeUserId(p.userId);}))return true;
+  const stories=db.rzV2.stories||[];
+  if(stories.some(function(s){return s.mediaUrl===url&&activeUserId(s.userId)&&(!s.expiresAt||new Date(s.expiresAt).getTime()>Date.now());}))return true;
+  const comments=db.rzV2.comments||[];
+  if(comments.some(function(comment){
+    if(comment.mediaUrl!==url||comment.hidden===true)return false;
+    const post=posts.find(function(p){return p.id===comment.postId;});
+    return !!post&&activeUserId(post.userId);
+  }))return true;
+  if(users.some(function(target){
+    const profile=(db.creatorProfiles&&db.creatorProfiles[target.id])||{};
+    return activeUserId(target.id)&&(profile.avatarUrl===url||target.avatarUrl===url);
+  }))return true;
+  return false;
+}
+
 function publicMedia(record){
   return {
     id: record.id,
@@ -330,13 +355,14 @@ async function handleRizoraMedia(ctx){
     const id = decodeURIComponent(fileMatch[1]);
     const record = db.rzV2.media.find(x => x.id === id);
     if(!record || !record.path || !fs.existsSync(record.path)){ sendError(res,404,"Media not found."); return true; }
+    if(!mediaIsAccessible(db,user,record)){ sendError(res,403,"You do not have access to this media."); return true; }
 
     const origin=String(req.headers.origin||"");
     const allowedOrigin=origin==="https://rizora.com.ng"||origin==="https://www.rizora.com.ng"||origin==="http://localhost:3000"||origin==="http://127.0.0.1:3000";
     const headers={
       "Content-Type":record.mimeType,
       "Content-Length":String(record.bytes),
-      "Cache-Control":"public, max-age=31536000, immutable",
+      "Cache-Control":"private, max-age=3600",
       "Access-Control-Allow-Credentials":"true",
       "Access-Control-Expose-Headers":"Content-Length,Content-Type,Content-Disposition",
       "Vary":"Origin"
