@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /login
+Disallow: /signup
+Disallow: /join
+Disallow: /admin
+Disallow: /messages
+Disallow: /profile
 
 Sitemap: https://rizora.com.ng/sitemap.xml
