@@ -257,7 +257,7 @@ async function openChat(target){
       if(m.mediaUrl){
         audio='<audio controls preload="metadata" style="width:100%;margin-top:8px" data-rz-media-src="'+esc(m.mediaUrl)+'"></audio>';
       }
-      return '<div class="rz-card"><div class="rz-mini">'+(m.fromUserId===state.user.id?"You":"Creator")+(m.messageType==="voice"?" · Voice":"")+'</div>'+(m.text?'<div>'+esc(m.text)+'</div>':"")+audio+'</div>';
+      return '<div class="rz-card"><div class="rz-mini">'+(m.fromUserId===state.user.id?"You":esc(d.user&&d.user.displayName||d.user&&d.user.username||"Creator"))+(m.messageType==="voice"?" · Voice":"")+'</div>'+(m.text?'<div>'+esc(m.text)+'</div>':"")+audio+'</div>';
     }).join("");
     $("chatBox").innerHTML='<div class="rz-card" style="margin-top:14px"><h3>'+esc(d.user.displayName)+'</h3><div class="rz-mini">@'+esc(d.user.publicUsername||d.user.username)+'</div><div class="rz-feed">'+messageHtml+'</div><form id="messageForm" data-chat-target="'+esc(target)+'" class="rz-actions"><input id="messageText" class="rz-input" placeholder="Write a message"><button class="rz-btn primary">Send</button></form></div>';
     $("messageForm").onsubmit=async function(e){e.preventDefault();var text=$("messageText").value.trim();if(!text)return;try{await api("/api/v2/messages/"+encodeURIComponent(target),{method:"POST",body:JSON.stringify({text:text})});openChat(target);}catch(err){toast(err.message);}};
