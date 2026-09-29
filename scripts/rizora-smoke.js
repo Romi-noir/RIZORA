@@ -262,7 +262,14 @@ async function main() {
     const voiceThread = await request("/api/v2/messages/" + encodeURIComponent(username), { headers: authHeaders });
     assert(voiceThread.res.status === 200 && voiceThread.data.messages.some(m => m.messageType === "voice" && m.mediaUrl), "voice one-to-one message did not round-trip");
 
-    const voiceComment = await request("/api/v2/posts/" + encodeURIComponent(post.data.post.id) + "/comment", {
+    const postForVoice = await request("/api/v2/posts", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ text: "Voice comment smoke test" })
+    });
+    assert(postForVoice.res.status === 201 && postForVoice.data.post, "voice comment post creation failed");
+
+    const voiceComment = await request("/api/v2/posts/" + encodeURIComponent(postForVoice.data.post.id) + "/comment", {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({
@@ -272,7 +279,7 @@ async function main() {
     });
     assert(voiceComment.res.status === 201, "voice comment creation failed");
 
-    const voiceComments = await request("/api/v2/posts/" + encodeURIComponent(post.data.post.id) + "/comments", { headers: authHeaders });
+    const voiceComments = await request("/api/v2/posts/" + encodeURIComponent(postForVoice.data.post.id) + "/comments", { headers: authHeaders });
     assert(voiceComments.res.status === 200 && voiceComments.data.comments.some(c => c.messageType === "voice" && c.mediaUrl), "voice comment did not round-trip");
 
     const transcribeReject = await request("/api/ai/transcribe", {
