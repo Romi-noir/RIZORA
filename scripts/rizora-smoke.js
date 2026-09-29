@@ -125,6 +125,17 @@ async function main() {
     const me = await request("/api/auth/me", { headers: authHeaders });
     assert(me.res.status === 200 && me.data.user && me.data.user.username === username, "auth/me failed");
 
+    const verificationRequest = await request("/api/verification/apply", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        reason: "Smoke test creator identity verification.",
+        proofUrl: "https://example.com/rizora-smoke-proof"
+      })
+    });
+    assert(verificationRequest.res.status === 201, "verification submission failed: " + JSON.stringify(verificationRequest.data));
+    assert(verificationRequest.data.status === "pending", "verification request did not enter pending state");
+
     const v2me = await request("/api/v2/me", { headers: authHeaders });
     assert(v2me.res.status === 200 && v2me.data.user, "v2/me failed");
 
@@ -140,6 +151,8 @@ async function main() {
       }
     });
     assert(corsPreflight.res.status === 204 && /PATCH/i.test(corsPreflight.res.headers.get("access-control-allow-methods") || ""), "CORS preflight does not allow PATCH requests");
+    const blockedOrigin = await request("/api/auth/me", { headers: { Origin: "https://evil.example" } });
+    assert(blockedOrigin.res.status === 403, "disallowed browser origin was not blocked");
 
     assert(tasks.res.status === 200 && Array.isArray(tasks.data.tasks), "tasks failed");
 
