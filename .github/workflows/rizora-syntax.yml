@@ -57,7 +57,7 @@ jobs:
         run: npm run build
 
       - name: Predeploy integration audit
-        run: node --experimental-default-type=commonjs scripts/rizora-predeploy-audit.js
+        run: node scripts/rizora-predeploy-audit.cjs
 
       - name: Runtime smoke test
         run: node scripts/rizora-smoke.js
