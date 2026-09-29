@@ -232,6 +232,20 @@ async function main() {
     assert(feed.res.status === 200 && Array.isArray(feed.data.posts), "feed failed");
 
     const tasks = await request("/api/tasks", { headers: authHeaders });
+    const corsPreflight = await request("/api/v2/profile", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "http://localhost:3000",
+        "Access-Control-Request-Method": "PATCH"
+      }
+    });
+    assert(corsPreflight.res.status === 204 && /PATCH/i.test(corsPreflight.res.headers.get("access-control-allow-methods") || ""), "CORS preflight does not allow PATCH requests");
+
+    const officialProfiles = await request("/api/official/profiles");
+    const officialIds = new Set((officialProfiles.data.profiles || []).map(p => p.id));
+    assert(officialProfiles.res.status === 200 && officialIds.has("official_rizora") && officialIds.has("official_romi") && (officialProfiles.data.profiles || []).filter(p => p.verified === true).length >= 2, "official verified identity profiles are incomplete");
+
+
     assert(tasks.res.status === 200 && Array.isArray(tasks.data.tasks), "tasks failed");
     assert(!(tasks.data.tasks || []).some(t => t.type === "social_follow"), "legacy social missions are still duplicated in the general task feed");
     const exploreTask = (tasks.data.tasks || []).find(t => t.id === "rizora_explore");
@@ -335,6 +349,17 @@ async function main() {
     assert(voiceMessage.res.status === 201, "voice one-to-one message failed");
 
     const voiceThread = await request("/api/v2/messages/" + encodeURIComponent(voiceRecipient), { headers: authHeaders });
+    const voiceRecord = (voiceThread.data.messages || []).find(m => m.messageType === "voice" && m.mediaUrl);
+    assert(voiceRecord && voiceRecord.mediaUrl, "voice message media URL missing");
+    const voiceOwnerFetch = await request(voiceRecord.mediaUrl, { headers: authHeaders });
+    assert(voiceOwnerFetch.res.status === 200, "voice owner could not fetch the voice media");
+    const voicePeerMe = await request("/api/auth/me", { headers: { Cookie: cookieFrom(voicePeerSignup.res) } });
+    assert(voicePeerMe.res.status === 200 && voicePeerMe.data.user, "voice peer session failed");
+    const voicePeerHeaders = { Cookie: cookieFrom(voicePeerSignup.res) };
+    const voicePeerFetch = await request(voiceRecord.mediaUrl, { headers: voicePeerHeaders });
+    assert(voicePeerFetch.res.status === 200, "voice recipient could not fetch the voice media");
+
+
     assert(voiceThread.res.status === 200 && voiceThread.data.messages.some(m => m.messageType === "voice" && m.mediaUrl), "voice one-to-one message did not round-trip");
 
     const postForVoice = await request("/api/v2/posts", {
