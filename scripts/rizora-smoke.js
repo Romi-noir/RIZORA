@@ -91,10 +91,10 @@ async function main() {
   assert(suiteSource.includes("bindSuiteButtons(b);"), "Creator Suite controls are not bound");
   assert(/RIZORA_CACHE="rizora-v2-shell-v\d+-voice-badge-ai"/.test(serviceWorkerSource), "PWA cache version must be a voice/badge cache");
   assert(!serviceWorkerSource.includes('"/rizora-v2-growth.js"'), "PWA cache must not contain the backend-only growth module");
-  assert(vercelConfig.framework === null, "Vercel framework must be explicitly set to Other/null for the static root app");
-  assert(vercelConfig.buildCommand === null || typeof vercelConfig.buildCommand === "string", "Vercel build command must be valid for the static root app");
-  assert(typeof vercelConfig.installCommand === "string", "Vercel install command must be valid for the static frontend");
-  assert(vercelConfig.outputDirectory === ".", "Vercel output directory must be the repository root");
+  assert(!("framework" in vercelConfig), "Static Vercel config should not force a framework");
+  assert(!("buildCommand" in vercelConfig), "Static Vercel config should not force a build command");
+  assert(!("installCommand" in vercelConfig), "Static Vercel config should not force an install command");
+  assert(!("outputDirectory" in vercelConfig), "Static Vercel config should serve the repository root directly");
   assert(Array.isArray(vercelConfig.rewrites) && vercelConfig.rewrites.some(x => x.source === "/login" && x.destination === "/"), "Vercel login rewrite is missing");
   for (const assetPath of new Set(serviceWorkerAssets)) {
     const fsPath = String(assetPath).replace(/^\//, "");
