@@ -1102,7 +1102,8 @@ function getCurrentUser(
 // ============================================================
 
 
-const TASK_COOLDOWN_MS = 7 * 60 * 1000;\nconst TASK_COOLDOWN_MINUTES = Math.ceil(TASK_COOLDOWN_MS / 60000);
+const TASK_COOLDOWN_MS = 7 * 60 * 1000;
+const TASK_COOLDOWN_MINUTES = Math.ceil(TASK_COOLDOWN_MS / 60000);
 
 const RIZORA_FEATURE_LAYER_V1 = true;
 
