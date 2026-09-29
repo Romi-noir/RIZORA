@@ -403,8 +403,16 @@ async function openComments(postId){
 }
 window.RIZORA_REOPEN_COMMENTS=openComments;
 
-function task(t){return '<div class="rz-card rz-task"><strong>'+esc(t.title)+"</strong><div>"+esc(t.description||"")+"</div><span class='rz-points'>+"+Number(t.points||t.reward||0)+" pts</span><button class='rz-btn primary' data-task='"+esc(t.id)+"'>Complete</button></div>";}
-function socialTask(t){return '<div class="rz-card rz-task"><strong>'+esc(t.title)+"</strong><div>"+esc(t.description||"")+"</div><span class='rz-points'>+"+Number(t.reward||0)+" pts</span><button class='rz-btn primary' data-social='"+esc(t.id)+"'>Complete</button></div>";}
+function task(t){
+  var locked=t.locked===true;
+  return '<div class="rz-card rz-task"><strong>'+esc(t.title)+"</strong><div>"+esc(t.description||"")+"</div><span class='rz-points'>+"+Number(t.points||t.reward||0)+" pts</span>"+(locked?"<div class='rz-mini'>Locked until your 7-minute task cooldown ends.</div>":"")+
+    "<button class='rz-btn primary' data-task='"+esc(t.id)+"'"+(locked?" disabled":"")+">"+(locked?"Locked":"Start task")+"</button></div>";
+}
+function socialTask(t){
+  var locked=Number(t.cooldownMs||0)>0||t.completed===true;
+  return '<div class="rz-card rz-task"><strong>'+esc(t.title)+"</strong><div>"+esc(t.description||"")+"</div><span class='rz-points'>+"+Number(t.reward||0)+" pts</span>"+(locked?"<div class='rz-mini'>"+(Number(t.cooldownMs||0)>0?"Available again after the 7-minute cooldown.":"Completed.")+"</div>":"")+
+    "<button class='rz-btn primary' data-social='"+esc(t.id)+"'"+(locked?" disabled":"")+">"+(locked?"Locked":"Complete")+"</button></div>";
+}
 function wire(){
   document.querySelectorAll("[data-onboarding-follow]").forEach(function(b){b.onclick=function(){var username=b.getAttribute("data-onboarding-follow");api("/api/v2/onboarding/follow",{method:"POST",body:JSON.stringify({username:username})}).then(function(d){toast("Followed @"+d.username+" · +"+d.awarded+" pts");load();}).catch(function(e){toast(e.message);});};});
   document.querySelectorAll("[data-go]").forEach(function(b){b.onclick=function(){state.view=b.getAttribute("data-go");shell();load();};});
@@ -417,7 +425,43 @@ function wire(){
     document.querySelectorAll("[data-poll-vote]").forEach(function(b){b.onclick=function(){api("/api/v2/polls/"+encodeURIComponent(b.getAttribute("data-poll-vote"))+"/vote",{method:"POST",body:JSON.stringify({optionId:b.getAttribute("data-poll-option")})}).then(load).catch(function(e){toast(e.message);});}});
     document.querySelectorAll("[data-share-post]").forEach(function(b){b.onclick=async function(){var target=window.prompt("Send this post to which RIZORA username?");if(!target)return;try{await api("/api/v2/messages/share",{method:"POST",body:JSON.stringify({recipientUsername:target,postId:b.getAttribute("data-share-post")})});toast("Post shared in DMs.");}catch(e){toast(e.message);}};});
   }
-  if(state.view==="grow"){document.querySelectorAll("[data-task]").forEach(function(b){b.onclick=function(){var id=b.getAttribute("data-task");api("/api/tasks/start",{method:"POST",body:JSON.stringify({taskId:id})}).then(function(){return api("/api/tasks/complete",{method:"POST",body:JSON.stringify({taskId:id})});}).then(load).catch(function(e){toast(e.message);});};});document.querySelectorAll("[data-social]").forEach(function(b){b.onclick=function(){api("/api/social/tasks/complete",{method:"POST",body:JSON.stringify({taskId:b.getAttribute("data-social")})}).then(load).catch(function(e){toast(e.message);});};});}
+  if(state.view==="grow"){
+  document.querySelectorAll("[data-task]").forEach(function(b){
+    b.onclick=async function(){
+      var id=b.getAttribute("data-task");
+      if(b.disabled)return;
+      b.disabled=true;
+      try{
+        await api("/api/tasks/start",{method:"POST",body:JSON.stringify({taskId:id})});
+        var remaining=20;
+        b.textContent="Started · 0:20";
+        var timer=setInterval(function(){
+          remaining-=1;
+          if(remaining>0){b.textContent="Started · 0:"+String(remaining).padStart(2,"0");return;}
+          clearInterval(timer);
+          b.textContent="Claiming…";
+          api("/api/tasks/complete",{method:"POST",body:JSON.stringify({taskId:id})})
+            .then(load)
+            .catch(function(e){b.disabled=false;b.textContent="Start task";toast(e.message);});
+        },1000);
+      }catch(e){
+        b.disabled=false;
+        b.textContent="Start task";
+        toast(e.message);
+      }
+    };
+  });
+  document.querySelectorAll("[data-social]").forEach(function(b){
+    b.onclick=function(){
+      if(b.disabled)return;
+      b.disabled=true;
+      b.textContent="Completing…";
+      api("/api/social/tasks/complete",{method:"POST",body:JSON.stringify({taskId:b.getAttribute("data-social")})})
+        .then(load)
+        .catch(function(e){b.disabled=false;b.textContent="Complete";toast(e.message);});
+    };
+  });
+}
   if(state.view==="studio"){$("hooks").onclick=async function(){var d=await api("/api/generate/hooks",{method:"POST",body:"{}"});$("studioOut").textContent=(d.hooks||[]).join("\n");};$("hash").onclick=async function(){var d=await api("/api/generate/hashtags",{method:"POST",body:"{}"});$("studioOut").textContent=(d.hashtags||[]).join(" ");};$("captions").onclick=async function(){var d=await api("/api/generate/captions",{method:"POST",body:"{}"});$("studioOut").textContent=(d.captions||[]).join("\n");};}
   if(state.view==="ai"){document.querySelectorAll("[data-ai-speak]").forEach(function(b){b.onclick=function(){var i=Number(b.getAttribute("data-ai-speak"));var m=state.aiMessages[i];if(!m||m.role!=="ai")return;if(window.RIZORA_AI_SPEAK)window.RIZORA_AI_SPEAK(m.text,b);else toast("AI voice playback is still loading.");};});$("aiForm").onsubmit=async function(e){e.preventDefault();var q=$("aiInput").value.trim();if(!q)return;var history=state.aiMessages.slice(-8);state.aiMessages.push({role:"you",text:q});renderView();try{var d=await api("/api/ai/chat",{method:"POST",body:JSON.stringify({message:q,history:history})});state.aiMessages.push({role:"ai",text:d.reply||"No response."});}catch(err){state.aiMessages.push({role:"ai",text:err.message});}renderView();};}
   if(state.view==="discover")$("doSearch").onclick=async function(){state.query=$("q").value;state.search=await api("/api/v2/search?q="+encodeURIComponent(state.query));view();};
