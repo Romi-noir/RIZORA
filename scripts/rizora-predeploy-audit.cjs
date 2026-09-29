@@ -54,6 +54,7 @@ for(const x of [...refs].filter(x=>x.startsWith("RIZORA_")&&!ignore.has(x))) {
 const core=read("rizora-v2.js");
 const media=read("rizora-v2-media.js");
 const server=read("server.js");
+const growth=read("rizora-v2-growth.js");
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
 
@@ -86,7 +87,7 @@ assert(server.includes("function isAllowedBrowserOrigin"),"CSRF origin guard is 
 assert(server.includes("!isAllowedBrowserOrigin(req)"),"CSRF origin guard is not enforced.");
 assert(server.includes('cooldownMinutes: Math.ceil(TASK_COOLDOWN_MS / 60000)'),"Task cooldown response duration is not derived from the configured cooldown.");
 assert(server.includes("publishDueSchedules("),"Schedule publisher wiring is missing.");
-assert(server.includes("db.rzV2.schedules = db.rzV2.schedules || []"),"Schedule storage initialization is missing.");
+assert(growth.includes("db.rzV2.schedules = db.rzV2.schedules || []"),"Schedule storage initialization is missing.");
 
 assert(read("vercel.json").includes('"outputDirectory": "."'),"Vercel static deployment config is missing.");
 const rootEntries=fs.readdirSync(root);
