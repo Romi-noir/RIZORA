@@ -257,7 +257,6 @@ async function main() {
       body: JSON.stringify({ taskId: exploreTask.id })
     });
     assert(taskStart.res.status === 200 && taskStart.data.success === true, "task start route is not working");
-    assert(Number(taskStart.data.cooldownMinutes || 7) === 7, "task cooldown is not 7 minutes");
     await sleep(21000);
     const taskComplete = await request("/api/tasks/complete", {
       method: "POST",
@@ -265,6 +264,7 @@ async function main() {
       body: JSON.stringify({ taskId: exploreTask.id })
     });
     assert(taskComplete.res.status === 200 && Number(taskComplete.data.reward) === 50, "task completion/reward flow failed: " + JSON.stringify(taskComplete.data));
+    assert(Number(taskComplete.data.cooldownMinutes || 0) === 7, "task cooldown is not 7 minutes");
 
     const socialTasks = await request("/api/social/tasks", { headers: authHeaders });
     assert(socialTasks.res.status === 200 && Array.isArray(socialTasks.data.tasks), "social tasks endpoint failed");
