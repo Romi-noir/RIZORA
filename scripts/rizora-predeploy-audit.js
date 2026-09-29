@@ -13,7 +13,9 @@ function assert(ok,msg){
   if(!ok) throw new Error(msg);
 }
 function listRefs(html,regex){
-  return [...html.matchAll(regex)].map(m=>m[1].replace(/^\//,"").split("?")[0]);
+  return [...html.matchAll(regex)]
+    .map(m=>m[1].replace(/^\//,"").split("?")[0])
+    .filter(p => !/^https?:\/\//i.test(p));
 }
 
 const index=read("index.html");
