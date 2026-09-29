@@ -46,6 +46,7 @@ async function main() {
     "rizora-v2-upgrades-ui.js",
     "rizora-v2-global-ui.js",
     "rizora-v2-media.js",
+    "rizora-v2-voice.js",
     "rizora-v2-series-ui.js",
     "rizora-v2-events-ui.js",
     "rizora-v2-business-ui.js",
@@ -101,6 +102,16 @@ async function main() {
   }
   assert(indexSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not linked");
   assert(indexSource.includes("/rizora-v2-voice.js"), "RIZORA voice module is not linked");
+  const voiceSource = require("fs").readFileSync("rizora-v2-voice.js", "utf8");
+  const commentsSource = require("fs").readFileSync("rizora-v2-comments.js", "utf8");
+  assert(voiceSource.includes('"/api/ai/transcribe"'), "AI voice transcription route is missing from voice module");
+  assert(voiceSource.includes('data-chat-target'), "Voice module is not wired to one-to-one chats");
+  assert(voiceSource.includes('data-post-id'), "Voice module is not wired to comments");
+  assert(voiceSource.includes('id="aiInput"') || voiceSource.includes("#aiInput"), "Voice module is not wired to the AI composer");
+  assert(voiceSource.includes("RIZORA_UPLOAD_FILE"), "Voice module is not wired to the media uploader");
+  assert(commentsSource.includes("mediaUrl:comment.mediaUrl||\"\""), "Comment moderation formatter must preserve voice media URL");
+  assert(commentsSource.includes("messageType:comment.messageType||\"text\""), "Comment moderation formatter must preserve message type");
+
   assert(require("fs").existsSync("assets/rizora_verified_badge.svg"), "RIZORA verified badge asset is missing");
   assert(serviceWorkerSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not cached by the PWA shell");
   assert(serviceWorkerSource.includes("/assets/rizora_verified_badge.svg"), "RIZORA verified badge is not cached by the PWA shell");
@@ -226,6 +237,50 @@ async function main() {
     assert(mediaUpload.res.status === 201 && mediaUpload.data.media && mediaUpload.data.media.url, "media upload failed");
     const mediaFetch = await request(mediaUpload.data.media.url, { headers: { Cookie: cookie } });
     assert(mediaFetch.res.status === 200, "uploaded media could not be fetched");
+
+    const voiceUpload = await request("/api/v2/media/upload", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        filename: "smoke-voice.webm",
+        mimeType: "audio/webm",
+        data: "AAAA"
+      })
+    });
+    assert(voiceUpload.res.status === 201 && voiceUpload.data.media && voiceUpload.data.media.id, "voice media upload failed");
+
+    const voiceMessage = await request("/api/v2/messages/" + encodeURIComponent(username), {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        mediaId: voiceUpload.data.media.id,
+        messageType: "voice"
+      })
+    });
+    assert(voiceMessage.res.status === 201, "voice one-to-one message failed");
+
+    const voiceThread = await request("/api/v2/messages/" + encodeURIComponent(username), { headers: authHeaders });
+    assert(voiceThread.res.status === 200 && voiceThread.data.messages.some(m => m.messageType === "voice" && m.mediaUrl), "voice one-to-one message did not round-trip");
+
+    const voiceComment = await request("/api/v2/posts/" + encodeURIComponent(post.data.post.id) + "/comment", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        mediaId: voiceUpload.data.media.id,
+        messageType: "voice"
+      })
+    });
+    assert(voiceComment.res.status === 201, "voice comment creation failed");
+
+    const voiceComments = await request("/api/v2/posts/" + encodeURIComponent(post.data.post.id) + "/comments", { headers: authHeaders });
+    assert(voiceComments.res.status === 200 && voiceComments.data.comments.some(c => c.messageType === "voice" && c.mediaUrl), "voice comment did not round-trip");
+
+    const transcribeReject = await request("/api/ai/transcribe", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ audio: "not-a-data-url", mimeType: "audio/webm" })
+    });
+    assert(transcribeReject.res.status === 400, "AI voice transcription validation route failed");
 
     const channel = await request("/api/v2/channels", {
       method: "POST",
