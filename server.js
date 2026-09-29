@@ -3507,7 +3507,10 @@ async function handleRequest(
 // RIZORA FEATURE LAYER
 // ============================================================
 
-if (method === "GET" && pathname === "/api/tasks") {
+if (
+  (method === "GET" && pathname === "/api/tasks") ||
+  (method === "POST" && pathname === "/api/tasks/start")
+) {
   const user = getCurrentUser(db, req);
 
   if (!user) {
@@ -3540,6 +3543,7 @@ if (method === "GET" && pathname === "/api/tasks") {
     .filter(task => task.type !== "generated")
     .filter(task => task.type !== "social_follow")
     .filter(task => !(task.type === "community" && task.creatorId === user.id))
+    .filter(task => task.type !== "social_follow")
     .filter(task => !completedIds.has(task.id))
     .map(task => ({
       ...task,
@@ -3621,6 +3625,16 @@ if (method === "GET" && pathname === "/api/tasks") {
         "Task ID is required."
       );
 
+      return;
+    }
+
+    const startCooldown = getCooldown(db, user.id);
+    if (startCooldown.active) {
+      sendJSON(res, 429, {
+        error: "Your next RIZORA task is still on cooldown.",
+        cooldown: startCooldown,
+        cooldownMinutes: 7
+      });
       return;
     }
 
