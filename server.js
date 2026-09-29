@@ -1111,7 +1111,7 @@ function getCurrentUser(
 // ============================================================
 
 
-const TASK_COOLDOWN_MS = 45 * 60 * 1000;
+const TASK_COOLDOWN_MS = 7 * 60 * 1000;
 
 const RIZORA_FEATURE_LAYER_V1 = true;
 
@@ -10228,7 +10228,7 @@ seedDatabase();
    ============================================================ */
 
 const RIZORA_SOCIAL_COOLDOWN_MS =
-  45 * 60 * 1000;
+  7 * 60 * 1000;
 
 const RIZORA_SOCIAL_MIN_REWARD =
   5;
