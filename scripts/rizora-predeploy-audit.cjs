@@ -78,10 +78,14 @@ assert(sw.includes("rizora_verified_badge.svg"),"Service worker does not cache v
 const verifiedPath=/verifiedBadgeUrl/;
 assert(verifiedPath.test(server),"Backend public profile does not expose verified badge metadata.");
 assert(server.includes('pathname === "/api/verification/apply"'),"Verification apply route is missing.");
+assert(server.includes('rzVerificationPath === "/api/verification/request"'),"Verification request route is missing.");
 assert(server.includes("proofUrl"),"Verification proof URL support is missing.");
 assert(server.includes("45 * 60 * 1000"),"45-minute task cooldown is missing.");
 assert(server.includes("function isAllowedBrowserOrigin"),"CSRF origin guard is missing.");
+assert(server.includes("!isAllowedBrowserOrigin(req)"),"CSRF origin guard is not enforced.");
+assert(server.includes('cooldownMinutes: Math.ceil(TASK_COOLDOWN_MS / 60000)'),"Task cooldown response still reports the old duration.");
 assert(server.includes("publishDueSchedules("),"Schedule publisher wiring is missing.");
+assert(server.includes("db.rzV2.schedules = db.rzV2.schedules || []"),"Schedule storage initialization is missing.");
 
 assert(read("vercel.json").includes('"outputDirectory": "."'),"Vercel static deployment config is missing.");
 console.log("RIZORA predeploy audit: PASS");
