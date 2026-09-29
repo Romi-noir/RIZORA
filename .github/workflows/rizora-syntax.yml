@@ -42,12 +42,16 @@ jobs:
           node --check rizora-v2-business.js
           node --check rizora-v2-business-ui.js
           node --check rizora-v2.js
+          node --check rizora-email.js
           node --check rizora-v2-comments.js
           node --check rizora-v2-comments-ui.js
           node --check rizora-v2-series.js
           node --check rizora-v2-series-ui.js
           node --check rizora-v2-events.js
           node --check rizora-v2-events-ui.js
+
+      - name: Predeploy integration audit
+        run: node scripts/rizora-predeploy-audit.js
 
       - name: Runtime smoke test
         run: node scripts/rizora-smoke.js
