@@ -120,7 +120,23 @@ function googleButton(){
       if(window.google&&google.accounts&&google.accounts.id){
         clearInterval(tm);
         google.accounts.id.initialize({client_id:c.clientId,callback:function(r){
-          api("/api/auth/google",{method:"POST",body:JSON.stringify({credential:r.credential})}).then(function(d){if(d.token)setRizoraAuthToken(d.token);state.user=d.user;window.RIZORA_CURRENT_USER=state.user;load();}).catch(function(e){$("authError").textContent=e.message;});
+          api("/api/auth/google",{method:"POST",body:JSON.stringify({credential:r.credential})}).then(function(d){
+            if(d.token)setRizoraAuthToken(d.token);
+            state.user=d.user;
+            window.RIZORA_CURRENT_USER=state.user;
+            return load().then(function(){
+              if(d.created){
+                var emailInfo=d.emailDelivery||{};
+                var emailText=emailInfo.configured
+                  ? "Your welcome email has been queued for "+(state.user.email||"your registered email address")+"."
+                  : "Your account is live. Email delivery is still waiting for the RIZORA email provider.";
+                if(window.RIZORA_POPUP)window.RIZORA_POPUP("Welcome to RIZORA","@"+(state.user.publicUsername||state.user.username)+" is now live with Google. "+emailText,"success");
+                else toast("Welcome to RIZORA.");
+              }else{
+                toast("Welcome back to RIZORA.");
+              }
+            });
+          }).catch(function(e){$("authError").textContent=e.message;});
         }});
         google.accounts.id.renderButton($("googleButton"),{theme:"outline",size:"large",width:380,text:"continue_with",shape:"rectangular"});
       }
