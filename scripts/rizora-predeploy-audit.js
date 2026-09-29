@@ -94,5 +94,5 @@ assert(server.includes("45 * 60 * 1000"),"45-minute task cooldown is missing.");
 assert(server.includes("function isAllowedBrowserOrigin"),"CSRF origin guard is missing.");
 assert(server.includes("publishDueSchedules(db"),"Schedule publisher is missing.");
 
-assert(read("vercel.json").includes('"source": "/"'),"Vercel rewrite/config is missing.");
+assert(read("vercel.json").includes('"outputDirectory": "."'),"Vercel static deployment config is missing.");
 console.log("RIZORA predeploy audit: PASS");
