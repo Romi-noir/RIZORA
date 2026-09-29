@@ -50,7 +50,7 @@ jobs:
           node --check rizora-v2-events.js
           node --check rizora-v2-events-ui.js
           node --check rizora-remita.js
-          node --check scripts/rizora-predeploy-audit.js
+          node --check scripts/rizora-predeploy-audit.cjs
           node --check scripts/capacitor-copy.cjs
 
       - name: Build web bundle
