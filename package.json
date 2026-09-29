@@ -11,9 +11,9 @@
     "cap:sync": "npm run build && npx cap sync"
   },
   "dependencies": {
-    "@capacitor/android": "^8.5.1",
-    "@capacitor/cli": "^8.5.1",
-    "@capacitor/core": "^8.5.1",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
     "dotenv": "^16.6.1",
     "google-auth-library": "^11.1.0"
   },
