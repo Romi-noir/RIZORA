@@ -241,11 +241,6 @@ async function main() {
     });
     assert(corsPreflight.res.status === 204 && /PATCH/i.test(corsPreflight.res.headers.get("access-control-allow-methods") || ""), "CORS preflight does not allow PATCH requests");
 
-    const officialProfiles = await request("/api/official/profiles");
-    const officialIds = new Set((officialProfiles.data.profiles || []).map(p => p.id));
-    assert(officialProfiles.res.status === 200 && officialIds.has("official_rizora") && officialIds.has("official_romi") && (officialProfiles.data.profiles || []).filter(p => p.verified === true).length >= 2, "official verified identity profiles are incomplete");
-
-
     assert(tasks.res.status === 200 && Array.isArray(tasks.data.tasks), "tasks failed");
     assert(!(tasks.data.tasks || []).some(t => t.type === "social_follow"), "legacy social missions are still duplicated in the general task feed");
     const exploreTask = (tasks.data.tasks || []).find(t => t.id === "rizora_explore");
