@@ -80,7 +80,7 @@ assert(verifiedPath.test(server),"Backend public profile does not expose verifie
 assert(server.includes('pathname === "/api/verification/apply"'),"Verification apply route is missing.");
 assert(server.includes('rzVerificationPath === "/api/verification/request"'),"Verification request route is missing.");
 assert(server.includes("proofUrl"),"Verification proof URL support is missing.");
-assert(server.includes("7 * 60 * 1000"),"7-minute task cooldown is missing.");
+assert(server.includes("7 * 60 * 1000"),"7-minute task cooldown is missing.");\nassert(server.includes("refusing to continue with an empty database"),"Database corruption must fail closed instead of resetting to an empty state.");
 assert(server.includes("function isAllowedBrowserOrigin"),"CSRF origin guard is missing.");
 assert(server.includes("!isAllowedBrowserOrigin(req)"),"CSRF origin guard is not enforced.");
 assert(server.includes('cooldownMinutes: Math.ceil(TASK_COOLDOWN_MS / 60000)'),"Task cooldown response duration is not derived from the configured cooldown.");

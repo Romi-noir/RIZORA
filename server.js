@@ -1111,7 +1111,7 @@ function getCurrentUser(
 // ============================================================
 
 
-const TASK_COOLDOWN_MS = 7 * 60 * 1000;
+const TASK_COOLDOWN_MS = 7 * 60 * 1000;\nconst TASK_COOLDOWN_MINUTES = Math.ceil(TASK_COOLDOWN_MS / 60000);
 
 const RIZORA_FEATURE_LAYER_V1 = true;
 
@@ -4061,7 +4061,7 @@ if (
     ],
 
     cooldown,
-    cooldownMinutes: 7,
+    cooldownMinutes: TASK_COOLDOWN_MINUTES,
     generatedCount: generatedTasks.length,
 
     message:
@@ -4146,7 +4146,7 @@ if (
         error:
           "Your next RIZORA task is still on cooldown.",
         cooldown,
-        cooldownMinutes: 7
+        cooldownMinutes: TASK_COOLDOWN_MINUTES
       }
     );
     return;
@@ -4295,7 +4295,7 @@ const completion = {
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: 7,
+      cooldownMinutes: TASK_COOLDOWN_MINUTES,
       cooldown:
         getCooldown(
           db,
@@ -4828,7 +4828,7 @@ if (
         error:
           "Your next task is still on cooldown.",
         cooldown,
-        cooldownMinutes: 7
+        cooldownMinutes: TASK_COOLDOWN_MINUTES
       }
     );
     return;
@@ -4951,7 +4951,7 @@ if (
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: 7,
+      cooldownMinutes: TASK_COOLDOWN_MINUTES,
       cooldown:
         getCooldown(
           db,
