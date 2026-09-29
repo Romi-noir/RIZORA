@@ -281,7 +281,7 @@ async function handleRizoraBusiness(ctx) {
       reference: "",
       status: "active",
       durationDays: Math.round(durationDays),
-      expiresAt: new Date(Date.now() + durationDays * 86400000).toISOString(),
+      expiresAt: null,
       impressions: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -303,6 +303,14 @@ async function handleRizoraBusiness(ctx) {
   }
 
   if (path === "/api/v2/ads/external/initialize" && method === "POST") {
+    if (user) {
+      if (!isRizoraPlus(user)) {
+        ctx.sendError(res, 403, "Registered RIZORA businesses must subscribe to RIZORA+ to run ads.");
+        return true;
+      }
+      ctx.sendError(res, 400, "Your registered RIZORA+ business should launch ads from Ads Manager instead.");
+      return true;
+    }
     var ext;
     try {
       ext = await readBody(req);
