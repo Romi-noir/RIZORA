@@ -9933,6 +9933,7 @@ function seedRizoraOfficialIdentities(db) {
       verificationType: "official_platform",
       official: true,
       accountType: "platform",
+      verifiedBadgeUrl: "/assets/rizora_verified_badge.svg",
       links: {
         website: "https://rizora.com.ng/",
         tiktok:
@@ -9956,6 +9957,7 @@ function seedRizoraOfficialIdentities(db) {
       verificationType: "official_creator",
       official: true,
       accountType: "creator",
+      verifiedBadgeUrl: "/assets/rizora_verified_badge.svg",
       links: {
         tiktok:
           "https://www.tiktok.com/@romi.noir",
