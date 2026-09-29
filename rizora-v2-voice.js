@@ -187,6 +187,40 @@
     wireForm(document.getElementById("aiForm"),"ai");
   }
 
+  var speakingButton=null;
+  function speakAI(text,button){
+    var value=String(text||"").trim();
+    if(!value)return;
+    if(!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)){
+      if(window.RIZORA_TOAST)window.RIZORA_TOAST("Voice playback is not supported in this browser.");
+      return;
+    }
+    if(window.speechSynthesis.speaking && speakingButton===button){
+      window.speechSynthesis.cancel();
+      if(button)button.textContent="🔊 Listen";
+      speakingButton=null;
+      return;
+    }
+    window.speechSynthesis.cancel();
+    if(speakingButton)speakingButton.textContent="🔊 Listen";
+    var utterance=new SpeechSynthesisUtterance(value);
+    utterance.lang="en-NG";
+    utterance.rate=1.02;
+    utterance.pitch=1;
+    speakingButton=button||null;
+    if(button)button.textContent="⏹ Stop";
+    utterance.onend=function(){if(button)button.textContent="🔊 Listen";if(speakingButton===button)speakingButton=null;};
+    utterance.onerror=function(){if(button)button.textContent="🔊 Listen";if(speakingButton===button)speakingButton=null;};
+    window.speechSynthesis.speak(utterance);
+  }
+  window.RIZORA_AI_SPEAK=speakAI;
+  window.RIZORA_TOAST=window.RIZORA_TOAST||function(message){
+    var t=document.getElementById("toast");if(!t)return;
+    t.textContent=message||"";
+    t.classList.add("show");
+    clearTimeout(window.__rtVoice);
+    window.__rtVoice=setTimeout(function(){t.classList.remove("show");},2400);
+  };
   window.RIZORA_VOICE_WIRE=wire;
   var observer=new MutationObserver(wire);
   observer.observe(document.documentElement,{childList:true,subtree:true});
