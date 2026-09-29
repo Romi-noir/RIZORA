@@ -29,6 +29,7 @@ function ensureEnterprise(db) {
   db.rzV2.creatorMembershipTiers = db.rzV2.creatorMembershipTiers || [];
   db.rzV2.creatorMemberships = db.rzV2.creatorMemberships || [];
   db.rzV2.creatorMembershipEvents = db.rzV2.creatorMembershipEvents || [];
+  db.rzV2.adCampaigns = db.rzV2.adCampaigns || [];
 }
 
 async function readBody(req, limit) {
@@ -363,16 +364,25 @@ async function handleRizoraEnterprise(ctx) {
   if(path==="/api/v2/premium/status"&&method==="GET"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     const active=db.rzV2.premiumSubscriptions.find(x=>x.userId===user.id&&["active","non-renewing","attention"].includes(x.status));
-    const configured=!!String(process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
+    const premiumCode=String(process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
+    const premiumPlusCode=String(process.env.PAYSTACK_PREMIUM_PLUS_PLAN_CODE||"").trim();
+    const configured=!!premiumCode;
     const isPremium=!!active;
-    ctx.sendJSON(res,200,{success:true,plan:isPremium?(active.plan||"premium"):"free",active:isPremium,configured,provider:"paystack",
+    const currentPlan=isPremium?(active.plan||"premium"):"free";
+    const plans={
+      premium:{name:"Premium",priceNaira:4000,configured:!!premiumCode},
+      premium_plus:{name:"Premium+",priceNaira:13000,configured:!!premiumPlusCode}
+    };
+    ctx.sendJSON(res,200,{success:true,plan:currentPlan,active:isPremium,configured,provider:"paystack",
       status:active?active.status:"free",
       reference:active?active.reference:null,
       nextPaymentDate:active?active.nextPaymentDate||null:null,
       canCancel:!!(active&&active.subscriptionCode&&active.emailToken&&["active","attention"].includes(active.status)),
+      plans,
       features:{
         advancedAI:isPremium,advancedAnalytics:isPremium,creatorPortfolio:true,experiments:true,contentPlanning:true,
-        broadcastChannels:true,digitalProducts:true,creatorPayouts:false
+        broadcastChannels:true,digitalProducts:true,creatorPayouts:false,
+        premiumPlus:currentPlan==="premium_plus"
       },premiumOnly:["advancedAI","advancedAnalytics"]}); return true;
   }
   const premiumVerifyMatch=path.match(/^\/api\/v2\/premium\/verify\/([^/]+)$/);
@@ -401,18 +411,24 @@ async function handleRizoraEnterprise(ctx) {
 
   if(path==="/api/v2/premium/subscribe"&&method==="POST"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
-    const planCode=String(process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
-    if(!planCode){ctx.sendError(res,503,"RIZORA Premium billing is not configured yet.");return true;}
     if(!paystackConfigured()){ctx.sendError(res,503,"Paystack is not configured on the RIZORA server yet.");return true;}
+    let b={};try{b=await readBody(req,50000);}catch(e){ctx.sendError(res,400,e.message);return true;}
+    const requestedPlan=String(b.plan||"premium").trim().toLowerCase()==="premium_plus"?"premium_plus":"premium";
+    const planCode=String(requestedPlan==="premium_plus"?process.env.PAYSTACK_PREMIUM_PLUS_PLAN_CODE:process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
+    const defaultAmountKobo=requestedPlan==="premium_plus"?1300000:400000;
+    const amountEnv=requestedPlan==="premium_plus"?process.env.RIZORA_PREMIUM_PLUS_INITIAL_AMOUNT:process.env.RIZORA_PREMIUM_INITIAL_AMOUNT;
+    const amountKobo=Number(amountEnv||defaultAmountKobo);
+    const amountNaira=amountKobo/100;
+    if(!planCode){ctx.sendError(res,503,requestedPlan==="premium_plus"?"RIZORA Premium+ billing is not configured yet.":"RIZORA Premium billing is not configured yet.");return true;}
+    if(!Number.isFinite(amountKobo)||amountKobo<=0){ctx.sendError(res,503,"Premium pricing is not configured correctly.");return true;}
     const email=safeString(user.email,180); if(!email||!email.includes("@")){ctx.sendError(res,400,"A valid account email is required.");return true;}
-    const ref="RZP-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
-    const payload={email,amount:String(Number(process.env.RIZORA_PREMIUM_INITIAL_AMOUNT||0)),currency:String(process.env.RIZORA_CURRENCY||"NGN"),reference:ref,plan:planCode,callback_url:String(process.env.RIZORA_PAYMENT_CALLBACK||"https://rizora.com.ng/")};
-    if(!payload.amount||Number(payload.amount)<=0){ctx.sendError(res,503,"Premium initial amount is not configured.");return true;}
+    const ref="RZP-"+requestedPlan.toUpperCase()+"-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
+    const payload={email,amount:String(Math.round(amountKobo)),currency:String(process.env.RIZORA_CURRENCY||"NGN"),reference:ref,plan:planCode,callback_url:String(process.env.RIZORA_PAYMENT_CALLBACK||"https://rizora.com.ng/")};
     const ps=await paystackRequest("/transaction/initialize",{method:"POST",body:JSON.stringify(payload)});
     if(!ps.response.ok||!ps.data.status){ctx.sendError(res,502,ps.data.message||"Unable to initialize Premium payment.");return true;}
-    const sub={id:"prem_"+Date.now().toString(36),userId:user.id,plan:"premium",planCode,provider:"paystack",reference:ps.data.data.reference,status:"pending",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-    db.rzV2.premiumSubscriptions.push(sub);db.rzV2.premiumEvents.push({event:"subscription.initialize",reference:sub.reference,userId:user.id,createdAt:new Date().toISOString()});ctx.saveDB(db);
-    ctx.sendJSON(res,200,{success:true,authorizationUrl:ps.data.data.authorization_url,reference:sub.reference});return true;
+    const sub={id:"prem_"+Date.now().toString(36),userId:user.id,plan:requestedPlan,planCode,provider:"paystack",reference:ps.data.data.reference,status:"pending",amountNaira,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+    db.rzV2.premiumSubscriptions.push(sub);db.rzV2.premiumEvents.push({event:"subscription.initialize",reference:sub.reference,userId:user.id,plan:requestedPlan,createdAt:new Date().toISOString()});ctx.saveDB(db);
+    ctx.sendJSON(res,200,{success:true,authorizationUrl:ps.data.data.authorization_url,reference:sub.reference,plan:requestedPlan,amountNaira});return true;
   }
 
   const premiumCancelPath="/api/v2/premium/cancel";
@@ -1050,6 +1066,33 @@ async function handleRizoraEnterprise(ctx) {
       db.notifications=db.notifications||[];
       if(["active","attention","non-renewing","cancelled"].includes(premiumSub.status)){
         db.notifications.push({id:ctx.uid("notif_"),userId:premiumSub.userId,title:"Premium billing update",message:"Your RIZORA Premium subscription is now "+premiumSub.status+".",type:"billing",read:false,createdAt:new Date().toISOString()});
+      }
+    }
+
+    // External RIZORA Ads payments.
+    const adPayment = reference
+      ? db.rzV2.adCampaigns.find(function (ad) { return ad.reference === reference; })
+      : null;
+    if (adPayment) {
+      if (event === "charge.success") {
+        adPayment.status = "active";
+        adPayment.paidAt = new Date().toISOString();
+        adPayment.updatedAt = new Date().toISOString();
+        const adTx = db.rzV2.transactions.find(function (t) { return t.reference === reference; });
+        if (adTx) {
+          adTx.status = "success";
+          adTx.paystackId = data.id || adTx.paystackId || null;
+          adTx.updatedAt = adPayment.updatedAt;
+        }
+      } else if (["charge.failed","transaction.failed"].includes(event)) {
+        adPayment.status = "payment_failed";
+        adPayment.updatedAt = new Date().toISOString();
+        const adTx = db.rzV2.transactions.find(function (t) { return t.reference === reference; });
+        if (adTx) {
+          adTx.status = "failed";
+          adTx.paystackId = data.id || adTx.paystackId || null;
+          adTx.updatedAt = adPayment.updatedAt;
+        }
       }
     }
 
