@@ -281,7 +281,7 @@ function officialView(){
     if(p.tiktok)links+='<a class="rz-btn" href="'+esc(p.tiktok)+'" target="_blank" rel="noopener">TikTok</a>';
     if(p.instagram)links+='<a class="rz-btn" href="'+esc(p.instagram)+'" target="_blank" rel="noopener">Instagram</a>';
     if(p.x)links+='<a class="rz-btn" href="'+esc(p.x)+'" target="_blank" rel="noopener">X</a>';
-    return '<div class="rz-card"><div class="rz-post-head">'+avatar(p)+'<div><strong>'+esc(p.displayName||p.username)+'</strong> <span class="rz-badge ok">✓ Verified</span><div class="rz-mini">@'+esc(p.publicUsername||p.username)+'</div></div></div><div class="rz-actions">'+links+"</div></div>";
+    return '<div class="rz-card"><div class="rz-post-head">'+avatar(p)+'<div><strong>'+esc(p.displayName||p.username)+'</strong> <span class="rz-badge ok">✓ Verified</span><div class="rz-mini">@'+esc(p.publicUsername||p.username)+'</div></div></div><div class="rz-verified-showcase"><img src="/assets/rizora_verified_badge.svg" alt="RIZORA Verified badge"><div><div class="rz-kicker">RIZORA VERIFIED</div><strong>Creator Verified</strong><div class="rz-mini">'+esc(p.verificationType||"official")+'</div></div></div><div class="rz-actions">'+links+"</div></div>";
   }).join("");
   if(!rows)rows="<div class='rz-empty'>Official identities are loading.</div>";
   return card("OFFICIAL","<h2>Verified RIZORA identities</h2><p class='rz-muted'>Official platform and verified creator profiles.</p><div class='rz-feed'>"+rows+"</div>");
