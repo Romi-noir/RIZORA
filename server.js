@@ -1075,25 +1075,50 @@ const RIZORA_FEATURE_LAYER_V1 = true;
 
 function rizoraTaskSeen(db, userId, taskId) {
   db.taskSeen ||= {};
+  const state = db.taskSeen[userId];
 
-  return (
-    Array.isArray(db.taskSeen[userId]) &&
-    db.taskSeen[userId].includes(taskId)
-  );
+  if (Array.isArray(state)) {
+    return state.includes(taskId);
+  }
+
+  if (state && typeof state === "object") {
+    const completed = Array.isArray(state.completed) ? state.completed : [];
+    return completed.includes(taskId);
+  }
+
+  return false;
 }
 
 function rizoraMarkTaskSeen(db, userId, taskId) {
   db.taskSeen ||= {};
-  db.taskSeen[userId] ||= [];
+  const current = db.taskSeen[userId];
 
-  if (!db.taskSeen[userId].includes(taskId)) {
-    db.taskSeen[userId].push(taskId);
+  if (Array.isArray(current)) {
+    const completed = current.includes(taskId) ? current.slice() : current.concat(taskId);
+    db.taskSeen[userId] = completed.slice(-1000);
+    return;
   }
 
-  if (db.taskSeen[userId].length > 1000) {
-    db.taskSeen[userId] =
-      db.taskSeen[userId].slice(-1000);
+  const state =
+    current && typeof current === "object"
+      ? current
+      : {};
+
+  const completed = Array.isArray(state.completed)
+    ? state.completed.slice()
+    : [];
+
+  if (!completed.includes(taskId)) {
+    completed.push(taskId);
   }
+
+  state.completed = completed.slice(-1000);
+
+  if (!state.generated || typeof state.generated !== "object") {
+    state.generated = {};
+  }
+
+  db.taskSeen[userId] = state;
 }
 
 
