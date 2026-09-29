@@ -1077,6 +1077,7 @@ async function handleRizoraEnterprise(ctx) {
       if (event === "charge.success") {
         adPayment.status = "active";
         adPayment.paidAt = new Date().toISOString();
+        adPayment.expiresAt = new Date(Date.now() + Number(adPayment.durationDays || 7) * 86400000).toISOString();
         adPayment.updatedAt = new Date().toISOString();
         const adTx = db.rzV2.transactions.find(function (t) { return t.reference === reference; });
         if (adTx) {
