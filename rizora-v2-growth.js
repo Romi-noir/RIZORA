@@ -258,7 +258,7 @@ async function handleRizoraGrowth(ctx) {
       if(target.id===user.id||target.status!=="active")return;
       var followers=(db.rzV2.follows||[]).filter(function(f){return f.followingId===target.id;}).length;
       var targetPosts=allPosts.filter(function(p){return p.userId===target.id;}).length;
-      if(!followers&&!targetPosts)return;
+      if(!followers&&!targetPosts&&target.official!==true)return;
       var verified=target.verified===true||target.verificationStatus==="verified";
       var followed=(db.rzV2.follows||[]).some(function(f){return f.followerId===user.id&&f.followingId===target.id;});
       creatorMap[target.id]={user:publicUser(db,target),followers:followers,posts:targetPosts,followed:followed,score:followers*2+targetPosts+(verified?50:0)};
