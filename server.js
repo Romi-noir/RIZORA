@@ -115,6 +115,7 @@ function loadDB() {
     console.error("Database load error:", error);
     throw new Error("RIZORA database could not be loaded; refusing to continue with an empty database.");
   }
+}
 
 function saveDB(db) {
   ensureDatabase();
