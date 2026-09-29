@@ -122,6 +122,7 @@ async function main() {
   assert(serviceWorkerSource.includes("/assets/rizora_verified_badge.svg"), "RIZORA verified badge is not cached by the PWA shell");
   assert(serviceWorkerSource.includes("/assets/rizora_verified_mark.svg"), "RIZORA verified mark is not cached by the PWA shell");
   assert(serviceWorkerSource.includes("/rizora-v2-voice.js"), "RIZORA voice module is not cached by the PWA shell");
+  assert(serviceWorkerSource.includes("/rizora-v2-ads-ui.js"), "RIZORA Ads UI is not cached by the PWA shell");
   assert(premiumUiSource.includes("premium_plus"), "Premium+ UI wiring is missing");
   assert(premiumUiSource.includes('plan:"premium_plus"'), "Premium+ checkout plan is missing");
   assert(coreUiSource.includes("rzPremiumVerificationHint"), "Premium suggestion block is missing");
@@ -236,6 +237,24 @@ async function main() {
 
     const feed = await request("/api/v2/feed?tab=for-you", { headers: authHeaders });
     assert(feed.res.status === 200 && Array.isArray(feed.data.posts), "feed failed");
+
+    const referralState = await request("/api/referrals/me", { headers: authHeaders });
+    assert(referralState.res.status === 200 && referralState.data && referralState.data.referralCode, "referral endpoint failed");
+
+    const leaderboard = await request("/api/leaderboard", { headers: authHeaders });
+    assert(leaderboard.res.status === 200 && Array.isArray(leaderboard.data.leaderboard || leaderboard.data.users || leaderboard.data.rows), "leaderboard endpoint failed");
+
+    const boosts = await request("/api/boosts", { headers: authHeaders });
+    assert(boosts.res.status === 200 && Array.isArray(boosts.data.boosts || boosts.data.items || boosts.data.campaigns), "boosts endpoint failed");
+
+    const socialOverview = await request("/api/social/overview", { headers: authHeaders });
+    assert(socialOverview.res.status === 200 && socialOverview.data && typeof socialOverview.data === "object", "social overview endpoint failed");
+
+    const adsAccess = await request("/api/v2/ads/access");
+    assert(adsAccess.res.status === 200 && adsAccess.data && adsAccess.data.paymentProvider === "paystack", "RIZORA Ads access endpoint failed");
+
+    const adsFeed = await request("/api/v2/ads");
+    assert(adsFeed.res.status === 200 && Array.isArray(adsFeed.data.ads), "RIZORA Ads public feed endpoint failed");
 
     const tasks = await request("/api/tasks", { headers: authHeaders });
     const corsPreflight = await request("/api/v2/profile", {
