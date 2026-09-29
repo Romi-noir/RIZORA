@@ -10,6 +10,7 @@ const crypto = require("crypto");
 require("dotenv").config();
 const { OAuth2Client } =
   require("google-auth-library");
+const { configured: rizoraEmailConfigured, sendRizoraWelcomeEmail } = require("./rizora-email");
 const { handleRizoraV2 } = require("./rizora-v2-backend");
 const { publishDueSchedules } = require("./rizora-v2-growth");
 const { handleRizoraGlobal } = require("./rizora-v2-global");
@@ -107,6 +108,7 @@ function loadDB() {
     db.experiments ||= [];
     db.userSettings ||= {};
     db.supportTickets ||= [];
+    db.emailEvents ||= [];
 
     return db;
   } catch (error) {
@@ -373,6 +375,50 @@ function randomReferralCode(username) {
     .randomBytes(4)
     .toString("hex")
     .toUpperCase()}`;
+}
+
+function queueRizoraWelcomeEmail(db,user,req){
+  db.emailEvents ||= [];
+  const event={
+    id:uid("email_"),
+    type:"welcome",
+    userId:user.id,
+    to:normalizeEmail(user.email),
+    status:"queued",
+    createdAt:new Date().toISOString()
+  };
+  db.emailEvents.unshift(event);
+  if(db.emailEvents.length>2000)db.emailEvents=db.emailEvents.slice(0,2000);
+
+  if(!rizoraEmailConfigured()){
+    event.status="skipped";
+    event.reason="EMAIL_PROVIDER_NOT_CONFIGURED";
+    return {configured:false,queued:false,status:event.status};
+  }
+
+  Promise.resolve().then(function(){
+    return sendRizoraWelcomeEmail({
+      to:user.email,
+      username:user.username,
+      displayName:user.displayName,
+      referralCode:user.referralCode,
+      publicUrl:getPublicBaseURL(req)
+    });
+  }).then(function(result){
+    event.status="sent";
+    event.provider=result && result.provider || "resend";
+    event.providerId=result && result.id || "";
+    event.sentAt=new Date().toISOString();
+    saveDB(db);
+  }).catch(function(error){
+    event.status="failed";
+    event.reason=String(error && error.message || "Email delivery failed").slice(0,300);
+    event.failedAt=new Date().toISOString();
+    console.error("RIZORA welcome email failed:",event.reason);
+    try{saveDB(db);}catch(_){}
+  });
+
+  return {configured:true,queued:true,status:event.status};
 }
 
 function getPublicBaseURL(req) {
@@ -3183,6 +3229,19 @@ async function handleRequest(
           Boolean(referral)
       }
     );
+
+    const welcomeEmailDelivery = queueRizoraWelcomeEmail(db,user,req);
+
+    db.notifications ||= [];
+    db.notifications.unshift({
+      id:uid("notif_"),
+      userId:user.id,
+      title:"Welcome to RIZORA",
+      message:"Your creator account is ready. Explore your profile, missions, AI, messages and growth tools.",
+      type:"system",
+      read:false,
+      createdAt:new Date().toISOString()
+    });
 
     saveDB(db);
 
