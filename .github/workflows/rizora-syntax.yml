@@ -18,7 +18,8 @@ jobs:
           node-version: 24
           cache: npm
       - name: Validate package lock
-        run: node -e "JSON.parse(require('fs').readFileSync('package-lock.json','utf8')); console.log('package-lock.json: valid JSON')"
+        run: |
+          node -e 'JSON.parse(require("fs").readFileSync("package-lock.json","utf8")); console.log("package-lock.json: valid JSON")'
       - name: Install dependencies
         run: npm ci --ignore-scripts --no-audit
       - name: Check JavaScript syntax
