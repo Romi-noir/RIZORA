@@ -113,17 +113,8 @@ function loadDB() {
     return db;
   } catch (error) {
     console.error("Database load error:", error);
-
-    return {
-      users: [],
-      tasks: [],
-      taskCompletions: [],
-      auditLogs: [],
-      referrals: [],
-      sessions: []
-    };
+    throw new Error("RIZORA database could not be loaded; refusing to continue with an empty database.");
   }
-}
 
 function saveDB(db) {
   ensureDatabase();
