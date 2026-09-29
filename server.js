@@ -224,7 +224,7 @@ function json(res, statusCode, data, extraHeaders = {}) {
     "Access-Control-Allow-Credentials": "true",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
+    "Permissions-Policy": "geolocation=(), camera=(), microphone=(self)",
     ...extraHeaders
   });
 
@@ -727,6 +727,31 @@ async function readBody(req) {
   });
 }
 
+
+async function readLargeJSONBody(req, limit) {
+  return new Promise((resolve, reject) => {
+    let raw = "";
+    let settled = false;
+    req.setEncoding("utf8");
+    req.on("data", chunk => {
+      if (settled) return;
+      raw += chunk;
+      if (Buffer.byteLength(raw, "utf8") > limit) {
+        settled = true;
+        reject(new Error("Request body too large."));
+        try { req.destroy(); } catch (_) {}
+      }
+    });
+    req.on("end", () => {
+      if (settled) return;
+      settled = true;
+      const body = raw.trim();
+      if (!body) return resolve({});
+      try { resolve(JSON.parse(body)); } catch (_) { reject(new Error("Invalid JSON body.")); }
+    });
+    req.on("error", error => { if (!settled) { settled = true; reject(error); } });
+  });
+}
 
 // ============================================================
 // RATE LIMITING
@@ -4767,8 +4792,17 @@ await rizoraGroqCompletion({
             publicUsername: user.publicUsername || user.username,
             displayName: user.displayName || user.username,
             verified: user.verified === true || user.verificationStatus === "verified",
-            points: Number(user.points || 0)
-          }
+            points: Number(user.points || 0),
+            role: user.role || "user"
+          },
+          profile: {
+            bio: String((db.creatorProfiles && db.creatorProfiles[user.id] && db.creatorProfiles[user.id].bio) || user.bio || "").slice(0,600),
+            category: String((db.creatorProfiles && db.creatorProfiles[user.id] && db.creatorProfiles[user.id].category) || user.category || "").slice(0,120),
+            location: String((db.creatorProfiles && db.creatorProfiles[user.id] && db.creatorProfiles[user.id].location) || user.location || "").slice(0,120)
+          },
+          recentConversation: Array.isArray(body.history) ? body.history.slice(-8).map(function(item){
+            return {role:item && item.role === "ai" ? "assistant" : "user",text:String(item && item.text || "").slice(0,1200)};
+          }) : []
         }) +
         "\nUser request: " +
         message
@@ -4881,6 +4915,41 @@ await rizoraGroqCompletion({
     }
   }
 
+  if (method === "POST" && pathname === "/api/ai/transcribe") {
+    const user = getCurrentUser(db, req);
+    if (!user) return sendError(res, 401, "Authentication required.");
+    const rateKey = user.id + ":transcribe";
+    if (!checkRateLimit(aiRateLimits, rateKey, 10 * 60 * 1000, 20)) return sendError(res, 429, "RIZORA AI voice is taking a short break. Try again in a few minutes.");
+    let body = {};
+    try { body = await readLargeJSONBody(req, 8 * 1024 * 1024); } catch (error) { return sendError(res, 400, error.message); }
+    const dataUrl = String(body.audio || "").trim();
+    const mimeType = String(body.mimeType || "audio/webm").toLowerCase().split(";")[0];
+    const match = dataUrl.match(/^data:([^;,]+)?;base64,([A-Za-z0-9+/=\s]+)$/);
+    if (!match) return sendError(res, 400, "Voice recording data is invalid.");
+    const buffer = Buffer.from(match[2].replace(/\s+/g, ""), "base64");
+    if (!buffer.length) return sendError(res, 400, "Voice recording is empty.");
+    if (buffer.length > 6 * 1024 * 1024) return sendError(res, 413, "Voice recording is too large.");
+    const allowedAudio = new Set(["audio/webm","audio/ogg","audio/wav","audio/mp4","audio/mpeg"]);
+    if (!allowedAudio.has(mimeType)) return sendError(res, 415, "This voice recording format is not supported.");
+    const groqKey = String(process.env.GROQ_API_KEY || "").trim();
+    if (!groqKey) return sendError(res, 503, "RIZORA AI voice is not configured.");
+    try {
+      const form = new FormData();
+      const ext = mimeType === "audio/webm" ? "webm" : mimeType === "audio/ogg" ? "ogg" : mimeType === "audio/mp4" ? "m4a" : mimeType === "audio/mpeg" ? "mp3" : "wav";
+      form.append("file", new Blob([buffer], {type:mimeType}), "rizora-voice." + ext);
+      form.append("model", String(process.env.GROQ_STT_MODEL || "whisper-large-v3-turbo").trim());
+      form.append("response_format", "json");
+      form.append("temperature", "0");
+      form.append("prompt", "RIZORA creator platform, RoMi, @romi.noir, creator analytics, missions, boosts, social growth, AI, content and branding.");
+      const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {method:"POST",headers:{Authorization:"Bearer " + groqKey},body:form});
+      const data = await response.json().catch(function(){ return {}; });
+      if (!response.ok) return sendJSON(res, response.status === 429 ? 429 : 502, {success:false,provider:"groq",code:response.status === 429 ? "GROQ_RATE_LIMIT" : "GROQ_STT_ERROR",error:response.status === 429 ? "RIZORA AI voice is temporarily rate-limited." : "RIZORA AI could not transcribe that voice recording."});
+      return sendJSON(res, 200, {success:true,provider:"groq",model:String(process.env.GROQ_STT_MODEL || "whisper-large-v3-turbo").trim(),text:String(data.text || "").trim()});
+    } catch (error) {
+      console.error("RIZORA GROQ STT NETWORK ERROR", error);
+      return sendJSON(res, 502, {success:false,provider:"groq",code:"GROQ_STT_NETWORK_ERROR",error:"RIZORA AI could not reach voice transcription."});
+    }
+  }
   if (
     method === "GET" &&
     pathname === "/api/ai/status"
