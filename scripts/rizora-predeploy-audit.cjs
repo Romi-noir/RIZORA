@@ -57,7 +57,7 @@ const server=read("server.js");
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
 
-assert(core.includes('id="aiInput"') && core.includes('id="aiForm"'),"AI composer wiring is missing.");
+assert((core.includes('id="aiInput"') || core.includes("id='aiInput'")) && (core.includes('id="aiForm"') || core.includes("id='aiForm'")),"AI composer wiring is missing.");
 assert(media.includes('"audio/webm"') || media.includes("audio/webm"),"Media uploader checks are missing.");
 assert(server.includes('pathname === "/api/ai/chat"'),"AI chat route is missing.");
 assert(server.includes('pathname === "/api/ai/transcribe"'),"AI transcription route is missing.");
