@@ -119,7 +119,7 @@ async function handleRizoraPlatform(ctx){
     var map={};
     db.rzV2.messages.filter(function(m){return m.fromUserId===user.id||m.toUserId===user.id;}).forEach(function(m){
       var other=m.fromUserId===user.id?m.toUserId:m.fromUserId;
-      if(!map[other]||new Date(m.createdAt)>new Date(map[other].lastAt))map[other]={otherUserId:other,lastText:m.text,lastAt:m.createdAt,unread:0};
+      if(!map[other]||new Date(m.createdAt)>new Date(map[other].lastAt))map[other]={otherUserId:other,lastText:m.messageType==="voice"?"Voice message":m.text,lastAt:m.createdAt,unread:0};
       if(m.toUserId===user.id&&!m.read)map[other].unread++;
     });
     var conversations=Object.keys(map).map(function(id){var target=db.users.find(function(u){return u.id===id;});return target?Object.assign(map[id],{user:currentProfile(db,target)}):null;}).filter(Boolean).sort(function(a,b){return new Date(b.lastAt)-new Date(a.lastAt);});
@@ -138,9 +138,11 @@ async function handleRizoraPlatform(ctx){
     if(!user||!activePlatformUser(user)){ctx.sendError(res,403,"Your account cannot send messages right now.");return true;}
     var recipient=db.users.find(function(u){return u.id===thread[1]||String(u.username||"").toLowerCase()===thread[1].toLowerCase();});
     if(!recipient){ctx.sendError(res,404,"Creator not found.");return true;}
-    var mb=await readBodyPlatform(req),mt=String(mb.text||"").trim().slice(0,2000);if(!mt){ctx.sendError(res,400,"Message required.");return true;}
-    if(explicitPlatformText(mt)){ctx.sendError(res,422,"Adult or sexually explicit content is not allowed.");return true;}
-    db.rzV2.messages.push({id:"msg_"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),fromUserId:user.id,toUserId:recipient.id,text:mt,read:false,createdAt:new Date().toISOString()});
+    var mb=await readBodyPlatform(req),mt=String(mb.text||"").trim().slice(0,2000),mediaId=String(mb.mediaId||"").trim().slice(0,160),voiceMedia=null;
+    if(mediaId){voiceMedia=(db.rzV2.media||[]).find(function(m){return m.id===mediaId&&m.ownerId===user.id&&String(m.mimeType||"").indexOf("audio/")===0;})||null;if(!voiceMedia){ctx.sendError(res,404,"Voice media not found.");return true;}}
+    if(!mt&&!voiceMedia){ctx.sendError(res,400,"Message required.");return true;}
+    if(mt&&explicitPlatformText(mt)){ctx.sendError(res,422,"Adult or sexually explicit content is not allowed.");return true;}
+    db.rzV2.messages.push({id:"msg_"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),fromUserId:user.id,toUserId:recipient.id,text:mt,mediaUrl:voiceMedia?voiceMedia.url:"",mimeType:voiceMedia?voiceMedia.mimeType:"",messageType:voiceMedia?"voice":"text",read:false,createdAt:new Date().toISOString()});
     notifyPlatform(db,recipient.id,"New message","@"+user.username+" sent you a message.");ctx.saveDB(db);ctx.sendJSON(res,201,{success:true});return true;
   }
 
