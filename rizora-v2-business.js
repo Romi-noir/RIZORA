@@ -292,7 +292,7 @@ async function handleRizoraBusiness(ctx) {
       id: ctx.uid("notif_"),
       userId: user.id,
       title: "RIZORA+ ad campaign live",
-      message: "Your business ad "" + ad.title + "" is now live.",
+      message: 'Your business ad "' + ad.title + '" is now live.',
       type: "ads",
       read: false,
       createdAt: new Date().toISOString()
