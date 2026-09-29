@@ -9920,6 +9920,10 @@ function seedDatabase() {
   const configuredSuperAdminsChanged =
     ensureConfiguredSuperAdminAccounts(db);
 
+  // Re-sync verified identity profiles after account seeding so the
+  // official RoMi profile is linked on the first boot too.
+  seedRizoraOfficialIdentities(db);
+
   let changed = configuredSuperAdminsChanged;
 
   for (
