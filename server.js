@@ -2097,6 +2097,22 @@ async function handleRequest(
       return;
     }
 
+    const reason = cleanString(body.reason || body.note || "", 1500).trim();
+    const proofUrl = cleanString(body.proofUrl || body.proof || body.url || "", 500).trim();
+
+    if (reason.length < 10) {
+      sendError(res, 400, "Please provide more information about your creator identity.");
+      return;
+    }
+
+    try {
+      const parsed = new URL(proofUrl);
+      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
+    } catch (_) {
+      sendError(res, 400, "Proof URL must be a valid http or https URL.");
+      return;
+    }
+
     user.verificationStatus =
       "pending";
 
@@ -2112,16 +2128,26 @@ async function handleRequest(
       userId:
         user.id,
 
+      username:
+        user.username,
+
+      displayName:
+        user.displayName || user.username,
+
       status:
         "pending",
 
+      reason,
+
       note:
-        cleanString(
-          body.note,
-          1000
-        ),
+        reason,
+
+      proofUrl,
 
       createdAt:
+        new Date().toISOString(),
+
+      updatedAt:
         new Date().toISOString()
     });
 
@@ -2556,24 +2582,30 @@ async function handleRequest(
       .toUpperCase();
 
   // ----------------------------------------------------------
-  // CORS PREFLIGHT
+  // CORS / BROWSER-ORIGIN GUARD
   // ----------------------------------------------------------
+
+  const requestOrigin = String(req.headers.origin || "").trim();
+
+  if (requestOrigin && !isAllowedBrowserOrigin(req)) {
+    sendError(res, 403, "Origin not allowed.");
+    return;
+  }
+
+  if (requestOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
+    res.setHeader("Vary", "Origin");
+  }
 
   if (method === "OPTIONS") {
     res.writeHead(
       204,
       {
-        "Access-Control-Allow-Origin":
-          "https://rizora.com.ng",
-
-        "Access-Control-Allow-Headers":
-          "Content-Type, Authorization",
-
-                "Access-Control-Allow-Credentials":
-          "true",
-
-"Access-Control-Allow-Methods":
-          "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        "Access-Control-Allow-Origin": requestOrigin || "https://rizora.com.ng",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-RIZORA-CSRF",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Vary": "Origin"
       }
     );
 
@@ -3807,7 +3839,7 @@ if (
       sendJSON(res, 429, {
         error: "Your next RIZORA task is still on cooldown.",
         cooldown: startCooldown,
-        cooldownMinutes: 7
+        cooldownMinutes: Math.ceil(TASK_COOLDOWN_MS / 60000)
       });
       return;
     }
