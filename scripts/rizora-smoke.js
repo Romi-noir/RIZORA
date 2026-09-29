@@ -104,6 +104,7 @@ async function main() {
   assert(indexSource.includes("/rizora-v2-voice.js"), "RIZORA voice module is not linked");
   const voiceSource = require("fs").readFileSync("rizora-v2-voice.js", "utf8");
   const commentsSource = require("fs").readFileSync("rizora-v2-comments.js", "utf8");
+   const mediaSource = require("fs").readFileSync("rizora-v2-media.js", "utf8");
   assert(voiceSource.includes('"/api/ai/transcribe"'), "AI voice transcription route is missing from voice module");
   assert(voiceSource.includes('data-chat-target'), "Voice module is not wired to one-to-one chats");
   assert(voiceSource.includes('data-post-id'), "Voice module is not wired to comments");
