@@ -4824,6 +4824,28 @@ if (
     }
 
     if (
+      /^(who am i|who am i on rizora|what is my name|whats my name|what is my username|whats my username|my username|my account)$/.test(knownRizoraIdentityAnswer)
+    ) {
+      const identityName = String(user.displayName || user.username || "Creator").trim();
+      const identityHandle = String(user.publicUsername || user.username || "").replace(/^@/, "").trim();
+      const verified = user.verified === true || user.verificationStatus === "verified";
+      return sendJSON(
+        res,
+        200,
+        {
+          success: true,
+          provider: "rizora",
+          deterministic: true,
+          reply:
+            "You are " + identityName + (identityHandle ? " (@" + identityHandle + ")" : "") +
+            ". You're signed in to RIZORA, and I can recognize this account in our current session." +
+            " Your current points are " + Number(user.points || 0) + "." +
+            (verified ? " Your RIZORA account is verified." : " Your RIZORA account is not currently marked as verified.")
+        }
+      );
+    }
+
+    if (
       /^(what is rizora|what does rizora do)$/.test(knownRizoraIdentityAnswer)
     ) {
       return sendJSON(
