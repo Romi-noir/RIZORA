@@ -88,4 +88,4 @@ assert(server.includes("publishDueSchedules("),"Schedule publisher wiring is mis
 assert(server.includes("db.rzV2.schedules = db.rzV2.schedules || []"),"Schedule storage initialization is missing.");
 
 assert(read("vercel.json").includes('"outputDirectory": "."'),"Vercel static deployment config is missing.");
-console.log("RIZORA predeploy audit: PASS");
+const rootEntries=fs.readdirSync(root);\nfor(const name of rootEntries){\n  assert(!/(^|[._-])(backup|before-|quarantine)([._-]|$)/i.test(name),"Legacy backup artifact is tracked at repository root: "+name);\n  assert(name !== "sw.js","Duplicate legacy service worker sw.js is present; use service-worker.js only.");\n}\nassert(!index.includes("RIZORA — Creator OS"),"Legacy Creator OS title remains in the production shell.");\nconsole.log("RIZORA predeploy audit: PASS");
