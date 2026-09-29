@@ -9594,31 +9594,55 @@ if (
   method === "GET" &&
   pathname === "/api/official/profiles"
 ) {
+  const canonical = [
+    { username: "rizora", publicUsername: "rizora", verificationType: "official_platform", accountType: "platform" },
+    { username: "romi", publicUsername: "romi.noir", verificationType: "official_creator", accountType: "creator" }
+  ];
 
-  const officialDb =
-    loadDB();
+  const profiles = canonical.map(function(item) {
+    const user = (db.users || []).find(function(entry) {
+      const username = normalizeUsername(entry.username);
+      const publicUsername = normalizeUsername(entry.publicUsername);
+      return username === item.username || publicUsername === item.publicUsername;
+    });
+    if (!user) return null;
 
-  officialDb.officialProfiles ||=
-    [];
+    const profile = (db.creatorProfiles && db.creatorProfiles[user.id]) || {};
+    const links = user.username === "rizora"
+      ? {
+          website: "https://rizora.com.ng/",
+          tiktok: "https://www.tiktok.com/@official_rizora.hq",
+          instagram: "https://www.instagram.com/rizora.hq",
+          x: "https://x.com/Rizora_hq"
+        }
+      : {
+          website: "https://rizora.com.ng/",
+          tiktok: "https://www.tiktok.com/@romi.noir"
+        };
 
-  sendJSON(
-    res,
-    200,
-    {
-      success: true,
-      profiles:
-        officialDb
-          .officialProfiles
-          .filter(
-            profile =>
-              profile &&
-              profile.verified === true
-          )
-          .map(profile => ({
-            ...profile
-          }))
-    }
-  );
+    return {
+      id: user.id,
+      username: user.username,
+      publicUsername: user.publicUsername || item.publicUsername,
+      displayName: user.displayName || (user.username === "rizora" ? "RIZORA" : "RoMi"),
+      bio: profile.bio || user.bio || (user.username === "rizora"
+        ? "Creator growth. Content. Community. AI. Built for creators."
+        : "Artist. Developer. Creator. Builder. Creator of RIZORA."),
+      avatarUrl: profile.avatarUrl || user.avatarUrl || "/rizora-cover.png",
+      verified: true,
+      verificationStatus: "verified",
+      verificationType: user.verificationType || item.verificationType,
+      official: true,
+      accountType: user.accountType || item.accountType,
+      badgeUrl: "/assets/rizora_verified_badge.svg",
+      links
+    };
+  }).filter(Boolean);
+
+  sendJSON(res, 200, {
+    success: true,
+    profiles
+  });
 
   return;
 }
