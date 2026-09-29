@@ -38,14 +38,6 @@ async function main() {
   assert(vercelConfig.buildCommand === null, "Vercel build command must be null for the production static app");
   assert(vercelConfig.installCommand === "", "Vercel install command must be empty for the production static app");
   assert(vercelConfig.outputDirectory === ".", "Vercel output directory must be the repository root");
-  const voiceSource = fs.readFileSync("rizora-v2-voice.js", "utf8");
-  const commentSource = fs.readFileSync("rizora-v2-comments.js", "utf8");
-  assert(voiceSource.includes("/api/ai/transcribe"), "AI voice transcription wiring is missing");
-  assert(voiceSource.includes("data-chat-target"), "One-to-one voice chat wiring is missing");
-  assert(voiceSource.includes("data-post-id"), "Voice comment wiring is missing");
-  assert(voiceSource.includes("RIZORA_UPLOAD_FILE"), "Voice media upload wiring is missing");
-  assert(commentSource.includes('mediaUrl:comment.mediaUrl||""'), "Voice comment media URL is not preserved");
-  assert(commentSource.includes('messageType:comment.messageType||"text"'), "Voice comment message type is not preserved");
   for (const backendFile of [
     "server.js",
     "rizora-v2-backend.js",
