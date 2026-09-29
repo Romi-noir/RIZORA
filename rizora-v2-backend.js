@@ -201,7 +201,11 @@ async function handleRizoraV2(ctx){
   if(method==="GET"&&path==="/api/v2/search"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     var q=String(url.searchParams.get("q")||"").toLowerCase().replace(/^[@#]/,"").trim();
-    var users=db.users.filter(function(u){return String(u.username||"").toLowerCase().includes(q)||String(u.displayName||"").toLowerCase().includes(q);}).slice(0,20).map(function(u){return publicProfile(db,u);});
+    var users=db.users.filter(function(u){
+      return String(u.username||"").toLowerCase().includes(q)||
+        String(u.publicUsername||"").toLowerCase().includes(q)||
+        String(u.displayName||"").toLowerCase().includes(q);
+    }).slice(0,20).map(function(u){return publicProfile(db,u);});
     var found=db.rzV2.posts.filter(function(p){return String(p.text||"").toLowerCase().includes(q)||(p.hashtags||[]).some(function(t){return t.includes(q);});}).slice(-30).reverse().map(function(p){return decorate(db,p);}).filter(Boolean);
     var hashtags=Object.entries(db.rzV2.hashtags).filter(function(x){return x[0].includes(q);}).slice(0,20).map(function(x){return {tag:x[0],count:x[1]};});
     ctx.sendJSON(res,200,{success:true,users:users,posts:found,hashtags:hashtags});return true;
