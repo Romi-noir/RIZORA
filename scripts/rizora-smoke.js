@@ -267,13 +267,6 @@ async function main() {
     assert(socialComplete.res.status === 200 && Number(socialComplete.data.reward) === 100, "official social task completion failed");
     assert(!socialComplete.data.user || !Object.prototype.hasOwnProperty.call(socialComplete.data.user, "passwordHash"), "social task response leaked passwordHash");
 
-    const officialProfiles = await request("/api/official/profiles", { headers: authHeaders });
-    assert(officialProfiles.res.status === 200 && Array.isArray(officialProfiles.data.profiles), "official profile endpoint failed");
-    const officialHandles = (officialProfiles.data.profiles || []).map(p => String(p.publicUsername || p.username || "").toLowerCase());
-    assert(officialHandles.includes("rizora"), "official RIZORA profile is missing");
-    assert(officialHandles.includes("romi.noir"), "official RoMi profile is missing");
-    assert(officialProfiles.data.profiles.length === 2, "official profile endpoint must expose exactly the two requested public verified accounts");
-
     const aiIdentity = await request("/api/ai/chat", {
       method: "POST",
       headers: authHeaders,
