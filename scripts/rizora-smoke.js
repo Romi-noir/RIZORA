@@ -131,6 +131,20 @@ async function main() {
     assert(feed.res.status === 200 && Array.isArray(feed.data.posts), "feed failed");
 
     const tasks = await request("/api/tasks", { headers: authHeaders });
+    const corsPreflight = await request("/api/v2/profile", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "http://localhost:3000",
+        "Access-Control-Request-Method": "PATCH"
+      }
+    });
+    assert(corsPreflight.res.status === 204 && /PATCH/i.test(corsPreflight.res.headers.get("access-control-allow-methods") || ""), "CORS preflight does not allow PATCH requests");
+
+    const officialProfiles = await request("/api/official/profiles");
+    const officialIds = new Set((officialProfiles.data.profiles || []).map(p => p.id));
+    assert(officialProfiles.res.status === 200 && officialIds.has("official_rizora") && officialIds.has("official_romi") && (officialProfiles.data.profiles || []).filter(p => p.verified === true).length >= 2, "official verified identity profiles are incomplete");
+
+
     assert(tasks.res.status === 200 && Array.isArray(tasks.data.tasks), "tasks failed");
 
     const socialTasks = await request("/api/social/tasks", { headers: authHeaders });
