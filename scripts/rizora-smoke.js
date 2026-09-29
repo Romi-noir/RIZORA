@@ -140,6 +140,13 @@ async function main() {
     });
     assert(aiIdentity.res.status === 200 && aiIdentity.data.deterministic === true && /creator of RIZORA/i.test(aiIdentity.data.reply || ""), "RIZORA AI identity answer failed: " + aiIdentity.res.status + " " + JSON.stringify(aiIdentity.data));
 
+    const aiUserIdentity = await request("/api/ai/chat", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ message: "who am i" })
+    });
+    assert(aiUserIdentity.res.status === 200 && aiUserIdentity.data.deterministic === true && new RegExp(username, "i").test(aiUserIdentity.data.reply || ""), "RIZORA AI signed-in identity answer failed: " + aiUserIdentity.res.status + " " + JSON.stringify(aiUserIdentity.data));
+
     const media = await request("/api/v2/media/config", { headers: authHeaders });
     assert(media.res.status === 200 && Number(media.data.maxFileBytes) > 0, "media config failed");
 
