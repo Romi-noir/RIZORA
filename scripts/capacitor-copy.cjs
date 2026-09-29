@@ -25,6 +25,8 @@ copyFile("index.html");
 copyFile("manifest.json");
 copyFile("service-worker.js");
 copyFile("rizora-cover.png");
+copyFile("assets/rizora_verified_badge.svg");
+copyFile("assets/rizora_verified_mark.svg");
 
 const refs = new Set();
 for (const match of index.matchAll(/(?:src|href)=["']\/([^"']+)["']/gi)) {
