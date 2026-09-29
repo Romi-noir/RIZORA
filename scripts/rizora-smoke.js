@@ -89,7 +89,7 @@ async function main() {
   assert(suiteSource.includes("function modal("), "Creator Suite modal constructor is missing");
   assert(suiteSource.includes("function toast("), "Creator Suite toast helper is missing");
   assert(suiteSource.includes("bindSuiteButtons(b);"), "Creator Suite controls are not bound");
-  assert(serviceWorkerSource.includes('RIZORA_CACHE="rizora-v2-shell-v26-voice-ai"'), "PWA cache version must be v26");
+  assert(/RIZORA_CACHE="rizora-v2-shell-v\\d+-voice-badge-ai"/.test(serviceWorkerSource), "PWA cache version must be a voice/badge cache");
   assert(!serviceWorkerSource.includes('"/rizora-v2-growth.js"'), "PWA cache must not contain the backend-only growth module");
   assert(vercelConfig.framework === null, "Vercel framework must be explicitly set to Other/null for the static root app");
   assert(vercelConfig.buildCommand === null || typeof vercelConfig.buildCommand === "string", "Vercel build command must be valid for the static root app");
@@ -119,6 +119,7 @@ async function main() {
   assert(require("fs").existsSync("assets/rizora_verified_badge.svg"), "RIZORA verified badge asset is missing");
   assert(serviceWorkerSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not cached by the PWA shell");
   assert(serviceWorkerSource.includes("/assets/rizora_verified_badge.svg"), "RIZORA verified badge is not cached by the PWA shell");
+  assert(serviceWorkerSource.includes("/assets/rizora_verified_mark.svg"), "RIZORA verified mark is not cached by the PWA shell");
   assert(serviceWorkerSource.includes("/rizora-v2-voice.js"), "RIZORA voice module is not cached by the PWA shell");
   assert(premiumUiSource.includes("premium_plus"), "Premium+ UI wiring is missing");
   assert(premiumUiSource.includes('plan:"premium_plus"'), "Premium+ checkout plan is missing");
