@@ -381,11 +381,22 @@ async function openComments(postId){
     wrap.onclick=function(e){if(e.target===wrap)wrap.remove();};
     wrap.querySelector("#rzCommentForm").onsubmit=async function(e){
       e.preventDefault();var text=wrap.querySelector("#rzCommentText").value.trim();if(!text)return;
-      try{await api("/api/v2/posts/"+encodeURIComponent(postId)+"/comment",{method:"POST",body:JSON.stringify({text:text})});await openComments(postId);}catch(err){wrap.querySelector("#rzCommentStatus").textContent=err.message;}
+      try{var parentId=wrap.querySelector("#rzCommentForm").getAttribute("data-comment-parent")||null;await api("/api/v2/posts/"+encodeURIComponent(postId)+"/comment",{method:"POST",body:JSON.stringify({text:text,parentId:parentId})});await openComments(postId);}catch(err){wrap.querySelector("#rzCommentStatus").textContent=err.message;}
     };
-    wrap.querySelectorAll("[data-comment-reply]").forEach(function(btn){btn.onclick=async function(){
-      var text=window.prompt("Reply to @"+btn.getAttribute("data-comment-user"));if(!text||!text.trim())return;
-      try{await api("/api/v2/posts/"+encodeURIComponent(postId)+"/comment",{method:"POST",body:JSON.stringify({text:text.trim(),parentId:btn.getAttribute("data-comment-reply")})});await openComments(postId);}catch(err){toast(err.message);}
+    wrap.querySelectorAll("[data-comment-reply]").forEach(function(btn){btn.onclick=function(){
+      var form=wrap.querySelector("#rzCommentForm"),parentId=btn.getAttribute("data-comment-reply"),username=btn.getAttribute("data-comment-user")||"creator";
+      if(!form)return;
+      if(form.getAttribute("data-comment-parent")===parentId){
+        form.removeAttribute("data-comment-parent");
+        wrap.querySelector("#rzCommentText").placeholder="Write a comment…";
+        btn.classList.remove("primary");
+        return;
+      }
+      form.setAttribute("data-comment-parent",parentId);
+      wrap.querySelector("#rzCommentText").placeholder="Reply to @"+username+"…";
+      wrap.querySelector("#rzCommentText").focus();
+      wrap.querySelectorAll("[data-comment-reply]").forEach(function(x){x.classList.remove("primary");});
+      btn.classList.add("primary");
     };});
   }catch(err){toast(err.message);}
 }
