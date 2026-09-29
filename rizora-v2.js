@@ -276,11 +276,11 @@ function boostsView(){
 }
 function officialView(){
   var rows=(state.official||[]).map(function(p){
-    var links="";
-    if(p.website)links+='<a class="rz-btn" href="'+esc(p.website)+'" target="_blank" rel="noopener">Website</a>';
-    if(p.tiktok)links+='<a class="rz-btn" href="'+esc(p.tiktok)+'" target="_blank" rel="noopener">TikTok</a>';
-    if(p.instagram)links+='<a class="rz-btn" href="'+esc(p.instagram)+'" target="_blank" rel="noopener">Instagram</a>';
-    if(p.x)links+='<a class="rz-btn" href="'+esc(p.x)+'" target="_blank" rel="noopener">X</a>';
+    var linksData=p.links||p||{},links="";
+    if(linksData.website)links+='<a class="rz-btn" href="'+esc(linksData.website)+'" target="_blank" rel="noopener noreferrer">Website</a>';
+    if(linksData.tiktok)links+='<a class="rz-btn" href="'+esc(linksData.tiktok)+'" target="_blank" rel="noopener noreferrer">TikTok</a>';
+    if(linksData.instagram)links+='<a class="rz-btn" href="'+esc(linksData.instagram)+'" target="_blank" rel="noopener noreferrer">Instagram</a>';
+    if(linksData.x)links+='<a class="rz-btn" href="'+esc(linksData.x)+'" target="_blank" rel="noopener noreferrer">X</a>';
     return '<div class="rz-card"><div class="rz-post-head">'+avatar(p)+'<div><strong>'+esc(p.displayName||p.username)+'</strong> <span class="rz-badge ok">✓ Verified</span><div class="rz-mini">@'+esc(p.publicUsername||p.username)+'</div></div></div><div class="rz-verified-showcase"><img src="/assets/rizora_verified_badge.svg" alt="RIZORA Verified badge"><div><div class="rz-kicker">RIZORA VERIFIED</div><strong>Creator Verified</strong><div class="rz-mini">'+esc(p.verificationType||"official")+'</div></div></div><div class="rz-actions">'+links+"</div></div>";
   }).join("");
   if(!rows)rows="<div class='rz-empty'>Official identities are loading.</div>";
