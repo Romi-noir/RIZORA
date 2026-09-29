@@ -10,6 +10,7 @@ function ensureBusiness(db) {
   db.rzV2.productPurchases = db.rzV2.productPurchases || [];
   db.rzV2.products = db.rzV2.products || [];
   db.rzV2.transactions = db.rzV2.transactions || [];
+  db.rzV2.adCampaigns = db.rzV2.adCampaigns || [];
 }
 
 function currentUser(ctx) {
@@ -155,6 +156,282 @@ async function handleRizoraBusiness(ctx) {
   var method = String(req.method || "GET").toUpperCase();
 
   ensureBusiness(db);
+
+  // ---------- RIZORA ADS ----------
+  // Registered RIZORA accounts may run ads only with an active RIZORA+ (Premium+)
+  // subscription. External businesses may purchase an ad campaign through Paystack.
+  function isRizoraPlus(account) {
+    if (!account) return false;
+    var sub = (db.rzV2.premiumSubscriptions || []).find(function (x) {
+      return x.userId === account.id &&
+        ["active", "attention", "non-renewing"].includes(x.status) &&
+        (x.plan === "premium_plus" || x.paystackPlanCode === String(process.env.PAYSTACK_PREMIUM_PLUS_PLAN_CODE || "").trim());
+    });
+    return !!sub;
+  }
+
+  function adSafeUrl(value) {
+    var raw = safe(ctx, value, 1200);
+    if (!raw) return "";
+    try {
+      var parsed = new URL(raw);
+      if (!["http:", "https:"].includes(parsed.protocol)) return "";
+      return parsed.toString();
+    } catch (_) {
+      return "";
+    }
+  }
+
+  if (path === "/api/v2/ads/access" && method === "GET") {
+    ctx.sendJSON(res, 200, {
+      success: true,
+      registered: !!user,
+      userId: user ? user.id : null,
+      rizoraPlus: !!(user && isRizoraPlus(user)),
+      paymentProvider: "paystack",
+      currency: String(process.env.RIZORA_CURRENCY || "NGN"),
+      externalMinimumNaira: Number(process.env.RIZORA_EXTERNAL_AD_MIN_NAIRA || 1000),
+      externalMaximumNaira: Number(process.env.RIZORA_EXTERNAL_AD_MAX_NAIRA || 10000000)
+    });
+    return true;
+  }
+
+  if (path === "/api/v2/ads" && method === "GET") {
+    var nowMs = Date.now();
+    var activeAds = (db.rzV2.adCampaigns || []).filter(function (ad) {
+      return ad.status === "active" &&
+        (!ad.expiresAt || new Date(ad.expiresAt).getTime() > nowMs);
+    }).sort(function (a, b) {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    }).slice(0, 10).map(function (ad) {
+      ad.impressions = Number(ad.impressions || 0) + 1;
+      return {
+        id: ad.id,
+        title: ad.title,
+        description: ad.description,
+        imageUrl: ad.imageUrl || "",
+        destinationUrl: ad.destinationUrl,
+        advertiserName: ad.businessName || "Business advertiser",
+        createdAt: ad.createdAt,
+        expiresAt: ad.expiresAt || null
+      };
+    });
+    ctx.saveDB(db);
+    ctx.sendJSON(res, 200, { success: true, ads: activeAds });
+    return true;
+  }
+
+  if (path === "/api/v2/ads/mine" && method === "GET") {
+    if (!user) {
+      ctx.sendError(res, 401, "Authentication required.");
+      return true;
+    }
+    var mine = (db.rzV2.adCampaigns || []).filter(function (ad) {
+      return ad.userId === user.id;
+    }).sort(function (a, b) {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    }).map(function (ad) {
+      return Object.assign({}, ad, {
+        canManage: true,
+        billingType: ad.billingType || "rizora_plus"
+      });
+    });
+    ctx.sendJSON(res, 200, { success: true, rizoraPlus: isRizoraPlus(user), ads: mine.slice(0, 100) });
+    return true;
+  }
+
+  if (path === "/api/v2/ads" && method === "POST") {
+    if (!user) {
+      ctx.sendError(res, 401, "Log in to run ads from a RIZORA account.");
+      return true;
+    }
+    if (!isRizoraPlus(user)) {
+      ctx.sendError(res, 403, "RIZORA+ is required for registered businesses to run ads.");
+      return true;
+    }
+    var body;
+    try {
+      body = await readBody(req);
+    } catch (e) {
+      ctx.sendError(res, 400, e.message);
+      return true;
+    }
+    var title = safe(ctx, body.title, 120);
+    var description = safe(ctx, body.description, 500);
+    var businessName = safe(ctx, body.businessName, 120);
+    var destinationUrl = adSafeUrl(body.destinationUrl);
+    var imageUrl = adSafeUrl(body.imageUrl);
+    var durationDays = Math.max(1, Math.min(90, Number(body.durationDays || 7)));
+    if (!businessName || !title || !destinationUrl) {
+      ctx.sendError(res, 400, "Business name, ad title and a valid destination URL are required.");
+      return true;
+    }
+    var ad = {
+      id: ctx.uid("ad_"),
+      userId: user.id,
+      advertiserType: "rizora_registered",
+      billingType: "rizora_plus",
+      businessName,
+      title,
+      description,
+      imageUrl,
+      destinationUrl,
+      amountNaira: 0,
+      currency: String(process.env.RIZORA_CURRENCY || "NGN"),
+      reference: "",
+      status: "active",
+      durationDays: Math.round(durationDays),
+      expiresAt: new Date(Date.now() + durationDays * 86400000).toISOString(),
+      impressions: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    db.rzV2.adCampaigns.push(ad);
+    db.notifications = db.notifications || [];
+    db.notifications.push({
+      id: ctx.uid("notif_"),
+      userId: user.id,
+      title: "RIZORA+ ad campaign live",
+      message: "Your business ad "" + ad.title + "" is now live.",
+      type: "ads",
+      read: false,
+      createdAt: new Date().toISOString()
+    });
+    ctx.saveDB(db);
+    ctx.sendJSON(res, 201, { success: true, ad: ad });
+    return true;
+  }
+
+  if (path === "/api/v2/ads/external/initialize" && method === "POST") {
+    var ext;
+    try {
+      ext = await readBody(req);
+    } catch (e) {
+      ctx.sendError(res, 400, e.message);
+      return true;
+    }
+    var businessName = safe(ctx, ext.businessName, 120);
+    var email = safe(ctx, ext.email, 180).toLowerCase();
+    var title = safe(ctx, ext.title, 120);
+    var description = safe(ctx, ext.description, 500);
+    var destinationUrl = adSafeUrl(ext.destinationUrl);
+    var imageUrl = adSafeUrl(ext.imageUrl);
+    var amountNaira = Number(ext.amountNaira);
+    var durationDays = Math.max(1, Math.min(90, Number(ext.durationDays || 7)));
+    var minNaira = Number(process.env.RIZORA_EXTERNAL_AD_MIN_NAIRA || 1000);
+    var maxNaira = Number(process.env.RIZORA_EXTERNAL_AD_MAX_NAIRA || 10000000);
+    if (!businessName || !email.includes("@") || !title || !destinationUrl) {
+      ctx.sendError(res, 400, "Business name, valid email, ad title and destination URL are required.");
+      return true;
+    }
+    if (!Number.isFinite(amountNaira) || amountNaira < minNaira || amountNaira > maxNaira) {
+      ctx.sendError(res, 400, "Ad budget must be between ₦" + minNaira.toLocaleString() + " and ₦" + maxNaira.toLocaleString() + ".");
+      return true;
+    }
+    var secret = String(process.env.PAYSTACK_SECRET_KEY || "").trim();
+    if (!secret) {
+      ctx.sendError(res, 503, "Paystack is not configured on the RIZORA server yet.");
+      return true;
+    }
+    var reference = "RZA-AD-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+    var ad = {
+      id: ctx.uid("ad_"),
+      userId: null,
+      advertiserType: "external",
+      billingType: "paystack",
+      businessName,
+      email,
+      title,
+      description,
+      imageUrl,
+      destinationUrl,
+      amountNaira,
+      currency: String(process.env.RIZORA_CURRENCY || "NGN"),
+      reference,
+      status: "pending_payment",
+      durationDays: Math.round(durationDays),
+      expiresAt: new Date(Date.now() + durationDays * 86400000).toISOString(),
+      impressions: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    var payload = {
+      email: email,
+      amount: String(Math.round(amountNaira * 100)),
+      currency: ad.currency,
+      reference: reference,
+      callback_url: String(process.env.RIZORA_PAYMENT_CALLBACK || "https://rizora.com.ng/"),
+      metadata: JSON.stringify({
+        purpose: "rizora_external_ad",
+        adId: ad.id,
+        businessName: businessName,
+        email: email
+      })
+    };
+    try {
+      var response = await fetch("https://api.paystack.co/transaction/initialize", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + secret,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      var result = await response.json();
+      if (!response.ok || !result.status || !result.data) {
+        ctx.sendError(res, 502, result.message || "Unable to initialize Paystack ad payment.");
+        return true;
+      }
+      ad.authorizationUrl = result.data.authorization_url || "";
+      ad.accessCode = result.data.access_code || "";
+      ad.reference = result.data.reference || reference;
+      ad.updatedAt = new Date().toISOString();
+      db.rzV2.adCampaigns.push(ad);
+      db.rzV2.transactions.push({
+        id: ctx.uid("tx_"),
+        userId: null,
+        provider: "paystack",
+        reference: ad.reference,
+        amountNaira: amountNaira,
+        amountSubunit: Math.round(amountNaira * 100),
+        currency: ad.currency,
+        purpose: "rizora_external_ad",
+        campaignId: ad.id,
+        status: "initialized",
+        authorizationUrl: ad.authorizationUrl,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      ctx.saveDB(db);
+      ctx.sendJSON(res, 200, {
+        success: true,
+        authorizationUrl: ad.authorizationUrl,
+        reference: ad.reference,
+        adId: ad.id,
+        amountNaira: amountNaira
+      });
+    } catch (e) {
+      ctx.sendError(res, 502, "Paystack ad payment could not be initialized.");
+    }
+    return true;
+  }
+
+  var adVerify = path.match(/^/api/v2/ads/external/verify/([^/]+)$/);
+  if (adVerify && method === "GET") {
+    var verifyRef = decodeURIComponent(adVerify[1]);
+    var verifyAd = (db.rzV2.adCampaigns || []).find(function (ad) { return ad.reference === verifyRef; });
+    if (!verifyAd) {
+      ctx.sendError(res, 404, "Ad payment reference not found.");
+      return true;
+    }
+    ctx.sendJSON(res, 200, {
+      success: true,
+      status: verifyAd.status,
+      active: verifyAd.status === "active",
+      adId: verifyAd.id
+    });
+    return true;
+  }
 
   if (path === "/api/v2/business/summary" && method === "GET") {
     if (!user) {
