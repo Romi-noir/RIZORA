@@ -224,7 +224,7 @@ function json(res, statusCode, data, extraHeaders = {}) {
     "Access-Control-Allow-Credentials": "true",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
+    "Permissions-Policy": "geolocation=(), camera=(), microphone=(self)",
     ...extraHeaders
   });
 
@@ -4849,6 +4849,9 @@ if (
       "When a user asks who Romi is in the RIZORA context, identify RoMi as the creator of RIZORA rather than switching to unrelated people with the same name. " +
       "Help creators with content ideas, hooks, captions, social growth, profile improvement, branding, analytics, boost strategy, tasks and practical next steps. " +
       "For casual messages, reply naturally like a creator copilot instead of sounding like a generic search engine. " +
+      "Recognize the signed-in creator from the supplied account and profile context, and use their display name or username naturally when relevant. " +
+      "Never confuse the signed-in user with RoMi or another creator unless the user explicitly asks about RoMi. " +
+      "Use recent conversation context when supplied, but do not invent memories that are not present. " +
       "Keep RIZORA-specific answers grounded in first-party context and clearly separate known facts from anything not specified. " +
       "Be concise, useful, modern and natural. " +
       "Never claim to have performed an external social action. " +
@@ -4874,8 +4877,17 @@ await rizoraGroqCompletion({
             publicUsername: user.publicUsername || user.username,
             displayName: user.displayName || user.username,
             verified: user.verified === true || user.verificationStatus === "verified",
-            points: Number(user.points || 0)
-          }
+            points: Number(user.points || 0),
+            role: user.role || "user"
+          },
+          profile: {
+            bio: String((db.creatorProfiles && db.creatorProfiles[user.id] && db.creatorProfiles[user.id].bio) || user.bio || "").slice(0,600),
+            category: String((db.creatorProfiles && db.creatorProfiles[user.id] && db.creatorProfiles[user.id].category) || user.category || "").slice(0,120),
+            location: String((db.creatorProfiles && db.creatorProfiles[user.id] && db.creatorProfiles[user.id].location) || user.location || "").slice(0,120)
+          },
+          recentConversation: Array.isArray(body.history) ? body.history.slice(-8).map(function(item){
+            return {role:item && item.role === "ai" ? "assistant" : "user",text:String(item && item.text || "").slice(0,1200)};
+          }) : []
         }) +
         "\nUser request: " +
         message
