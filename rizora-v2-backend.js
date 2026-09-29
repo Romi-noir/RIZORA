@@ -143,7 +143,7 @@ async function handleRizoraV2(ctx){
     rawComments.forEach(function(c){
       var author=db.users.find(function(u){return u.id===c.userId;});
       if(!author)return;
-      commentMap[c.id]={id:c.id,postId:c.postId,userId:c.userId,text:c.text,parentId:c.parentId||null,createdAt:c.createdAt,author:publicProfile(db,author),replies:[]};
+      commentMap[c.id]={id:c.id,postId:c.postId,userId:c.userId,text:c.text||"",mediaUrl:c.mediaUrl||"",mimeType:c.mimeType||"",messageType:c.messageType||"text",parentId:c.parentId||null,createdAt:c.createdAt,author:publicProfile(db,author),replies:[]};
     });
     rawComments.forEach(function(c){
       var row=commentMap[c.id];
@@ -162,17 +162,21 @@ async function handleRizoraV2(ctx){
     var postId=match[1],action=match[2],postTarget=db.rzV2.posts.find(function(p){return p.id===postId;});
     if(!postTarget){ctx.sendError(res,404,"Post not found.");return true;}
     if(action==="comment"){
-      var cb=await body(req),ct=ctx.cleanString(cb.text,1000),parentId=ctx.cleanString(cb.parentId,120)||null;
-      if(!ct){ctx.sendError(res,400,"Comment text is required.");return true;}
+      var cb=await body(req),ct=ctx.cleanString(cb.text,1000),parentId=ctx.cleanString(cb.parentId,120)||null,mediaId=ctx.cleanString(cb.mediaId,160),voiceMedia=null;
+      if(mediaId){
+        voiceMedia=(db.rzV2.media||[]).find(function(m){return m.id===mediaId&&m.ownerId===user.id&&String(m.mimeType||"").indexOf("audio/")===0;})||null;
+        if(!voiceMedia){ctx.sendError(res,404,"Voice media not found.");return true;}
+      }
+      if(!ct&&!voiceMedia){ctx.sendError(res,400,"Add text or a voice recording.");return true;}
       if(parentId){
         var parentComment=(db.rzV2.comments||[]).find(function(c){return c.id===parentId&&c.postId===postId;});
         if(!parentComment){ctx.sendError(res,400,"Reply target not found.");return true;}
       }
-      var cm=moderate(db,user,ctx,ct,postId);
+      var cm=ct?moderate(db,user,ctx,ct,postId):{allowed:true};
       if(!cm.allowed){ctx.sendJSON(res,422,Object.assign({success:false,code:"CONTENT_POLICY_VIOLATION"},cm));return true;}
       var held=false,holdReason="";
-      if(postTarget.userId!==user.id){var creatorControls=controlsFor(db,postTarget.userId);var heldCheck=commentBlockedByControl(creatorControls,ct);held=heldCheck.blocked;holdReason=heldCheck.reason;}
-      db.rzV2.comments.push({id:ctx.uid("comment_"),postId:postId,userId:user.id,text:ct,parentId:parentId,hidden:held,moderationReason:holdReason,createdAt:new Date().toISOString()});
+      if(postTarget.userId!==user.id&&ct){var creatorControls=controlsFor(db,postTarget.userId);var heldCheck=commentBlockedByControl(creatorControls,ct);held=heldCheck.blocked;holdReason=heldCheck.reason;}
+      db.rzV2.comments.push({id:ctx.uid("comment_"),postId:postId,userId:user.id,text:ct,mediaUrl:voiceMedia?voiceMedia.url:"",mimeType:voiceMedia?voiceMedia.mimeType:"",messageType:voiceMedia?"voice":"text",parentId:parentId,hidden:held,moderationReason:holdReason,createdAt:new Date().toISOString()});
       if(postTarget.userId!==user.id)notify(db,postTarget.userId,held?"Comment held for review":(parentId?"New reply":"New comment"),"@"+user.username+(held?" left a comment that matched your creator filters and was held for review.":(parentId?" replied to a comment on your post.":" commented on your post.")),"comment");
       ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,hidden:held});return true;
     }
