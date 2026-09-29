@@ -291,7 +291,8 @@ async function main() {
     });
     assert(voiceUpload.res.status === 201 && voiceUpload.data.media && voiceUpload.data.media.id, "voice media upload failed");
 
-    const voiceMessage = await request("/api/v2/messages/" + encodeURIComponent(username), {
+    const voiceRecipient = "romi.noir";
+    const voiceMessage = await request("/api/v2/messages/" + encodeURIComponent(voiceRecipient), {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({
@@ -301,7 +302,7 @@ async function main() {
     });
     assert(voiceMessage.res.status === 201, "voice one-to-one message failed");
 
-    const voiceThread = await request("/api/v2/messages/" + encodeURIComponent(username), { headers: authHeaders });
+    const voiceThread = await request("/api/v2/messages/" + encodeURIComponent(voiceRecipient), { headers: authHeaders });
     assert(voiceThread.res.status === 200 && voiceThread.data.messages.some(m => m.messageType === "voice" && m.mediaUrl), "voice one-to-one message did not round-trip");
 
     const postForVoice = await request("/api/v2/posts", {
