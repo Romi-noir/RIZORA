@@ -115,6 +115,7 @@ async function main() {
       })
     });
     assert(signup.res.status === 201, "signup failed: " + JSON.stringify(signup.data));
+    assert(signup.data.emailDelivery && typeof signup.data.emailDelivery.configured === "boolean", "signup email delivery status is missing");
 
     const cookie = cookieFrom(signup.res);
     assert(cookie.startsWith("rizora_session="), "signup did not return a session cookie");
