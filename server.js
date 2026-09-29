@@ -4671,18 +4671,6 @@ if (
     );
     return;
   }
-
-  if (
-    task.creatorId &&
-    task.creatorId === user.id
-  ) {
-    sendError(
-      res,
-      403,
-      "You cannot complete your own task."
-    );
-    return;
-  }
   const cooldown =
     getCooldown(
       db,
