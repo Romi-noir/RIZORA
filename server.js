@@ -1147,16 +1147,55 @@ const RIZORA_GENERATED_PLATFORMS = [
   { key: "spotify", name: "Spotify" }
 ];
 
-function rizoraGeneratedSeen(db, userId, key) {
+function rizoraTaskSeenState(db, userId) {
   db.taskSeen ||= {};
-  db.taskSeen[userId] ||= {};
-  return !!db.taskSeen[userId][`generated:${key}`];
+
+  const current = db.taskSeen[userId];
+
+  if (Array.isArray(current)) {
+    const state = {
+      completed: current.slice(-1000),
+      generated: {}
+    };
+    db.taskSeen[userId] = state;
+    return state;
+  }
+
+  if (!current || typeof current !== "object") {
+    db.taskSeen[userId] = {
+      completed: [],
+      generated: {}
+    };
+    return db.taskSeen[userId];
+  }
+
+  if (!Array.isArray(current.completed)) {
+    current.completed = [];
+  }
+
+  if (!current.generated || typeof current.generated !== "object" || Array.isArray(current.generated)) {
+    current.generated = {};
+  }
+
+  return current;
+}
+
+function rizoraGeneratedSeen(db, userId, key) {
+  const state = rizoraTaskSeenState(db, userId);
+  return !!state.generated[`generated:${key}`];
 }
 
 function rizoraMarkGeneratedSeen(db, userId, key) {
-  db.taskSeen ||= {};
-  db.taskSeen[userId] ||= {};
-  db.taskSeen[userId][`generated:${key}`] = Date.now();
+  const state = rizoraTaskSeenState(db, userId);
+  state.generated[`generated:${key}`] = Date.now();
+
+  const generatedKeys = Object.keys(state.generated);
+  if (generatedKeys.length > 1000) {
+    generatedKeys
+      .sort((a, b) => Number(state.generated[a]) - Number(state.generated[b]))
+      .slice(0, generatedKeys.length - 1000)
+      .forEach((item) => delete state.generated[item]);
+  }
 }
 
 function rizoraGenerateFreshTasks(db, userId) {
