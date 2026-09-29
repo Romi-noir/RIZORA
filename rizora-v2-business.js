@@ -358,7 +358,7 @@ async function handleRizoraBusiness(ctx) {
       reference,
       status: "pending_payment",
       durationDays: Math.round(durationDays),
-      expiresAt: new Date(Date.now() + durationDays * 86400000).toISOString(),
+      expiresAt: null,
       impressions: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -424,7 +424,7 @@ async function handleRizoraBusiness(ctx) {
     return true;
   }
 
-  var adVerify = path.match(/^/api/v2/ads/external/verify/([^/]+)$/);
+  var adVerify = path.match(/^\/api\/v2\/ads\/external\/verify\/([^/]+)$/);
   if (adVerify && method === "GET") {
     var verifyRef = decodeURIComponent(adVerify[1]);
     var verifyAd = (db.rzV2.adCampaigns || []).find(function (ad) { return ad.reference === verifyRef; });
