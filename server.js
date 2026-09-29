@@ -10,7 +10,6 @@ const crypto = require("crypto");
 require("dotenv").config();
 const { OAuth2Client } =
   require("google-auth-library");
-const { configured: rizoraEmailConfigured, sendRizoraWelcomeEmail } = require("./rizora-email");
 const { handleRizoraV2 } = require("./rizora-v2-backend");
 const { publishDueSchedules } = require("./rizora-v2-growth");
 const { handleRizoraGlobal } = require("./rizora-v2-global");
@@ -108,7 +107,6 @@ function loadDB() {
     db.experiments ||= [];
     db.userSettings ||= {};
     db.supportTickets ||= [];
-    db.emailEvents ||= [];
 
     return db;
   } catch (error) {
@@ -309,7 +307,6 @@ function safeUser(user) {
   return {
     id: user.id,
     username: user.username,
-    publicUsername: user.publicUsername || user.username,
     displayName: user.displayName || user.username,
     email: user.email || "",
     role: user.role || "user",
@@ -327,12 +324,6 @@ function safeUser(user) {
     verified:
       user.verified === true ||
       user.verificationStatus === "verified",
-
-    verifiedBadgeUrl:
-      (user.verified === true ||
-       user.verificationStatus === "verified")
-        ? "/assets/rizora_verified_mark.svg"
-        : "",
 
     verificationStatus:
       user.verificationStatus || "unverified",
@@ -377,85 +368,39 @@ function randomReferralCode(username) {
     .toUpperCase()}`;
 }
 
-function queueRizoraWelcomeEmail(db,user,req){
-  db.emailEvents ||= [];
-  const event={
-    id:uid("email_"),
-    type:"welcome",
-    userId:user.id,
-    to:normalizeEmail(user.email),
-    status:"queued",
-    createdAt:new Date().toISOString()
-  };
-  db.emailEvents.unshift(event);
-  if(db.emailEvents.length>2000)db.emailEvents=db.emailEvents.slice(0,2000);
-
-  if(!rizoraEmailConfigured()){
-    event.status="skipped";
-    event.reason="EMAIL_PROVIDER_NOT_CONFIGURED";
-    return {configured:false,queued:false,status:event.status};
-  }
-
-  Promise.resolve().then(function(){
-    return sendRizoraWelcomeEmail({
-      to:user.email,
-      username:user.username,
-      displayName:user.displayName,
-      referralCode:user.referralCode,
-      publicUrl:getPublicBaseURL(req)
-    });
-  }).then(function(result){
-    event.status="sent";
-    event.provider=result && result.provider || "resend";
-    event.providerId=result && result.id || "";
-    event.sentAt=new Date().toISOString();
-    saveDB(db);
-  }).catch(function(error){
-    event.status="failed";
-    event.reason=String(error && error.message || "Email delivery failed").slice(0,300);
-    event.failedAt=new Date().toISOString();
-    console.error("RIZORA welcome email failed:",event.reason);
-    try{saveDB(db);}catch(_){}
-  });
-
-  return {configured:true,queued:true,status:event.status};
-}
-
-function queueRizoraVerificationEmail(db,user,action,reason,req){
-  db.emailEvents ||= [];
-  const normalizedAction=String(action||"").toLowerCase();
-  const event={id:uid("email_"),type:"verification_"+normalizedAction,userId:user.id,to:normalizeEmail(user.email),status:"queued",createdAt:new Date().toISOString()};
-  db.emailEvents.unshift(event);
-  if(db.emailEvents.length>2000)db.emailEvents=db.emailEvents.slice(0,2000);
-  if(!rizoraEmailConfigured()){event.status="skipped";event.reason="EMAIL_PROVIDER_NOT_CONFIGURED";return {configured:false,queued:false,status:event.status};}
-  const name=String(user.displayName||user.username||"Creator").trim().slice(0,120);
-  const username=String(user.publicUsername||user.username||"creator").replace(/^@/,"").trim().slice(0,80);
-  const why=String(reason||"").trim().slice(0,500);
-  const isVerified=normalizedAction==="approve"||normalizedAction==="verify";
-  const statusLabel=isVerified?"verified":normalizedAction;
-  const safe=function(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");};
-  const base=getPublicBaseURL(req);
-  const subject=isVerified?"Your RIZORA verification is approved":"RIZORA verification update";
-  const text=["Hi "+name+",","",isVerified?"Your RIZORA creator account @"+username+" is now verified.":"Your RIZORA verification request for @"+username+" is now "+statusLabel+".",why?"Review note: "+why:"","Open RIZORA: "+base,"","RIZORA · CREATE. GROW. EARN."].filter(Boolean).join("\n");
-  const html='<div style="margin:0;background:#07050d;color:#f8f6ff;font-family:Arial,Helvetica,sans-serif;padding:32px 16px"><div style="max-width:620px;margin:0 auto;background:#100b1d;border:1px solid #33215a;border-radius:22px;padding:30px"><div style="font-size:12px;letter-spacing:4px;color:#bba8ff;font-weight:800">RIZORA</div><h1 style="margin:12px 0 8px;font-size:30px">'+(isVerified?"Verification approved":"Verification update")+'</h1><p style="color:#b8aec9;line-height:1.7">Hi '+safe(name)+', your account @'+safe(username)+' has a verification status update: <b>'+safe(statusLabel)+'</b>.</p>'+(why?'<div style="margin:18px 0;padding:14px;border-radius:14px;background:#090611;border:1px solid #2a1a49;color:#c8bfd8">Review note: '+safe(why)+'</div>':"")+'<a href="'+safe(base)+'" style="display:inline-block;padding:13px 19px;background:#7b4dff;color:#fff;text-decoration:none;border-radius:12px;font-weight:800">Open RIZORA</a></div></div>';
-  Promise.resolve().then(function(){return sendRizoraEmail({to:user.email,subject:subject,text:text,html:html});}).then(function(result){event.status="sent";event.provider=result&&result.provider||"resend";event.providerId=result&&result.id||"";event.sentAt=new Date().toISOString();saveDB(db);}).catch(function(error){event.status="failed";event.reason=String(error&&error.message||"Email delivery failed").slice(0,300);event.failedAt=new Date().toISOString();console.error("RIZORA verification email failed:",event.reason);try{saveDB(db);}catch(_){}});
-  return {configured:true,queued:true,status:event.status};
-}
-
 function getPublicBaseURL(req) {
-  const configured =
-    String(process.env.RIZORA_PUBLIC_URL || "").trim().replace(/\/+$/,"");
-  if (configured) return configured;
+  const forwardedProto =
+    String(
+      req.headers["x-forwarded-proto"] || ""
+    ).split(",")[0].trim();
 
-  const forwardedHost =
-    String(req.headers["x-forwarded-host"] || "").split(",")[0].trim();
-  const host = forwardedHost || String(req.headers.host || "").trim();
+  const protocol =
+    forwardedProto ||
+    (
+      process.env.RIZORA_PUBLIC_URL
+        ? (() => {
+            try {
+              return new URL(
+                process.env.RIZORA_PUBLIC_URL
+              ).protocol.replace(":", "");
+            } catch {
+              return "http";
+            }
+          })()
+        : "http"
+    );
 
-  if (host && /(^|\.)rizora\.com\.ng$/i.test(host)) {
-    return "https://" + host.replace(/\/+$/,"");
+  if (process.env.RIZORA_PUBLIC_URL) {
+    return String(
+      process.env.RIZORA_PUBLIC_URL
+    ).replace(/\/+$/, "");
   }
 
-  return "https://rizora.com.ng";
+  const host =
+    req.headers.host ||
+    `localhost:${PORT}`;
+
+  return `${protocol}://${host}`;
 }
 
 
@@ -1094,127 +1039,6 @@ function getCurrentUser(
 }
 
 // ============================================================
-// EMAILS
-// ============================================================
-
-function escEmail(value) {
-  return String(value == null ? "" : value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-async function sendRizoraEmail(options) {
-  const to = normalizeEmail(options && options.to);
-  const apiKey = String(process.env.RESEND_API_KEY || "").trim();
-
-  if (!to || !apiKey) {
-    return { sent: false, configured: false };
-  }
-
-  const from = String(
-    process.env.RESEND_FROM_EMAIL ||
-    "RIZORA <noreply@rizora.com.ng>"
-  ).trim();
-
-  try {
-    const headers = {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + apiKey
-    };
-
-    if (options.idempotencyKey) {
-      headers["Idempotency-Key"] = String(options.idempotencyKey);
-    }
-
-    const response = await fetch(
-      "https://api.resend.com/emails",
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          from,
-          to: [to],
-          subject: String(options.subject || "RIZORA"),
-          html: String(options.html || ""),
-          text: String(options.text || "")
-        })
-      }
-    );
-
-    const data = await response.json().catch(function() {
-      return {};
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        data.message ||
-        "RIZORA email provider rejected the request."
-      );
-    }
-
-    return {
-      sent: true,
-      configured: true,
-      id: data.id || null
-    };
-  } catch (error) {
-    console.error(
-      "RIZORA EMAIL ERROR",
-      error && error.message ? error.message : error
-    );
-
-    return {
-      sent: false,
-      configured: true,
-      error:
-        error && error.message
-          ? error.message
-          : "Email delivery failed."
-    };
-  }
-}
-
-function scheduleWelcomeEmail(user) {
-  const configured = Boolean(
-    process.env.RESEND_API_KEY &&
-    String(user && user.email || "").trim()
-  );
-
-  if (!configured) return false;
-
-  const displayName = cleanString(
-    user.displayName || user.username || "Creator",
-    80
-  );
-  const username = normalizeUsername(user.username);
-
-  void sendRizoraEmail({
-    to: user.email,
-    subject: "Welcome to RIZORA — your creator account is ready",
-    idempotencyKey: "rizora-welcome-" + user.id,
-    text:
-      "Welcome to RIZORA, " + displayName + ".\n\n" +
-      "Your @" + username + " creator account is ready. " +
-      "Create, grow and earn with RIZORA.\n\n" +
-      "Open RIZORA: https://rizora.com.ng/",
-    html:
-      '<div style="background:#08060f;color:#f8f6ff;padding:32px;font-family:Arial,sans-serif">' +
-      '<div style="max-width:620px;margin:auto;background:#120d1b;border:1px solid #2a1f3d;border-radius:20px;padding:28px">' +
-      '<div style="font-size:12px;letter-spacing:.18em;color:#bda7ff">RIZORA · CREATOR OS</div>' +
-      '<h1 style="margin:10px 0 8px">Welcome to RIZORA, ' + escEmail(displayName) + '.</h1>' +
-      '<p style="color:#cfc6dc;line-height:1.7">Your <strong>@' + escEmail(username) + '</strong> creator account is ready. Create, grow and earn with RIZORA.</p>' +
-      '<a href="https://rizora.com.ng/" style="display:inline-block;padding:12px 18px;border-radius:12px;background:#7c3aed;color:#fff;text-decoration:none;font-weight:800">Open RIZORA</a>' +
-      '<p style="margin-top:24px;color:#9389a4;font-size:12px">You received this email because this address was used to create your RIZORA account.</p>' +
-      '</div></div>'
-  });
-
-  return true;
-}
-
-// ============================================================
 // TASKS
 // ============================================================
 
@@ -1225,50 +1049,25 @@ const RIZORA_FEATURE_LAYER_V1 = true;
 
 function rizoraTaskSeen(db, userId, taskId) {
   db.taskSeen ||= {};
-  const state = db.taskSeen[userId];
 
-  if (Array.isArray(state)) {
-    return state.includes(taskId);
-  }
-
-  if (state && typeof state === "object") {
-    const completed = Array.isArray(state.completed) ? state.completed : [];
-    return completed.includes(taskId);
-  }
-
-  return false;
+  return (
+    Array.isArray(db.taskSeen[userId]) &&
+    db.taskSeen[userId].includes(taskId)
+  );
 }
 
 function rizoraMarkTaskSeen(db, userId, taskId) {
   db.taskSeen ||= {};
-  const current = db.taskSeen[userId];
+  db.taskSeen[userId] ||= [];
 
-  if (Array.isArray(current)) {
-    const completed = current.includes(taskId) ? current.slice() : current.concat(taskId);
-    db.taskSeen[userId] = completed.slice(-1000);
-    return;
+  if (!db.taskSeen[userId].includes(taskId)) {
+    db.taskSeen[userId].push(taskId);
   }
 
-  const state =
-    current && typeof current === "object"
-      ? current
-      : {};
-
-  const completed = Array.isArray(state.completed)
-    ? state.completed.slice()
-    : [];
-
-  if (!completed.includes(taskId)) {
-    completed.push(taskId);
+  if (db.taskSeen[userId].length > 1000) {
+    db.taskSeen[userId] =
+      db.taskSeen[userId].slice(-1000);
   }
-
-  state.completed = completed.slice(-1000);
-
-  if (!state.generated || typeof state.generated !== "object") {
-    state.generated = {};
-  }
-
-  db.taskSeen[userId] = state;
 }
 
 
@@ -1297,55 +1096,16 @@ const RIZORA_GENERATED_PLATFORMS = [
   { key: "spotify", name: "Spotify" }
 ];
 
-function rizoraTaskSeenState(db, userId) {
-  db.taskSeen ||= {};
-
-  const current = db.taskSeen[userId];
-
-  if (Array.isArray(current)) {
-    const state = {
-      completed: current.slice(-1000),
-      generated: {}
-    };
-    db.taskSeen[userId] = state;
-    return state;
-  }
-
-  if (!current || typeof current !== "object") {
-    db.taskSeen[userId] = {
-      completed: [],
-      generated: {}
-    };
-    return db.taskSeen[userId];
-  }
-
-  if (!Array.isArray(current.completed)) {
-    current.completed = [];
-  }
-
-  if (!current.generated || typeof current.generated !== "object" || Array.isArray(current.generated)) {
-    current.generated = {};
-  }
-
-  return current;
-}
-
 function rizoraGeneratedSeen(db, userId, key) {
-  const state = rizoraTaskSeenState(db, userId);
-  return !!state.generated[`generated:${key}`];
+  db.taskSeen ||= {};
+  db.taskSeen[userId] ||= {};
+  return !!db.taskSeen[userId][`generated:${key}`];
 }
 
 function rizoraMarkGeneratedSeen(db, userId, key) {
-  const state = rizoraTaskSeenState(db, userId);
-  state.generated[`generated:${key}`] = Date.now();
-
-  const generatedKeys = Object.keys(state.generated);
-  if (generatedKeys.length > 1000) {
-    generatedKeys
-      .sort((a, b) => Number(state.generated[a]) - Number(state.generated[b]))
-      .slice(0, generatedKeys.length - 1000)
-      .forEach((item) => delete state.generated[item]);
-  }
+  db.taskSeen ||= {};
+  db.taskSeen[userId] ||= {};
+  db.taskSeen[userId][`generated:${key}`] = Date.now();
 }
 
 function rizoraGenerateFreshTasks(db, userId) {
@@ -1479,52 +1239,18 @@ const DEFAULT_TASKS = [
 ];
 
 function seedTasks(db) {
-  const officialRewardIds = new Set([
-    "rizora_tiktok",
-    "rizora_instagram",
-    "rizora_x",
-    "romi_tiktok",
-    "rizora_explore",
-    "rizora_share",
-    "rizora_create",
-    "rizora_profile",
-    "rizora_invite"
-  ]);
-
   for (const task of DEFAULT_TASKS) {
     const existing = db.tasks.find(
       x => x.id === task.id
     );
 
-    if (!existing) {
+    if (existing) {
+      Object.assign(existing, task);
+    } else {
       db.tasks.push({
         ...task,
         createdAt: new Date().toISOString()
       });
-      continue;
-    }
-
-    // Preserve admin/user task state, but repair missing defaults and
-    // keep the documented official reward values authoritative.
-    if (officialRewardIds.has(task.id)) {
-      Object.assign(existing, {
-        title: task.title,
-        description: task.description,
-        type: task.type,
-        platform: task.platform,
-        url: task.url,
-        active: true,
-        points: task.points,
-        reward: task.points
-      });
-    } else {
-      existing.title ||= task.title;
-      existing.description ||= task.description;
-      existing.type ||= task.type;
-      existing.platform ||= task.platform;
-      existing.url ||= task.url;
-      if (typeof existing.active !== "boolean") existing.active = task.active !== false;
-      if (!Number.isFinite(Number(existing.points))) existing.points = task.points;
     }
   }
 }
@@ -2934,13 +2660,6 @@ async function handleRequest(
           ) === googleEmail
       );
 
-    let googleCreated = false;
-    let googleEmailDelivery = {
-      configured: rizoraEmailConfigured(),
-      queued: false,
-      status: "existing_account"
-    };
-
     if(user){
 
       if(
@@ -3067,8 +2786,6 @@ async function handleRequest(
         user
       );
 
-      googleCreated = true;
-
       const referral =
         applyReferral(
           db,
@@ -3091,19 +2808,6 @@ async function handleRequest(
             Boolean(referral)
         }
       );
-
-      googleEmailDelivery = queueRizoraWelcomeEmail(db,user,req);
-
-      db.notifications ||= [];
-      db.notifications.unshift({
-        id:uid("notif_"),
-        userId:user.id,
-        title:"Welcome to RIZORA",
-        message:"Your Google creator account is ready. Explore your profile, missions, AI, messages and growth tools.",
-        type:"system",
-        read:false,
-        createdAt:new Date().toISOString()
-      });
     }
 
     if(
@@ -3148,9 +2852,7 @@ async function handleRequest(
         user:
           safeUser(
             user
-          ),
-        created: googleCreated,
-        emailDelivery: googleEmailDelivery
+          )
       }
     );
 
@@ -3418,17 +3120,6 @@ async function handleRequest(
 
     db.users.push(user);
 
-    db.notifications ||= [];
-    db.notifications.push({
-      id: uid("notif_"),
-      userId: user.id,
-      title: "Welcome to RIZORA",
-      message: "Your creator account is ready. Start creating, growing and earning.",
-      type: "welcome",
-      read: false,
-      createdAt: new Date().toISOString()
-    });
-
     const referral =
       applyReferral(
         db,
@@ -3452,19 +3143,6 @@ async function handleRequest(
       }
     );
 
-    const welcomeEmailDelivery = queueRizoraWelcomeEmail(db,user,req);
-
-    db.notifications ||= [];
-    db.notifications.unshift({
-      id:uid("notif_"),
-      userId:user.id,
-      title:"Welcome to RIZORA",
-      message:"Your creator account is ready. Explore your profile, missions, AI, messages and growth tools.",
-      type:"system",
-      read:false,
-      createdAt:new Date().toISOString()
-    });
-
     saveDB(db);
 
     setSessionCookie(
@@ -3479,12 +3157,7 @@ async function handleRequest(
         success: true,
         token,
         user:
-          safeUser(user),
-        emailDelivery: {
-          status: welcomeEmailDelivery.status,
-          queued: welcomeEmailDelivery.queued,
-          configured: welcomeEmailDelivery.configured
-        }
+          safeUser(user)
       }
     );
 
@@ -3834,10 +3507,7 @@ async function handleRequest(
 // RIZORA FEATURE LAYER
 // ============================================================
 
-if (
-  (method === "GET" && pathname === "/api/tasks") ||
-  (method === "POST" && pathname === "/api/tasks/start")
-) {
+if (method === "GET" && pathname === "/api/tasks") {
   const user = getCurrentUser(db, req);
 
   if (!user) {
@@ -3870,7 +3540,6 @@ if (
     .filter(task => task.type !== "generated")
     .filter(task => task.type !== "social_follow")
     .filter(task => !(task.type === "community" && task.creatorId === user.id))
-    .filter(task => task.type !== "social_follow")
     .filter(task => !completedIds.has(task.id))
     .map(task => ({
       ...task,
@@ -3955,16 +3624,6 @@ if (
       return;
     }
 
-    const startCooldown = getCooldown(db, user.id);
-    if (startCooldown.active) {
-      sendJSON(res, 429, {
-        error: "Your next RIZORA task is still on cooldown.",
-        cooldown: startCooldown,
-        cooldownMinutes: 7
-      });
-      return;
-    }
-
     const task =
       db.tasks.find(
         (item) =>
@@ -3979,39 +3638,6 @@ if (
         "Task not found."
       );
 
-      return;
-    }
-
-    if (task.type === "social_follow") {
-      sendError(
-        res,
-        409,
-        "Use the Social Tasks mission for this action."
-      );
-      return;
-    }
-
-    if (
-      task.type === "generated" &&
-      task.createdForUserId !== user.id
-    ) {
-      sendError(
-        res,
-        403,
-        "This generated task is not assigned to your account."
-      );
-      return;
-    }
-
-    if (
-      task.type === "community" &&
-      task.creatorId === user.id
-    ) {
-      sendError(
-        res,
-        403,
-        "You cannot claim your own community task."
-      );
       return;
     }
 
@@ -4311,7 +3937,7 @@ if (
       return;
     }
 
-    const startedAt = typeof attempt.startedAt === "number" ? attempt.startedAt : new Date(attempt.startedAt || 0).getTime();
+    const startedAt = Number(attempt.startedAt || 0);
     const elapsedMs = Date.now() - startedAt;
     const REQUIRED_TASK_TIME_MS = 20 * 1000;
 
@@ -4923,6 +4549,18 @@ if (
       res,
       403,
       "You cannot complete your own boost."
+    );
+    return;
+  }
+
+  if (
+    task.creatorId &&
+    task.creatorId === user.id
+  ) {
+    sendError(
+      res,
+      403,
+      "You cannot complete your own task."
     );
     return;
   }
@@ -8830,24 +8468,17 @@ if (
 
   }
 
-  request.updatedAt = now;
-  request.reviewedAt = now;
-  request.reviewedBy = admin.username;
-  target.updatedAt = now;
+  request.updatedAt =
+    now;
 
-  db.notifications ||= [];
-  db.notifications.unshift({
-    id:uid("notif_"),
-    userId:target.id,
-    title:(action === "approve" || action === "verify") ? "RIZORA verification approved" : "RIZORA verification update",
-    message:(action === "approve" || action === "verify") ? "Your creator account is now RIZORA Verified." : "Your verification request is now "+String(action||"updated")+".",
-    type:"verification",
-    read:false,
-    createdAt:now
-  });
+  request.reviewedAt =
+    now;
 
-  const verificationEmailDelivery =
-    queueRizoraVerificationEmail(db,target,action,request.reviewNote || request.reason || "",req);
+  request.reviewedBy =
+    admin.username;
+
+  target.updatedAt =
+    now;
 
   saveDB(db);
 
@@ -8865,12 +8496,7 @@ if (
           ? "Account verified successfully."
           : action === "reject"
             ? "Verification request rejected."
-            : "Verification revoked.",
-      emailDelivery: {
-        status: verificationEmailDelivery.status,
-        queued: verificationEmailDelivery.queued,
-        configured: verificationEmailDelivery.configured
-      }
+            : "Verification revoked."
     }
   );
 
@@ -9617,7 +9243,7 @@ if(
           0
         ),
 
-      user: safeUser(user),
+      user,
 
       completion
     }
@@ -9907,55 +9533,31 @@ if (
   method === "GET" &&
   pathname === "/api/official/profiles"
 ) {
-  const canonical = [
-    { username: "rizora", publicUsername: "rizora", verificationType: "official_platform", accountType: "platform" },
-    { username: "romi", publicUsername: "romi.noir", verificationType: "official_creator", accountType: "creator" }
-  ];
 
-  const profiles = canonical.map(function(item) {
-    const user = (db.users || []).find(function(entry) {
-      const username = normalizeUsername(entry.username);
-      const publicUsername = normalizeUsername(entry.publicUsername);
-      return username === item.username || publicUsername === item.publicUsername;
-    });
-    if (!user) return null;
+  const officialDb =
+    loadDB();
 
-    const profile = (db.creatorProfiles && db.creatorProfiles[user.id]) || {};
-    const links = user.username === "rizora"
-      ? {
-          website: "https://rizora.com.ng/",
-          tiktok: "https://www.tiktok.com/@official_rizora.hq",
-          instagram: "https://www.instagram.com/rizora.hq",
-          x: "https://x.com/Rizora_hq"
-        }
-      : {
-          website: "https://rizora.com.ng/",
-          tiktok: "https://www.tiktok.com/@romi.noir"
-        };
+  officialDb.officialProfiles ||=
+    [];
 
-    return {
-      id: user.id,
-      username: user.username,
-      publicUsername: user.publicUsername || item.publicUsername,
-      displayName: user.displayName || (user.username === "rizora" ? "RIZORA" : "RoMi"),
-      bio: profile.bio || user.bio || (user.username === "rizora"
-        ? "Creator growth. Content. Community. AI. Built for creators."
-        : "Artist. Developer. Creator. Builder. Creator of RIZORA."),
-      avatarUrl: profile.avatarUrl || user.avatarUrl || "/rizora-cover.png",
-      verified: true,
-      verificationStatus: "verified",
-      verificationType: user.verificationType || item.verificationType,
-      official: true,
-      accountType: user.accountType || item.accountType,
-      badgeUrl: "/assets/rizora_verified_badge.svg",
-      links
-    };
-  }).filter(Boolean);
-
-  sendJSON(res, 200, {
-    success: true,
-    profiles
-  });
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      profiles:
+        officialDb
+          .officialProfiles
+          .filter(
+            profile =>
+              profile &&
+              profile.verified === true
+          )
+          .map(profile => ({
+            ...profile
+          }))
+    }
+  );
 
   return;
 }
@@ -10080,40 +9682,11 @@ function seedRizoraOfficialIdentities(db) {
 
   db.officialProfiles ||= [];
 
-  let romiUser =
+  const romiUser =
     db.users.find(
       user =>
-        normalizeUsername(user.username) === "romi" ||
-        normalizeUsername(user.publicUsername) === "romi.noir"
+        normalizeUsername(user.username) === "romi"
     );
-
-  if (!romiUser) {
-    romiUser = {
-      id: uid("usr_"),
-      username: "romi",
-      publicUsername: "romi.noir",
-      displayName: "RoMi",
-      email: normalizeEmail(process.env.RIZORA_SUPER_ADMIN_EMAIL || "romi@rizora.com.ng"),
-      socialHandle: "romi.noir",
-      passwordHash: "",
-      passwordSetupRequired: true,
-      role: "super_admin",
-      status: "active",
-      points: 0,
-      referralCode: randomReferralCode("romi"),
-      referredBy: null,
-      referralCount: 0,
-      verified: true,
-      verificationStatus: "verified",
-      verificationType: "official_creator",
-      official: true,
-      accountType: "creator",
-      createdAt: new Date().toISOString(),
-      lastLoginAt: null,
-      avatarUrl: "/rizora-cover.png"
-    };
-    db.users.push(romiUser);
-  }
 
   if (romiUser) {
 
@@ -10306,10 +9879,6 @@ function seedDatabase() {
 
   const configuredSuperAdminsChanged =
     ensureConfiguredSuperAdminAccounts(db);
-
-  // Re-sync verified identity profiles after account seeding so the
-  // official RoMi profile is linked on the first boot too.
-  seedRizoraOfficialIdentities(db);
 
   let changed = configuredSuperAdminsChanged;
 
@@ -10510,34 +10079,42 @@ function ensureRizoraSocialDB(db){
     }
   ];
 
-  for(const task of official){
-    const exists=db.socialTasks.find(item=>item.id===task.id);
+  for(
+    const task
+    of official
+  ){
+
+    const exists =
+      db.socialTasks.some(
+        item =>
+          item.id === task.id
+      );
+
     if(!exists){
+
       db.socialTasks.push({
+
         ...task,
+
         creatorId:null,
+
         quantity:null,
+
         completedCount:0,
+
         fundedRemaining:null,
+
         status:"active",
-        createdAt:new Date().toISOString()
+
+        createdAt:
+          new Date().toISOString()
+
       });
-    }else{
-      Object.assign(exists,{
-        title:task.title,
-        description:task.description,
-        platform:task.platform,
-        action:task.action,
-        url:task.url,
-        reward:task.reward,
-        sponsored:true,
-        creatorId:null,
-        quantity:null,
-        fundedRemaining:null,
-        status:exists.status==="completed" ? "active" : (exists.status||"active")
-      });
+
     }
+
   }
+
   return db;
 }
 
