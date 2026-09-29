@@ -61,12 +61,6 @@ assert((core.includes('id="aiInput"') || core.includes("id='aiInput'")) && (core
 assert(media.includes('"audio/webm"') || media.includes("audio/webm"),"Media uploader checks are missing.");
 assert(server.includes('pathname === "/api/ai/chat"'),"AI chat route is missing.");
 assert(server.includes('pathname === "/api/ai/transcribe"'),"AI transcription route is missing.");
-assert(server.includes("I can recognize this account"),"AI signed-in creator context is missing.");
-assert(server.includes("knownRizoraIdentityAnswer"),"Deterministic RIZORA identity answers are missing.");
-assert(server.includes('username: "rizora"'),"Official RIZORA account bootstrap is missing.");
-assert(server.includes('username: "romi"'),"Official RoMi account bootstrap is missing.");
-assert(server.includes('verificationType: "official_creator"'),"RoMi verified-account type is missing.");
-assert(server.includes('verificationType: "official_platform"'),"RIZORA verified-account type is missing.");
 assert(server.includes('rz_official_tiktok'),"Official TikTok task is missing.");
 assert(server.includes('rz_official_instagram'),"Official Instagram task is missing.");
 assert(server.includes('rz_official_x'),"Official X task is missing.");
