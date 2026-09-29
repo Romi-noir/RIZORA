@@ -3,10 +3,6 @@
   "outputDirectory": ".",
   "rewrites": [
     {
-      "source": "/creator/:handle",
-      "destination": "/"
-    },
-    {
       "source": "/join",
       "destination": "/"
     },
