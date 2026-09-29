@@ -186,6 +186,10 @@ async function main() {
     assert(officialHandles.has("rizora"), "RIZORA official verified profile is missing");
     assert(officialHandles.has("romi.noir"), "RoMi official verified profile is missing");
     assert((officialProfiles.data.profiles || []).filter(p => p.verified === true).length >= 2, "Expected two verified official identities");
+    const rizoraOfficial = (officialProfiles.data.profiles || []).find(p => String(p.publicUsername || p.username || "").toLowerCase() === "rizora");
+    const romiOfficial = (officialProfiles.data.profiles || []).find(p => String(p.publicUsername || p.username || "").toLowerCase() === "romi.noir");
+    assert(rizoraOfficial && rizoraOfficial.links && rizoraOfficial.links.tiktok, "RIZORA official social links are missing");
+    assert(romiOfficial && romiOfficial.links && romiOfficial.links.tiktok, "RoMi official social link is missing");
 
     const suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     const username = "smoke_" + suffix;
