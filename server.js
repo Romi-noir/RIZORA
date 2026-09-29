@@ -1322,18 +1322,44 @@ const DEFAULT_TASKS = [
 ];
 
 function seedTasks(db) {
+  const officialRewardIds = new Set([
+    "rizora_tiktok",
+    "rizora_instagram",
+    "rizora_x",
+    "romi_tiktok",
+    "rizora_explore",
+    "rizora_share",
+    "rizora_create",
+    "rizora_profile",
+    "rizora_invite"
+  ]);
+
   for (const task of DEFAULT_TASKS) {
     const existing = db.tasks.find(
       x => x.id === task.id
     );
 
-    if (existing) {
-      Object.assign(existing, task);
-    } else {
+    if (!existing) {
       db.tasks.push({
         ...task,
         createdAt: new Date().toISOString()
       });
+      continue;
+    }
+
+    // Preserve admin/user task state, but repair missing defaults and
+    // keep the documented official reward values authoritative.
+    existing.title ||= task.title;
+    existing.description ||= task.description;
+    existing.type ||= task.type;
+    existing.platform ||= task.platform;
+    existing.url ||= task.url;
+    if (typeof existing.active !== "boolean") existing.active = task.active !== false;
+    if (officialRewardIds.has(task.id)) {
+      existing.points = task.points;
+      existing.reward = task.points;
+    } else if (!Number.isFinite(Number(existing.points))) {
+      existing.points = task.points;
     }
   }
 }
