@@ -9318,7 +9318,7 @@ if(
           0
         ),
 
-      user,
+      user: safeUser(user),
 
       completion
     }
@@ -10159,42 +10159,34 @@ function ensureRizoraSocialDB(db){
     }
   ];
 
-  for(
-    const task
-    of official
-  ){
-
-    const exists =
-      db.socialTasks.some(
-        item =>
-          item.id === task.id
-      );
-
+  for(const task of official){
+    const exists=db.socialTasks.find(item=>item.id===task.id);
     if(!exists){
-
       db.socialTasks.push({
-
         ...task,
-
         creatorId:null,
-
         quantity:null,
-
         completedCount:0,
-
         fundedRemaining:null,
-
         status:"active",
-
-        createdAt:
-          new Date().toISOString()
-
+        createdAt:new Date().toISOString()
       });
-
+    }else{
+      Object.assign(exists,{
+        title:task.title,
+        description:task.description,
+        platform:task.platform,
+        action:task.action,
+        url:task.url,
+        reward:task.reward,
+        sponsored:true,
+        creatorId:null,
+        quantity:null,
+        fundedRemaining:null,
+        status:exists.status==="completed" ? "active" : (exists.status||"active")
+      });
     }
-
   }
-
   return db;
 }
 
