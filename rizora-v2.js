@@ -254,8 +254,7 @@ async function openChat(target){
     var messageHtml=d.messages.map(function(m){
       var audio="";
       if(m.mediaUrl){
-        var src=String(m.mediaUrl).indexOf("http")===0?m.mediaUrl:API+String(m.mediaUrl);
-        audio='<audio controls preload="metadata" style="width:100%;margin-top:8px" src="'+esc(src)+'"></audio>';
+        audio='<audio controls preload="metadata" style="width:100%;margin-top:8px" data-rz-media-src="'+esc(m.mediaUrl)+'"></audio>';
       }
       return '<div class="rz-card"><div class="rz-mini">'+(m.fromUserId===state.user.id?"You":"Creator")+(m.messageType==="voice"?" · Voice":"")+'</div>'+(m.text?'<div>'+esc(m.text)+'</div>':"")+audio+'</div>';
     }).join("");
@@ -372,8 +371,7 @@ async function openComments(postId){
       var pad=Math.min(Number(depth||0),3)*18;
       var audio="";
       if(c.mediaUrl){
-        var src=String(c.mediaUrl).indexOf("http")===0?c.mediaUrl:API+String(c.mediaUrl);
-        audio='<audio controls preload="metadata" style="width:100%;margin-top:8px" src="'+esc(src)+'"></audio>';
+        audio='<audio controls preload="metadata" style="width:100%;margin-top:8px" data-rz-media-src="'+esc(c.mediaUrl)+'"></audio>';
       }
       return '<div style="margin-left:'+pad+'px;padding:11px 0;border-bottom:1px solid var(--line)"><div><strong>'+esc(c.author&&c.author.displayName||c.author&&c.author.username||"Creator")+'</strong> <span class="rz-mini">@'+esc(c.author&&(c.author.publicUsername||c.author.username)||"")+'</span></div>'+(c.text?'<div style="margin:5px 0 8px">'+esc(c.text)+'</div>':"")+(c.messageType==="voice"?'<div class="rz-mini">Voice comment</div>':"")+audio+'<button class="rz-btn" data-comment-reply="'+esc(c.id)+'" data-comment-user="'+esc(c.author&&(c.author.publicUsername||c.author.username)||"creator")+'">Reply</button>'+(c.replies||[]).map(function(r){return commentHtml(r,Number(depth||0)+1);}).join("")+'</div>';
     }
