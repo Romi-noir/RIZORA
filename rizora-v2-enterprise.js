@@ -29,6 +29,7 @@ function ensureEnterprise(db) {
   db.rzV2.creatorMembershipTiers = db.rzV2.creatorMembershipTiers || [];
   db.rzV2.creatorMemberships = db.rzV2.creatorMemberships || [];
   db.rzV2.creatorMembershipEvents = db.rzV2.creatorMembershipEvents || [];
+  db.rzV2.adCampaigns = db.rzV2.adCampaigns || [];
 }
 
 async function readBody(req, limit) {
@@ -1065,6 +1066,33 @@ async function handleRizoraEnterprise(ctx) {
       db.notifications=db.notifications||[];
       if(["active","attention","non-renewing","cancelled"].includes(premiumSub.status)){
         db.notifications.push({id:ctx.uid("notif_"),userId:premiumSub.userId,title:"Premium billing update",message:"Your RIZORA Premium subscription is now "+premiumSub.status+".",type:"billing",read:false,createdAt:new Date().toISOString()});
+      }
+    }
+
+    // External RIZORA Ads payments.
+    const adPayment = reference
+      ? db.rzV2.adCampaigns.find(function (ad) { return ad.reference === reference; })
+      : null;
+    if (adPayment) {
+      if (event === "charge.success") {
+        adPayment.status = "active";
+        adPayment.paidAt = new Date().toISOString();
+        adPayment.updatedAt = new Date().toISOString();
+        const adTx = db.rzV2.transactions.find(function (t) { return t.reference === reference; });
+        if (adTx) {
+          adTx.status = "success";
+          adTx.paystackId = data.id || adTx.paystackId || null;
+          adTx.updatedAt = adPayment.updatedAt;
+        }
+      } else if (["charge.failed","transaction.failed"].includes(event)) {
+        adPayment.status = "payment_failed";
+        adPayment.updatedAt = new Date().toISOString();
+        const adTx = db.rzV2.transactions.find(function (t) { return t.reference === reference; });
+        if (adTx) {
+          adTx.status = "failed";
+          adTx.paystackId = data.id || adTx.paystackId || null;
+          adTx.updatedAt = adPayment.updatedAt;
+        }
       }
     }
 
