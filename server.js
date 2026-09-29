@@ -3257,7 +3257,12 @@ async function handleRequest(
         success: true,
         token,
         user:
-          safeUser(user)
+          safeUser(user),
+        emailDelivery: {
+          status: welcomeEmailDelivery.status,
+          queued: welcomeEmailDelivery.queued,
+          configured: welcomeEmailDelivery.configured
+        }
       }
     );
 
