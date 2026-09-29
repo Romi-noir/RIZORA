@@ -1265,17 +1265,25 @@ function seedTasks(db) {
 
     // Preserve admin/user task state, but repair missing defaults and
     // keep the documented official reward values authoritative.
-    existing.title ||= task.title;
-    existing.description ||= task.description;
-    existing.type ||= task.type;
-    existing.platform ||= task.platform;
-    existing.url ||= task.url;
-    if (typeof existing.active !== "boolean") existing.active = task.active !== false;
     if (officialRewardIds.has(task.id)) {
-      existing.points = task.points;
-      existing.reward = task.points;
-    } else if (!Number.isFinite(Number(existing.points))) {
-      existing.points = task.points;
+      Object.assign(existing, {
+        title: task.title,
+        description: task.description,
+        type: task.type,
+        platform: task.platform,
+        url: task.url,
+        active: true,
+        points: task.points,
+        reward: task.points
+      });
+    } else {
+      existing.title ||= task.title;
+      existing.description ||= task.description;
+      existing.type ||= task.type;
+      existing.platform ||= task.platform;
+      existing.url ||= task.url;
+      if (typeof existing.active !== "boolean") existing.active = task.active !== false;
+      if (!Number.isFinite(Number(existing.points))) existing.points = task.points;
     }
   }
 }
@@ -9611,7 +9619,7 @@ async function requestHandler(
 
   res.setHeader(
     "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS"
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
   );
 
   res.setHeader(
