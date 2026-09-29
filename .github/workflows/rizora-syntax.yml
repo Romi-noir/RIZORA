@@ -49,6 +49,12 @@ jobs:
           node --check rizora-v2-series-ui.js
           node --check rizora-v2-events.js
           node --check rizora-v2-events-ui.js
+          node --check rizora-remita.js
+          node --check scripts/rizora-predeploy-audit.js
+          node --check scripts/capacitor-copy.cjs
+
+      - name: Build web bundle
+        run: npm run build
 
       - name: Predeploy integration audit
         run: node --experimental-default-type=commonjs scripts/rizora-predeploy-audit.js
