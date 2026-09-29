@@ -4010,7 +4010,7 @@ if (
       return;
     }
 
-    const startedAt = Number(attempt.startedAt || 0);
+    const startedAt = typeof attempt.startedAt === "number" ? attempt.startedAt : new Date(attempt.startedAt || 0).getTime();
     const elapsedMs = Date.now() - startedAt;
     const REQUIRED_TASK_TIME_MS = 20 * 1000;
 
