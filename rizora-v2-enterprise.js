@@ -77,6 +77,7 @@ function profilePayload(db, user) {
     location: p.location || user.location || "",
     links: p.links || user.links || {},
     verified: user.verified === true || user.verificationStatus === "verified",
+    verifiedBadgeUrl: (user.verified === true || user.verificationStatus === "verified") ? "/assets/rizora_verified_badge.svg" : "",
     warningCount: Number(user.warningCount || 0),
     followers,
     following,
