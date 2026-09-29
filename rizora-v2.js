@@ -260,7 +260,7 @@ async function openChat(target){
       return '<div class="rz-card"><div class="rz-mini">'+(m.fromUserId===state.user.id?"You":esc(d.user&&d.user.displayName||d.user&&d.user.username||"Creator"))+(m.messageType==="voice"?" · Voice":"")+'</div>'+(m.text?'<div>'+esc(m.text)+'</div>':"")+audio+'</div>';
     }).join("");
     $("chatBox").innerHTML='<div class="rz-card" style="margin-top:14px"><h3>'+esc(d.user.displayName)+'</h3><div class="rz-mini">@'+esc(d.user.publicUsername||d.user.username)+'</div><div class="rz-feed">'+messageHtml+'</div><form id="messageForm" data-chat-target="'+esc(target)+'" class="rz-actions"><input id="messageText" class="rz-input" placeholder="Write a message"><button class="rz-btn primary">Send</button></form></div>';
-    $("messageForm").onsubmit=async function(e){e.preventDefault();var text=$("messageText").value.trim();if(!text)return;try{await api("/api/v2/messages/"+encodeURIComponent(target),{method:"POST",body:JSON.stringify({text:text})});openChat(target);}catch(err){toast(err.message);}};
+    $("messageForm").onsubmit=async function(e){e.preventDefault();var text=$("messageText").value.trim();if(!text)return;try{await api("/api/v2/messages/"+encodeURIComponent(target),{method:"POST",body:JSON.stringify({text:text})});openChat(target);}catch(err){toast(err.message);}};if(window.RIZORA_VOICE_WIRE)window.RIZORA_VOICE_WIRE();
   }catch(err){toast(err.message);}
 }
 window.RIZORA_OPEN_CHAT=openChat;
@@ -384,6 +384,7 @@ async function openComments(postId){
       e.preventDefault();var text=wrap.querySelector("#rzCommentText").value.trim();if(!text)return;
       try{var parentId=wrap.querySelector("#rzCommentForm").getAttribute("data-comment-parent")||null;await api("/api/v2/posts/"+encodeURIComponent(postId)+"/comment",{method:"POST",body:JSON.stringify({text:text,parentId:parentId})});await openComments(postId);}catch(err){wrap.querySelector("#rzCommentStatus").textContent=err.message;}
     };
+     if(window.RIZORA_VOICE_WIRE)window.RIZORA_VOICE_WIRE();
     wrap.querySelectorAll("[data-comment-reply]").forEach(function(btn){btn.onclick=function(){
       var form=wrap.querySelector("#rzCommentForm"),parentId=btn.getAttribute("data-comment-reply"),username=btn.getAttribute("data-comment-user")||"creator";
       if(!form)return;
@@ -463,7 +464,7 @@ function wire(){
   });
 }
   if(state.view==="studio"){$("hooks").onclick=async function(){var d=await api("/api/generate/hooks",{method:"POST",body:"{}"});$("studioOut").textContent=(d.hooks||[]).join("\n");};$("hash").onclick=async function(){var d=await api("/api/generate/hashtags",{method:"POST",body:"{}"});$("studioOut").textContent=(d.hashtags||[]).join(" ");};$("captions").onclick=async function(){var d=await api("/api/generate/captions",{method:"POST",body:"{}"});$("studioOut").textContent=(d.captions||[]).join("\n");};}
-  if(state.view==="ai"){document.querySelectorAll("[data-ai-speak]").forEach(function(b){b.onclick=function(){var i=Number(b.getAttribute("data-ai-speak"));var m=state.aiMessages[i];if(!m||m.role!=="ai")return;if(window.RIZORA_AI_SPEAK)window.RIZORA_AI_SPEAK(m.text,b);else toast("AI voice playback is still loading.");};});$("aiForm").onsubmit=async function(e){e.preventDefault();var q=$("aiInput").value.trim();if(!q)return;var history=state.aiMessages.slice(-8);state.aiMessages.push({role:"you",text:q});renderView();try{var d=await api("/api/ai/chat",{method:"POST",body:JSON.stringify({message:q,history:history})});state.aiMessages.push({role:"ai",text:d.reply||"No response."});}catch(err){state.aiMessages.push({role:"ai",text:err.message});}renderView();};}
+  if(state.view==="ai"){document.querySelectorAll("[data-ai-speak]").forEach(function(b){b.onclick=function(){var i=Number(b.getAttribute("data-ai-speak"));var m=state.aiMessages[i];if(!m||m.role!=="ai")return;if(window.RIZORA_AI_SPEAK)window.RIZORA_AI_SPEAK(m.text,b);else toast("AI voice playback is still loading.");};});$("aiForm").onsubmit=async function(e){e.preventDefault();var q=$("aiInput").value.trim();if(!q)return;var history=state.aiMessages.slice(-8);state.aiMessages.push({role:"you",text:q});renderView();try{var d=await api("/api/ai/chat",{method:"POST",body:JSON.stringify({message:q,history:history})});state.aiMessages.push({role:"ai",text:d.reply||"No response."});}catch(err){state.aiMessages.push({role:"ai",text:err.message});}renderView();};if(window.RIZORA_VOICE_WIRE)window.RIZORA_VOICE_WIRE();}
   if(state.view==="discover")$("doSearch").onclick=async function(){state.query=$("q").value;state.search=await api("/api/v2/search?q="+encodeURIComponent(state.query));view();};
   if(state.view==="notifications")$("readAll").onclick=function(){api("/api/v2/notifications/read",{method:"POST"}).then(load);};
   if(state.view==="stories")wireStories();
