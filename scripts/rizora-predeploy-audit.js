@@ -84,6 +84,7 @@ assert(server.includes("sendRizoraWelcomeEmail"),"Welcome email delivery is not 
 assert(email.includes("RESEND_API_KEY"),"Resend API key support is missing.");
 assert(email.includes("RIZORA_EMAIL_FROM"),"RIZORA sender address configuration is missing.");
 assert(sw.includes("rizora-v2-voice.js"),"Service worker does not cache voice module.");
+assert(sw.includes("rizora-v2-ads-ui.js"),"Service worker does not cache RIZORA Ads UI.");
 assert(sw.includes("rizora_verified_badge.svg"),"Service worker does not cache verified badge.");
 assert(sw.includes("rizora_verified_mark.svg"),"Service worker does not cache verified mark.");
 assert(sw.includes("rizora-v2-experience.css"),"Service worker does not cache experience CSS.");
