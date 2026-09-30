@@ -214,6 +214,13 @@ async function main() {
     assert(signup.res.status === 201, "signup failed: " + JSON.stringify(signup.data));
     assert(signup.data.emailDelivery && typeof signup.data.emailDelivery.configured === "boolean", "signup email delivery status is missing");
 
+    const login = await request("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier: username, password: "SmokePass123" })
+    });
+    assert(login.res.status === 200 && login.data.token && login.data.user && login.data.user.username === username, "login route failed: " + JSON.stringify(login.data));
+
     const cookie = cookieFrom(signup.res);
     assert(cookie.startsWith("rizora_session="), "signup did not return a session cookie");
 
