@@ -1,0 +1,821 @@
+(function () {
+  "use strict";
+
+  if (window.__RIZORA_V7__) return;
+  window.__RIZORA_V7__ = true;
+
+  function addStyles() {
+    if (document.getElementById("rizora-v7-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "rizora-v7-css";
+
+    style.textContent = `
+      :root {
+        --v7-glow: rgba(139,92,246,.18);
+        --v7-line: rgba(255,255,255,.08);
+      }
+
+      body.rizora-v7 {
+        background:
+          radial-gradient(circle at 50% -10%, rgba(139,92,246,.07), transparent 28%),
+          var(--bg);
+      }
+
+      body.rizora-v7 .main {
+        position: relative;
+      }
+
+      body.rizora-v7 .card,
+      body.rizora-v7 .stat,
+      body.rizora-v7 .hero,
+      body.rizora-v7 .community-hero {
+        box-shadow: 0 14px 45px rgba(0,0,0,.12);
+        transition:
+          border-color .2s ease,
+          transform .2s ease,
+          box-shadow .2s ease;
+      }
+
+      body.rizora-v7 .card:hover {
+        border-color: #303442;
+      }
+
+      body.rizora-v7 .hero {
+        position: relative;
+        overflow: hidden;
+      }
+
+      body.rizora-v7 .hero::after {
+        content: "";
+        position: absolute;
+        width: 280px;
+        height: 280px;
+        right: -120px;
+        top: -150px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(139,92,246,.18), transparent 65%);
+        pointer-events: none;
+      }
+
+      .v7-dashboard {
+        margin: 0 0 20px;
+      }
+
+      .v7-dashboard-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 12px;
+      }
+
+      .v7-kicker {
+        color: #b89cff;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 1.3px;
+        text-transform: uppercase;
+      }
+
+      .v7-title {
+        margin-top: 5px;
+        font-size: 20px;
+        font-weight: 900;
+      }
+
+      .v7-subtitle {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .v7-actions {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      .v7-action {
+        border: 1px solid var(--border);
+        background:
+          linear-gradient(145deg, rgba(139,92,246,.11), rgba(255,255,255,.015));
+        color: #fff;
+        border-radius: 13px;
+        padding: 14px;
+        text-align: left;
+        transition: .18s ease;
+      }
+
+      .v7-action:hover {
+        transform: translateY(-2px);
+        border-color: #41375b;
+        background:
+          linear-gradient(145deg, rgba(139,92,246,.17), rgba(255,255,255,.025));
+      }
+
+      .v7-action-icon {
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+
+      .v7-action-name {
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .v7-action-copy {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.45;
+      }
+
+      .v7-pulse {
+        display: grid;
+        grid-template-columns: 1.1fr .9fr;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .v7-panel {
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        padding: 18px;
+        background:
+          radial-gradient(circle at 95% 5%, rgba(139,92,246,.12), transparent 32%),
+          var(--panel);
+      }
+
+      .v7-panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .v7-badge {
+        display: inline-flex;
+        border: 1px solid #322852;
+        background: #151126;
+        color: #c8b4ff;
+        border-radius: 999px;
+        padding: 5px 8px;
+        font-size: 9px;
+        font-weight: 850;
+        letter-spacing: .7px;
+        text-transform: uppercase;
+      }
+
+      .v7-mini-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .v7-mini {
+        border: 1px solid var(--border);
+        background: var(--panel-3);
+        border-radius: 10px;
+        padding: 11px;
+      }
+
+      .v7-mini-label {
+        color: var(--muted);
+        font-size: 9px;
+      }
+
+      .v7-mini-value {
+        margin-top: 4px;
+        font-size: 19px;
+        font-weight: 900;
+      }
+
+      .v7-signal {
+        margin-top: 12px;
+        padding: 12px;
+        border-left: 3px solid var(--accent);
+        border-radius: 7px;
+        background: #11131b;
+      }
+
+      .v7-signal-label {
+        color: #aeb4c1;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .v7-signal-text {
+        margin-top: 5px;
+        color: #e1e4eb;
+        font-size: 11px;
+        line-height: 1.55;
+      }
+
+      .v7-score-row {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-top: 14px;
+      }
+
+      .v7-ring {
+        width: 78px;
+        height: 78px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        position: relative;
+        flex-shrink: 0;
+        background:
+          conic-gradient(var(--accent) var(--v7-score,0%), #222631 0);
+      }
+
+      .v7-ring::after {
+        content: "";
+        position: absolute;
+        inset: 7px;
+        border-radius: 50%;
+        background: #0d0f16;
+      }
+
+      .v7-ring span {
+        position: relative;
+        z-index: 1;
+        font-size: 17px;
+        font-weight: 950;
+      }
+
+      .v7-result-tools {
+        display: flex;
+        justify-content: flex-end;
+        gap: 7px;
+        margin-top: 9px;
+      }
+
+      .v7-copy {
+        border: 1px solid var(--border);
+        background: #171a24;
+        color: #fff;
+        border-radius: 7px;
+        padding: 6px 9px;
+        font-size: 10px;
+      }
+
+      .v7-copy:hover {
+        background: #222633;
+      }
+
+      .v7-loading {
+        opacity: .65 !important;
+      }
+
+      .v7-loading::after {
+        content: " · · ·";
+      }
+
+      .v7-toast-wrap {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+      }
+
+      .v7-toast {
+        max-width: 330px;
+        padding: 11px 13px;
+        border-radius: 10px;
+        background: #12151d;
+        border: 1px solid var(--border);
+        box-shadow: 0 15px 40px rgba(0,0,0,.35);
+        font-size: 11px;
+        color: #f4f5f7;
+      }
+
+      .v7-toast.success {
+        border-color: #28563d;
+      }
+
+      .v7-toast.error {
+        border-color: #663040;
+      }
+
+      .v7-page-badge {
+        margin-left: 7px;
+        vertical-align: middle;
+      }
+
+      body.rizora-v7 .btn {
+        box-shadow: 0 8px 22px rgba(0,0,0,.12);
+      }
+
+      body.rizora-v7 input:focus,
+      body.rizora-v7 textarea:focus,
+      body.rizora-v7 select:focus {
+        box-shadow: 0 0 0 3px rgba(139,92,246,.08);
+      }
+
+      @media (max-width: 1000px) {
+        .v7-actions {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .v7-pulse {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 650px) {
+        .v7-actions {
+          grid-template-columns: 1fr;
+        }
+
+        .v7-mini-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .v7-dashboard-head {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .v7-toast-wrap {
+          left: 14px;
+          right: 14px;
+        }
+
+        .v7-toast {
+          max-width: none;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  function toast(message, type = "success") {
+    let wrap = document.querySelector(".v7-toast-wrap");
+
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.className = "v7-toast-wrap";
+      document.body.appendChild(wrap);
+    }
+
+    const item = document.createElement("div");
+    item.className = "v7-toast " + type;
+    item.textContent = message;
+
+    wrap.appendChild(item);
+
+    setTimeout(() => {
+      item.style.opacity = "0";
+      item.style.transform = "translateY(8px)";
+      setTimeout(() => item.remove(), 180);
+    }, 2300);
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(String(text || ""));
+      toast("Copied to clipboard.");
+    } catch {
+      toast("Copy failed.", "error");
+    }
+  }
+
+  function boosts() {
+    try {
+      return typeof getBoostResults === "function"
+        ? getBoostResults()
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function go(sectionId) {
+    const button = Array.from(
+      document.querySelectorAll(".nav button")
+    ).find((item) =>
+      (item.getAttribute("onclick") || "").includes(
+        "'" + sectionId + "'"
+      )
+    );
+
+    if (typeof window.showSection === "function") {
+      window.showSection(sectionId, button);
+    }
+  }
+
+  function createDashboardUpgrade() {
+    const overview = document.getElementById("overview");
+    if (!overview || document.getElementById("rizoraV7Dashboard")) {
+      return;
+    }
+
+    const wrap = document.createElement("div");
+    wrap.id = "rizoraV7Dashboard";
+    wrap.className = "v7-dashboard";
+
+    wrap.innerHTML = `
+      <div class="v7-dashboard-head">
+        <div>
+          <div class="v7-kicker">RIZORA workspace</div>
+          <div class="v7-title">Your next move starts here.</div>
+          <div class="v7-subtitle">
+            Jump into the tool that matches what you're creating right now.
+          </div>
+        </div>
+        <span class="v7-badge">v7 experience</span>
+      </div>
+
+      <div class="v7-actions">
+        <button class="v7-action" data-r7="boost">
+          <div class="v7-action-icon">🚀</div>
+          <div class="v7-action-name">Boost content</div>
+          <div class="v7-action-copy">Score, optimize and package a post.</div>
+        </button>
+
+        <button class="v7-action" data-r7="tools">
+          <div class="v7-action-icon">✨</div>
+          <div class="v7-action-name">Create content</div>
+          <div class="v7-action-copy">Hooks, captions, hashtags and ideas.</div>
+        </button>
+
+        <button class="v7-action" data-r7="analytics">
+          <div class="v7-action-icon">📈</div>
+          <div class="v7-action-name">Read your data</div>
+          <div class="v7-action-copy">Find patterns in your saved results.</div>
+        </button>
+
+        <button class="v7-action" data-r7="profile">
+          <div class="v7-action-icon">👤</div>
+          <div class="v7-action-name">Tune your profile</div>
+          <div class="v7-action-copy">Make RIZORA more personal to you.</div>
+        </button>
+      </div>
+    `;
+
+    const hero = overview.querySelector(".hero");
+
+    if (hero) {
+      hero.insertAdjacentElement("afterend", wrap);
+    }
+
+    wrap.querySelectorAll("[data-r7]").forEach((button) => {
+      button.addEventListener("click", () => {
+        go(button.dataset.r7);
+      });
+    });
+  }
+
+  function createPulse() {
+    const overview = document.getElementById("overview");
+    if (!overview || document.getElementById("rizoraV7Pulse")) {
+      return;
+    }
+
+    const panel = document.createElement("div");
+    panel.id = "rizoraV7Pulse";
+    panel.className = "v7-pulse";
+
+    panel.innerHTML = `
+      <div class="v7-panel">
+        <div class="v7-panel-head">
+          <div>
+            <div class="v7-kicker">Creator pulse</div>
+            <div class="v7-title">Your current snapshot</div>
+          </div>
+          
+        </div>
+
+        <div class="v7-mini-grid">
+          <div class="v7-mini">
+            <div class="v7-mini-label">Boosts</div>
+            <div class="v7-mini-value" id="r7Boosts">0</div>
+          </div>
+
+          <div class="v7-mini">
+            <div class="v7-mini-label">Average</div>
+            <div class="v7-mini-value" id="r7Average">—</div>
+          </div>
+
+          <div class="v7-mini">
+            <div class="v7-mini-label">Best</div>
+            <div class="v7-mini-value" id="r7Best">—</div>
+          </div>
+
+          <div class="v7-mini">
+            <div class="v7-mini-label">Ideas</div>
+            <div class="v7-mini-value" id="r7Ideas">0</div>
+          </div>
+        </div>
+
+        <div class="v7-signal">
+          <div class="v7-signal-label">Creator signal</div>
+          <div class="v7-signal-text" id="r7ProfileSignal">
+            Add your Creator Profile to make RIZORA personalize this area.
+          </div>
+        </div>
+      </div>
+
+      <div class="v7-panel">
+        <div class="v7-panel-head">
+          <div>
+            <div class="v7-kicker">Latest result</div>
+            <div class="v7-title" id="r7LatestTitle">No boost yet</div>
+          </div>
+        </div>
+
+        <div class="v7-score-row">
+          <div class="v7-ring" id="r7Ring" style="--v7-score:0%;">
+            <span>—</span>
+          </div>
+
+          <div>
+            <div class="v7-signal-label">What RIZORA sees</div>
+            <div class="v7-signal-text" id="r7LatestText">
+              Your latest Boost result will appear here.
+            </div>
+          </div>
+        </div>
+
+        <div class="v7-signal">
+          <div class="v7-signal-label">Optimized hook</div>
+          <div class="v7-signal-text" id="r7Hook">
+            No optimized hook yet.
+          </div>
+          <div class="v7-result-tools">
+            <button class="v7-copy" id="r7CopyHook" type="button">
+              Copy hook
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const stats = overview.querySelector(".stats");
+
+    if (stats) {
+      stats.insertAdjacentElement("afterend", panel);
+    }
+  }
+
+  function refreshPulse() {
+    const list = boosts();
+    const scores = list.map((item) => Number(item.score) || 0);
+
+    const boostsEl = document.getElementById("r7Boosts");
+    const averageEl = document.getElementById("r7Average");
+    const bestEl = document.getElementById("r7Best");
+    const ideasEl = document.getElementById("r7Ideas");
+    const profileEl = document.getElementById("r7ProfileSignal");
+    const latestTitle = document.getElementById("r7LatestTitle");
+    const latestText = document.getElementById("r7LatestText");
+    const ring = document.getElementById("r7Ring");
+    const hookEl = document.getElementById("r7Hook");
+    const copyHook = document.getElementById("r7CopyHook");
+
+    if (boostsEl) boostsEl.textContent = list.length;
+
+    const ideas = Number(
+      localStorage.getItem("rizoraIdeas") || 0
+    );
+
+    if (ideasEl) ideasEl.textContent = ideas;
+
+    if (!list.length) {
+      if (averageEl) averageEl.textContent = "—";
+      if (bestEl) bestEl.textContent = "—";
+      if (latestTitle) latestTitle.textContent = "No boost yet";
+      if (latestText) {
+        latestText.textContent =
+          "Run Boost Studio to create your first performance signal.";
+      }
+      if (hookEl) hookEl.textContent = "No optimized hook yet.";
+      if (ring) ring.style.setProperty("--v7-score", "0%");
+      if (ring?.querySelector("span")) {
+        ring.querySelector("span").textContent = "—";
+      }
+      if (copyHook) copyHook.style.display = "none";
+    } else {
+      const avg =
+        Math.round(
+          (scores.reduce((a, b) => a + b, 0) / scores.length) * 10
+        ) / 10;
+
+      const best = Math.max(...scores);
+      const latest = list[0];
+      const latestScore = Number(latest.score) || 0;
+      const hook =
+        latest.optimizedHook ||
+        latest.topic ||
+        "Latest optimized content";
+
+      if (averageEl) averageEl.textContent = avg;
+      if (bestEl) bestEl.textContent = best;
+      if (latestTitle) latestTitle.textContent = `${latestScore}/100`;
+      if (latestText) {
+        latestText.textContent =
+          latest.verdict || "Latest Boost result";
+      }
+
+      if (ring) {
+        ring.style.setProperty("--v7-score", `${latestScore}%`);
+      }
+
+      if (ring?.querySelector("span")) {
+        ring.querySelector("span").textContent = latestScore;
+      }
+
+      if (hookEl) {
+        hookEl.textContent = hook;
+      }
+
+      if (copyHook) {
+        copyHook.style.display = "inline-block";
+        copyHook.onclick = () => copyText(hook);
+      }
+    }
+
+    try {
+      if (typeof getProfile === "function") {
+        const profile = getProfile();
+
+        if (profile && profileEl) {
+          profileEl.textContent =
+            `${profile.name || "Creator"} · ${profile.niche || "your niche"} · ` +
+            `${profile.style || "personal style"} · goal: ${profile.goal || "growth"}.`;
+        }
+      }
+    } catch {}
+  }
+
+  function enhanceResultCards() {
+    const outputs = [
+      ["boostOutput", "Boost result"],
+      ["hookOutput", "Hook results"],
+      ["hashtagOutput", "Hashtag results"],
+      ["captionOutput", "Caption results"],
+      ["ideaOutput", "Idea results"],
+      ["analyzeOutput", "Analysis results"],
+      ["performanceOutput", "Performance results"],
+      ["abOutput", "A/B results"]
+    ];
+
+    outputs.forEach(([id]) => {
+      const output = document.getElementById(id);
+      if (!output || output.dataset.r7Enhanced) return;
+
+      output.dataset.r7Enhanced = "1";
+
+      const controls = document.createElement("div");
+      controls.className = "v7-result-tools";
+
+      const copy = document.createElement("button");
+      copy.className = "v7-copy";
+      copy.type = "button";
+      copy.textContent = "Copy result";
+
+      copy.addEventListener("click", () => {
+        const text = output.innerText || output.textContent || "";
+
+        if (!text.trim()) {
+          toast("Nothing to copy yet.", "error");
+          return;
+        }
+
+        copyText(text);
+      });
+
+      controls.appendChild(copy);
+      output.insertAdjacentElement("afterend", controls);
+    });
+  }
+
+  function enhanceButtons() {
+    const ids = [
+      "boostBtn",
+      "generateHookBtn",
+      "generateHashtagBtn",
+      "generateCaptionBtn",
+      "generateIdeaBtn",
+      "analyzeBtn",
+      "performanceBtn",
+      "abTestBtn"
+    ];
+
+    ids.forEach((id) => {
+      const button = document.getElementById(id);
+
+      if (!button || button.dataset.r7Button) return;
+
+      button.dataset.r7Button = "1";
+
+      const originalText = button.textContent.trim();
+
+      button.addEventListener("click", () => {
+        if (button.disabled) return;
+
+        button.classList.add("v7-loading");
+        button.dataset.originalText = originalText;
+
+        const restore = () => {
+          button.classList.remove("v7-loading");
+
+          if (button.dataset.originalText) {
+            button.textContent = button.dataset.originalText;
+          }
+        };
+
+        const messages = {
+          boostBtn: "Boosting...",
+          generateHookBtn: "Creating hooks...",
+          generateHashtagBtn: "Building hashtags...",
+          generateCaptionBtn: "Writing captions...",
+          generateIdeaBtn: "Finding ideas...",
+          analyzeBtn: "Analyzing...",
+          performanceBtn: "Reading performance...",
+          abTestBtn: "Comparing..."
+        };
+
+        button.textContent = messages[id] || originalText;
+
+        setTimeout(restore, 4500);
+      });
+    });
+  }
+
+  function monitorBoostOutput() {
+    const output = document.getElementById("boostOutput");
+    if (!output || output.dataset.r7Observer) return;
+
+    output.dataset.r7Observer = "1";
+
+    const observer = new MutationObserver(() => {
+      refreshPulse();
+      enhanceResultCards();
+      enhanceButtons();
+
+      const text = (output.textContent || "").trim();
+
+      if (
+        text &&
+        !text.includes("Enter your content and run Boost.") &&
+        !text.includes("Analyzing your content...")
+      ) {
+        toast("Boost complete.");
+      }
+    });
+
+    observer.observe(output, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  }
+
+  function enhanceSectionTitles() {
+    document.querySelectorAll(".section .topline h1").forEach((title) => {
+      if (title.querySelector(".v7-page-badge")) return;
+
+      const badge = document.createElement("span");
+      badge.className = "v7-badge v7-page-badge";
+      badge.textContent = "RIZORA";
+
+      title.appendChild(badge);
+    });
+  }
+
+  function start() {
+    document.body.classList.add("rizora-v7");
+
+    addStyles();
+    createDashboardUpgrade();
+    createPulse();
+    enhanceResultCards();
+    enhanceButtons();
+    monitorBoostOutput();
+    enhanceSectionTitles();
+    refreshPulse();
+
+    setInterval(() => {
+      enhanceResultCards();
+      enhanceButtons();
+      enhanceSectionTitles();
+      refreshPulse();
+    }, 1500);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
+})();

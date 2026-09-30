@@ -6,18 +6,13 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "node scripts/capacitor-copy.cjs",
-    "cap:copy": "node scripts/capacitor-copy.cjs",
-    "cap:sync": "npm run build && npx cap sync"
+    "build": "node -e \"console.log('RIZORA static frontend: no compilation step required')\""
   },
   "dependencies": {
-    "@capacitor/android": "^8.5.2",
-    "@capacitor/cli": "^8.5.2",
-    "@capacitor/core": "^8.5.2",
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
     "dotenv": "^16.6.1",
     "google-auth-library": "^11.1.0"
-  },
-  "engines": {
-    "node": ">=24 <25"
   }
 }

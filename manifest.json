@@ -1,16 +1,10 @@
 {
   "name": "RIZORA",
   "short_name": "RIZORA",
-  "id": "/",
-  "description": "Creator social, growth missions, AI tools, analytics, opportunities, community and creator campaigns.",
+  "description": "Creator growth, missions, analytics and AI.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": [
-    "window-controls-overlay",
-    "standalone"
-  ],
-  "prefer_related_applications": false,
   "background_color": "#07060d",
   "theme_color": "#080611",
   "orientation": "portrait-primary",
@@ -21,5 +15,11 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "id": "/",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "prefer_related_applications": false
 }

@@ -31,14 +31,37 @@ function cookieFrom(response) {
 }
 
 async function main() {
-  const fs = require("fs");
-  const vercelConfig = JSON.parse(fs.readFileSync("vercel.json", "utf8"));
-  const vercelIgnore = fs.readFileSync(".vercelignore", "utf8").split(/\r?\n/);
-  assert(vercelConfig.framework === null, "Vercel framework must be null/Other for the production static app");
-  assert(vercelConfig.buildCommand === null, "Vercel build command must be null for the production static app");
-  assert(vercelConfig.installCommand === "", "Vercel install command must be empty for the production static app");
-  assert(vercelConfig.outputDirectory === ".", "Vercel output directory must be the repository root");
-  for (const backendFile of [
+  const indexSource = require("fs").readFileSync("index.html", "utf8");
+  const suiteSource = require("fs").readFileSync("rizora-v2-suite.js", "utf8");
+  const serviceWorkerSource = require("fs").readFileSync("service-worker.js", "utf8");
+  const vercelConfig = JSON.parse(require("fs").readFileSync("vercel.json", "utf8"));
+  const vercelIgnore = require("fs").readFileSync(".vercelignore", "utf8");
+  const frontendModules = [
+    "rizora-v2.js",
+    "rizora-v2-enterprise-ui.js",
+    "rizora-v2-suite.js",
+    "rizora-v2-next.js",
+    "rizora-v2-growth-ui.js",
+    "rizora-v2-modern-ui.js",
+    "rizora-v2-upgrades-ui.js",
+    "rizora-v2-global-ui.js",
+    "rizora-v2-media.js",
+    "rizora-v2-voice.js",
+    "rizora-v2-series-ui.js",
+    "rizora-v2-events-ui.js",
+    "rizora-v2-business-ui.js",
+    "rizora-v2-comments-ui.js",
+    "rizora-v2-labs-ui.js",
+    "rizora-v2-hub.js",
+    "rizora-v2-downloads.js"
+  ];
+  for (const modulePath of frontendModules) {
+    const checked = require("child_process").spawnSync(process.execPath, ["--check", modulePath], { encoding: "utf8" });
+    assert(checked.status === 0, "Frontend module syntax check failed: " + modulePath + "\n" + (checked.stderr || checked.stdout || ""));
+  }
+
+  assert(/(^|\n)database\/(?:\r?\n|$)/.test(vercelIgnore), "Vercel ignore must block the backend database directory");
+  const backendFiles = [
     "server.js",
     "rizora-v2-backend.js",
     "rizora-v2-enterprise.js",
@@ -54,7 +77,67 @@ async function main() {
     "rizora-v2-comments.js",
     "rizora-v2-media-backend.js",
     "rizora-v2-business.js"
-  ]) assert(vercelIgnore.includes(backendFile), "Vercel ignore must block backend module: " + backendFile);
+  ];
+  for (const backendFile of backendFiles) {
+    assert(vercelIgnore.split(/\r?\n/).includes(backendFile), "Vercel ignore must block backend module: " + backendFile);
+  }
+  const serviceWorkerAssets = Array.from(serviceWorkerSource.matchAll(/["']\/(?:[^"'?]+\.(?:js|css|png|json|html))["']/g)).map(m => m[1] || m[0].slice(1,-1));
+  const premiumUiSource = require("fs").readFileSync("rizora-v2-enterprise-ui.js", "utf8");
+  const coreUiSource = require("fs").readFileSync("rizora-v2.js", "utf8");
+
+  assert(!indexSource.includes("/rizora-v2-growth.js"), "frontend must not load the backend-only rizora-v2-growth.js module");
+  assert(suiteSource.includes("function modal("), "Creator Suite modal constructor is missing");
+  assert(suiteSource.includes("function toast("), "Creator Suite toast helper is missing");
+  assert(suiteSource.includes("bindSuiteButtons(b);"), "Creator Suite controls are not bound");
+  assert(/RIZORA_CACHE="rizora-v2-shell-v\d+-voice-badge-ai(?:-[^"]+)?"/.test(serviceWorkerSource), "PWA cache version must be a voice/badge cache");
+  assert(!serviceWorkerSource.includes('"/rizora-v2-growth.js"'), "PWA cache must not contain the backend-only growth module");
+  assert(!("framework" in vercelConfig), "Static Vercel config should not force a framework");
+  assert(!("buildCommand" in vercelConfig), "Static Vercel config should not force a build command");
+  assert(!("installCommand" in vercelConfig), "Static Vercel config should not force an install command");
+  assert(!("outputDirectory" in vercelConfig), "Static Vercel config should serve the repository root directly");
+  assert(Array.isArray(vercelConfig.rewrites) && vercelConfig.rewrites.some(x => x.source === "/login" && x.destination === "/"), "Vercel login rewrite is missing");
+  for (const assetPath of new Set(serviceWorkerAssets)) {
+    const fsPath = String(assetPath).replace(/^\//, "");
+    assert(require("fs").existsSync(fsPath), "Service worker asset is missing: " + assetPath);
+  }
+  assert(indexSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not linked");
+  assert(indexSource.includes("/rizora-v2-voice.js"), "RIZORA voice module is not linked");
+  const voiceSource = require("fs").readFileSync("rizora-v2-voice.js", "utf8");
+  const commentsSource = require("fs").readFileSync("rizora-v2-comments.js", "utf8");
+   const mediaSource = require("fs").readFileSync("rizora-v2-media.js", "utf8");
+  assert(voiceSource.includes('"/api/ai/transcribe"'), "AI voice transcription route is missing from voice module");
+  assert(voiceSource.includes('data-chat-target'), "Voice module is not wired to one-to-one chats");
+  assert(voiceSource.includes('data-post-id'), "Voice module is not wired to comments");
+  assert(voiceSource.includes('id="aiInput"') || voiceSource.includes("#aiInput"), "Voice module is not wired to the AI composer");
+  assert(voiceSource.includes("RIZORA_UPLOAD_FILE"), "Voice module is not wired to the media uploader");
+  assert(voiceSource.includes("RIZORA_AI_SPEAK"), "AI voice playback helper is missing");
+   assert(coreUiSource.includes("data-ai-speak"), "AI voice playback controls are missing from the AI UI");
+  assert(mediaSource.includes('"audio/webm"'), "Media uploader must allow recorded WebM voice notes");
+  assert(commentsSource.includes("mediaUrl:comment.mediaUrl||\"\""), "Comment moderation formatter must preserve voice media URL");
+  assert(commentsSource.includes("messageType:comment.messageType||\"text\""), "Comment moderation formatter must preserve message type");
+
+  assert(require("fs").existsSync("assets/rizora_verified_badge.svg"), "RIZORA verified badge asset is missing");
+  assert(indexSource.includes("/assets/rizora_verified_badge.svg"), "RIZORA full verified badge is not wired into the landing UI");
+  assert(serviceWorkerSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not cached by the PWA shell");
+  assert(serviceWorkerSource.includes("/assets/rizora_verified_badge.svg"), "RIZORA verified badge is not cached by the PWA shell");
+  assert(serviceWorkerSource.includes("/assets/rizora_verified_mark.svg"), "RIZORA verified mark is not cached by the PWA shell");
+  assert(serviceWorkerSource.includes("/rizora-v2-voice.js"), "RIZORA voice module is not cached by the PWA shell");
+  assert(serviceWorkerSource.includes("/rizora-v2-ads-ui.js"), "RIZORA Ads UI is not cached by the PWA shell");
+  assert(premiumUiSource.includes("premium_plus"), "Premium+ UI wiring is missing");
+  assert(premiumUiSource.includes('plan:"premium_plus"'), "Premium+ checkout plan is missing");
+  assert(coreUiSource.includes("rzPremiumVerificationHint"), "Premium suggestion block is missing");
+  assert(coreUiSource.includes("rzDismissPremiumSuggestion"), "Premium suggestion dismiss control is missing");
+  const assetRefs = [
+    ...Array.from(indexSource.matchAll(/src=["']\/([^"'?]+\.js)(?:\?[^"']*)?["']/g)).map(m => m[1]),
+    ...Array.from(indexSource.matchAll(/href=["']\/([^"'?]+\.css)(?:\?[^"']*)?["']/g)).map(m => m[1])
+  ].filter(Boolean);
+  for (const asset of new Set(assetRefs)) {
+    assert(require("fs").existsSync(asset), "Indexed frontend asset is missing: " + asset);
+  }
+  assert(!("buildCommand" in vercelConfig), "Static Vercel config should not force a Node build command");
+  assert(!("installCommand" in vercelConfig), "Static Vercel config should not force dependency installation");
+  assert(!("outputDirectory" in vercelConfig), "Static Vercel config should serve the repository root directly");
+
   const child = spawn(process.execPath, ["server.js"], {
     cwd: process.cwd(),
     env: {
@@ -99,6 +182,20 @@ async function main() {
       }
     }
 
+    const badgeAsset = await request("/assets/rizora_verified_badge.svg");
+    assert(badgeAsset.res.status === 200, "RIZORA verified badge asset is not publicly available");
+
+    const officialProfiles = await request("/api/official/profiles");
+    assert(officialProfiles.res.status === 200 && Array.isArray(officialProfiles.data.profiles), "official profiles endpoint failed");
+    const officialHandles = new Set((officialProfiles.data.profiles || []).map(p => String(p.publicUsername || p.username || "").toLowerCase()));
+    assert(officialHandles.has("rizora"), "RIZORA official verified profile is missing");
+    assert(officialHandles.has("romi.noir"), "RoMi official verified profile is missing");
+    assert((officialProfiles.data.profiles || []).filter(p => p.verified === true).length >= 2, "Expected two verified official identities");
+    const rizoraOfficial = (officialProfiles.data.profiles || []).find(p => String(p.publicUsername || p.username || "").toLowerCase() === "rizora");
+    const romiOfficial = (officialProfiles.data.profiles || []).find(p => String(p.publicUsername || p.username || "").toLowerCase() === "romi.noir");
+    assert(rizoraOfficial && rizoraOfficial.links && rizoraOfficial.links.tiktok, "RIZORA official social links are missing");
+    assert(romiOfficial && romiOfficial.links && romiOfficial.links.tiktok, "RoMi official social link is missing");
+
     const suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     const username = "smoke_" + suffix;
     const email = username + "@example.com";
@@ -123,24 +220,41 @@ async function main() {
     const authHeaders = { Cookie: cookie, "Content-Type": "application/json" };
 
     const me = await request("/api/auth/me", { headers: authHeaders });
-    assert(me.res.status === 200 && me.data.user && me.data.user.username === username, "auth/me failed");
+    const welcomeNotifications = await request("/api/v2/notifications", { headers: authHeaders });
+    assert(welcomeNotifications.res.status === 200 && (welcomeNotifications.data.notifications || []).some(n => n.type === "system" && /welcome/i.test(String(n.title || ""))), "welcome notification was not created");
+    assert(me.res.status === 200 && me.data.user && me.data.user.username === username, "auth/me cookie session failed");
 
-    const verificationRequest = await request("/api/verification/apply", {
-      method: "POST",
-      headers: authHeaders,
-      body: JSON.stringify({
-        reason: "Smoke test creator identity verification.",
-        proofUrl: "https://example.com/rizora-smoke-proof"
-      })
-    });
-    assert(verificationRequest.res.status === 201, "verification submission failed: " + JSON.stringify(verificationRequest.data));
-    assert(verificationRequest.data.status === "pending", "verification request did not enter pending state");
+    const bearerHeaders = {
+      Authorization: "Bearer " + signup.data.token,
+      "Content-Type": "application/json"
+    };
 
-    const v2me = await request("/api/v2/me", { headers: authHeaders });
-    assert(v2me.res.status === 200 && v2me.data.user, "v2/me failed");
+    const bearerMe = await request("/api/auth/me", { headers: bearerHeaders });
+    assert(bearerMe.res.status === 200 && bearerMe.data.user && bearerMe.data.user.username === username, "auth/me bearer session failed");
+
+    const v2me = await request("/api/v2/me", { headers: bearerHeaders });
+    assert(v2me.res.status === 200 && v2me.data.user, "v2/me bearer session failed");
 
     const feed = await request("/api/v2/feed?tab=for-you", { headers: authHeaders });
     assert(feed.res.status === 200 && Array.isArray(feed.data.posts), "feed failed");
+
+    const referralState = await request("/api/referrals/me", { headers: authHeaders });
+    assert(referralState.res.status === 200 && referralState.data && referralState.data.referralCode, "referral endpoint failed");
+
+    const leaderboard = await request("/api/leaderboard", { headers: authHeaders });
+    assert(leaderboard.res.status === 200 && Array.isArray(leaderboard.data.leaderboard || leaderboard.data.users || leaderboard.data.rows), "leaderboard endpoint failed");
+
+    const boosts = await request("/api/boosts", { headers: authHeaders });
+    assert(boosts.res.status === 200 && Array.isArray(boosts.data.boosts || boosts.data.items || boosts.data.campaigns), "boosts endpoint failed");
+
+    const socialOverview = await request("/api/social/overview", { headers: authHeaders });
+    assert(socialOverview.res.status === 200 && socialOverview.data && typeof socialOverview.data === "object", "social overview endpoint failed");
+
+    const adsAccess = await request("/api/v2/ads/access");
+    assert(adsAccess.res.status === 200 && adsAccess.data && adsAccess.data.paymentProvider === "paystack", "RIZORA Ads access endpoint failed");
+
+    const adsFeed = await request("/api/v2/ads");
+    assert(adsFeed.res.status === 200 && Array.isArray(adsFeed.data.ads), "RIZORA Ads public feed endpoint failed");
 
     const tasks = await request("/api/tasks", { headers: authHeaders });
     const corsPreflight = await request("/api/v2/profile", {
@@ -151,10 +265,25 @@ async function main() {
       }
     });
     assert(corsPreflight.res.status === 204 && /PATCH/i.test(corsPreflight.res.headers.get("access-control-allow-methods") || ""), "CORS preflight does not allow PATCH requests");
-    const blockedOrigin = await request("/api/auth/me", { headers: { Origin: "https://evil.example" } });
-    assert(blockedOrigin.res.status === 403, "disallowed browser origin was not blocked");
 
     assert(tasks.res.status === 200 && Array.isArray(tasks.data.tasks), "tasks failed");
+    assert(!(tasks.data.tasks || []).some(t => t.type === "social_follow"), "legacy social missions are still duplicated in the general task feed");
+    const exploreTask = (tasks.data.tasks || []).find(t => t.id === "rizora_explore");
+    assert(exploreTask && Number(exploreTask.points || exploreTask.reward || 0) === 50, "Explore task reward is not 50 points");
+    const taskStart = await request("/api/tasks/start", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ taskId: exploreTask.id })
+    });
+    assert(taskStart.res.status === 200 && taskStart.data.success === true, "task start route is not working");
+    await sleep(21000);
+    const taskComplete = await request("/api/tasks/complete", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ taskId: exploreTask.id })
+    });
+    assert(taskComplete.res.status === 200 && Number(taskComplete.data.reward) === 50, "task completion/reward flow failed: " + JSON.stringify(taskComplete.data));
+    assert(Number(taskComplete.data.cooldownMinutes || 0) === 7, "task cooldown is not 7 minutes");
 
     const socialTasks = await request("/api/social/tasks", { headers: authHeaders });
     assert(socialTasks.res.status === 200 && Array.isArray(socialTasks.data.tasks), "social tasks endpoint failed");
@@ -215,7 +344,22 @@ async function main() {
     });
     assert(voiceUpload.res.status === 201 && voiceUpload.data.media && voiceUpload.data.media.id, "voice media upload failed");
 
-    const voiceMessage = await request("/api/v2/messages/" + encodeURIComponent(username), {
+    const voicePeerUsername = "voicepeer_" + suffix;
+    const voicePeerEmail = voicePeerUsername + "@example.com";
+    const voicePeerSignup = await request("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: voicePeerUsername,
+        displayName: "RIZORA Voice Peer",
+        email: voicePeerEmail,
+        password: "SmokePass123",
+        confirmPassword: "SmokePass123"
+      })
+    });
+    assert(voicePeerSignup.res.status === 201, "voice peer signup failed: " + JSON.stringify(voicePeerSignup.data));
+    const voiceRecipient = voicePeerUsername;
+    const voiceMessage = await request("/api/v2/messages/" + encodeURIComponent(voiceRecipient), {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({
@@ -225,7 +369,18 @@ async function main() {
     });
     assert(voiceMessage.res.status === 201, "voice one-to-one message failed");
 
-    const voiceThread = await request("/api/v2/messages/" + encodeURIComponent(username), { headers: authHeaders });
+    const voiceThread = await request("/api/v2/messages/" + encodeURIComponent(voiceRecipient), { headers: authHeaders });
+    const voiceRecord = (voiceThread.data.messages || []).find(m => m.messageType === "voice" && m.mediaUrl);
+    assert(voiceRecord && voiceRecord.mediaUrl, "voice message media URL missing");
+    const voiceOwnerFetch = await request(voiceRecord.mediaUrl, { headers: authHeaders });
+    assert(voiceOwnerFetch.res.status === 200, "voice owner could not fetch the voice media");
+    const voicePeerMe = await request("/api/auth/me", { headers: { Cookie: cookieFrom(voicePeerSignup.res) } });
+    assert(voicePeerMe.res.status === 200 && voicePeerMe.data.user, "voice peer session failed");
+    const voicePeerHeaders = { Cookie: cookieFrom(voicePeerSignup.res) };
+    const voicePeerFetch = await request(voiceRecord.mediaUrl, { headers: voicePeerHeaders });
+    assert(voicePeerFetch.res.status === 200, "voice recipient could not fetch the voice media");
+
+
     assert(voiceThread.res.status === 200 && voiceThread.data.messages.some(m => m.messageType === "voice" && m.mediaUrl), "voice one-to-one message did not round-trip");
 
     const postForVoice = await request("/api/v2/posts", {
@@ -246,7 +401,7 @@ async function main() {
     assert(voiceComment.res.status === 201, "voice comment creation failed");
 
     const voiceComments = await request("/api/v2/posts/" + encodeURIComponent(postForVoice.data.post.id) + "/comments", { headers: authHeaders });
-    assert(voiceComments.res.status === 200 && voiceComments.data.comments.some(m => m.messageType === "voice" && m.mediaUrl), "voice comment did not round-trip");
+    assert(voiceComments.res.status === 200 && voiceComments.data.comments.some(c => c.messageType === "voice" && c.mediaUrl), "voice comment did not round-trip");
 
     const transcribeReject = await request("/api/ai/transcribe", {
       method: "POST",

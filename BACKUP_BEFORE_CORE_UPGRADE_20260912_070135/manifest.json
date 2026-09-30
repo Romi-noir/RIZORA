@@ -1,0 +1,13 @@
+﻿{
+  "name": "RIZORA — Creator Growth Platform",
+  "short_name": "RIZORA",
+  "description": "RIZORA is a creator growth platform for discovering tasks, earning points, improving content and connecting with creators.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#05060a",
+  "theme_color": "#07080d",
+  "lang": "en",
+  "categories": ["social", "productivity", "lifestyle"]
+}

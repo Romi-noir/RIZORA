@@ -1,8 +1,8 @@
 (function(){
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
-function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var t=await r.text(),d={};try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}if(!r.ok)throw new Error(d.message||d.error||"Request failed.");return d;}
+function toast(s){var t=document.getElementById("toast");if(!t)return;t.textContent=String(s||"");t.classList.add("show");clearTimeout(window.__rzLocalToast);window.__rzLocalToast=setTimeout(function(){t.classList.remove("show");},2600);}function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
 function close(){var x=document.getElementById("rzModernOverlay");if(x)x.remove();}
 function modal(title,sub,body){close();var m=document.createElement("div");m.id="rzModernOverlay";m.className="rz-modern-overlay";m.innerHTML='<div class="rz-modern-panel"><div class="rz-modern-head"><div><div class="rz-kicker">RIZORA CONTROL CENTER</div><h2>'+esc(title)+'</h2><p>'+esc(sub||"")+'</p></div><button class="rz-btn" id="rzModernClose">Close</button></div><div id="rzModernBody">'+body+'</div></div>';document.body.appendChild(m);document.getElementById("rzModernClose").onclick=close;m.addEventListener("click",function(e){if(e.target===m)close();});return m;}
 function notify(s){if(window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.toast)return window.RIZORA_ENTERPRISE.toast(s);alert(s);}
@@ -78,7 +78,7 @@ async function safety(){
   m.querySelectorAll("[data-rz-unmute]").forEach(function(b){b.onclick=async function(){try{await api("/api/v2/mutes/"+encodeURIComponent(b.getAttribute("data-rz-unmute")),{method:"DELETE"});safety();}catch(e){notify(e.message);}};});
 }
 async function exportData(){
-  try{var d=await api("/api/v2/data/export"),blob=new Blob([JSON.stringify(d.data,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="rizora-data-export-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);notify("Your RIZORA data export is ready.");}catch(e){notify(e.message);}
+  try{var d=await api("/api/v2/data/export"),blob=new Blob([JSON.stringify(d.data,null,2)],{type:"application/json"}),name="rizora-data-export-"+new Date().toISOString().slice(0,10)+".json";if(window.RIZORA_DOWNLOAD&&window.RIZORA_DOWNLOAD.blob)window.RIZORA_DOWNLOAD.blob(blob,name,"account-export");else{var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}notify("Your RIZORA data export is ready.");}catch(e){notify(e.message);}
 }
 function inject(){
   var aside=document.querySelector(".rz-sidebar"),nav=aside&&aside.querySelector(".rz-nav");

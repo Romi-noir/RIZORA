@@ -3,14 +3,8 @@
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-async function api(path,opt){
-  opt=opt||{};
-  var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});
-  var t=await r.text(),d={};
-  try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}
-  if(!r.ok)throw new Error(d.message||d.error||"Request failed.");
-  return d;
-}
+async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
+function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function closeModal(){var m=document.getElementById("rzNextModal");if(m)m.remove();}
 function modal(title,kicker,body){
   closeModal();
@@ -212,14 +206,7 @@ function integrity(){
       '<p class="rz-muted">RIZORA still applies its platform safety rules at publish time. This tool helps you catch avoidable quality and attribution problems before submission.</p></div>';
   };
 }
-function inject(){
-  if(document.getElementById("rzNextTools"))return;
-  var aside=document.querySelector(".rz-sidebar");if(!aside)return;
-  var box=document.createElement("div");box.id="rzNextTools";box.className="rz-next-tools";
-  box.innerHTML='<div class="rz-enterprise-heading">NEXT-GEN TOOLS</div><button class="rz-btn" data-next-open="assistant">Creator Assistant</button><button class="rz-btn" data-next-open="business">Business Hub</button><button class="rz-btn" data-next-open="integrity">Content Integrity</button><button class="rz-btn" data-next-open="integrity">Pre-publish Check</button>';
-  aside.appendChild(box);
-  box.querySelectorAll("[data-next-open]").forEach(function(b){b.onclick=function(){var x=b.getAttribute("data-next-open");if(x==="assistant")assistant();if(x==="business")business();if(x==="memberships")memberships();if(x==="integrity")integrity();};});
-}
+function inject(){return;}
 async function verifyTipCallback(){
   var ref=new URLSearchParams(location.search).get("reference");
   if(!ref||ref.indexOf("tip_")!==0)return;

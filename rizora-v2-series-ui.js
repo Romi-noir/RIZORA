@@ -4,13 +4,7 @@
   var overlay=null;
 
   function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-  async function api(path,opt){
-    opt=opt||{};
-    var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});
-    var t=await r.text(),d={}; try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}
-    if(!r.ok)throw new Error(d.message||d.error||"Request failed.");
-    return d;
-  }
+  async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
   function close(){if(overlay){overlay.remove();overlay=null;}}
   function modal(title,body){
     close();

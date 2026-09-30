@@ -5,12 +5,8 @@ var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 var activeEnterpriseView=null;
 
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-async function api(path,opt){
-  opt=opt||{};
-  var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});
-  var t=await r.text(),d={}; try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}
-  if(!r.ok)throw new Error(d.message||d.error||"Request failed."); return d;
-}
+async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
+function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function toast(s){var t=document.getElementById("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rzxToast);window.__rzxToast=setTimeout(function(){t.classList.remove("show");},2600);}
 function backHome(){var b=document.querySelector('[data-nav="home"]');if(b)b.click();else activeEnterpriseView=null;}
 function renderInto(html){var c=document.getElementById("content");if(!c)return;activeEnterpriseView=html;c.innerHTML=html;bindView();}
@@ -19,21 +15,36 @@ function header(kicker,title,sub){return '<section class="rz-card rz-enterprise-
 
 
 async function showPremium(){
- renderInto(header("PREMIUM","RIZORA Premium","Higher creator intelligence, deeper analytics and advanced creator workflows.")+
+ renderInto(header("PREMIUM","RIZORA Premium","Keep both Premium tiers visible, manage your current plan, and upgrade without losing the Premium block.")+
  '<section class="rz-card"><div id="rzPremiumStatus"><div class="rz-empty">Loading Premium status…</div></div></section>'+
- '<section class="rz-card"><h3>Premium capabilities</h3><div class="rz-enterprise-grid"><div><strong>Advanced AI</strong><p class="rz-muted">Higher creator intelligence capacity.</p></div><div><strong>Advanced Analytics</strong><p class="rz-muted">Deeper creator performance insight.</p></div><div><strong>Creator Portfolio</strong><p class="rz-muted">Professional identity and portfolio tools.</p></div><div><strong>Experiments</strong><p class="rz-muted">Test hooks and content ideas.</p></div></div></section>');
+ '<section class="rz-card"><h3>Premium capabilities</h3><div class="rz-enterprise-grid"><div><strong>Advanced AI</strong><p class="rz-muted">Higher creator intelligence capacity.</p></div><div><strong>Advanced Analytics</strong><p class="rz-muted">Deeper creator performance insight.</p></div><div><strong>Creator Portfolio</strong><p class="rz-muted">Professional identity and portfolio tools.</p></div><div><strong>Experiments</strong><p class="rz-muted">Test hooks and content ideas.</p></div></div></section>'+
+ '<section class="rz-card"><div class="rz-section-title"><div><h3>Premium tiers</h3><p class="rz-muted">The tier cards stay visible even after subscription.</p></div></div><div id="rzPremiumTiers" class="rz-enterprise-grid"><div class="rz-empty">Loading tiers…</div></div></section>');
  api("/api/v2/premium/status").then(function(d){
    var el=document.getElementById("rzPremiumStatus");if(!el)return;
-   var title=d.active?"Premium active":"Free plan";
-   var copy=d.active?("Status: "+(d.status||"active")+(d.nextPaymentDate?" · next payment "+new Date(d.nextPaymentDate).toLocaleDateString():"")):"Premium billing is available when Paystack plan configuration is enabled.";
-   var action=d.active
+   var plan=String(d.plan||"free").toLowerCase();
+   var active=!!d.active;
+   var title=active?"Premium active":"Free plan";
+   var copy=active?("Current tier: "+(plan==="premium_plus"?"Premium+":"Premium")+". Status: "+(d.status||"active")+(d.nextPaymentDate?" · next payment "+new Date(d.nextPaymentDate).toLocaleDateString():"")):"Choose Premium or Premium+ to unlock advanced creator capabilities.";
+   var action=active
      ? (d.canCancel?btn("Turn off auto-renewal","premium-cancel"):'<span class="rz-badge">'+esc(d.status||"active")+'</span>')
-     : btn("Upgrade to Premium","premium-subscribe","primary");
-   el.innerHTML='<div class="rz-section-title"><div><h3>'+title+'</h3><p class="rz-muted">'+esc(copy)+'</p></div>'+action+'</div><div class="rz-mini">'+(d.configured?"Paystack plan configured.":"Paystack Premium plan not configured yet.")+'</div>';
-   var b=el.querySelector('[data-rzx-action="premium-subscribe"]');
-   if(b)b.onclick=async function(){try{var x=await api("/api/v2/premium/subscribe",{method:"POST",body:"{}"});if(x.authorizationUrl)location.href=x.authorizationUrl;}catch(e){toast(e.message);}};
-   var c=el.querySelector('[data-rzx-action="premium-cancel"]');
-   if(c)c.onclick=async function(){if(!confirm("Stop RIZORA Premium from renewing? Your access stays active until the paid period ends."))return;try{var x=await api("/api/v2/premium/cancel",{method:"POST",body:"{}"});toast(x.status==="non-renewing"?"Premium renewal disabled.":"Premium updated.");showPremium();}catch(e){toast(e.message);}};
+     : '<span class="rz-badge">Ready to upgrade</span>';
+   el.innerHTML='<div class="rz-section-title"><div><h3>'+title+'</h3><p class="rz-muted">'+esc(copy)+'</p></div>'+action+'</div><div class="rz-mini">'+(d.configured?"Paystack Premium plan configured.":"Paystack Premium plan not configured yet.")+'</div>';
+   var tiers=document.getElementById("rzPremiumTiers");
+   if(tiers){
+     var premiumReady=!!(d.plans&&d.plans.premium&&d.plans.premium.configured);
+     var plusReady=!!(d.plans&&d.plans.premium_plus&&d.plans.premium_plus.configured);
+     var premiumCurrent=active&&plan==="premium";
+     var plusCurrent=active&&plan==="premium_plus";
+     tiers.innerHTML=
+       '<div class="rz-card"><div class="rz-kicker">'+(premiumCurrent?"CURRENT PLAN":"PREMIUM")+'</div><h3>₦4,000</h3><p class="rz-muted">Advanced creator intelligence, analytics and Pro tools.</p>'+(premiumCurrent?'<span class="rz-badge">Active</span>':'<button class="rz-btn primary" data-rzx-action="premium-subscribe" '+((premiumReady&&!active)?"":"disabled")+'>Get Premium</button>')+(!premiumReady&&!premiumCurrent?'<div class="rz-mini">Billing setup pending.</div>':"")+'</div>'+
+       '<div class="rz-card"><div class="rz-kicker">'+(plusCurrent?"CURRENT PLAN":"PREMIUM+")+'</div><h3>₦13,000</h3><p class="rz-muted">Everything in Premium, with the expanded premium tier for your creator workflow.</p>'+(plusCurrent?'<span class="rz-badge">Active</span>':'<button class="rz-btn primary" data-rzx-action="premium-plus-subscribe" '+(plusReady?"":"disabled")+'>Get Premium+</button>')+(!plusReady&&!plusCurrent?'<div class="rz-mini">Billing setup pending.</div>':"")+'</div>';
+     var sub=tiers.querySelector('[data-rzx-action="premium-subscribe"]');
+     if(sub)sub.onclick=async function(){try{var x=await api("/api/v2/premium/subscribe",{method:"POST",body:JSON.stringify({plan:"premium"})});if(x.authorizationUrl)location.href=x.authorizationUrl;}catch(e){toast(e.message);}};
+     var plus=tiers.querySelector('[data-rzx-action="premium-plus-subscribe"]');
+     if(plus)plus.onclick=async function(){try{var x=await api("/api/v2/premium/subscribe",{method:"POST",body:JSON.stringify({plan:"premium_plus"})});if(x.authorizationUrl)location.href=x.authorizationUrl;}catch(e){toast(e.message);}};
+   }
+   var cancel=el.querySelector('[data-rzx-action="premium-cancel"]');
+   if(cancel)cancel.onclick=async function(){if(!confirm("Stop RIZORA Premium from renewing? Your access stays active until the paid period ends."))return;try{var x=await api("/api/v2/premium/cancel",{method:"POST",body:"{}"});toast(x.status==="non-renewing"?"Premium renewal disabled.":"Premium updated.");showPremium();}catch(e){toast(e.message);}};
  }).catch(function(e){var el=document.getElementById("rzPremiumStatus");if(el)el.innerHTML='<div class="rz-error">'+esc(e.message)+'</div>';});
 }
 async function showChannels(){
@@ -99,24 +110,23 @@ async function loadSupport(){
 }
 async function showWallet(){
   renderInto(header("WALLET","Payments & transaction history","Secure payments through the providers configured on the RIZORA backend.")+
-  '<section class="rz-card"><div id="rzPayStatus" class="rz-mini">Checking payment configuration…</div><form id="rzPayForm"><div class="rz-enterprise-grid"><div class="rz-field"><label class="rz-label">Amount (NGN)</label><input id="rzPayAmount" class="rz-input" type="number" min="1" max="10000000" step="1" placeholder="5000" required></div><div class="rz-field"><label class="rz-label">Email</label><input id="rzPayEmail" class="rz-input" type="email" placeholder="your@email.com" required></div><div class="rz-field"><label class="rz-label">Payment method</label><select id="rzPayMethod" class="rz-input"><option value="paystack">Paystack</option><option value="remita">Remita</option></select></div><div class="rz-field"><label class="rz-label">Purpose</label><select id="rzPayPurpose" class="rz-input"><option value="creator_boost">Creator Boost</option><option value="opportunity">Opportunity</option><option value="creator_service">Creator Service</option><option value="rizora_creator">RIZORA Creator</option></select></div><div class="rz-field"><label class="rz-label">Phone (Remita)</label><input id="rzPayPhone" class="rz-input" maxlength="30" placeholder="08012345678"></div><div class="rz-field"><label class="rz-label">Campaign ID (optional)</label><input id="rzPayCampaign" class="rz-input" maxlength="120" placeholder="Campaign ID"></div></div><div class="rz-actions">'+btn("Start secure payment","pay","primary")+'</div><div id="rzPayError" class="rz-error"></div></form></section><section class="rz-card"><div class="rz-section-title"><h3>Transactions</h3>'+btn("Refresh","refresh-wallet")+'</div><div id="rzTxList" class="rz-feed"><div class="rz-empty">Loading…</div></div></section>');
+  '<section class="rz-card"><div id="rzPayStatus" class="rz-mini">Checking payment configuration…</div><form id="rzPayForm"><div class="rz-enterprise-grid"><div class="rz-field"><label class="rz-label">Amount (NGN)</label><input id="rzPayAmount" class="rz-input" type="number" min="1" max="10000000" step="1" placeholder="5000" required></div><div class="rz-field"><label class="rz-label">Email</label><input id="rzPayEmail" class="rz-input" type="email" placeholder="your@email.com" required></div><div class="rz-field"><label class="rz-label">Payment method</label><select id="rzPayMethod" class="rz-input" disabled><option value="paystack">Paystack</option></select></div><div class="rz-field"><label class="rz-label">Purpose</label><select id="rzPayPurpose" class="rz-input"><option value="creator_boost">Creator Boost</option><option value="opportunity">Opportunity</option><option value="creator_service">Creator Service</option><option value="rizora_creator">RIZORA Creator</option></select></div><div class="rz-field"><label class="rz-label">Campaign ID (optional)</label><input id="rzPayCampaign" class="rz-input" maxlength="120" placeholder="Campaign ID"></div></div><div class="rz-actions">'+btn("Start secure payment","pay","primary")+'</div><div id="rzPayError" class="rz-error"></div></form></section><section class="rz-card"><div class="rz-section-title"><h3>Transactions</h3>'+btn("Refresh","refresh-wallet")+'</div><div id="rzTxList" class="rz-feed"><div class="rz-empty">Loading…</div></div></section>');
   document.getElementById("rzPayForm").onsubmit=async function(e){
     e.preventDefault();var er=document.getElementById("rzPayError");er.textContent="";
     var method=document.getElementById("rzPayMethod").value;
     try{
-      var payload={amountNaira:Number(document.getElementById("rzPayAmount").value),email:document.getElementById("rzPayEmail").value,purpose:document.getElementById("rzPayPurpose").value,campaignId:document.getElementById("rzPayCampaign").value,phone:document.getElementById("rzPayPhone").value};
-      var d=await api(method==="remita"?"/api/remita/initialize":"/api/v2/payments/initialize",{method:"POST",body:JSON.stringify(payload)});
+      var payload={amountNaira:Number(document.getElementById("rzPayAmount").value),email:document.getElementById("rzPayEmail").value,purpose:document.getElementById("rzPayPurpose").value,campaignId:document.getElementById("rzPayCampaign").value};
+      var d=await api("/api/v2/payments/initialize",{method:"POST",body:JSON.stringify(payload)});
       if(d.authorizationUrl)window.location.href=d.authorizationUrl;else if(d.paymentUrl)window.location.href=d.paymentUrl;else toast("Payment initialized.");
     }catch(x){er.textContent=x.message;}
   };loadWallet();
 }
 async function loadWallet(){
-  var pay="",rem="";
+  var pay="";
   try{var s=await api("/api/v2/payments/status");pay=s.configured?'<span class="rz-badge ok">Paystack connected</span> · '+esc(s.currency)+' · '+esc(s.mode):'<span class="rz-badge">Paystack setup pending</span>';}catch(_){pay='<span class="rz-badge">Paystack unavailable</span>';}
-  try{var r=await api("/api/remita/status");rem=r.configured?'<span class="rz-badge ok">Remita connected</span>':'<span class="rz-badge">Remita setup pending</span>';}catch(_){rem='<span class="rz-badge">Remita unavailable</span>';}
-  var status=document.getElementById("rzPayStatus");if(status)status.innerHTML=pay+" · "+rem;
+  var status=document.getElementById("rzPayStatus");if(status)status.innerHTML=pay;
   var list=document.getElementById("rzTxList");if(!list)return;
-  try{var d=await api("/api/v2/payments/transactions");list.innerHTML=(d.transactions||[]).map(function(t){return '<div class="rz-card"><strong>'+esc(t.reference)+'</strong><div>'+esc(t.amountNaira)+' '+esc(t.currency)+' · '+esc(t.status)+' · '+esc(t.provider||"paystack")+'</div><div class="rz-mini">'+esc(t.purpose)+' · '+new Date(t.createdAt).toLocaleString()+'</div>'+(t.status!=="success"?btn(t.provider==="remita"?"Verify Remita":"Verify",(t.provider==="remita"?"verify-remita:":"verify-payment:")+encodeURIComponent(t.provider==="remita"?(t.orderId||t.reference):t.reference)):"")+'</div>';}).join("")||'<div class="rz-empty">No transactions yet.</div>';}catch(x){list.innerHTML='<div class="rz-error">'+esc(x.message)+'</div>';}
+  try{var d=await api("/api/v2/payments/transactions");list.innerHTML=(d.transactions||[]).map(function(t){return '<div class="rz-card"><strong>'+esc(t.reference)+'</strong><div>'+esc(t.amountNaira)+' '+esc(t.currency)+' · '+esc(t.status)+' · '+esc(t.provider||"paystack")+'</div><div class="rz-mini">'+esc(t.purpose)+' · '+new Date(t.createdAt).toLocaleString()+'</div>'+(t.status!=="success"?btn("Verify","verify-payment:"+encodeURIComponent(t.reference)):"")+'</div>';}).join("")||'<div class="rz-empty">No transactions yet.</div>';}catch(x){list.innerHTML='<div class="rz-error">'+esc(x.message)+'</div>';}
 }
 async function showCreatorLookup(){
   renderInto(header("CREATOR IDENTITY","Creator profiles","Open a public creator profile with live metrics and recent posts.")+
@@ -172,12 +182,29 @@ function adminReport(r){return '<article class="rz-card"><strong>'+esc(r.targetT
 function bindAdmin(){
   document.querySelectorAll("[data-admin-ticket]").forEach(function(f){f.onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/admin/support/"+encodeURIComponent(f.getAttribute("data-admin-ticket")),{method:"POST",body:JSON.stringify({status:f.status.value,message:f.message.value})});toast("Support ticket updated.");showAdmin();}catch(x){toast(x.message);}};});
   document.querySelectorAll("[data-admin-report]").forEach(function(f){f.onsubmit=async function(e){e.preventDefault();try{await api("/api/v2/admin/reports/"+encodeURIComponent(f.getAttribute("data-admin-report")),{method:"POST",body:JSON.stringify({action:f.action.value})});toast("Moderation action applied.");showAdmin();}catch(x){toast(x.message);}};});
+  document.querySelectorAll("[data-user-save]").forEach(function(b){b.onclick=async function(){
+    var id=b.getAttribute("data-user-save");
+    var statusEl=document.querySelector('[data-user-status="'+id+'"]');
+    var roleEl=document.querySelector('[data-user-role="'+id+'"]');
+    try{
+      await api("/api/superadmin/users/status",{method:"POST",body:JSON.stringify({userId:id,status:statusEl&&statusEl.value||"active"})});
+      await api("/api/superadmin/users/role",{method:"POST",body:JSON.stringify({userId:id,role:roleEl&&roleEl.value||"user"})});
+      toast("User permissions updated.");showAdmin();
+    }catch(x){toast(x.message);}
+  };});
+  document.querySelectorAll("[data-task-toggle]").forEach(function(b){b.onclick=async function(){
+    var id=b.getAttribute("data-task-toggle");
+    var nextActive=b.textContent.trim().toLowerCase()==="activate";
+    try{
+      await api("/api/superadmin/tasks/status",{method:"POST",body:JSON.stringify({taskId:id,active:nextActive})});
+      toast(nextActive?"Mission activated.":"Mission disabled.");showAdmin();
+    }catch(x){toast(x.message);}
+  };});
 }
+
 async function verifyPayment(ref){try{var d=await api("/api/v2/payments/verify/"+encodeURIComponent(ref));toast("Payment status: "+d.status);loadWallet();}catch(x){toast(x.message);}}
-async function verifyRemitaPayment(ref){try{var d=await api("/api/remita/verify/"+encodeURIComponent(ref));toast("Remita status: "+d.status);loadWallet();}catch(x){toast(x.message);}}
 function bindView(){
-  document.querySelectorAll("[data-rzx-action]").forEach(function(b){b.onclick=async function(){var a=b.getAttribute("data-rzx-action");if(a==="premium")return showPremium();if(a==="premium-cancel")return; if(a==="channels")return showChannels();if(a==="shop")return showShop();if(a==="support")return showSupport();if(a==="wallet")return showWallet();if(a==="creator")return showCreatorLookup();if(a==="report")return showReport();if(a==="admin")return showAdmin();if(a==="boosts"){var n=document.querySelector('[data-nav="boosts"]');if(n)n.click();return;}if(a==="back")return backHome();if(a==="refresh-support")return loadSupport();if(a==="refresh-wallet")return loadWallet();if(a==="refresh-admin")return showAdmin();if(a.indexOf("verify-payment:")===0)return verifyPayment(decodeURIComponent(a.slice(15)));
-if(a.indexOf("verify-remita:")===0)return verifyRemitaPayment(decodeURIComponent(a.slice(14)));};});
+  document.querySelectorAll("[data-rzx-action]").forEach(function(b){b.onclick=async function(){var a=b.getAttribute("data-rzx-action");if(a==="premium")return showPremium();if(a==="premium-cancel")return; if(a==="channels")return showChannels();if(a==="shop")return showShop();if(a==="support")return showSupport();if(a==="wallet")return showWallet();if(a==="creator")return showCreatorLookup();if(a==="report")return showReport();if(a==="admin")return showAdmin();if(a==="boosts"){var n=document.querySelector('[data-nav="boosts"]');if(n)n.click();return;}if(a==="back")return backHome();if(a==="refresh-support")return loadSupport();if(a==="refresh-wallet")return loadWallet();if(a==="refresh-admin")return showAdmin();if(a.indexOf("verify-payment:")===0)return verifyPayment(a.slice(15));};});
 }
 
 function injectPasswordToggles(){
@@ -196,13 +223,7 @@ function injectPasswordToggles(){
   });
 }
 
-function injectTools(){
-  if(document.body.classList.contains("rz-auth")||!document.querySelector(".rz-sidebar")||document.getElementById("rzEnterpriseTools"))return;
-  var aside=document.querySelector(".rz-sidebar");if(!aside)return;
-  var box=document.createElement("div");box.id="rzEnterpriseTools";box.className="rz-enterprise-tools";
-  box.innerHTML='<div class="rz-enterprise-heading">PLATFORM</div>'+btn("Help Center","support")+btn("Premium","premium")+btn("Channels","channels")+btn("Creator Profiles","creator")+btn("Report & Safety","report")+btn("Boost Network","boosts")+btn("Super Admin","admin");
-  aside.appendChild(box);bindView();
-}
+function injectTools(){if(document.body.classList.contains("rz-auth"))return;bindView();}
 async function premiumReturnCheck(){
   var q=new URLSearchParams(location.search);
   var ref=q.get("reference")||q.get("trxref");

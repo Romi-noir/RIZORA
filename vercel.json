@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": ".",
   "rewrites": [
     {
       "source": "/join",
@@ -38,6 +37,10 @@
         {
           "key": "Content-Type",
           "value": "text/html; charset=utf-8"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "microphone=(self)"
         }
       ]
     },
@@ -63,8 +66,5 @@
         }
       ]
     }
-  ],
-  "framework": null,
-  "buildCommand": null,
-  "installCommand": ""
+  ]
 }

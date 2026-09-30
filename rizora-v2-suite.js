@@ -2,16 +2,23 @@
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-async function api(path,opt){opt=opt||{};var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});var t=await r.text(),d={};try{d=t?JSON.parse(t):{};}catch(_){d={error:t};}if(!r.ok)throw new Error(d.message||d.error||"Request failed.");return d;}
-function toast(s){if(window.RIZORA_ENTERPRISE&&typeof window.RIZORA_ENTERPRISE.toast==="function")return window.RIZORA_ENTERPRISE.toast(s);var t=document.getElementById("toast");if(!t)return;t.textContent=s;t.classList.add("show");clearTimeout(window.__rzSuiteToast);window.__rzSuiteToast=setTimeout(function(){t.classList.remove("show");},2400);}
-function modal(title,sub,body){
- var old=document.getElementById("rzSuiteModal");if(old)old.remove();
- var m=document.createElement("div");m.id="rzSuiteModal";m.className="rz-suite-overlay";
- m.innerHTML='<div class="rz-suite-panel"><div class="rz-suite-head"><div><div class="rz-kicker">RIZORA CREATOR SUITE</div><h2>'+esc(title)+'</h2><p class="rz-muted">'+esc(sub||"")+'</p></div><button class="rz-btn" id="rzSuiteClose">Close</button></div><div id="rzSuiteBody">'+body+'</div></div>';
- document.body.appendChild(m);document.getElementById("rzSuiteClose").onclick=function(){m.remove();};m.addEventListener("click",function(e){if(e.target===m)m.remove();});
- return document.getElementById("rzSuiteBody");
-}
+async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
+function toast(s){var t=document.getElementById("rzSuiteToast");if(!t){t=document.createElement("div");t.id="rzSuiteToast";t.className="rz-suite-toast";document.body.appendChild(t);}t.textContent=String(s||"");t.classList.add("show");clearTimeout(window.__rzSuiteToast);window.__rzSuiteToast=setTimeout(function(){t.classList.remove("show");},2600);}
 function card(title,body){return '<section class="rz-suite-card"><div class="rz-kicker">'+esc(title)+'</div>'+body+'</section>';}
+function closeSuiteModal(){var old=document.getElementById("rzSuiteModal");if(old)old.remove();}
+function modal(title,sub,body){
+  closeSuiteModal();
+  var m=document.createElement("div");
+  m.id="rzSuiteModal";
+  m.className="rz-suite-overlay";
+  m.innerHTML='<div class="rz-suite-panel"><div class="rz-suite-head"><div><div class="rz-kicker">RIZORA CREATOR SUITE</div><h2>'+esc(title)+'</h2><p class="rz-muted">'+esc(sub||"")+'</p></div><button class="rz-btn" id="rzSuiteClose">Close</button></div><div id="rzSuiteBody">'+body+'</div></div>';
+  document.body.appendChild(m);
+  var closeBtn=m.querySelector("#rzSuiteClose");
+  if(closeBtn)closeBtn.onclick=closeSuiteModal;
+  m.addEventListener("click",function(e){if(e.target===m)closeSuiteModal();});
+  return m;
+}
+
 function stat(v,k){return '<div class="rz-suite-stat"><strong>'+esc(v)+'</strong><span>'+esc(k)+'</span></div>';}
 
 async function premium(){
@@ -33,6 +40,7 @@ async function premium(){
    "RIZORA Premium is connected to the live billing entitlement API when Paystack Premium is configured.",
    premiumBody
  );
+ bindSuiteButtons(b);
  try{
    var x=await Promise.all([
      api("/api/v2/premium/status"),
@@ -74,37 +82,45 @@ async function premium(){
    var actions=document.getElementById("rzSuitePremiumActions");
    if(actions){
      var bill="";
+     var premiumReady=!!(p.plans&&p.plans.premium&&p.plans.premium.configured);
+     var plusReady=!!(p.plans&&p.plans.premium_plus&&p.plans.premium_plus.configured);
+     var isPlus=p.active&&String(p.plan||"").toLowerCase()==="premium_plus";
+     var premiumLabel=p.active&&!isPlus?"CURRENT PLAN":"PREMIUM";
+     var plusLabel=isPlus?"CURRENT PLAN":"PREMIUM+";
+     var premiumAction=p.active&&!isPlus
+       ? '<span class="rz-badge">Active</span>'
+       : '<button id="rzPremiumSubscribe" class="rz-btn primary" '+(premiumReady&&!p.active?"":"disabled")+'>Get Premium</button>';
+     var plusAction=isPlus
+       ? '<span class="rz-badge">Active</span>'
+       : '<button id="rzPremiumPlusSubscribe" class="rz-btn primary" '+(plusReady?"":"disabled")+'>Get Premium+</button>';
+     var billingStatus="";
      if(p.active){
-       bill=card(
-         "BILLING",
-         '<p class="rz-muted">Provider: '+esc(p.provider||"Paystack")+' · Status: '+esc(p.status||"active")+'</p>'+
+       billingStatus=card("BILLING",
+         '<p class="rz-muted">Current plan: <b>'+esc((p.plan||"premium").replace("_"," "))+'</b> · Provider: '+esc(p.provider||"Paystack")+' · Status: '+esc(p.status||"active")+'</p>'+
          (p.canCancel?
            '<button id="rzPremiumCancel" class="rz-btn">Cancel renewal</button>':
            '<p class="rz-mini">Cancellation becomes available once the recurring subscription credentials are received.</p>')
        );
-     }else if(p.configured){
-       bill=card(
-         "UPGRADE",
-         '<p class="rz-muted">Start the RIZORA Premium monthly subscription. You will continue through the secure Paystack checkout.</p>'+
-         '<button id="rzPremiumSubscribe" class="rz-btn primary">Start Premium</button>'
-       );
-     }else{
-       bill=card(
-         "COMING ONLINE",
-         '<p class="rz-muted">Premium billing is not configured on the RIZORA server yet. The feature gate is already wired; no fake payment button is shown.</p>'
-       );
      }
+     bill=card(
+       p.active?"YOUR PREMIUM TIERS":"CHOOSE YOUR TIER",
+       '<div class="rz-suite-grid rz-suite-grid-2">'+
+         '<div class="rz-suite-card"><div class="rz-kicker">'+premiumLabel+'</div><h3>₦4,000</h3><p class="rz-muted">Advanced creator intelligence, analytics and Pro tools.</p>'+premiumAction+(!premiumReady&&!p.active?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
+         '<div class="rz-suite-card"><div class="rz-kicker">'+plusLabel+'</div><h3>₦13,000</h3><p class="rz-muted">Everything in Premium, with the expanded premium tier for your creator workflow.</p>'+plusAction+(!plusReady&&!isPlus?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
+       '</div>'+
+       '<p class="rz-mini">Secure checkout is handled by Paystack. Premium and Premium+ remain visible after subscription so the upgrade path is never removed.</p>'+
+       billingStatus
+     );
      actions.innerHTML=bill;
-     var sub=document.getElementById("rzPremiumSubscribe");
-     if(sub){
-       sub.onclick=async function(){
-         try{
-           var d=await api("/api/v2/premium/subscribe",{method:"POST",body:"{}"});
-           if(d.authorizationUrl) window.location.href=d.authorizationUrl;
-           else toast("Premium checkout could not be started.");
-         }catch(e){toast(e.message);}
-       };
+     async function startPremium(plan){
+       try{
+         var d=await api("/api/v2/premium/subscribe",{method:"POST",body:JSON.stringify({plan:plan})});
+         if(d.authorizationUrl) window.location.href=d.authorizationUrl;
+         else toast("Premium checkout could not be started.");
+       }catch(e){toast(e.message);}
      }
+     var sub=document.getElementById("rzPremiumSubscribe");if(sub)sub.onclick=function(){startPremium("premium");};
+     var plus=document.getElementById("rzPremiumPlusSubscribe");if(plus)plus.onclick=function(){startPremium("premium_plus");};
      var cancel=document.getElementById("rzPremiumCancel");
      if(cancel){
        cancel.onclick=async function(){
@@ -121,14 +137,13 @@ async function premium(){
    var errorBox=document.getElementById("rzSuitePremiumStatus");
    if(errorBox)errorBox.innerHTML=card("PREMIUM STATUS",'<p class="rz-error">'+esc(e.message)+'</p>');
  }
- bindSuiteButtons(b);
  return b;
 }
 async function analytics(){
  var b=modal("Advanced Analytics","Live platform metrics plus the original creator-scoring analytics.",'<div id="rzSuiteAnalytics">'+card("ANALYTICS","<div class='rz-empty'>Loading…</div>")+'</div>');
  try{
   var x=await Promise.all([api("/api/v2/analytics/overview"),api("/api/creator/analytics")]),a=x[0]||{},c=x[1]||{};
-  document.getElementById("rzSuiteAnalytics").innerHTML=card("PLATFORM + CREATOR INTELLIGENCE",'<div class="rz-suite-stats">'+stat(a.posts||0,"Posts")+stat(a.followers||0,"Followers")+stat(a.following||0,"Following")+stat(a.likes||0,"Likes")+stat(a.comments||0,"Comments")+stat(a.saves||0,"Saves")+stat(a.reposts||0,"Reposts")+stat(c.ideasGenerated||0,"Ideas generated")+stat(c.averageScore||0,"Average score")+stat(c.bestScore||0,"Best score")+'</div><div class="rz-suite-list">'+(c.scores||[]).slice().reverse().slice(0,10).map(function(x){return "<div><strong>"+esc(x.score)+"</strong> · "+esc(x.rating||"score")+" <span class='rz-mini'>"+new Date(x.createdAt).toLocaleString()+"</span></div>";}).join("")||"<div class='rz-empty'>No creator scores yet.</div>"+'</div>');
+  var scoreRows=(c.scores||[]).slice().reverse().slice(0,10).map(function(x){return "<div><strong>"+esc(x.score)+"</strong> · "+esc(x.rating||"score")+" <span class=\'rz-mini\'>"+new Date(x.createdAt).toLocaleString()+"</span></div>";}).join("");document.getElementById("rzSuiteAnalytics").innerHTML=card("PLATFORM + CREATOR INTELLIGENCE",'<div class="rz-suite-stats">'+stat(a.posts||0,"Posts")+stat(a.followers||0,"Followers")+stat(a.following||0,"Following")+stat(a.likes||0,"Likes")+stat(a.comments||0,"Comments")+stat(a.saves||0,"Saves")+stat(a.reposts||0,"Reposts")+stat(c.ideasGenerated||0,"Ideas generated")+stat(c.averageScore||0,"Average score")+stat(c.bestScore||0,"Best score")+'</div><div class="rz-suite-list">'+(scoreRows||"<div class=\'rz-empty\'>No creator scores yet.</div>")+'</div>');
  }catch(e){document.getElementById("rzSuiteAnalytics").innerHTML='<div class="rz-error">'+esc(e.message)+'</div>';}
 }
 async function intelligence(){
@@ -181,9 +196,16 @@ async function community(){
  async function load(){try{var d=await api("/api/community");document.getElementById("rzGlobalCommunityList").innerHTML=(d.posts||[]).map(function(p){return '<div class="rz-suite-history-row"><strong>@'+esc(p.username)+'</strong><span>'+esc(p.text)+'</span><time>'+new Date(p.createdAt).toLocaleString()+'</time></div>';}).join("")||'<div class="rz-empty">No community posts yet.</div>';}catch(e){}}
  document.getElementById("rzGlobalCommunityForm").onsubmit=async function(e){e.preventDefault();try{await api("/api/community",{method:"POST",body:JSON.stringify({text:e.target.text.value})});e.target.reset();toast("Published.");load();}catch(x){toast(x.message);}};load();
 }
+function goSuiteView(id){if(window.RIZORA_GOTO)window.RIZORA_GOTO(id);}
+function moreTools(){
+ var b=modal("More tools","Secondary creator features stay here so your main menu stays clean.",'<div class="rz-suite-grid rz-suite-grid-3">'+[
+  ["Leaderboard","leaderboard"],["Referrals","referrals"],["History","history"],["Portfolio + Planner","portfolio"],["Campaigns","campaigns"],["Community","community"],["Experiments","experiments"],["Settings","settings"],["Install RIZORA","install"],["Creator Assistant","assistant"],["Business Hub","business"],["Content Integrity","integrity"],["Creator Lab","lab"],["Help & Support","support"],["Channels","channels"],["Creator Profiles","creator"],["Report & Safety","report"],["Wallet","wallet"],["Super Admin","admin"],["Stories","stories"],["Communities","communities"],["Discover","discover"],["Messages","messages"],["Notifications","notifications"],["Safety","safety"],["Opportunities","opportunities"],["Official","official"],["Studio","studio"]
+ ].map(function(x){return '<button class="rz-suite-launch" data-more-go="'+x[1]+'"><strong>'+esc(x[0])+'</strong></button>';}).join("")+'</div>');
+ b.querySelectorAll("[data-more-go]").forEach(function(el){el.onclick=function(){var id=el.getAttribute("data-more-go");if(["leaderboard","referrals","history","portfolio","campaigns","community","settings","install"].indexOf(id)>=0){return id==="leaderboard"?leaderboard():id==="referrals"?referrals():id==="history"?history():id==="portfolio"?portfolio():id==="campaigns"?campaigns():id==="community"?community():id==="settings"?settings():install();}var secondary={assistant:function(){return window.RIZORA_NEXT&&window.RIZORA_NEXT.assistant&&window.RIZORA_NEXT.assistant();},business:function(){return window.RIZORA_NEXT&&window.RIZORA_NEXT.business&&window.RIZORA_NEXT.business();},integrity:function(){return window.RIZORA_NEXT&&window.RIZORA_NEXT.integrity&&window.RIZORA_NEXT.integrity();},lab:function(){return window.RIZORA_UPGRADES&&window.RIZORA_UPGRADES.open&&window.RIZORA_UPGRADES.open();},support:function(){return window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.support&&window.RIZORA_ENTERPRISE.support();},channels:function(){return window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showChannels&&window.RIZORA_ENTERPRISE.showChannels();},creator:function(){return window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.profiles&&window.RIZORA_ENTERPRISE.profiles();},report:function(){return window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.report&&window.RIZORA_ENTERPRISE.report();},wallet:function(){return window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.wallet&&window.RIZORA_ENTERPRISE.wallet();},admin:function(){return window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.admin&&window.RIZORA_ENTERPRISE.admin();}};var m=document.getElementById("rzSuiteModal");if(m)m.remove();if(secondary[id]){try{var result=secondary[id]();if(result===undefined)toast("That tool is unavailable right now.");return result;}catch(err){toast(err&&err.message?err.message:"Tool could not be opened.");return;}}goSuiteView(id);};});
+}
 function suiteMenu(){
- var b=modal("RIZORA Suite","Every recovered website feature in one place.",'<div class="rz-suite-grid rz-suite-grid-3">'+[
-  ["Premium","premium","Advanced AI, analytics and Pro Creator Tools."],["Verification","verification","Open your RIZORA verification center."],["Creator Intelligence","intelligence","Creator profile, ideas and post analysis."],["Leaderboard","leaderboard","Points rankings."],["Referrals","referrals","Referral code, link and rewards."],["History","history","Points and creator-score history."],["Experiment Lab","experiments","A/B hooks and experiment notes."],["Settings","settings","Notifications and compact mode."],["Portfolio + Planner","portfolio","Portfolio identity and content planning."],["Campaigns","campaigns","Original funded creator campaigns."],["Community Feed","community","Global community feed."],["Install RIZORA","install","Install the PWA."],["Meet RoMi","romi","Creator profile."],["Flow","flow","Modern RIZORA Flow."],["Grow","grow","Official missions and growth tasks."],["Boosts","boosts","Creator Boost Network."]
+ var b=modal("RIZORA Suite","Core actions first. Everything else stays one layer deeper.",'<div class="rz-suite-grid rz-suite-grid-3">'+[
+  ["Premium","premium","Premium ₦4,000 · Premium+ ₦13,000"],["Verification","verification","Build trust around your creator identity."],["Official","official","RIZORA and RoMi official verified identities."],["Analytics","analytics","Track posts, followers, reach and performance."],["Creator Intelligence","intelligence","AI strategy, ideas and post analysis."],["Grow","grow","Missions, social tasks and growth loops."],["Boosts","boosts","Creator Boost Network and promotion."],["Messages","messages","Private creator conversations."],["Discover","discover","Find creators, posts and trends."],["Meet RoMi","romi","The creator behind RIZORA."],["More tools","more","Secondary tools and settings."]
  ].map(function(x){return '<button class="rz-suite-launch" data-suite-go="'+x[1]+'"><strong>'+esc(x[0])+'</strong><span>'+esc(x[2])+'</span></button>';}).join("")+'</div>');
  bindSuiteButtons(b);
 }
@@ -196,11 +218,11 @@ function romi(){
  '<img class="rz-suite-romi-avatar" src="/rizora-cover.png"><div><div class="rz-kicker">OFFICIAL CREATOR</div><h2>RoMi · @romi.noir</h2><p class="rz-muted">Artist. Developer. Creator. Builder. Creator of RIZORA.</p><div class="rz-actions"><a class="rz-btn" href="https://www.tiktok.com/@romi.noir" target="_blank" rel="noopener noreferrer">@romi.noir</a><a class="rz-btn primary" href="https://rizora.com.ng/" target="_blank" rel="noopener noreferrer">RIZORA</a></div></div></div>');
 }
 function bindSuiteButtons(root){
- (root||document).querySelectorAll("[data-suite-go]").forEach(function(el){el.onclick=function(){var a=el.getAttribute("data-suite-go");if(a==="premium")return premium();if(a==="analytics")return analytics();if(a==="intelligence")return intelligence();if(a==="leaderboard")return leaderboard();if(a==="referrals")return referrals();if(a==="history")return history();if(a==="experiments")return experiments();if(a==="settings")return settings();if(a==="portfolio")return portfolio();if(a==="campaigns")return campaigns();if(a==="community")return community();if(a==="install")return install();if(a==="romi")return romi();if(a==="verification"){var pv=document.querySelector('[data-nav="profile"]');if(pv){var mm=document.getElementById("rzSuiteModal");if(mm)mm.remove();pv.click();}}if(a==="flow"||a==="grow"||a==="boosts"){var n=document.querySelector('[data-nav="'+a+'"]');if(n){var m=document.getElementById("rzSuiteModal");if(m)m.remove();n.click();}}};});
+ (root||document).querySelectorAll("[data-suite-go]").forEach(function(el){el.onclick=function(){var a=el.getAttribute("data-suite-go");if(a==="premium")return premium();if(a==="analytics")return analytics();if(a==="intelligence")return intelligence();if(a==="leaderboard")return leaderboard();if(a==="referrals")return referrals();if(a==="history")return history();if(a==="experiments")return experiments();if(a==="settings")return settings();if(a==="portfolio")return portfolio();if(a==="campaigns")return campaigns();if(a==="community")return community();if(a==="install")return install();if(a==="romi")return romi();if(a==="official"){var om=document.getElementById("rzSuiteModal");if(om)om.remove();return goSuiteView("official");}if(a==="more")return moreTools();if(a==="verification"){var mm=document.getElementById("rzSuiteModal");if(mm)mm.remove();goSuiteView("profile");setTimeout(function(){var vb=document.getElementById("verify");if(vb)vb.click();},220);}if(["flow","grow","boosts","messages","discover","stories","communities","studio","official","opportunities","notifications","safety"].indexOf(a)>=0){var m=document.getElementById("rzSuiteModal");if(m)m.remove();goSuiteView(a);}};});
 }
 function logout(){
-  fetch(API+"/api/auth/logout",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"}}).catch(function(){});
-  try{localStorage.removeItem("rizoraToken");localStorage.removeItem("rizora_token");}catch(_){}
+  if(window.RIZORA_API_CALL)window.RIZORA_API_CALL("/api/auth/logout",{method:"POST"}).catch(function(){});else fetch(API+"/api/auth/logout",{method:"POST",credentials:"include",headers:window.RIZORA_AUTH_HEADERS?window.RIZORA_AUTH_HEADERS({"Content-Type":"application/json"}):{"Content-Type":"application/json"}}).catch(function(){});
+  if(window.RIZORA_CLEAR_AUTH_TOKEN)window.RIZORA_CLEAR_AUTH_TOKEN();try{localStorage.removeItem("rizoraToken");localStorage.removeItem("rizora_token");}catch(_){}try{sessionStorage.removeItem("rz_premium_suggestion_dismissed");}catch(_){}
   location.reload();
 }
 function injectLogout(){
@@ -214,10 +236,10 @@ function injectMobileMenu(){
   if(document.getElementById("rzMobileSuiteButton"))return;
   var top=document.querySelector(".rz-top-inner");if(!top)return;
   var b=document.createElement("button");b.id="rzMobileSuiteButton";b.className="rz-btn rz-mobile-suite-button";b.textContent="Menu";b.onclick=function(){
-    var m=modal("RIZORA Menu","Mobile navigation and creator tools.",'<div class="rz-suite-grid rz-suite-grid-2">'+[
-      ["Home","home"],["Flow","flow"],["Stories","stories"],["Grow","grow"],["Boosts","boosts"],["Communities","communities"],["Studio","studio"],["AI","ai"],["Discover","discover"],["Official","official"],["Messages","messages"],["Opportunities","opportunities"],["Analytics","analytics"],["Notifications","notifications"],["Profile","profile"],["Safety","safety"],["Creator Suite","suite"],["Log out","logout"]
+    var m=modal("RIZORA Menu","Five core destinations. Secondary tools stay inside Suite.",'<div class="rz-suite-grid rz-suite-grid-2">'+[
+      ["Home","home"],["Flow","flow"],["Grow","grow"],["AI","ai"],["Profile","profile"],["Creator Suite","suite"],["Notifications","notifications"],["Log out","logout"]
     ].map(function(x){return '<button class="rz-suite-launch" data-mobile-nav="'+x[1]+'"><strong>'+esc(x[0])+'</strong></button>';}).join("")+'</div>');
-    m.querySelectorAll("[data-mobile-nav]").forEach(function(x){x.onclick=function(){var a=x.getAttribute("data-mobile-nav");if(a==="suite"){suiteMenu();return;}if(a==="logout"){logout();return;}var n=document.querySelector('[data-nav="'+a+'"]');var sm=document.getElementById("rzSuiteModal");if(sm)sm.remove();if(n)n.click();};});
+    m.querySelectorAll("[data-mobile-nav]").forEach(function(x){x.onclick=function(){var a=x.getAttribute("data-mobile-nav");if(a==="suite"){suiteMenu();return;}if(a==="logout"){logout();return;}var sm=document.getElementById("rzSuiteModal");if(sm)sm.remove();goSuiteView(a);};});
   };
   top.insertBefore(b,top.firstChild);
 }

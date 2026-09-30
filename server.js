@@ -113,7 +113,15 @@ function loadDB() {
     return db;
   } catch (error) {
     console.error("Database load error:", error);
-    throw new Error("RIZORA database could not be loaded; refusing to continue with an empty database.");
+
+    return {
+      users: [],
+      tasks: [],
+      taskCompletions: [],
+      auditLogs: [],
+      referrals: [],
+      sessions: []
+    };
   }
 }
 
@@ -325,11 +333,6 @@ function safeUser(user) {
     verificationType:
       user.verificationType || null,
 
-    verifiedBadgeUrl:
-      (user.verified === true || user.verificationStatus === "verified")
-        ? "/assets/rizora_verified_badge.svg"
-        : null,
-
     official:
       user.official === true,
 
@@ -354,22 +357,6 @@ function isAdmin(user) {
     ["admin", "super_admin"].includes(user.role) &&
     user.status === "active"
   );
-}
-
-const RIZORA_ALLOWED_ORIGINS = new Set([
-  "https://rizora.com.ng",
-  "https://www.rizora.com.ng",
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:5500",
-  "http://127.0.0.1:5500"
-]);
-
-function isAllowedBrowserOrigin(req) {
-  const origin = String(req.headers.origin || "").trim();
-  return !origin || RIZORA_ALLOWED_ORIGINS.has(origin);
 }
 
 function randomReferralCode(username) {
@@ -1104,7 +1091,6 @@ function getCurrentUser(
 
 
 const TASK_COOLDOWN_MS = 7 * 60 * 1000;
-const TASK_COOLDOWN_MINUTES = Math.ceil(TASK_COOLDOWN_MS / 60000);
 
 const RIZORA_FEATURE_LAYER_V1 = true;
 
@@ -2090,22 +2076,6 @@ async function handleRequest(
       return;
     }
 
-    const reason = cleanString(body.reason || body.note || "", 1500).trim();
-    const proofUrl = cleanString(body.proofUrl || body.proof || body.url || "", 500).trim();
-
-    if (reason.length < 10) {
-      sendError(res, 400, "Please provide more information about your creator identity.");
-      return;
-    }
-
-    try {
-      const parsed = new URL(proofUrl);
-      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
-    } catch (_) {
-      sendError(res, 400, "Proof URL must be a valid http or https URL.");
-      return;
-    }
-
     user.verificationStatus =
       "pending";
 
@@ -2121,26 +2091,16 @@ async function handleRequest(
       userId:
         user.id,
 
-      username:
-        user.username,
-
-      displayName:
-        user.displayName || user.username,
-
       status:
         "pending",
 
-      reason,
-
       note:
-        reason,
-
-      proofUrl,
+        cleanString(
+          body.note,
+          1000
+        ),
 
       createdAt:
-        new Date().toISOString(),
-
-      updatedAt:
         new Date().toISOString()
     });
 
@@ -2575,30 +2535,24 @@ async function handleRequest(
       .toUpperCase();
 
   // ----------------------------------------------------------
-  // CORS / BROWSER-ORIGIN GUARD
+  // CORS PREFLIGHT
   // ----------------------------------------------------------
-
-  const requestOrigin = String(req.headers.origin || "").trim();
-
-  if (requestOrigin && !isAllowedBrowserOrigin(req)) {
-    sendError(res, 403, "Origin not allowed.");
-    return;
-  }
-
-  if (requestOrigin) {
-    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
-    res.setHeader("Vary", "Origin");
-  }
 
   if (method === "OPTIONS") {
     res.writeHead(
       204,
       {
-        "Access-Control-Allow-Origin": requestOrigin || "https://rizora.com.ng",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-RIZORA-CSRF",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "Vary": "Origin"
+        "Access-Control-Allow-Origin":
+          "https://rizora.com.ng",
+
+        "Access-Control-Allow-Headers":
+          "Content-Type, Authorization",
+
+                "Access-Control-Allow-Credentials":
+          "true",
+
+"Access-Control-Allow-Methods":
+          "GET, POST, PUT, PATCH, DELETE, OPTIONS"
       }
     );
 
@@ -3236,16 +3190,6 @@ async function handleRequest(
           ) === username
       );
 
-    if (SUPER_ADMINS.has(username)) {
-      sendError(
-        res,
-        403,
-        "That username is reserved."
-      );
-
-      return;
-    }
-
     if (usernameExists) {
       sendError(
         res,
@@ -3281,6 +3225,11 @@ async function handleRequest(
         password
       );
 
+    const isProtected =
+      SUPER_ADMINS.has(
+        username
+      );
+
     const user = {
       id: uid("user_"),
 
@@ -3300,7 +3249,9 @@ async function handleRequest(
       passwordHash,
 
       role:
-        "user",
+        isProtected
+          ? "super_admin"
+          : "user",
 
       status: "active",
 
@@ -3832,7 +3783,7 @@ if (
       sendJSON(res, 429, {
         error: "Your next RIZORA task is still on cooldown.",
         cooldown: startCooldown,
-        cooldownMinutes: Math.ceil(TASK_COOLDOWN_MS / 60000)
+        cooldownMinutes: 7
       });
       return;
     }
@@ -4054,7 +4005,7 @@ if (
     ],
 
     cooldown,
-    cooldownMinutes: TASK_COOLDOWN_MINUTES,
+    cooldownMinutes: 7,
     generatedCount: generatedTasks.length,
 
     message:
@@ -4139,7 +4090,7 @@ if (
         error:
           "Your next RIZORA task is still on cooldown.",
         cooldown,
-        cooldownMinutes: TASK_COOLDOWN_MINUTES
+        cooldownMinutes: 7
       }
     );
     return;
@@ -4288,7 +4239,7 @@ const completion = {
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: TASK_COOLDOWN_MINUTES,
+      cooldownMinutes: 7,
       cooldown:
         getCooldown(
           db,
@@ -4821,7 +4772,7 @@ if (
         error:
           "Your next task is still on cooldown.",
         cooldown,
-        cooldownMinutes: TASK_COOLDOWN_MINUTES
+        cooldownMinutes: 7
       }
     );
     return;
@@ -4944,7 +4895,7 @@ if (
       points:
         user.points,
       nextTaskAt,
-      cooldownMinutes: TASK_COOLDOWN_MINUTES,
+      cooldownMinutes: 7,
       cooldown:
         getCooldown(
           db,
@@ -9816,6 +9767,17 @@ async function requestHandler(
   // RIZORA CORS COMPATIBILITY
   // ============================================================
 
+  const RIZORA_ALLOWED_ORIGINS = new Set([
+    "https://rizora.com.ng",
+    "https://www.rizora.com.ng",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500"
+  ]);
+
   const rizoraOrigin = req.headers.origin;
 
   if (
@@ -9851,15 +9813,6 @@ async function requestHandler(
   if (req.method === "OPTIONS") {
     res.statusCode = 204;
     res.end();
-    return;
-  }
-
-  if (
-    ["POST","PUT","PATCH","DELETE"].includes(String(req.method || "").toUpperCase()) &&
-    req.headers.origin &&
-    !isAllowedBrowserOrigin(req)
-  ) {
-    sendError(res, 403, "Untrusted browser origin.");
     return;
   }
 

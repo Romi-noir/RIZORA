@@ -4,14 +4,7 @@
   var mounted=false, user=null, modal=null;
 
   function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-  async function api(path,opt){
-    opt=opt||{};
-    var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:Object.assign({"Content-Type":"application/json"},opt.headers||{}),body:opt.body});
-    var txt=await r.text(), d={};
-    try{d=txt?JSON.parse(txt):{};}catch(_){d={message:txt};}
-    if(!r.ok)throw new Error(d.message||d.error||"Request failed.");
-    return d;
-  }
+  async function api(path,opt){return window.RIZORA_API_CALL(path,opt||{});}
   function close(){
     if(modal){modal.remove();modal=null;}
   }
@@ -40,7 +33,7 @@
         '<div class="rz-global-card"><div class="rz-kicker">NEXT MOVE</div><h3>'+esc(b.nextMove.title)+'</h3><p>'+esc(b.nextMove.action)+'</p></div>'+
         '<div class="rz-global-card"><div class="rz-kicker">CREATOR BRIEF</div>'+b.actions.map(function(a){return '<button class="rz-global-action" data-global-action="'+esc(a.type)+'"><strong>'+esc(a.title)+'</strong><span>'+esc(a.action)+'</span></button>';}).join("")+'</div>');
       bindTabs();
-      document.querySelectorAll("[data-global-action]").forEach(function(btn){btn.onclick=function(){var t=btn.getAttribute("data-global-action");var map={content:"studio",profile:"profile",community:"communities",growth:"grow",distribution:"series",safety:"safety"};var target=map[t]||"flow";close();var n=document.querySelector('[data-nav="'+target+'"]');if(n){n.click();return;}if(window.RIZORA_HUB&&window.RIZORA_HUB.open){window.RIZORA_HUB.open();}};});
+      document.querySelectorAll("[data-global-action]").forEach(function(btn){btn.onclick=function(){var t=btn.getAttribute("data-global-action");var map={content:"studio",profile:"profile",community:"communities",growth:"grow",distribution:"series",safety:"safety"};var target=map[t]||"flow";close();var n=document.querySelector('[data-nav="'+target+'"]');if(n){n.click();return;}if(target==="safety"&&window.RIZORA_SUITE&&window.RIZORA_SUITE.open){window.RIZORA_SUITE.open();return;}if(window.RIZORA_HUB&&window.RIZORA_HUB.open){window.RIZORA_HUB.open();}};});
     }catch(e){notify(e.message);}
   }
   async function channels(){

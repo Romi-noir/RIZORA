@@ -1,0 +1,2373 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head><script>window.RIZORA_API_BASE="https://rizora.com.ng";</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>RIZORA — Creator Growth Platform</title>
+<meta name="description" content="RIZORA is a creator growth platform for creators, missions, rewards and creator tools.">
+<meta name="theme-color" content="#080611">
+<link rel="manifest" href="/manifest.json">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#06050b;
+  --panel:#0d0b16;
+  --panel2:#12101d;
+  --panel3:#171322;
+  --border:rgba(255,255,255,.08);
+  --border2:rgba(174,125,255,.25);
+  --text:#f8f6ff;
+  --muted:#9791aa;
+  --accent:#a56cff;
+  --accent2:#d1b8ff;
+  --success:#53e6a6;
+  --danger:#ff6a84;
+  --warning:#ffc86b;
+  --shadow:0 30px 100px rgba(0,0,0,.4)
+}
+
+html{
+  scroll-behavior:smooth;
+  background:var(--bg)
+}
+
+body{
+  min-height:100vh;
+  overflow-x:hidden;
+  color:var(--text);
+  background:
+    radial-gradient(
+      900px 600px at 90% -10%,
+      rgba(165,108,255,.17),
+      transparent 62%
+    ),
+    radial-gradient(
+      700px 500px at -10% 30%,
+      rgba(93,76,255,.08),
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      #06050b 0%,
+      #08070e 100%
+    );
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif
+}
+
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,.012) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.012) 1px,
+      transparent 1px
+    );
+  background-size:42px 42px;
+  mask-image:
+    linear-gradient(
+      to bottom,
+      black,
+      transparent 80%
+    )
+}
+
+button,
+input,
+textarea,
+select{
+  font:inherit
+}
+
+button{
+  cursor:pointer
+}
+
+a{
+  color:inherit;
+  text-decoration:none
+}
+
+.hidden{
+  display:none!important
+}
+
+.muted{
+  color:var(--muted)
+}
+
+::-webkit-scrollbar{
+  width:9px
+}
+
+::-webkit-scrollbar-track{
+  background:#07060b
+}
+
+::-webkit-scrollbar-thumb{
+  border-radius:99px;
+  background:#2c2639
+}
+
+header{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  height:74px;
+  border-bottom:1px solid var(--border);
+  background:rgba(6,5,11,.72);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px)
+}
+
+.header-inner{
+  width:min(1320px,calc(100% - 34px));
+  height:100%;
+  margin:auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  font-size:15px;
+  font-weight:950;
+  letter-spacing:.13em
+}
+
+.brand-mark{
+  width:39px;
+  height:39px;
+  display:grid;
+  place-items:center;
+  border-radius:13px;
+  color:white;
+  font-size:17px;
+  font-weight:1000;
+  background:
+    linear-gradient(
+      140deg,
+      #cfadff,
+      #9460fa 48%,
+      #6230c8
+    );
+  box-shadow:
+    0 10px 35px rgba(165,108,255,.32),
+    inset 0 1px 0 rgba(255,255,255,.24)
+}
+
+nav{
+  display:flex;
+  align-items:center;
+  gap:5px
+}
+
+nav a,
+nav button{
+  border:0;
+  color:var(--muted);
+  background:transparent;
+  padding:10px 13px;
+  border-radius:11px;
+  font-size:13px;
+  font-weight:700;
+  transition:.18s
+}
+
+nav a:hover,
+nav button:hover{
+  color:white;
+  background:rgba(255,255,255,.055)
+}
+
+.btn{
+  min-height:43px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border:1px solid transparent;
+  border-radius:12px;
+  padding:0 16px;
+  color:white;
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      #713bd1
+    );
+  font-size:13px;
+  font-weight:850;
+  box-shadow:
+    0 12px 30px rgba(165,108,255,.16);
+  transition:.18s
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+  filter:brightness(1.08)
+}
+
+.btn:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+  transform:none;
+  filter:none
+}
+
+.btn.secondary{
+  color:var(--text);
+  background:rgba(255,255,255,.035);
+  border-color:var(--border);
+  box-shadow:none
+}
+
+.btn.danger{
+  background:rgba(255,106,132,.1);
+  border-color:rgba(255,106,132,.22);
+  color:#ffb4c2;
+  box-shadow:none
+}
+
+.btn.small{
+  min-height:36px;
+  padding:0 12px;
+  font-size:12px;
+  border-radius:10px
+}
+
+.btn.tiny{
+  min-height:32px;
+  padding:0 9px;
+  font-size:11px;
+  border-radius:9px
+}
+
+.mobile-menu{
+  display:none;
+  min-width:43px;
+  min-height:40px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  color:white;
+  background:rgba(255,255,255,.045);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.08em
+}
+
+main section{
+  width:min(1320px,calc(100% - 34px));
+  margin:auto
+}
+
+.landing{
+  min-height:calc(100vh - 74px);
+  display:grid;
+  place-items:center;
+  padding:80px 20px
+}
+
+.landing-inner{
+  width:min(1160px,100%);
+  display:grid;
+  grid-template-columns:1.12fr .88fr;
+  gap:60px;
+  align-items:center
+}
+
+.hero-label,
+.eyebrow{
+  width:fit-content;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:14px;
+  padding:7px 11px;
+  color:var(--accent2);
+  border:1px solid rgba(165,108,255,.17);
+  border-radius:999px;
+  background:rgba(165,108,255,.07);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.13em;
+  text-transform:uppercase
+}
+
+.hero-label:before{
+  content:"";
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--success);
+  box-shadow:0 0 12px rgba(83,230,166,.8)
+}
+
+.landing h1{
+  max-width:850px;
+  margin-bottom:23px;
+  font-size:clamp(52px,8.2vw,92px);
+  line-height:.9;
+  letter-spacing:-.075em
+}
+
+.landing h1 span{
+  color:var(--accent2);
+  text-shadow:0 0 55px rgba(165,108,255,.22)
+}
+
+.hero-text{
+  max-width:665px;
+  color:var(--muted);
+  line-height:1.85;
+  font-size:17px
+}
+
+.landing-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:11px;
+  margin-top:30px
+}
+
+.hero-note{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-top:20px
+}
+
+.hero-pill{
+  padding:7px 10px;
+  color:var(--muted);
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:rgba(255,255,255,.025);
+  font-size:11px
+}
+
+.hero-card,
+.card,
+.auth-card{
+  border:1px solid var(--border);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(18,16,29,.98),
+      rgba(9,8,14,.98)
+    );
+  box-shadow:var(--shadow)
+}
+
+.hero-card{
+  position:relative;
+  overflow:hidden;
+  padding:28px;
+  border-radius:27px
+}
+
+.hero-card-top,
+.card-top,
+.row-between{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:15px
+}
+
+.hero-status,
+.badge,
+.role-badge,
+.status-badge,
+.reward{
+  padding:6px 9px;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.08em
+}
+
+.hero-status,
+.status-active{
+  color:#8df4c3;
+  border:1px solid rgba(83,230,166,.16);
+  background:rgba(83,230,166,.07)
+}
+
+.hero-card-title{
+  margin-bottom:9px;
+  font-size:29px;
+  line-height:1;
+  letter-spacing:-.045em
+}
+
+.hero-card-copy,
+.card-description{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.7
+}
+
+.hero-mini-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:24px
+}
+
+.hero-mini{
+  padding:17px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:rgba(6,5,11,.37)
+}
+
+.hero-mini strong{
+  display:block;
+  margin-bottom:4px;
+  font-size:22px
+}
+
+.hero-mini span{
+  color:var(--muted);
+  font-size:11px
+}
+
+.auth-wrap{
+  min-height:calc(100vh - 74px);
+  display:grid;
+  place-items:center;
+  padding:55px 20px
+}
+
+.auth-card{
+  width:min(455px,100%);
+  padding:30px;
+  border-radius:24px
+}
+
+.auth-icon{
+  width:45px;
+  height:45px;
+  display:grid;
+  place-items:center;
+  margin-bottom:20px;
+  border-radius:14px;
+  background:
+    linear-gradient(
+      135deg,
+      #ba8aff,
+      #7040cf
+    );
+  box-shadow:
+    0 12px 30px rgba(165,108,255,.24);
+  font-size:18px;
+  font-weight:1000
+}
+
+.auth-card h1{
+  margin-bottom:7px;
+  font-size:31px;
+  letter-spacing:-.045em
+}
+
+.auth-subtitle{
+  margin-bottom:24px;
+  color:var(--muted);
+  line-height:1.6;
+  font-size:13px
+}
+
+.field{
+  margin-bottom:15px
+}
+
+.field label{
+  display:block;
+  margin-bottom:7px;
+  color:#aaa4b9;
+  font-size:11px;
+  font-weight:800
+}
+
+.field input,
+.field textarea,
+.field select,
+#referralLink{
+  width:100%;
+  outline:none;
+  padding:13px 14px;
+  color:white;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#08070d;
+  transition:.18s
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus,
+#referralLink:focus{
+  border-color:rgba(165,108,255,.5);
+  box-shadow:0 0 0 4px rgba(165,108,255,.08)
+}
+
+.field textarea{
+  min-height:110px;
+  resize:vertical
+}
+
+.field select option{
+  background:#111
+}
+
+.password-wrap{
+  position:relative
+}
+
+.password-wrap input{
+  padding-right:48px
+}
+
+.password-toggle{
+  position:absolute;
+  right:6px;
+  top:50%;
+  width:38px;
+  height:38px;
+  transform:translateY(-50%);
+  border:0;
+  border-radius:9px;
+  color:#8f889c;
+  background:transparent;
+  font-size:17px
+}
+
+.auth-switch{
+  margin-top:18px;
+  color:var(--muted);
+  text-align:center;
+  font-size:12px
+}
+
+.auth-switch button{
+  border:0;
+  color:var(--accent2);
+  background:transparent;
+  font-weight:850
+}
+
+.error,
+.success-message{
+  padding:12px 13px;
+  margin-bottom:15px;
+  border-radius:12px;
+  font-size:12px;
+  line-height:1.55
+}
+
+.error{
+  color:#ffabb9;
+  border:1px solid rgba(255,106,132,.18);
+  background:rgba(255,106,132,.07)
+}
+
+.success-message{
+  color:#82efbf;
+  border:1px solid rgba(83,230,166,.18);
+  background:rgba(83,230,166,.07)
+}
+
+.app{
+  padding:34px 0 85px
+}
+
+.welcome{
+  position:relative;
+  overflow:hidden;
+  min-height:205px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:25px;
+  padding:32px;
+  margin-bottom:17px;
+  border:1px solid var(--border);
+  border-radius:25px;
+  background:
+    radial-gradient(
+      480px 250px at 84% 20%,
+      rgba(165,108,255,.15),
+      transparent 66%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(165,108,255,.08),
+      rgba(255,255,255,.017)
+    );
+  box-shadow:var(--shadow)
+}
+
+.welcome:after{
+  content:"R";
+  position:absolute;
+  right:5px;
+  bottom:-85px;
+  color:rgba(255,255,255,.025);
+  font-size:280px;
+  line-height:1;
+  font-weight:1000;
+  pointer-events:none
+}
+
+.welcome-content,
+.welcome-actions{
+  position:relative;
+  z-index:2
+}
+
+.welcome h1{
+  margin:6px 0 9px;
+  font-size:clamp(38px,6vw,61px);
+  line-height:.95;
+  letter-spacing:-.065em
+}
+
+.welcome-description{
+  max-width:620px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.7
+}
+
+.welcome-actions{
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:15px
+}
+
+.stat{
+  position:relative;
+  min-height:118px;
+  padding:20px;
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(13,11,22,.94),
+      rgba(255,255,255,.014)
+    );
+  transition:.18s
+}
+
+.stat:hover{
+  border-color:var(--border2);
+  transform:translateY(-2px)
+}
+
+.stat-label{
+  margin-bottom:9px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-size:9px;
+  font-weight:800
+}
+
+.stat-value{
+  font-size:29px;
+  line-height:1;
+  letter-spacing:-.045em;
+  font-weight:950
+}
+
+.dashboard-icon{
+  position:absolute;
+  top:15px;
+  right:15px;
+  width:32px;
+  height:32px;
+  display:grid;
+  place-items:center;
+  color:var(--accent2);
+  border:1px solid rgba(165,108,255,.16);
+  border-radius:9px;
+  background:rgba(165,108,255,.08);
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.05em
+}
+
+.card{
+  padding:24px;
+  border-radius:21px
+}
+
+.card h2{
+  margin-bottom:6px;
+  font-size:20px;
+  letter-spacing:-.035em
+}
+
+.rewards-card{
+  margin-bottom:15px
+}
+
+.referral-grid{
+  display:grid;
+  grid-template-columns:1.5fr .75fr .75fr;
+  gap:11px;
+  margin-top:18px
+}
+
+.referral-code{
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:.03em
+}
+
+.referral-link-section{
+  margin-top:17px
+}
+
+.referral-link-row{
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:8px;
+  margin-top:8px
+}
+
+.dashboard-grid{
+  display:grid;
+  grid-template-columns:1.2fr .8fr;
+  gap:15px
+}
+
+.tasks,
+.list-stack{
+  display:grid;
+  gap:9px;
+  margin-top:17px
+}
+
+.task,
+.table-row{
+  padding:17px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:rgba(255,255,255,.022);
+  transition:.18s
+}
+
+.task:hover,
+.table-row:hover{
+  border-color:rgba(165,108,255,.22);
+  background:rgba(255,255,255,.04)
+}
+
+.task-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px
+}
+
+.task h3{
+  margin-bottom:6px;
+  font-size:14px
+}
+
+.task p{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6
+}
+
+.task-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:13px
+}
+
+.reward{
+  color:#e9dbff;
+  border:1px solid rgba(165,108,255,.19);
+  background:rgba(165,108,255,.08);
+  font-size:10px
+}
+
+.creator-actions{
+  display:grid;
+  gap:9px;
+  margin-top:18px
+}
+
+#toolResult{
+  min-height:78px;
+  margin-top:15px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  color:var(--muted);
+  background:rgba(6,5,11,.67);
+  font-size:12px;
+  line-height:1.7
+}
+
+.tool-line{
+  padding:9px 0;
+  border-bottom:1px solid var(--border)
+}
+
+.tool-line:last-child{
+  border-bottom:0
+}
+
+.creator-follow-card{
+  margin-top:15px
+}
+
+.creator-follow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  padding:17px;
+  margin-top:17px;
+  border:1px solid rgba(165,108,255,.12);
+  border-radius:16px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(165,108,255,.08),
+      rgba(255,255,255,.02)
+    )
+}
+
+.creator-follow-info{
+  display:flex;
+  align-items:center;
+  gap:12px
+}
+
+.creator-avatar{
+  width:43px;
+  height:43px;
+  display:grid;
+  place-items:center;
+  border-radius:13px;
+  color:white;
+  background:
+    linear-gradient(
+      135deg,
+      #ba8aff,
+      #6634c8
+    );
+  font-weight:1000
+}
+
+.creator-follow-info strong{
+  display:block;
+  font-size:13px
+}
+
+.creator-follow-info span{
+  display:block;
+  margin-top:2px;
+  color:var(--muted);
+  font-size:10px
+}
+
+/* ADMIN */
+
+.admin-hero{
+  margin-bottom:15px;
+  background:
+    radial-gradient(
+      560px 240px at 90% 10%,
+      rgba(165,108,255,.17),
+      transparent 65%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(165,108,255,.10),
+      rgba(255,255,255,.015)
+    )
+}
+
+.admin-grid{
+  display:grid;
+  grid-template-columns:1.25fr .75fr;
+  gap:15px;
+  margin-bottom:15px
+}
+
+.admin-stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:15px
+}
+
+.admin-stat{
+  min-height:108px
+}
+
+.admin-tabs{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  margin:0 0 15px
+}
+
+.admin-tab{
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.03);
+  color:var(--muted);
+  padding:9px 12px;
+  border-radius:10px;
+  font-size:11px;
+  font-weight:850
+}
+
+.admin-tab.active{
+  color:white;
+  border-color:rgba(165,108,255,.35);
+  background:rgba(165,108,255,.1)
+}
+
+.admin-panel{
+  display:none
+}
+
+.admin-panel.active{
+  display:block
+}
+
+.table{
+  display:grid;
+  gap:8px;
+  margin-top:15px
+}
+
+.table-head,
+.table-row{
+  display:grid;
+  grid-template-columns:1.1fr .8fr .7fr .7fr auto;
+  gap:10px;
+  align-items:center
+}
+
+.table-head{
+  padding:0 10px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.09em;
+  font-size:9px;
+  font-weight:900
+}
+
+.table-row{
+  padding:13px
+}
+
+.table-cell{
+  min-width:0;
+  font-size:12px
+}
+
+.table-cell strong{
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis
+}
+
+.table-cell small{
+  display:block;
+  color:var(--muted);
+  margin-top:2px
+}
+
+.status-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center
+}
+
+.status-blocked{
+  color:#ffabb9;
+  border:1px solid rgba(255,106,132,.18);
+  background:rgba(255,106,132,.07)
+}
+
+.role-badge{
+  color:#e5d7ff;
+  border:1px solid rgba(165,108,255,.19);
+  background:rgba(165,108,255,.08)
+}
+
+.admin-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:flex-end
+}
+
+.metric-list{
+  display:grid;
+  gap:9px;
+  margin-top:15px
+}
+
+.metric-line{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 13px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(255,255,255,.025);
+  font-size:12px
+}
+
+.metric-line span{
+  color:var(--muted)
+}
+
+.filter-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:15px
+}
+
+.filter-row input,
+.filter-row select{
+  flex:1;
+  min-width:160px;
+  outline:none;
+  padding:11px 12px;
+  color:white;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:#08070d
+}
+
+.audit-item{
+  padding:14px;
+  border-bottom:1px solid var(--border)
+}
+
+.audit-item:last-child{
+  border-bottom:0
+}
+
+.audit-main{
+  display:flex;
+  justify-content:space-between;
+  gap:12px
+}
+
+.audit-action{
+  font-weight:850;
+  font-size:12px
+}
+
+.audit-time{
+  color:var(--muted);
+  font-size:10px
+}
+
+.audit-meta{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.5
+}
+
+.empty{
+  padding:25px;
+  text-align:center;
+  color:var(--muted);
+  border:1px dashed var(--border);
+  border-radius:14px
+}
+
+.danger-note{
+  padding:12px;
+  border:1px solid rgba(255,106,132,.18);
+  border-radius:12px;
+  color:#ffb4c2;
+  background:rgba(255,106,132,.06);
+  font-size:11px;
+  line-height:1.5
+}
+
+.code-box{
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  word-break:break-all;
+  color:#d8cbef
+}
+
+#toast{
+  position:fixed;
+  left:50%;
+  bottom:24px;
+  z-index:5000;
+  max-width:min(430px,calc(100% - 28px));
+  padding:12px 15px;
+  transform:translate(-50%,130px);
+  border:1px solid var(--border);
+  border-radius:13px;
+  color:white;
+  background:rgba(16,14,24,.94);
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+  backdrop-filter:blur(18px);
+  font-size:12px;
+  font-weight:750;
+  opacity:0;
+  transition:.25s
+}
+
+#toast.show{
+  transform:translate(-50%,0);
+  opacity:1
+}
+
+.loading-dot{
+  display:inline-block;
+  width:6px;
+  height:6px;
+  margin-left:3px;
+  border-radius:50%;
+  background:currentColor;
+  animation:pulse 1s infinite ease-in-out
+}
+
+@keyframes pulse{
+  0%,100%{opacity:.25}
+  50%{opacity:1}
+}
+
+@media(max-width:1050px){
+  .landing-inner{
+    grid-template-columns:1fr;
+    gap:35px
+  }
+
+  .dashboard-grid,
+  .admin-grid{
+    grid-template-columns:1fr
+  }
+
+  .admin-stats{
+    grid-template-columns:repeat(2,1fr)
+  }
+}
+
+@media(max-width:760px){
+  header{
+    height:65px
+  }
+
+  .header-inner{
+    width:calc(100% - 24px)
+  }
+
+  #desktopNav{
+    display:none;
+    position:absolute;
+    top:65px;
+    left:12px;
+    right:12px;
+    padding:10px;
+    flex-direction:column;
+    align-items:stretch;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:rgba(11,9,17,.98);
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(20px)
+  }
+
+  #desktopNav.mobile-open{
+    display:flex
+  }
+
+  #desktopNav a,
+  #desktopNav button{
+    width:100%;
+    text-align:left
+  }
+
+  .mobile-menu{
+    display:block
+  }
+
+  .landing{
+    min-height:calc(100vh - 65px);
+    padding:54px 14px
+  }
+
+  .landing h1{
+    font-size:clamp(48px,14vw,70px)
+  }
+
+  .landing p{
+    font-size:15px
+  }
+
+  .app,
+  main section{
+    width:calc(100% - 24px);
+    padding-top:18px
+  }
+
+  .welcome{
+    align-items:flex-start;
+    flex-direction:column;
+    min-height:185px;
+    padding:23px;
+    border-radius:20px
+  }
+
+  .welcome-actions{
+    width:100%
+  }
+
+  .welcome-actions .btn{
+    flex:1
+  }
+
+  .stats,
+  .admin-stats{
+    grid-template-columns:1fr 1fr
+  }
+
+  .referral-grid{
+    grid-template-columns:1fr
+  }
+
+  .referral-link-row{
+    grid-template-columns:1fr
+  }
+
+  .table{
+    overflow:auto
+  }
+
+  .table-head,
+  .table-row{
+    min-width:720px
+  }
+
+  .creator-follow{
+    align-items:flex-start;
+    flex-direction:column
+  }
+
+  .creator-follow .btn{
+    width:100%
+  }
+}
+
+@media(max-width:450px){
+  .stats,
+  .admin-stats{
+    grid-template-columns:1fr
+  }
+
+  .hero-mini-grid{
+    grid-template-columns:1fr
+  }
+
+  .hero-card{
+    padding:22px
+  }
+
+  .card{
+    padding:19px
+  }
+
+  .task-top{
+    flex-direction:column
+  }
+
+  .task-actions .btn{
+    flex:1
+  }
+
+  .landing-actions{
+    flex-direction:column
+  }
+
+  .landing-actions .btn{
+    width:100%
+  }
+}
+</style>
+<style id="rizora-mobile-splash-style">
+#rizora-mobile-splash{
+position:fixed;
+inset:0;
+z-index:999999;
+display:grid;
+place-items:center;
+background:#05040a url("/assets/rizora-space.png") center/cover no-repeat;
+transition:opacity .45s ease,visibility .45s ease;
+}
+#rizora-mobile-splash.hidden{
+opacity:0;
+visibility:hidden;
+pointer-events:none;
+}
+#rizora-mobile-splash::after{
+content:"";
+position:absolute;
+inset:0;
+background:linear-gradient(180deg,rgba(5,4,10,.08),rgba(5,4,10,.78));
+}
+#rizora-mobile-splash .rz-inner{
+position:relative;
+z-index:2;
+text-align:center;
+padding:24px;
+}
+#rizora-mobile-splash img{
+width:min(250px,62vw);
+max-height:260px;
+object-fit:contain;
+border-radius:28px;
+filter:drop-shadow(0 20px 55px rgba(165,108,255,.45));
+}
+#rizora-mobile-splash .rz-load{
+margin-top:16px;
+color:#fff;
+font:800 12px/1.4 system-ui,sans-serif;
+letter-spacing:.18em;
+text-transform:uppercase;
+}
+</style><style id="rizora-logo-fix">
+.rizora-logo-img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  border-radius:inherit;
+}
+</style><style id="RIZORA_BUTTON_LOADING_STYLE">
+#RIZORA_BUTTON_LOADING{
+  position:fixed;
+  top:82px;
+  left:50%;
+  transform:translateX(-50%);
+  width:190px;
+  height:31px;
+  padding:5px 8px;
+  display:none;
+  align-items:center;
+  gap:7px;
+  z-index:2147483647;
+  background:#0c0913;
+  border:1px solid rgba(171,116,255,.35);
+  border-radius:9px;
+  box-shadow:0 10px 35px rgba(0,0,0,.55);
+  pointer-events:none;
+}
+
+#RIZORA_BUTTON_LOADING.show{
+  display:flex;
+}
+
+#RIZORA_BUTTON_LOADING img{
+  width:18px;
+  height:18px;
+  object-fit:cover;
+  border-radius:5px;
+}
+
+#RIZORA_BUTTON_LOADING span{
+  color:#eee8ff;
+  font:800 9px/1 Inter,system-ui,sans-serif;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+#RIZORA_BUTTON_LOADING i{
+  width:9px;
+  height:9px;
+  margin-left:auto;
+  border:1px solid rgba(255,255,255,.18);
+  border-top-color:#b77dff;
+  border-radius:50%;
+  animation:RIZORA_BUTTON_SPIN .55s linear infinite;
+}
+
+#RIZORA_BUTTON_LINE{
+  position:fixed;
+  top:119px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(600px,calc(100vw - 30px));
+  height:3px;
+  display:none;
+  overflow:hidden;
+  z-index:2147483646;
+  border-radius:999px;
+  background:rgba(255,255,255,.10);
+  box-shadow:0 0 15px rgba(155,91,255,.25);
+  pointer-events:none;
+}
+
+#RIZORA_BUTTON_LINE.show{
+  display:block;
+}
+
+#RIZORA_BUTTON_FLOW{
+  position:absolute;
+  top:0;
+  left:-170px;
+  width:170px;
+  height:3px;
+  border-radius:999px;
+  background:linear-gradient(
+    90deg,
+    transparent,
+    #874cff,
+    #ffffff,
+    #c28aff,
+    #874cff,
+    transparent
+  );
+  box-shadow:0 0 12px rgba(173,116,255,.9);
+  animation:RIZORA_BUTTON_FLOW 1s linear infinite;
+}
+
+@keyframes RIZORA_BUTTON_FLOW{
+  from{left:-170px}
+  to{left:100%}
+}
+
+@keyframes RIZORA_BUTTON_SPIN{
+  to{transform:rotate(360deg)}
+}
+</style></head>
+
+<body><div id="rizoraFloatingProgress" class="rizora-floating-progress">
+  <div class="rizora-floating-progress-track">
+    <div class="rizora-floating-progress-flow"></div>
+  </div>
+</div>
+              `
+          )
+          .join("")
+      : `
+        <div class="empty">
+          No audit events yet.
+        </div>
+        `;
+}
+
+async function renderAdminOverview(){
+
+  const health =
+    await fetch(
+      "/api/health"
+    )
+      .then(
+        response =>
+          response.json()
+      )
+      .catch(
+        () => ({})
+      );
+
+  $("systemStatus")
+    .innerHTML =
+      `
+      <div class="metric-line">
+        <span>Service</span>
+        <strong>
+          ${escapeHTML(
+            health.service ||
+            "RIZORA"
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>Status</span>
+        <strong>
+          ${escapeHTML(
+            health.status ||
+            "unknown"
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>Version</span>
+        <strong>
+          ${escapeHTML(
+            health.version ||
+            "unknown"
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>Server time</span>
+        <strong>
+          ${
+            health.time
+              ? new Date(
+                  health.time
+                ).toLocaleString()
+              : "—"
+          }
+        </strong>
+      </div>
+      `;
+
+  $("adminIdentity")
+    .innerHTML =
+      `
+      <div class="metric-line">
+        <span>
+          Signed in as
+        </span>
+
+        <strong>
+          @${escapeHTML(
+            currentUser.username
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>
+          Role
+        </span>
+
+        <strong>
+          ${escapeHTML(
+            currentUser.role
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>
+          Status
+        </span>
+
+        <strong>
+          ${escapeHTML(
+            currentUser.status
+          )}
+        </strong>
+      </div>
+
+      <div class="metric-line">
+        <span>
+          Account ID
+        </span>
+
+        <span class="code-box">
+          ${escapeHTML(
+            currentUser.id
+          )}
+        </span>
+      </div>
+      `;
+}
+
+function toggleMobileMenu(){
+
+  $("desktopNav")
+    .classList
+    .toggle(
+      "mobile-open"
+    );
+}
+
+window.addEventListener(
+  "resize",
+  () => {
+
+    if(
+      window.innerWidth >
+      760
+    ){
+
+      closeMobileMenu();
+
+    }
+
+  }
+);
+
+if(
+  "serviceWorker" in navigator
+){
+
+  window.addEventListener(
+    "load",
+    () => {
+
+      navigator.serviceWorker
+        .register("/sw.js")
+        .catch(
+          () => {}
+        );
+
+    }
+  );
+
+}
+
+/* ============================================================
+   CREATOR WORKSPACE
+============================================================ */
+
+function creatorTab(button, id){
+  document.querySelectorAll("#creatorWorkspace .admin-tab")
+    .forEach(x => x.classList.remove("active"));
+
+  if(button) button.classList.add("active");
+
+  document.querySelectorAll("#creatorWorkspace .admin-panel")
+    .forEach(x => x.classList.remove("active"));
+
+  const el = $(id);
+  if(el) el.classList.add("active");
+
+  if(id === "creatorAnalytics") loadCreatorAnalytics();
+  if(id === "creatorLeaderboard") loadCreatorLeaderboard();
+  if(id === "creatorCommunity") loadCommunity();
+  if(id === "creatorExperiments") loadExperiments();
+  if(id === "creatorHistory") loadCreatorHistory();
+  if(id === "creatorProfile") loadCreatorProfile();
+  if(id === "creatorSettings") loadCreatorSettings();
+  if(id === "creatorBoost") loadCreatorBoosts();
+}
+
+function showCreatorWorkspace(){
+  if(!token || !currentUser){
+    showLogin();
+    return;
+  }
+
+  hideAll();
+
+  $("creatorWorkspace")
+    .classList.remove("hidden");
+
+  creatorTab(null, "creatorOverview");
+  closeMobileMenu();
+}
+
+async function creatorGenerate(endpoint){
+  const box = $("creatorToolOutput");
+
+  box.innerHTML = "Generating...";
+
+  try{
+    const result = await api(endpoint,{
+      method:"POST",
+      body:JSON.stringify({
+        topic:"creator growth",
+        category:"lifestyle",
+        vibe:"aesthetic gen z"
+      })
+    });
+
+    const values =
+      result.items ||
+      result.hooks ||
+      result.hashtags ||
+      result.captions ||
+      [];
+
+    box.innerHTML = values.length
+      ? values.map(x =>
+          `<div class="tool-line">${escapeHTML(x)}</div>`
+        ).join("")
+      : "No results.";
+  }catch(error){
+    box.textContent = error.message;
+  }
+}
+
+async function creatorIdeas(){
+  const box = $("creatorToolOutput");
+  box.innerHTML = "Generating ideas...";
+
+  try{
+    const result = await api("/api/creator/ideas",{
+      method:"POST",
+      body:JSON.stringify({
+        niche:
+          $("profileNiche")?.value ||
+          "content"
+      })
+    });
+
+    box.innerHTML =
+      (result.ideas || []).map(x =>
+        `<div class="tool-line">${escapeHTML(x)}</div>`
+      ).join("");
+  }catch(error){
+    box.textContent = error.message;
+  }
+}
+
+async function creatorAnalyze(){
+  try{
+    const result = await api("/api/creator/analyze",{
+      method:"POST",
+      body:JSON.stringify({
+        topic:$("creatorAnalyzeTopic").value,
+        hook:$("creatorAnalyzeHook").value,
+        caption:$("creatorAnalyzeCaption").value,
+        hashtags:$("creatorAnalyzeHashtags").value
+      })
+    });
+
+    $("creatorScore").textContent = result.score;
+    $("creatorRating").textContent =
+      `${result.rating} · /100`;
+
+    $("creatorImprovements").innerHTML =
+      (result.improvements || []).map(x =>
+        `<div class="task">${escapeHTML(x)}</div>`
+      ).join("") ||
+      `<div class="task">Strong setup. Keep testing.</div>`;
+
+    loadCreatorAnalytics();
+  }catch(error){
+    showToast(error.message);
+  }
+}
+
+async function loadCreatorAnalytics(){
+  try{
+    const result = await api("/api/creator/analytics");
+
+    $("creatorPosts").textContent =
+      Number(result.totalPosts || 0).toLocaleString();
+
+    $("creatorAverage").textContent =
+      Number(result.averageScore || 0);
+
+    $("creatorBest").textContent =
+      Number(result.bestScore || 0);
+
+    $("creatorIdeas").textContent =
+      Number(result.ideasGenerated || 0).toLocaleString();
+
+    const scores = result.scores || [];
+
+    $("creatorAnalyticsOutput").innerHTML = `
+      <div class="metric-line">
+        <span>Posts analyzed</span>
+        <strong>${result.totalPosts || 0}</strong>
+      </div>
+      <div class="metric-line">
+        <span>Average score</span>
+        <strong>${result.averageScore || 0}</strong>
+      </div>
+      <div class="metric-line">
+        <span>Best score</span>
+        <strong>${result.bestScore || 0}</strong>
+      </div>
+      <div class="metric-line">
+        <span>Ideas generated</span>
+        <strong>${result.ideasGenerated || 0}</strong>
+      </div>
+      ${
+        scores.slice().reverse().slice(0,10).map(x =>
+          `<div class="task">
+             <strong>Score ${Number(x.score || 0)}</strong>
+             <p>${escapeHTML(x.rating || "")}</p>
+           </div>`
+        ).join("")
+      }
+    `;
+  }catch(error){
+    $("creatorAnalyticsOutput").textContent = error.message;
+  }
+}
+
+async function loadCreatorLeaderboard(){
+  try{
+    const result = await api("/api/leaderboard");
+
+    $("creatorLeaderboardOutput").innerHTML =
+      (result.leaderboard || []).map(x =>
+        `<div class="metric-line">
+          <span>#${x.rank} · @${escapeHTML(x.username)}</span>
+          <strong>${Number(x.points || 0).toLocaleString()} pts</strong>
+        </div>`
+      ).join("") ||
+      `<div class="empty">No creators yet.</div>`;
+  }catch(error){
+    $("creatorLeaderboardOutput").textContent = error.message;
+  }
+}
+
+async function loadCommunity(){
+  try{
+    const result = await api("/api/community");
+
+    $("communityOutput").innerHTML =
+      (result.posts || []).map(x =>
+        `<div class="task">
+          <strong>${escapeHTML(x.displayName || x.username)}</strong>
+          <p>${escapeHTML(x.text)}</p>
+          <small class="muted">${new Date(x.createdAt).toLocaleString()}</small>
+        </div>`
+      ).join("") ||
+      `<div class="empty">No posts yet.</div>`;
+  }catch(error){
+    $("communityOutput").textContent = error.message;
+  }
+}
+
+async function communityPost(){
+  const text = $("communityText").value.trim();
+
+  if(!text){
+    showToast("Write something first.");
+    return;
+  }
+
+  try{
+    await api("/api/community",{
+      method:"POST",
+      body:JSON.stringify({text})
+    });
+
+    $("communityText").value = "";
+    await loadCommunity();
+    showToast("Posted to the community.");
+  }catch(error){
+    showToast(error.message);
+  }
+}
+
+async function loadExperiments(){
+  try{
+    const result = await api("/api/experiments");
+
+    $("experimentsOutput").innerHTML =
+      (result.experiments || []).map(x =>
+        `<div class="task">
+          <strong>${escapeHTML(x.name)}</strong>
+          <p>A: ${escapeHTML(x.hookA)}</p>
+          <p>B: ${escapeHTML(x.hookB)}</p>
+          <small class="muted">${new Date(x.createdAt).toLocaleString()}</small>
+        </div>`
+      ).join("") ||
+      `<div class="empty">No experiments yet.</div>`;
+  }catch(error){
+    $("experimentsOutput").textContent = error.message;
+  }
+}
+
+async function saveExperiment(){
+  try{
+    await api("/api/experiments",{
+      method:"POST",
+      body:JSON.stringify({
+        name:$("experimentName").value,
+        hookA:$("experimentA").value,
+        hookB:$("experimentB").value,
+        notes:$("experimentNotes").value
+      })
+    });
+
+    $("experimentName").value = "";
+    $("experimentA").value = "";
+    $("experimentB").value = "";
+    $("experimentNotes").value = "";
+
+    await loadExperiments();
+    showToast("Experiment saved.");
+  }catch(error){
+    showToast(error.message);
+  }
+}
+
+async function loadCreatorHistory(){
+  try{
+    const result = await api("/api/history");
+
+    $("creatorHistoryOutput").innerHTML =
+      (result.history || []).map(x =>
+        `<div class="task">
+          <strong>${escapeHTML(x.type)}</strong>
+          <p>${escapeHTML(JSON.stringify(x.details || {}))}</p>
+          <small class="muted">
+            ${new Date(x.createdAt).toLocaleString()}
+          </small>
+        </div>`
+      ).join("") ||
+      `<div class="empty">No activity yet.</div>`;
+  }catch(error){
+    $("creatorHistoryOutput").textContent = error.message;
+  }
+}
+
+async function loadCreatorProfile(){
+  try{
+    const result = await api("/api/creator/profile");
+    const p = result.profile || {};
+
+    $("profileNiche").value = p.niche || "";
+    $("profileBio").value = p.bio || "";
+    $("profilePlatforms").value =
+      (p.platforms || []).join(", ");
+    $("profileGoals").value =
+      (p.goals || []).join(", ");
+  }catch(error){
+    showToast(error.message);
+  }
+}
+
+async function saveCreatorProfile(){
+  try{
+    await api("/api/creator/profile",{
+      method:"POST",
+      body:JSON.stringify({
+        niche:$("profileNiche").value,
+        bio:$("profileBio").value,
+        platforms:$("profilePlatforms").value.split(",").map(x => x.trim()).filter(Boolean),
+        goals:$("profileGoals").value.split(",").map(x => x.trim()).filter(Boolean)
+      })
+    });
+
+    showToast("Creator profile saved.");
+  }catch(error){
+    showToast(error.message);
+  }
+}
+
+async function loadCreatorSettings(){
+  try{
+    const result = await api("/api/settings");
+    const s = result.settings || {};
+
+    $("settingNotifications").checked =
+      Boolean(s.notifications);
+
+    $("settingCompact").checked =
+      Boolean(s.compactMode);
+  }catch(error){
+    showToast(error.message);
+  }
+}
+
+async function saveCreatorSettings(){
+  try{
+    await api("/api/settings",{
+      method:"POST",
+      body:JSON.stringify({
+        notifications:
+          $("settingNotifications").checked,
+        compactMode:
+          $("settingCompact").checked
+      })
+    });
+
+    showToast("Settings saved.");
+  }catch(error){
+    showToast(error.message);
+  }
+}
+
+async function creatorAskAI(){
+  const input = $("creatorAIInput").value.trim();
+
+  if(!input){
+    showToast("Ask something first.");
+    return;
+  }
+
+  $("creatorAIResult").textContent =
+    "RIZORA AI is thinking...";
+
+  try{
+    const result = await api("/api/ai/chat",{
+      method:"POST",
+      body:JSON.stringify({
+        message:input
+      })
+    });
+
+    $("creatorAIResult").textContent =
+      result.reply || "No response.";
+  }catch(error){
+    $("creatorAIResult").textContent =
+      error.message;
+  }
+}
+
+async function loadCreatorBoosts(){
+  try{
+    const result = await api("/api/boosts");
+
+    $("creatorBoosts").innerHTML =
+      (result.boosts || []).map(b =>
+        `<div class="task">
+          <strong>${escapeHTML(b.platform)} · ${escapeHTML(b.action)}</strong>
+          <p>@${escapeHTML(b.username)}</p>
+          <p>Reward: ${Number(b.reward || 0)} pts · Remaining: ${Number(b.remaining || 0)}</p>
+          ${
+            b.url
+              ? `<a class="btn secondary small" href="${escapeHTML(b.url)}" target="_blank">Open ↗</a>`
+              : ""
+          }
+          <button class="btn small" onclick="completeCreatorBoost('${escapeHTML(b.id)}')">
+            Complete
+          </button>
+        </div>`
+      ).join("") ||
+      `<div class="empty">No boost opportunities right now.</div>`;
+  }catch(error){
+    $("creatorBoosts").textContent = error.message;
+  }
+}
+
+async function completeCreatorBoost(id){
+  try{
+    const result = await api("/api/boosts/complete",{
+      method:"POST",
+      body:JSON.stringify({boostId:id})
+    });
+
+    currentUser = result.user;
+
+    localStorage.setItem(
+      "rizoraUser",
+      JSON.stringify(currentUser)
+    );
+
+    updateHeader();
+    showToast(`+${result.reward} points earned.`);
+    await loadCreatorBoosts();
+  }catch(error){
+    showToast(error.message);
+  }
+}
+async function startup(){
+
+  updateHeader();
+
+  loadReferralFromURL();
+
+  if(
+    token &&
+    currentUser
+  ){
+
+    try{
+
+      const result =
+        await api(
+          "/api/auth/me"
+        );
+
+      currentUser =
+        result.user;
+
+      localStorage.setItem(
+        "rizoraUser",
+        JSON.stringify(
+          currentUser
+        )
+      );
+
+      updateHeader();
+
+      openBestDashboard();
+
+    }catch{
+
+      token = "";
+
+      currentUser = null;
+
+      localStorage.removeItem(
+        "rizoraToken"
+      );
+
+      localStorage.removeItem(
+        "rizoraUser"
+      );
+
+      updateHeader();
+
+      showLanding();
+
+    }
+
+  }else{
+
+    showLanding();
+
+  }
+}
+
+startup();
+
+</script>
+
+<script>
+(function(){
+  function hideRizoraSplash(){
+    const el=document.getElementById("rizora-mobile-splash");
+    if(el) el.classList.add("hidden");
+  }
+
+  window.addEventListener("load",function(){
+    setTimeout(hideRizoraSplash,500);
+  });
+
+  setTimeout(hideRizoraSplash,4500);
+})();
+</script><script id="RIZORA_BUTTON_LOADING_SCRIPT">
+(function(){
+
+  var hideTimer = null;
+
+  function createLoader(){
+
+    if(document.getElementById("RIZORA_BUTTON_LOADING")) return;
+
+    var box = document.createElement("div");
+    box.id = "RIZORA_BUTTON_LOADING";
+
+    box.innerHTML =
+      '<img src="/assets/rizora-cover.png" alt="RIZORA">' +
+      '<span id="RIZORA_BUTTON_TEXT">Loading</span>' +
+      '<i></i>';
+
+    var line = document.createElement("div");
+    line.id = "RIZORA_BUTTON_LINE";
+
+    line.innerHTML =
+      '<div id="RIZORA_BUTTON_FLOW"></div>';
+
+    document.documentElement.appendChild(box);
+    document.documentElement.appendChild(line);
+  }
+
+  window.RIZORA_BUTTON_START = function(message){
+
+    createLoader();
+
+    var box = document.getElementById("RIZORA_BUTTON_LOADING");
+    var line = document.getElementById("RIZORA_BUTTON_LINE");
+    var text = document.getElementById("RIZORA_BUTTON_TEXT");
+
+    if(text){
+      text.textContent = message || "Loading";
+    }
+
+    box.classList.add("show");
+    line.classList.add("show");
+
+    clearTimeout(hideTimer);
+
+    hideTimer = setTimeout(function(){
+      box.classList.remove("show");
+      line.classList.remove("show");
+    },3000);
+  };
+
+  function buttonPressed(e){
+
+    var b = e.target.closest(
+      "button,input[type='button'],input[type='submit'],[role='button']"
+    );
+
+    if(!b || b.disabled) return;
+
+    var name =
+      b.getAttribute("aria-label") ||
+      b.getAttribute("data-loading-text") ||
+      b.textContent ||
+      "Loading";
+
+    name = name.replace(/\s+/g," ").trim();
+
+    RIZORA_BUTTON_START(name.substring(0,22) || "Loading");
+  }
+
+  /* REAL TOUCH / MOUSE / PEN */
+  document.addEventListener("pointerdown",buttonPressed,true);
+
+  /* PHONES */
+  document.addEventListener("touchstart",buttonPressed,true);
+
+  /* NORMAL CLICK */
+  document.addEventListener("click",buttonPressed,true);
+
+})();
+</script><script id="rizora-ai-final-fix">
+(function(){
+
+  function getToken(){
+    try{
+      return (
+        window.token ||
+        localStorage.getItem("rizoraToken") ||
+        ""
+      );
+    }catch{
+      return "";
+    }
+  }
+
+  async function askAI(){
+
+    const input = document.getElementById("aiPrompt");
+    const output = document.getElementById("aiReply");
+    const button = document.getElementById("rizoraAskAIButton");
+
+    if(!input || !output) return;
+
+    const message = input.value.trim();
+
+    if(!message){
+      output.textContent = "Ask RIZORA AI something first.";
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "RIZORA AI is thinking...";
+
+    output.innerHTML =
+      '<div style="display:flex;align-items:center;gap:8px">' +
+      '<span style="width:8px;height:8px;border-radius:50%;background:#a56cff;display:inline-block;animation:rizoraAiPulse .8s infinite"></span>' +
+      '<span>Thinking...</span>' +
+      '</div>';
+
+    try{
+
+      const token = getToken();
+
+      const response = await fetch("/api/ai/chat",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          ...(token ? {"Authorization":"Bearer " + token} : {})
+        },
+        body:JSON.stringify({
+          message:message
+        })
+      });
+
+      const data = await response.json().catch(function(){
+        return {};
+      });
+
+      if(!response.ok){
+        throw new Error(
+          data.error ||
+          "RIZORA AI request failed."
+        );
+      }
+
+      output.textContent =
+        data.reply ||
+        "RIZORA AI returned no response.";
+
+    }catch(error){
+
+      console.error("RIZORA AI ERROR:",error);
+
+      output.textContent =
+        error.message ||
+        "RIZORA AI could not respond.";
+
+    }finally{
+
+      button.disabled = false;
+      button.textContent = "✦ Ask RIZORA AI";
+
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded",function(){
+
+    const button = document.getElementById("rizoraAskAIButton");
+
+    if(button){
+      button.addEventListener("click",askAI);
+    }
+
+  });
+
+})();
+</script>
+
+<style>
+@keyframes rizoraAiPulse{
+  0%,100%{opacity:.25;transform:scale(.8)}
+  50%{opacity:1;transform:scale(1.2)}
+}
+</style></body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

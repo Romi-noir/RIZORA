@@ -5,8 +5,6 @@ www/
 .vercel
 .env
 .env.*
-package.json
-package-lock.json
 server.js
 server.backup*.js
 server.before-*.js

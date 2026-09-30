@@ -132,8 +132,6 @@ function decoratePost(db, post) {
 }
 
 function publishDueSchedules(db, ctx) {
-  db.rzV2 = db.rzV2 || {};
-  db.rzV2.schedules = db.rzV2.schedules || [];
   var changed = false, current = Date.now();
   (db.rzV2.schedules || []).forEach(function(schedule) {
     if (schedule.status !== "scheduled") return;
