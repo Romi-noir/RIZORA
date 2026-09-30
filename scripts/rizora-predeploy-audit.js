@@ -57,10 +57,10 @@ const server=read("server.js");
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
 
-assert(core.includes('id="aiInput"') && core.includes('id="aiForm"'),"AI composer wiring is missing.");
-assert(core.includes('data-ai-speak'),"AI voice playback controls are missing.");
-assert(core.includes('data-chat-target'),"One-to-one chat voice target wiring is missing.");
-assert(core.includes('data-post-id'),"Comment voice post wiring is missing.");
+assert(/id=[\'"]aiInput[\'"]/.test(core) && /id=[\'"]aiForm[\'"]/.test(core),"AI composer wiring is missing.");
+assert(/data-ai-speak=[\'"]/.test(core),"AI voice playback controls are missing.");
+assert(/data-chat-target=[\'"]/.test(core),"One-to-one chat voice target wiring is missing.");
+assert(/data-post-id=[\'"]/.test(core),"Comment voice post wiring is missing.");
 assert(voice.includes("RIZORA_AI_SPEAK"),"AI voice playback helper is missing.");
 assert(voice.includes('/api/ai/transcribe'),"AI voice transcription wiring is missing.");
 assert(voice.includes('/api/v2/messages/'),"One-to-one voice message wiring is missing.");
