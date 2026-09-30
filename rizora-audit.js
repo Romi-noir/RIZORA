@@ -1,8 +1,8 @@
-﻿const { chromium } = require("playwright");
+const { chromium } = require("playwright");
 
 const URL = "https://rizora.com.ng";
-const USERNAME = "romi";
-const PASSWORD = "123romi45$";
+const USERNAME = process.env.RIZORA_AUDIT_USERNAME || "romi";
+const PASSWORD = process.env.RIZORA_AUDIT_PASSWORD || "";
 
 const results = [];
 
@@ -15,6 +15,10 @@ function record(name, pass, detail = "") {
 }
 
 async function login(page, label) {
+  if (!PASSWORD) {
+    record(`${label} Login`, false, "RIZORA_AUDIT_PASSWORD is not set; refusing to use a hard-coded credential.");
+    return false;
+  }
   await page.goto(URL, {
     waitUntil: "domcontentloaded",
     timeout: 60000
