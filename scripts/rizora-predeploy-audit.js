@@ -56,8 +56,10 @@ const media=read("rizora-v2-media.js");
 const server=read("server.js");
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
+const growth=read("rizora-v2-growth.js");
 
 assert(!/remita/i.test(source),"Deferred Remita UI must not expose unfinished frontend routes.");
+assert(growth.includes("db.rzV2 = db.rzV2 || {};") && growth.includes("Array.isArray(db.rzV2.schedules)"),"Scheduler must safely initialize persisted schedule state.");
 
 assert(/id=[\'"]aiInput[\'"]/.test(core) && /id=[\'"]aiForm[\'"]/.test(core),"AI composer wiring is missing.");
 assert(/data-ai-speak=[\'"]/.test(core),"AI voice playback controls are missing.");
