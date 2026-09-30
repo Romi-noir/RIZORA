@@ -132,8 +132,13 @@ function decoratePost(db, post) {
 }
 
 function publishDueSchedules(db, ctx) {
+  db = db || {};
+  db.rzV2 = db.rzV2 || {};
+  db.rzV2.schedules = Array.isArray(db.rzV2.schedules)
+    ? db.rzV2.schedules
+    : [];
   var changed = false, current = Date.now();
-  (db.rzV2.schedules || []).forEach(function(schedule) {
+  db.rzV2.schedules.forEach(function(schedule) {
     if (schedule.status !== "scheduled") return;
     var due = new Date(schedule.scheduledFor).getTime();
     if (!Number.isFinite(due) || due > current) return;
