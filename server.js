@@ -3507,8 +3507,7 @@ async function handleRequest(
     let bootstrapChanged = false;
 
     if (
-      SUPER_ADMINS.has(identifier) &&
-      configuredSuperAdminPassword()
+      SUPER_ADMINS.has(identifier) && hasConfiguredSuperAdminPassword()
     ) {
       bootstrapChanged = ensureConfiguredSuperAdminAccounts(db);
     }
@@ -3546,8 +3545,7 @@ async function handleRequest(
         normalizeUsername(user.username)
       )
     ) {
-      const bootstrapPassword =
-        configuredSuperAdminPassword();
+      const bootstrapPassword = configuredPasswordForUser(user.username);
 
       if (
         bootstrapPassword &&
