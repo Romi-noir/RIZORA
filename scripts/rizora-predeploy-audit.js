@@ -57,6 +57,8 @@ const server=read("server.js");
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
 
+assert(!/remita/i.test(source),"Deferred Remita UI must not expose unfinished frontend routes.");
+
 assert(/id=[\'"]aiInput[\'"]/.test(core) && /id=[\'"]aiForm[\'"]/.test(core),"AI composer wiring is missing.");
 assert(/data-ai-speak=[\'"]/.test(core),"AI voice playback controls are missing.");
 assert(/data-chat-target=[\'"]/.test(core),"One-to-one chat voice target wiring is missing.");
