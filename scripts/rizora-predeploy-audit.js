@@ -41,13 +41,13 @@ for(const p of [...scripts,...styles,"manifest.json","service-worker.js","rizora
 
 const jsFiles=scripts.filter(p=>fs.existsSync(path.join(root,p)));
 const source=jsFiles.map(p=>fs.readFileSync(path.join(root,p),"utf8")).join("\n");
-const exports=new Set();
-for(const m of source.matchAll(/window\.([A-Z][A-Z0-9_]+)\s*=/g)) exports.add(m[1]);
+const definedExports=new Set();
+for(const m of source.matchAll(/window\.([A-Z][A-Z0-9_]+)\s*=/g)) definedExports.add(m[1]);
 const refs=new Set();
 for(const m of source.matchAll(/window\.([A-Z][A-Z0-9_]+)\b/g)) refs.add(m[1]);
 const ignore=new Set(["RIZORA_API_BASE","RIZORA_CURRENT_USER","RIZORA_SUITE_PROMPT","RIZORA_ADS_OBSERVER"]);
 for(const x of [...refs].filter(x=>x.startsWith("RIZORA_")&&!ignore.has(x))) {
-  assert(exports.has(x),"Undefined cross-module RIZORA export: window."+x);
+  assert(definedExports.has(x),"Undefined cross-module RIZORA export: window."+x);
 }
 
 const core=read("rizora-v2.js");
