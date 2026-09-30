@@ -17,5 +17,10 @@
     "@capacitor/android": "^8.5.1",
     "@capacitor/cli": "^8.5.1",
     "@capacitor/core": "^8.5.1"
+  },
+  "overrides": {
+    "sax": "^1.6.0",
+    "uuid": "^8.3.2",
+    "bplist-parser": "^0.3.2"
   }
 }
