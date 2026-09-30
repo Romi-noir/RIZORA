@@ -24,6 +24,14 @@
     {
       "source": "/login/",
       "destination": "/"
+    },
+    {
+      "source": "/verification",
+      "destination": "/verification.html"
+    },
+    {
+      "source": "/verification/",
+      "destination": "/verification.html"
     }
   ],
   "headers": [
@@ -63,6 +71,23 @@
         {
           "key": "Cache-Control",
           "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/verification.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
+        },
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
         }
       ]
     }
