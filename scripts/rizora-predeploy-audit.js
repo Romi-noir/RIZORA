@@ -72,6 +72,9 @@ assert(server.includes('pathname === "/api/ai/chat"'),"AI chat route is missing.
 assert(server.includes('pathname === "/api/ai/transcribe"'),"AI transcription route is missing.");
 assert(/recognize the signed-in creator/i.test(server),"AI signed-in creator context is missing.");
 assert(server.includes("knownRizoraIdentityAnswer"),"Deterministic RIZORA identity answers are missing.");
+assert(!server.includes("configuredSuperAdminPassword("), "Stale configuredSuperAdminPassword() reference remains.");
+assert(server.includes("function configuredPasswordForUser"), "configuredPasswordForUser helper is missing.");
+assert(server.includes("function hasConfiguredSuperAdminPassword"), "hasConfiguredSuperAdminPassword helper is missing.");
 assert(server.includes('username: "rizora"'),"Official RIZORA account bootstrap is missing.");
 assert(server.includes('username: "romi"'),"Official RoMi account bootstrap is missing.");
 assert(server.includes('verificationType: "official_creator"'),"RoMi verified-account type is missing.");
