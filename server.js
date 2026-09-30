@@ -8,6 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 require("dotenv").config();
+const { Pool } = require("pg");
 const { OAuth2Client } =
   require("google-auth-library");
 const { configured: rizoraEmailConfigured, sendRizoraWelcomeEmail, sendRizoraEmail } = require("./rizora-email");
@@ -37,6 +38,11 @@ const googleOAuthClient =
 const ROOT = __dirname;
 const DB_DIR = path.join(ROOT, "database");
 const DB_FILE = path.join(DB_DIR, "db.json");
+const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
+let postgresPool = null;
+let dbCache = null;
+let dbPersistenceReady = false;
+let dbWriteQueue = Promise.resolve();
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -87,45 +93,42 @@ function ensureDatabase() {
   }
 }
 
-function loadDB() {
+function normalizeDB(db) {
+  const normalized = db && typeof db === "object" ? db : {};
+  normalized.users ||= [];
+  normalized.tasks ||= [];
+  normalized.taskCompletions ||= [];
+  normalized.taskAttempts ||= [];
+  normalized.auditLogs ||= [];
+  normalized.referrals ||= [];
+  normalized.sessions ||= [];
+  normalized.pointsLedger ||= [];
+  normalized.creatorProfiles ||= {};
+  normalized.analytics ||= {};
+  normalized.communityPosts ||= [];
+  normalized.experiments ||= [];
+  normalized.userSettings ||= {};
+  normalized.supportTickets ||= [];
+  normalized.emailEvents ||= [];
+  return normalized;
+}
+
+function loadLocalDB() {
   ensureDatabase();
 
   try {
-    const raw = fs.readFileSync(DB_FILE, "utf8");
-    const db = JSON.parse(raw);
-
-    db.users ||= [];
-    db.tasks ||= [];
-    db.taskCompletions ||= [];
-    db.taskAttempts ||= [];
-    db.auditLogs ||= [];
-    db.referrals ||= [];
-    db.sessions ||= [];
-    db.pointsLedger ||= [];
-    db.creatorProfiles ||= {};
-    db.analytics ||= {};
-    db.communityPosts ||= [];
-    db.experiments ||= [];
-    db.userSettings ||= {};
-    db.supportTickets ||= [];
-    db.emailEvents ||= [];
-
-    return db;
+    return normalizeDB(
+      JSON.parse(
+        fs.readFileSync(DB_FILE, "utf8")
+      )
+    );
   } catch (error) {
     console.error("Database load error:", error);
-
-    return {
-      users: [],
-      tasks: [],
-      taskCompletions: [],
-      auditLogs: [],
-      referrals: [],
-      sessions: []
-    };
+    return normalizeDB({});
   }
 }
 
-function saveDB(db) {
+function saveLocalDB(db) {
   ensureDatabase();
 
   const tempFile = `${DB_FILE}.tmp`;
@@ -138,6 +141,99 @@ function saveDB(db) {
 
   fs.renameSync(tempFile, DB_FILE);
 }
+
+function loadDB() {
+  if (dbCache) return dbCache;
+  dbCache = loadLocalDB();
+  return dbCache;
+}
+
+function queuePostgresSave() {
+  if (!postgresPool || !dbCache) return;
+
+  const snapshot = JSON.stringify(dbCache);
+
+  dbWriteQueue = dbWriteQueue
+    .then(function() {
+      return postgresPool.query(
+        `INSERT INTO rizora_state (id, data, updated_at)
+         VALUES (1, $1::jsonb, NOW())
+         ON CONFLICT (id)
+         DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+        [snapshot]
+      );
+    })
+    .catch(function(error) {
+      console.error(
+        "RIZORA PostgreSQL persistence error:",
+        error && error.message ? error.message : error
+      );
+    });
+}
+
+function saveDB(db) {
+  dbCache = normalizeDB(db);
+  saveLocalDB(dbCache);
+  if (dbPersistenceReady) {
+    queuePostgresSave();
+  }
+}
+
+async function initializePersistentDatabase() {
+  if (!DATABASE_URL) {
+    dbCache = loadLocalDB();
+    dbPersistenceReady = true;
+    console.warn(
+      "RIZORA persistence: DATABASE_URL is not configured; using local JSON storage."
+    );
+    return;
+  }
+
+  postgresPool = new Pool({
+    connectionString: DATABASE_URL,
+    max: 4,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000
+  });
+
+  await postgresPool.query(
+    `CREATE TABLE IF NOT EXISTS rizora_state (
+      id SMALLINT PRIMARY KEY,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`
+  );
+
+  const result = await postgresPool.query(
+    "SELECT data FROM rizora_state WHERE id = 1"
+  );
+
+  if (result.rows.length && result.rows[0].data) {
+    dbCache = normalizeDB(result.rows[0].data);
+    saveLocalDB(dbCache);
+    console.log("RIZORA persistence: PostgreSQL state loaded.");
+  } else {
+    dbCache = loadLocalDB();
+
+    await postgresPool.query(
+      `INSERT INTO rizora_state (id, data, updated_at)
+       VALUES (1, $1::jsonb, NOW())
+       ON CONFLICT (id) DO NOTHING`,
+      [JSON.stringify(dbCache)]
+    );
+
+    console.log("RIZORA persistence: PostgreSQL initialized from local state.");
+  }
+
+  dbPersistenceReady = true;
+}
+
+async function flushDBPersistence() {
+  if (!postgresPool || !dbCache) return;
+  queuePostgresSave();
+  await dbWriteQueue;
+}
+
 
 
 // ============================================================
@@ -10437,14 +10533,7 @@ function rzSocialNotify(
 
 }
 
-const RIZORA_SCHEDULE_PUBLISHER = setInterval(() => {
-  try {
-    const scheduledDb = loadDB();
-    publishDueSchedules(scheduledDb, { saveDB, cleanString, uid });
-  } catch (error) {
-    console.error("RIZORA scheduler error:", error);
-  }
-}, 30000);
+let RIZORA_SCHEDULE_PUBLISHER = null;
 
 const server =
   http.createServer(
@@ -10461,39 +10550,56 @@ server.on(
   }
 );
 
-server.listen(
-  PORT,
-  HOST,
-  () => {
+async function startRizoraServer() {
+  await initializePersistentDatabase();
 
-    console.log("");
-    console.log(
-      "=========================================="
-    );
-    console.log(
-      "           RIZORA BACKEND"
-    );
-    console.log(
-      "=========================================="
-    );
-    console.log(
-      "Version:  8.1.0"
-    );
-    console.log(
-      `Server:   http://${HOST}:${PORT}`
-    );
-    console.log(
-      `DB:       ${DB_FILE}`
-    );
-    console.log(
-      "Status:   ONLINE"
-    );
-    console.log(
-      "=========================================="
-    );
-    console.log("");
-  }
-);
+  RIZORA_SCHEDULE_PUBLISHER = setInterval(() => {
+    try {
+      const scheduledDb = loadDB();
+      publishDueSchedules(scheduledDb, { saveDB, cleanString, uid });
+    } catch (error) {
+      console.error("RIZORA scheduler error:", error);
+    }
+  }, 30000);
+
+  server.listen(
+    PORT,
+    HOST,
+    () => {
+      console.log("");
+      console.log(
+        "=========================================="
+      );
+      console.log(
+        "           RIZORA BACKEND"
+      );
+      console.log(
+        "=========================================="
+      );
+      console.log(
+        "Version:  8.1.0"
+      );
+      console.log(
+        `Server:   http://${HOST}:${PORT}`
+      );
+      console.log(
+        `DB:       ${DATABASE_URL ? "Render PostgreSQL" : DB_FILE}`
+      );
+      console.log(
+        "Status:   ONLINE"
+      );
+      console.log(
+        "=========================================="
+      );
+      console.log("");
+    }
+  );
+}
+
+startRizoraServer().catch(function(error) {
+  console.error("RIZORA startup failed:", error);
+  process.exitCode = 1;
+});
 
 
 // ============================================================
@@ -10506,18 +10612,25 @@ function shutdown(signal) {
     `\n${signal} received. Shutting down...`
   );
 
-  clearInterval(RIZORA_SCHEDULE_PUBLISHER);
+  if (RIZORA_SCHEDULE_PUBLISHER) {
+    clearInterval(RIZORA_SCHEDULE_PUBLISHER);
+  }
 
-  server.close(
-    () => {
-
-      console.log(
-        "RIZORA server stopped."
+  Promise.resolve()
+    .then(flushDBPersistence)
+    .finally(function() {
+      return postgresPool ? postgresPool.end() : null;
+    })
+    .finally(function() {
+      server.close(
+        () => {
+          console.log(
+            "RIZORA server stopped."
+          );
+          process.exit(0);
+        }
       );
-
-      process.exit(0);
-    }
-  );
+    });
 
   setTimeout(
     () => {

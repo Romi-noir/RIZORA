@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: RIZORA
+    runtime: node
+    plan: free
+    branch: main
+    repo: https://github.com/Romi-noir/RIZORA
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: RIZORA_PUBLIC_URL
+        value: https://rizora.com.ng
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rizora-production-db
+          property: connectionString
