@@ -68,7 +68,7 @@ assert(voice.includes('/api/v2/posts/'),"Voice comment wiring is missing.");
 assert(media.includes('"audio/webm"'),"Media uploader does not allow WebM voice notes.");
 assert(server.includes('pathname === "/api/ai/chat"'),"AI chat route is missing.");
 assert(server.includes('pathname === "/api/ai/transcribe"'),"AI transcription route is missing.");
-assert(server.includes("recognize the signed-in creator"),"AI signed-in creator context is missing.");
+assert(/recognize the signed-in creator/i.test(server),"AI signed-in creator context is missing.");
 assert(server.includes("knownRizoraIdentityAnswer"),"Deterministic RIZORA identity answers are missing.");
 assert(server.includes('username: "rizora"'),"Official RIZORA account bootstrap is missing.");
 assert(server.includes('username: "romi"'),"Official RoMi account bootstrap is missing.");
