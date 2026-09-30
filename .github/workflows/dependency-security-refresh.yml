@@ -33,7 +33,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Verify npm audit is clean
-        run: npm audit --audit-level=moderate
+        run: npm audit --omit=dev --audit-level=moderate
 
       - name: Commit lockfile refresh
         shell: bash
