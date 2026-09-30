@@ -1,5 +1,6 @@
 name: RIZORA syntax check
 # Production release gate
+# Verified dependency lockfile refresh
 
 on:
   push:
