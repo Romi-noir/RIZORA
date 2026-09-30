@@ -1,4 +1,5 @@
 name: RIZORA syntax check
+# Production release gate
 
 on:
   push:
