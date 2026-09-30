@@ -7,5 +7,6 @@ Disallow: /join
 Disallow: /admin
 Disallow: /messages
 Disallow: /profile
+Disallow: /verification
 
 Sitemap: https://rizora.com.ng/sitemap.xml
