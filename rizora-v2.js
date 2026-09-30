@@ -554,5 +554,19 @@ async function verification(){
   document.body.appendChild(overlay);$("closeVerify").onclick=function(){overlay.remove();};$("sendVerify").onclick=async function(){try{await api("/api/verification/apply",{method:"POST",body:JSON.stringify({reason:$("verifyReason").value,proofUrl:$("verifyUrl").value})});overlay.remove();if(window.RIZORA_POPUP)window.RIZORA_POPUP("Verification submitted","Your creator verification request is now under review.","success");else toast("Verification submitted.");load();}catch(err){toast(err.message);}};
 }
 boot();
-async function boot(){if(navigator.serviceWorker)navigator.serviceWorker.register("/service-worker.js").catch(function(){});try{var m=await api("/api/auth/me");state.user=m.user;load();}catch(e){landing();}}
+async function boot(){
+  if(navigator.serviceWorker)navigator.serviceWorker.register("/service-worker.js").catch(function(){});
+  // Render the public landing screen immediately. The backend auth check must not block
+  // the first paint because the Render service may cold-start for several seconds.
+  landing();
+  try{
+    var m=await api("/api/auth/me");
+    if(m&&m.user){
+      state.user=m.user;
+      await load();
+    }
+  }catch(e){
+    // Logged-out visitors stay on the public landing screen.
+  }
+}
 })();
