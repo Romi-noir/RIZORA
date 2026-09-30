@@ -89,7 +89,7 @@ async function main() {
   assert(suiteSource.includes("function modal("), "Creator Suite modal constructor is missing");
   assert(suiteSource.includes("function toast("), "Creator Suite toast helper is missing");
   assert(suiteSource.includes("bindSuiteButtons(b);"), "Creator Suite controls are not bound");
-  assert(/RIZORA_CACHE="rizora-v2-shell-v\d+-voice-badge-ai"/.test(serviceWorkerSource), "PWA cache version must be a voice/badge cache");
+  assert(/RIZORA_CACHE="rizora-v2-shell-v\d+-voice-badge-ai(?:-[^"]+)?"/.test(serviceWorkerSource), "PWA cache version must be a voice/badge cache");
   assert(!serviceWorkerSource.includes('"/rizora-v2-growth.js"'), "PWA cache must not contain the backend-only growth module");
   assert(!("framework" in vercelConfig), "Static Vercel config should not force a framework");
   assert(!("buildCommand" in vercelConfig), "Static Vercel config should not force a build command");
