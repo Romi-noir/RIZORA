@@ -10,3 +10,4 @@ Disallow: /profile
 Disallow: /verification
 
 Sitemap: https://rizora.com.ng/sitemap.xml
+Disallow: /verification
