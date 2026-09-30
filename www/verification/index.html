@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08060f">
+  <meta name="robots" content="noindex,nofollow">
+  <title>RIZORA — Verification</title>
+  <link rel="canonical" href="https://rizora.com.ng/verification">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/rizora-cover.png" type="image/png">
+  <style>
+    :root{color-scheme:dark;--bg:#08060f;--panel:#100b1d;--panel2:#160f27;--line:#33215a;--text:#f8f6ff;--muted:#aaa1be;--accent:#9b6cff;--accent2:#c39cff;--good:#53dfae;--warn:#ffcf70;--bad:#ff7c9c}
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:radial-gradient(circle at 50% -10%,#22133f 0,#08060f 50%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
+    body{padding:24px}
+    a{color:inherit}
+    .shell{width:min(760px,100%);margin:0 auto}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+    .brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+    .brand img{width:42px;height:42px;border-radius:13px;border:1px solid #4c2f7e;box-shadow:0 12px 28px #0008}
+    .brand strong{letter-spacing:.12em;font-size:.92rem}
+    .home{font-size:.88rem;color:var(--muted);text-decoration:none}
+    .home:hover{color:var(--text)}
+    .hero{margin-bottom:18px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #4b3175;background:#130d22;border-radius:999px;color:var(--accent2);font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    h1{margin:14px 0 8px;font-size:clamp(2rem,7vw,3.5rem);line-height:1.02}
+    .sub{margin:0;color:var(--muted);font-size:1rem;line-height:1.7;max-width:640px}
+    .card{background:linear-gradient(180deg,#140d23ee,#0e0a17f2);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 24px 60px #0008}
+    .status{padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:#0c0914;margin-bottom:20px;line-height:1.5}
+    .status.good{border-color:#225f4f;background:#0b1814;color:#a8f4d7}
+    .status.warn{border-color:#6b5424;background:#19150a;color:#ffe2a2}
+    .status.bad{border-color:#73314a;background:#1d0d15;color:#ffb9ca}
+    .status.muted{color:var(--muted)}
+    label{display:block;font-weight:700;font-size:.92rem;margin:18px 0 8px}
+    textarea,input{width:100%;font:inherit;color:var(--text);background:#0b0812;border:1px solid #3b2862;border-radius:16px;padding:14px 15px;outline:none;transition:.18s}
+    textarea{min-height:150px;resize:vertical}
+    textarea:focus,input:focus{border-color:#8d61e6;box-shadow:0 0 0 4px #9b6cff1a}
+    .hint{margin:7px 0 0;color:var(--muted);font-size:.82rem;line-height:1.5}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+    button,.button{border:0;border-radius:14px;padding:13px 17px;font:inherit;font-weight:800;text-decoration:none;cursor:pointer}
+    .primary{background:linear-gradient(135deg,#a56fff,#7f47e8);color:white;box-shadow:0 12px 28px #7c4ad43d}
+    .secondary{background:#181125;color:var(--text);border:1px solid #3b2862}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .mini{margin-top:18px;padding-top:17px;border-top:1px solid #25183f;color:var(--muted);font-size:.82rem;line-height:1.6}
+    .hidden{display:none}
+    .message{margin-top:16px;font-size:.9rem;line-height:1.6}
+    .request{margin-top:16px;padding:15px;border:1px solid #2b1c47;border-radius:16px;background:#0c0914}
+    .request b{color:var(--text)}
+    @media (max-width:600px){body{padding:16px}.card{padding:18px;border-radius:20px}.top{margin-bottom:18px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top">
+      <a class="brand" href="/">
+        <img src="/rizora-cover.png" alt="RIZORA">
+        <strong>RIZORA</strong>
+      </a>
+      <a class="home" href="/">Back to RIZORA</a>
+    </header>
+
+    <section class="hero">
+      <span class="eyebrow">Creator trust</span>
+      <h1>Verification</h1>
+      <p class="sub">Build trust around your creator identity. Verification requests are reviewed by the RIZORA team.</p>
+    </section>
+
+    <section class="card">
+      <div id="status" class="status muted">Checking verification status…</div>
+
+      <div id="loginGate" class="hidden">
+        <p class="message">You need to be logged in before you can submit a verification request.</p>
+        <div class="actions">
+          <a class="button primary" href="/login">Log in</a>
+          <a class="button secondary" href="/signup">Create account</a>
+        </div>
+      </div>
+
+      <form id="verifyForm" class="hidden">
+        <label for="reason">Why should your creator identity be verified?</label>
+        <textarea id="reason" name="reason" maxlength="1500" required placeholder="Tell us who you are, what you create, and why verification would help people identify the real you."></textarea>
+        <p class="hint">Use clear, specific information. Minimum 10 characters.</p>
+
+        <label for="proofUrl">Public proof URL</label>
+        <input id="proofUrl" name="proofUrl" type="url" inputmode="url" maxlength="500" required placeholder="https://tiktok.com/@yourname">
+        <p class="hint">Use a public social profile, website, press page, or another source that helps confirm your creator identity.</p>
+
+        <div class="actions">
+          <button id="submitBtn" class="primary" type="submit">Submit verification request</button>
+        </div>
+      </form>
+
+      <div id="requestCard" class="request hidden"></div>
+      <div class="mini">RIZORA will never ask you to send your password through the verification form.</div>
+    </section>
+  </main>
+
+  <script>
+    const API = "https://rizora-guse.onrender.com";
+    const statusEl = document.getElementById("status");
+    const loginGate = document.getElementById("loginGate");
+    const form = document.getElementById("verifyForm");
+    const requestCard = document.getElementById("requestCard");
+    const submitBtn = document.getElementById("submitBtn");
+
+    function setStatus(text, type="muted"){
+      statusEl.textContent = text;
+      statusEl.className = "status " + type;
+    }
+
+    function showRequest(request){
+      if(!request){ requestCard.classList.add("hidden"); return; }
+      const created = request.createdAt ? new Date(request.createdAt).toLocaleString() : "—";
+      requestCard.innerHTML =
+        "<b>Request status:</b> " + (request.status || "pending") +
+        "<br><span>Submitted " + created + "</span>";
+      requestCard.classList.remove("hidden");
+    }
+
+    async function getStatus(){
+      try{
+        const res = await fetch(API + "/api/verification/me", {credentials:"include"});
+        let data = {};
+        try { data = await res.json(); } catch {}
+        if(res.status === 401){
+          setStatus("Log in to request RIZORA verification.", "warn");
+          loginGate.classList.remove("hidden");
+          return;
+        }
+        if(!res.ok){
+          throw new Error(data.error || "Could not load verification status.");
+        }
+
+        loginGate.classList.add("hidden");
+
+        if(data.status === "verified" || data.verified === true){
+          setStatus("Your RIZORA creator identity is verified.", "good");
+          form.classList.add("hidden");
+          showRequest(data.request);
+          return;
+        }
+
+        if(data.status === "pending"){
+          setStatus("Your verification request is under review.", "warn");
+          form.classList.add("hidden");
+          showRequest(data.request);
+          return;
+        }
+
+        setStatus("You are eligible to submit a verification request.", "muted");
+        form.classList.remove("hidden");
+      }catch(error){
+        setStatus(error.message || "Unable to load verification status.", "bad");
+      }
+    }
+
+    form.addEventListener("submit", async (event)=>{
+      event.preventDefault();
+      const reason = document.getElementById("reason").value.trim();
+      const proofUrl = document.getElementById("proofUrl").value.trim();
+
+      if(reason.length < 10){
+        setStatus("Please provide more information about your creator identity.", "bad");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting…";
+
+      try{
+        const res = await fetch(API + "/api/verification/apply", {
+          method:"POST",
+          credentials:"include",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({reason, proofUrl})
+        });
+        let data = {};
+        try { data = await res.json(); } catch {}
+        if(!res.ok){
+          throw new Error(data.message || data.error || "Verification request failed.");
+        }
+        setStatus(data.message || "Verification request submitted successfully.", "good");
+        form.classList.add("hidden");
+        showRequest(data.request);
+      }catch(error){
+        setStatus(error.message || "Verification request failed.", "bad");
+      }finally{
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit verification request";
+      }
+    });
+
+    getStatus();
+  </script>
+</body>
+</html>
