@@ -9,11 +9,13 @@
     "build": "node -e \"console.log('RIZORA static frontend: no compilation step required')\""
   },
   "dependencies": {
-    "@capacitor/android": "^8.5.1",
-    "@capacitor/cli": "^8.5.1",
-    "@capacitor/core": "^8.5.1",
     "dotenv": "^16.6.1",
     "google-auth-library": "^11.1.0",
     "pg": "8.23.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1"
   }
 }
