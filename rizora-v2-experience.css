@@ -310,3 +310,19 @@ body{
   .rz-social-content>.rz-card:first-child{border-radius:18px}
   .rz-social-content .rz-feed>.rz-card{padding:15px 9px}
 }
+
+.rz-avatar-wrap{
+  position:relative;
+  display:inline-block;
+}
+
+.rz-avatar-verified{
+  position:absolute;
+  right:-6px;
+  bottom:2px;
+  width:30px;
+  height:30px;
+  object-fit:contain;
+  z-index:5;
+}
+
