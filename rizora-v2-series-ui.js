@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 (function(){
   var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   var overlay=null;
@@ -19,8 +19,8 @@
 
   async function open(){
     var m=modal("Series & Episodes",card("CREATE SERIES",'<form id="rzSeriesCreate" class="rz-series-form"><input class="rz-input" name="title" maxlength="100" placeholder="Series title" required><textarea class="rz-textarea" name="description" maxlength="600" placeholder="What is this series about?"></textarea><input class="rz-input" name="coverUrl" maxlength="1200" placeholder="Cover image URL (optional)"><button class="rz-btn primary">Create series</button><div id="rzSeriesCreateStatus" class="rz-muted"></div></form>')+
-      card("ADD AN EPISODE",'<form id="rzSeriesEpisode" class="rz-series-form"><select class="rz-input" name="series" required><option value="">Choose a series…</option></select><select class="rz-input" name="post" required><option value="">Choose one of your posts…</option></select><div class="rz-series-grid"><input class="rz-input" name="episodeNumber" type="number" min="1" max="9999" value="1" placeholder="Episode #"><input class="rz-input" name="episodeTitle" maxlength="140" placeholder="Episode title"></div><button class="rz-btn primary">Add episode</button><div id="rzSeriesEpisodeStatus" class="rz-muted"></div></form>')+
-      card("YOUR SERIES",'<div id="rzSeriesList">Loading…</div>')+
+      card("ADD AN EPISODE",'<form id="rzSeriesEpisode" class="rz-series-form"><select class="rz-input" name="series" required><option value="">Choose a series...</option></select><select class="rz-input" name="post" required><option value="">Choose one of your posts...</option></select><div class="rz-series-grid"><input class="rz-input" name="episodeNumber" type="number" min="1" max="9999" value="1" placeholder="Episode #"><input class="rz-input" name="episodeTitle" maxlength="140" placeholder="Episode title"></div><button class="rz-btn primary">Add episode</button><div id="rzSeriesEpisodeStatus" class="rz-muted"></div></form>')+
+      card("YOUR SERIES",'<div id="rzSeriesList">Loading...</div>')+
       card("DISCOVER A CREATOR",'<form id="rzSeriesFind" class="rz-series-form"><input class="rz-input" name="creator" placeholder="@creator username"><button class="rz-btn">Find public series</button></form><div id="rzSeriesDiscover"></div>'));
     await load(m);
   }
@@ -50,7 +50,7 @@
       catch(err){st.textContent=err.message;}
     };
     m.querySelector("#rzSeriesFind").onsubmit=async function(e){
-      e.preventDefault();var f=e.target,box=m.querySelector("#rzSeriesDiscover");box.innerHTML="Loading…";
+      e.preventDefault();var f=e.target,box=m.querySelector("#rzSeriesDiscover");box.innerHTML="Loading...";
       try{var d=await api("/api/v2/series?creator="+encodeURIComponent(f.creator.value.trim()));box.innerHTML=(d.series||[]).map(renderSeries).join("")||'<div class="rz-series-empty">No public series found.</div>';}
       catch(err){box.innerHTML='<div class="rz-error">'+esc(err.message)+'</div>';}
     };
@@ -75,3 +75,4 @@
   window.RIZORA_SERIES={open:open};
   setTimeout(boot,180);
 })();
+

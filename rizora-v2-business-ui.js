@@ -1,4 +1,4 @@
-(function(){
+﻿(function(){
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -16,7 +16,7 @@ function modal(title,kicker,body){
 function stat(label,value,note){
   return '<div class="rz-business-stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(note||"")+'</small></div>';
 }
-function naira(v){return "₦"+Number(v||0).toLocaleString();}
+function naira(v){return "NGN"+Number(v||0).toLocaleString();}
 async function earnings(){
   try{
     var d=await api("/api/v2/business/summary"),b=d.business||{},t=b.totals||{},a=b.audience||{},rows=b.ledger||[];
@@ -30,8 +30,8 @@ async function earnings(){
       '</div>'+
       '<section class="rz-business-card"><div class="rz-kicker">SETTLEMENT STATUS</div><h3>Gross ledger, not a payout statement</h3><p>'+esc((b.settlement&&b.settlement.note)||"")+'</p><div class="rz-business-actions"><button class="rz-btn primary" id="rzBusinessExport">Export ledger</button><button class="rz-btn" id="rzBusinessRefresh">Refresh</button></div></section>'+
       '<section class="rz-business-card"><div class="rz-business-card-head"><div><strong>Confirmed transactions</strong><span>Recent gross creator revenue recorded by RIZORA.</span></div></div>'+
-      '<div class="rz-business-table">'+(rows.length?rows.map(function(r){return '<div class="rz-business-row"><div><strong>'+esc(r.description||r.kind)+'</strong><small>'+esc(r.kind||"transaction")+' · '+esc(r.status||"")+'</small></div><strong>'+naira(r.grossNaira)+'</strong><small>'+esc(r.createdAt?new Date(r.createdAt).toLocaleString():"")+'</small></div>';}).join(""):'<div class="rz-business-empty">No confirmed creator transactions yet.</div>')+'</div></section>';
-    var m=modal("Creator Earnings","BUSINESS • TRANSPARENCY",body);
+      '<div class="rz-business-table">'+(rows.length?rows.map(function(r){return '<div class="rz-business-row"><div><strong>'+esc(r.description||r.kind)+'</strong><small>'+esc(r.kind||"transaction")+' - '+esc(r.status||"")+'</small></div><strong>'+naira(r.grossNaira)+'</strong><small>'+esc(r.createdAt?new Date(r.createdAt).toLocaleString():"")+'</small></div>';}).join(""):'<div class="rz-business-empty">No confirmed creator transactions yet.</div>')+'</div></section>';
+    var m=modal("Creator Earnings","BUSINESS â€¢ TRANSPARENCY",body);
     m.querySelector("#rzBusinessExport").onclick=async function(){try{var rr=await fetch(API+"/api/v2/business/export",{credentials:"include",headers:window.RIZORA_AUTH_HEADERS?window.RIZORA_AUTH_HEADERS():{}});if(!rr.ok)throw new Error("Export failed.");var blob=await rr.blob(),name="rizora-business-ledger.csv";if(window.RIZORA_DOWNLOAD&&window.RIZORA_DOWNLOAD.blob)window.RIZORA_DOWNLOAD.blob(blob,name,"business-ledger");else{var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}}catch(e){var n=document.getElementById("toast");if(n){n.textContent=String(e.message||"Export failed.");n.classList.add("show");setTimeout(function(){n.classList.remove("show");},2600);}}};
     m.querySelector("#rzBusinessRefresh").onclick=earnings;
   }catch(e){
@@ -44,7 +44,7 @@ async function freeMembership(){
     '<textarea class="rz-input" name="description" maxlength="600" placeholder="What free members get">Follow the creator community and receive public updates.</textarea>'+
     '<input class="rz-input" name="perks" placeholder="Perks, separated by commas" value="Community access, creator updates">'+
     '<button class="rz-btn primary" type="submit">Create free membership</button><div id="rzFreeTierStatus" class="rz-muted"></div></form></section>';
-  var m=modal("Free Community Membership","AUDIENCE • COMMUNITY",body);
+  var m=modal("Free Community Membership","AUDIENCE â€¢ COMMUNITY",body);
   m.querySelector("#rzFreeTierForm").onsubmit=async function(e){
     e.preventDefault();var f=e.target,s=m.querySelector("#rzFreeTierStatus");
     try{
@@ -62,7 +62,7 @@ function membershipGift(){
     '<input class="rz-input" name="username" placeholder="@username" required>'+
     '<input class="rz-input" name="days" type="number" min="1" max="365" value="30" required>'+
     '<button class="rz-btn primary">Gift access</button><div id="rzGiftStatus" class="rz-muted"></div></form></section>';
-  var m=modal("Gift Community Access","AUDIENCE • GIFTING",body);
+  var m=modal("Gift Community Access","AUDIENCE â€¢ GIFTING",body);
   m.querySelector("#rzGiftForm").onsubmit=async function(e){
     e.preventDefault();var f=e.target,s=m.querySelector("#rzGiftStatus");
     try{
@@ -88,7 +88,7 @@ async function adsManager(){
       '<input class="rz-input" name="imageUrl" type="url" placeholder="Optional image URL">'+
       '<select class="rz-input" name="durationDays"><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select>'+
       '<button class="rz-btn primary" type="submit">Launch ad</button><div id="rzAdStatus" class="rz-muted"></div></form></section>'+
-      '<section class="rz-business-card"><div class="rz-kicker">YOUR CAMPAIGNS</div><div id="rzMyAds" class="rz-business-table">Loading…</div></section>';
+      '<section class="rz-business-card"><div class="rz-kicker">YOUR CAMPAIGNS</div><div id="rzMyAds" class="rz-business-table">Loading...</div></section>';
   }else if(registered){
     body='<section class="rz-business-card"><div class="rz-kicker">RIZORA+ REQUIRED</div><h3>Upgrade this registered business to advertise</h3><p class="rz-muted">Registered RIZORA businesses run ads through RIZORA+.</p><button class="rz-btn primary" id="rzOpenRizoraPlus">Open RIZORA+</button></section>'+
       '<section class="rz-business-card"><div class="rz-kicker">EXTERNAL BUSINESS</div><p class="rz-muted">Need to advertise without a RIZORA account? Use the external Paystack route below.</p><button class="rz-btn" id="rzExternalMode">Pay with Paystack</button></section>';
@@ -101,11 +101,11 @@ async function adsManager(){
       '<textarea class="rz-input" name="description" maxlength="500" placeholder="Short ad description"></textarea>'+
       '<input class="rz-input" name="destinationUrl" type="url" placeholder="https://yourwebsite.com" required>'+
       '<input class="rz-input" name="imageUrl" type="url" placeholder="Optional image URL">'+
-      '<input class="rz-input" name="amountNaira" type="number" min="'+min+'" max="'+max+'" step="100" placeholder="Ad budget (₦)" required>'+
+      '<input class="rz-input" name="amountNaira" type="number" min="'+min+'" max="'+max+'" step="100" placeholder="Ad budget (NGN)" required>'+
       '<select class="rz-input" name="durationDays"><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select>'+
-      '<button class="rz-btn primary" type="submit">Continue to Paystack</button><div id="rzAdStatus" class="rz-muted">Minimum ₦'+min.toLocaleString()+' · maximum ₦'+max.toLocaleString()+'</div></form></section>';
+      '<button class="rz-btn primary" type="submit">Continue to Paystack</button><div id="rzAdStatus" class="rz-muted">Minimum NGN'+min.toLocaleString()+' - maximum NGN'+max.toLocaleString()+'</div></form></section>';
   }
-  var m=modal("RIZORA Ads","BUSINESS • ADVERTISING",body);
+  var m=modal("RIZORA Ads","BUSINESS â€¢ ADVERTISING",body);
   var plusBtn=m.querySelector("#rzOpenRizoraPlus");
   if(plusBtn)plusBtn.onclick=function(){if(window.RIZORA_ENTERPRISE&&window.RIZORA_ENTERPRISE.showPremium)window.RIZORA_ENTERPRISE.showPremium();};
   var externalBtn=m.querySelector("#rzExternalMode");
@@ -127,7 +127,7 @@ async function adsManager(){
   if(xform)xform.onsubmit=async function(e){
     e.preventDefault();
     var f=e.target,s=m.querySelector("#rzAdStatus");
-    s.textContent="Opening secure Paystack checkout…";
+    s.textContent="Opening secure Paystack checkout...";
     try{
       var d=await api("/api/v2/ads/external/initialize",{method:"POST",body:JSON.stringify({
         businessName:f.businessName.value,email:f.email.value,title:f.title.value,description:f.description.value,
@@ -152,12 +152,12 @@ function renderExternalAdForm(){
     '<textarea class="rz-input" name="description" maxlength="500" placeholder="Short ad description"></textarea>'+
     '<input class="rz-input" name="destinationUrl" type="url" placeholder="https://yourwebsite.com" required>'+
     '<input class="rz-input" name="imageUrl" type="url" placeholder="Optional image URL">'+
-    '<input class="rz-input" name="amountNaira" type="number" min="'+min+'" max="'+max+'" step="100" placeholder="Ad budget (₦)" required>'+
+    '<input class="rz-input" name="amountNaira" type="number" min="'+min+'" max="'+max+'" step="100" placeholder="Ad budget (NGN)" required>'+
     '<select class="rz-input" name="durationDays"><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select>'+
     '<button class="rz-btn primary" type="submit">Continue to Paystack</button><div id="rzAdStatus" class="rz-muted">Your payment is processed by Paystack.</div></form></section>';
   var f=m.querySelector("#rzExternalAdForm");
   f.onsubmit=async function(e){
-    e.preventDefault();var s=m.querySelector("#rzAdStatus");s.textContent="Opening secure Paystack checkout…";
+    e.preventDefault();var s=m.querySelector("#rzAdStatus");s.textContent="Opening secure Paystack checkout...";
     try{var d=await api("/api/v2/ads/external/initialize",{method:"POST",body:JSON.stringify({
       businessName:f.businessName.value,email:f.email.value,title:f.title.value,description:f.description.value,
       destinationUrl:f.destinationUrl.value,imageUrl:f.imageUrl.value,amountNaira:Number(f.amountNaira.value),durationDays:Number(f.durationDays.value)
@@ -171,7 +171,7 @@ async function loadMine(m){
     var d=await api("/api/v2/ads/mine");
     var rows=d.ads||[];
     host.innerHTML=rows.length?rows.map(function(ad){
-      return '<div class="rz-business-row"><div><strong>'+esc(ad.title)+'</strong><small>'+esc(ad.businessName)+' · '+esc(ad.status)+'</small></div><strong>'+esc(ad.billingType==="rizora_plus"?"RIZORA+":"Paystack")+'</strong><small>'+esc(ad.expiresAt?new Date(ad.expiresAt).toLocaleDateString():"")+'</small></div>';
+      return '<div class="rz-business-row"><div><strong>'+esc(ad.title)+'</strong><small>'+esc(ad.businessName)+' - '+esc(ad.status)+'</small></div><strong>'+esc(ad.billingType==="rizora_plus"?"RIZORA+":"Paystack")+'</strong><small>'+esc(ad.expiresAt?new Date(ad.expiresAt).toLocaleDateString():"")+'</small></div>';
     }).join(""):'<div class="rz-business-empty">No ad campaigns yet.</div>';
   }catch(e){host.textContent=e.message;}
 }
@@ -194,3 +194,4 @@ setTimeout(inject,260);
 var mo=new MutationObserver(inject);
 setTimeout(function(){if(document.body)mo.observe(document.body,{childList:true,subtree:true});},500);
 })();
+

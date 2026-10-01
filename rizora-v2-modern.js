@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 const crypto = require("crypto");
 
@@ -393,3 +393,4 @@ async function handleRizoraModern(ctx) {
 }
 
 module.exports={handleRizoraModern};
+

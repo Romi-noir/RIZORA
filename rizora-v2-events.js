@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 function ensureEvents(db) {
   db.rzV2 = db.rzV2 || {};
@@ -79,3 +79,4 @@ async function handleRizoraEvents(ctx){
   return false;
 }
 module.exports={handleRizoraEvents};
+

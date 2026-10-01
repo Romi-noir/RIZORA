@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 (function(){
   var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   var mounted=false, user=null, modal=null;
@@ -39,7 +39,7 @@
   async function channels(){
     try{
       var d=await api("/api/v2/channels");
-      var channelCards=(d.channels||[]).map(function(c){return '<div class="rz-global-card"><div class="rz-global-row"><div><h3>'+esc(c.name)+'</h3><p>'+esc(c.description||"")+'</p><span class="rz-mini">'+Number(c.memberCount||0)+' members · @'+esc((c.owner&& (c.owner.publicUsername||c.owner.username))||"creator")+'</span></div><button class="rz-btn" data-global-channel="'+esc(c.id)+'">'+(c.joined?"Open":"Join")+'</button></div></div>';}).join("");
+      var channelCards=(d.channels||[]).map(function(c){return '<div class="rz-global-card"><div class="rz-global-row"><div><h3>'+esc(c.name)+'</h3><p>'+esc(c.description||"")+'</p><span class="rz-mini">'+Number(c.memberCount||0)+' members - @'+esc((c.owner&& (c.owner.publicUsername||c.owner.username))||"creator")+'</span></div><button class="rz-btn" data-global-channel="'+esc(c.id)+'">'+(c.joined?"Open":"Join")+'</button></div></div>';}).join("");
       shell("Broadcast channels",tabs("channels")+
         '<div class="rz-global-card"><form id="rzChannelForm"><input id="rzChannelName" class="rz-input" placeholder="Channel name" maxlength="80" required><textarea id="rzChannelDesc" class="rz-textarea" placeholder="What will this channel be about?" maxlength="500"></textarea><button class="rz-btn primary">Create channel</button></form><p class="rz-mini">Up to 3 channels per creator.</p></div>'+
         '<div class="rz-global-list">'+(channelCards||'<div class="rz-empty">No creator channels yet.</div>')+'</div>');
@@ -53,7 +53,7 @@
     try{
       var d=await api("/api/v2/channels/"+encodeURIComponent(id));
       var c=d.channel;
-      var messageCards=(d.messages||[]).map(function(m){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((m.user&&(m.user.publicUsername||m.user.username))||"creator")+'</strong><span class="rz-mini">'+esc(m.createdAt||"")+'</span></div><p>'+esc(m.text||"")+'</p><div class="rz-global-reactions"><button class="rz-btn" data-global-react="'+esc(m.id)+'">♥ '+Number((m.reactions||{}).heart||0)+'</button><button class="rz-btn" data-global-react-value="fire" data-global-react="'+esc(m.id)+'">🔥 '+Number((m.reactions||{}).fire||0)+'</button></div></article>';}).join("");
+      var messageCards=(d.messages||[]).map(function(m){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((m.user&&(m.user.publicUsername||m.user.username))||"creator")+'</strong><span class="rz-mini">'+esc(m.createdAt||"")+'</span></div><p>'+esc(m.text||"")+'</p><div class="rz-global-reactions"><button class="rz-btn" data-global-react="'+esc(m.id)+'">HEART¥ '+Number((m.reactions||{}).heart||0)+'</button><button class="rz-btn" data-global-react-value="fire" data-global-react="'+esc(m.id)+'">ðŸ”¥ '+Number((m.reactions||{}).fire||0)+'</button></div></article>';}).join("");
       var canBroadcast=c.ownerId===user.id;
       shell(c.name,
         '<div class="rz-global-row"><div><span class="rz-mini">'+Number(c.memberCount||0)+' members</span><p>'+esc(c.description||"")+'</p></div><button id="rzChannelMembership" class="rz-btn">'+(c.joined?"Leave":"Join")+'</button></div>'+
@@ -84,7 +84,7 @@
   async function openFeed(id){
     try{
       var d=await api("/api/v2/feeds/"+encodeURIComponent(id)+"/items");
-      var postCards=(d.posts||[]).map(function(p){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((p.author&&(p.author.publicUsername||p.author.username))||"creator")+'</strong><span class="rz-mini">'+esc(p.createdAt||"")+'</span></div><p>'+esc(p.text||"")+'</p><div class="rz-mini">'+Number(p.likes||0)+' likes · '+Number(p.comments||0)+' comments</div></article>';}).join("");
+      var postCards=(d.posts||[]).map(function(p){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((p.author&&(p.author.publicUsername||p.author.username))||"creator")+'</strong><span class="rz-mini">'+esc(p.createdAt||"")+'</span></div><p>'+esc(p.text||"")+'</p><div class="rz-mini">'+Number(p.likes||0)+' likes - '+Number(p.comments||0)+' comments</div></article>';}).join("");
       shell(d.feed.name,tabs("feeds")+'<div class="rz-global-list">'+(postCards||'<div class="rz-empty">No posts match this feed yet.</div>')+'</div>');
       bindTabs();
     }catch(e){notify(e.message);}
@@ -100,7 +100,7 @@
       var prompts = (x.prompts || []).slice(0, 8);
       shell("Search Insights",
         '<div class="rz-global-tabs"><button class="rz-btn" data-global-tab="assistant">Assistant</button><button class="rz-btn" data-global-tab="channels">Broadcast</button><button class="rz-btn" data-global-tab="feeds">Custom feeds</button><button class="rz-btn primary" data-global-tab="insights">Search Insights</button></div>' +
-        '<div class="rz-global-card"><form id="rzInsightSearch" class="rz-global-compose"><input id="rzInsightQuery" class="rz-input" value="' + esc(q) + '" maxlength="80" placeholder="Search a topic, niche or hashtag — e.g. afrobeats, coding, football"><button class="rz-btn primary">Explore creator signals</button></form><p class="rz-mini">Built from activity inside RIZORA. This is a discovery signal, not external search-volume data.</p></div>' +
+        '<div class="rz-global-card"><form id="rzInsightSearch" class="rz-global-compose"><input id="rzInsightQuery" class="rz-input" value="' + esc(q) + '" maxlength="80" placeholder="Search a topic, niche or hashtag â€” e.g. afrobeats, coding, football"><button class="rz-btn primary">Explore creator signals</button></form><p class="rz-mini">Built from activity inside RIZORA. This is a discovery signal, not external search-volume data.</p></div>' +
         '<section class="rz-global-grid">' +
           '<div class="rz-global-stat"><span>Topic</span><strong>' + esc(q ? "#" + q : "RIZORA") + '</strong></div>' +
           '<div class="rz-global-stat"><span>Signals</span><strong>' + Number(trending.length) + '</strong></div>' +
@@ -111,13 +111,13 @@
           '<section class="rz-global-card"><div class="rz-kicker">TRENDING TOPICS</div><h3>What is moving inside RIZORA</h3>' +
             (trending.length ? trending.map(function(t){
               return '<button class="rz-global-action" data-insight-tag="' + esc(t.tag) + '"><strong>#' + esc(t.tag) + '</strong><span>' +
-                Number(t.recentPosts || 0) + ' recent post(s) · ' + Number(t.engagement || 0) + ' engagement · ' + (Number(t.growthPercent || 0) >= 0 ? "+" : "") + Number(t.growthPercent || 0) + '% vs previous 7d</span></button>';
+                Number(t.recentPosts || 0) + ' recent post(s) - ' + Number(t.engagement || 0) + ' engagement - ' + (Number(t.growthPercent || 0) >= 0 ? "+" : "") + Number(t.growthPercent || 0) + '% vs previous 7d</span></button>';
             }).join("") : '<div class="rz-empty">No trend signals yet. Post with a clear topic or hashtag to start building the signal.</div>') +
           '</section>' +
           '<section class="rz-global-card"><div class="rz-kicker">CREATOR DISCOVERY</div><h3>Creators publishing around this topic</h3>' +
             (creators.length ? creators.map(function(c){
               return '<div class="rz-global-action"><strong>@' + esc((c.creator && (c.creator.publicUsername || c.creator.username)) || "creator") + '</strong><span>' +
-                Number(c.posts || 0) + ' matching post(s) · ' + Number(c.engagement || 0) + ' engagement · ' + Number(c.signal || 0) + ' avg signal</span></div>';
+                Number(c.posts || 0) + ' matching post(s) - ' + Number(c.engagement || 0) + ' engagement - ' + Number(c.signal || 0) + ' avg signal</span></div>';
             }).join("") : '<div class="rz-empty">No matching creators yet.</div>') +
           '</section>' +
           '<section class="rz-global-card"><div class="rz-kicker">CONTENT STARTERS</div><h3>Turn a signal into your next post</h3>' +
@@ -153,3 +153,4 @@
   window.RIZORA_GLOBAL={assistant:assistant,channels:channels,feeds:feeds,insights:insights};
   boot();
 })();
+

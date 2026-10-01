@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 const { handleRizoraEnterprise } = require("./rizora-v2-enterprise");
 
 function ensurePlatform(db) {
@@ -182,3 +182,4 @@ async function handleRizoraPlatform(ctx){
   return false;
 }
 module.exports={handleRizoraPlatform};
+

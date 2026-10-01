@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 function ensureGrowth(db) {
   db.rzV2 = db.rzV2 || {};
@@ -351,3 +351,4 @@ async function handleRizoraGrowth(ctx) {
 }
 
 module.exports = { handleRizoraGrowth, publishDueSchedules };
+

@@ -1,4 +1,4 @@
-(function(){
+﻿(function(){
 "use strict";
 var ADS_API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 async function adApi(path){
@@ -44,3 +44,4 @@ function watch(){
 window.RIZORA_ADS={render:renderAd};
 setTimeout(watch,900);
 })();
+

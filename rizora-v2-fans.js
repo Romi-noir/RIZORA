@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 function ensureFans(db){
   db.rzV2 = db.rzV2 || {};
@@ -166,7 +166,7 @@ async function handleRizoraFans(ctx){
 
     const amount=Number(body.amountNaira);
     if(!Number.isFinite(amount)||amount<100||amount>1000000){
-      ctx.sendError(res,400,"Support amount must be between ₦100 and ₦1,000,000.");
+      ctx.sendError(res,400,"Support amount must be between NGN100 and NGN1,000,000.");
       return true;
     }
     const note=clean(ctx,body.note,240);
@@ -261,8 +261,8 @@ async function handleRizoraFans(ctx){
     const tx=db.rzV2.transactions.find(function(t){return t.reference===tip.reference;});
     if(tx){tx.status=tip.status;tx.paystackId=tip.paystackId;tx.updatedAt=tip.updatedAt;}
     if(tip.status==="success"&&!tip.notified){
-      notify(db,tip.senderId,"Creator Support sent","Your ₦"+Number(tip.amountNaira).toLocaleString()+" support payment was confirmed.");
-      notify(db,tip.creatorId,"You received Creator Support","A creator supporter sent ₦"+Number(tip.amountNaira).toLocaleString()+" to your RIZORA creator account.");
+      notify(db,tip.senderId,"Creator Support sent","Your NGN"+Number(tip.amountNaira).toLocaleString()+" support payment was confirmed.");
+      notify(db,tip.creatorId,"You received Creator Support","A creator supporter sent NGN"+Number(tip.amountNaira).toLocaleString()+" to your RIZORA creator account.");
       tip.notified=true;
     }
     ctx.saveDB(db);
@@ -274,3 +274,4 @@ async function handleRizoraFans(ctx){
 }
 
 module.exports={handleRizoraFans};
+

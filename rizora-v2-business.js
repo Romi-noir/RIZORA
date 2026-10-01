@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 function ensureBusiness(db) {
   db.rzV2 = db.rzV2 || {};
@@ -333,7 +333,7 @@ async function handleRizoraBusiness(ctx) {
       return true;
     }
     if (!Number.isFinite(amountNaira) || amountNaira < minNaira || amountNaira > maxNaira) {
-      ctx.sendError(res, 400, "Ad budget must be between ₦" + minNaira.toLocaleString() + " and ₦" + maxNaira.toLocaleString() + ".");
+      ctx.sendError(res, 400, "Ad budget must be between NGN" + minNaira.toLocaleString() + " and NGN" + maxNaira.toLocaleString() + ".");
       return true;
     }
     var secret = String(process.env.PAYSTACK_SECRET_KEY || "").trim();
@@ -745,3 +745,4 @@ async function handleRizoraBusiness(ctx) {
 }
 
 module.exports = { handleRizoraBusiness };
+

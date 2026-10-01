@@ -1,4 +1,4 @@
-(function(){
+﻿(function(){
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 function toast(s){var t=document.getElementById("toast");if(!t)return;t.textContent=String(s||"");t.classList.add("show");clearTimeout(window.__rzLocalToast);window.__rzLocalToast=setTimeout(function(){t.classList.remove("show");},2600);}function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -98,3 +98,4 @@ function inject(){
 window.RIZORA_CONTROL_CENTER={preferences:preferences,security:security,safety:safety,exportData:exportData};
 setTimeout(inject,300);setInterval(inject,1400);
 })();
+

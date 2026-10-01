@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 function ensureGlobal(db) {
   db.rzV2 = db.rzV2 || {};
@@ -428,3 +428,4 @@ async function handleRizoraGlobal(ctx) {
 }
 
 module.exports = { handleRizoraGlobal };
+

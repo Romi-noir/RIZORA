@@ -1,4 +1,4 @@
-const { handleRizoraMedia } = require("./rizora-v2-media-backend");
+﻿const { handleRizoraMedia } = require("./rizora-v2-media-backend");
 const { handleRizoraBusiness } = require("./rizora-v2-business");
 const { handleRizoraGrowth } = require("./rizora-v2-growth");
 const { handleRizoraPlatform } = require("./rizora-v2-platform");
@@ -31,7 +31,7 @@ function profileFor(db,user){
 function publicProfile(db,user){
   var p=profileFor(db,user);
   var isVerified=user.verified===true||user.verificationStatus==="verified";
-   return {id:user.id,username:user.username,publicUsername:user.publicUsername||user.username,displayName:user.displayName||user.username,bio:p.bio||"",avatarUrl:p.avatarUrl||user.avatarUrl||"",category:p.category||"",location:p.location||"",links:p.links||[],verified:isVerified,verifiedBadgeUrl:isVerified?"/assets/rizora_verified_badge.svg":"",verificationStatus:user.verificationStatus||"not_submitted",official:user.official===true,points:Number(user.points||0)};
+   return {id:user.id,username:user.username,publicUsername:user.publicUsername||user.username,displayName:user.displayName||user.username,bio:p.bio||"",avatarUrl:p.avatarUrl||user.avatarUrl||"",category:p.category||"",location:p.location||"",links:p.links||[],verified:isVerified,verifiedBadgeUrl:isVerified?"/assets/rizora_verified_badge.png":"",verificationStatus:user.verificationStatus||"not_submitted",official:user.official===true,points:Number(user.points||0)};
 }
 var EXPLICIT=[/\bporn(?:ography)?\b/i,/\bxxx\b/i,/\bnudes?\b/i,/\bsex\s*tape\b/i,/\bsex(?:ual)?\s*(?:work|service|services)\b/i,/\berotic\b/i,/\bnsfw\b/i,/\bonlyfans\b/i,/\bpornhub\b/i,/\bxvideos?\b/i,/\bxnxx\b/i,/\bescort\b/i];
 function warningState(db,id){db.rzV2.policy.warnings[id]=db.rzV2.policy.warnings[id]||{count:0,history:[]};return db.rzV2.policy.warnings[id];}
@@ -263,3 +263,4 @@ async function handleRizoraV2(ctx){
   return false;
 }
 module.exports={handleRizoraV2};
+

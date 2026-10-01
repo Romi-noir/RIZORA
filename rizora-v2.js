@@ -326,7 +326,7 @@ function officialView(){
     if(linksData.tiktok)links+='<a class="rz-btn" href="'+esc(linksData.tiktok)+'" target="_blank" rel="noopener noreferrer">TikTok</a>';
     if(linksData.instagram)links+='<a class="rz-btn" href="'+esc(linksData.instagram)+'" target="_blank" rel="noopener noreferrer">Instagram</a>';
     if(linksData.x)links+='<a class="rz-btn" href="'+esc(linksData.x)+'" target="_blank" rel="noopener noreferrer">X</a>';
-    return '<div class="rz-card"><div class="rz-post-head">'+avatar(p)+'<div><strong>'+esc(p.displayName||p.username)+'</strong> <span class="rz-badge ok">âœ“ Verified</span><div class="rz-mini">@'+esc(p.publicUsername||p.username)+'</div></div></div><div class="rz-verified-showcase"><img src="/assets/rizora_verified_badge.png" alt="RIZORA Verified badge"><div><div class="rz-kicker">RIZORA VERIFIED</div><strong>Creator Verified</strong><div class="rz-mini">'+esc(p.verificationType||"official")+'</div></div></div><div class="rz-actions">'+links+"</div></div>";
+    return '<div class="rz-card"><div class="rz-post-head">'+avatar(p)+'<div><strong>'+esc(p.displayName||p.username)+'</strong> <span class="rz-badge ok">✓ Verified</span><div class="rz-mini">@'+esc(p.publicUsername||p.username)+'</div></div></div><div class="rz-verified-showcase"><img src="/assets/rizora_verified_badge.png" alt="RIZORA Verified badge"><div><div class="rz-kicker">RIZORA VERIFIED</div><strong>Creator Verified</strong><div class="rz-mini">'+esc(p.verificationType||"official")+'</div></div></div><div class="rz-actions">'+links+"</div></div>";
   }).join("");
   if(!rows)rows="<div class='rz-empty'>Official identities are loading.</div>";
   return card("OFFICIAL","<h2>Verified RIZORA identities</h2><p class='rz-muted'>Official platform and verified creator profiles.</p><div class='rz-feed'>"+rows+"</div>");
@@ -421,7 +421,7 @@ async function openComments(postId){
       }
       return '<div style="margin-left:'+pad+'px;padding:11px 0;border-bottom:1px solid var(--line)"><div><strong>'+esc(c.author&&c.author.displayName||c.author&&c.author.username||"Creator")+'</strong> <span class="rz-mini">@'+esc(c.author&&(c.author.publicUsername||c.author.username)||"")+'</span></div>'+(c.text?'<div style="margin:5px 0 8px">'+esc(c.text)+'</div>':"")+(c.messageType==="voice"?'<div class="rz-mini">Voice comment</div>':"")+audio+'<button class="rz-btn" data-comment-reply="'+esc(c.id)+'" data-comment-user="'+esc(c.author&&(c.author.publicUsername||c.author.username)||"creator")+'">Reply</button>'+(c.replies||[]).map(function(r){return commentHtml(r,Number(depth||0)+1);}).join("")+'</div>';
     }
-    wrap.innerHTML='<section class="rz-card" style="width:min(720px,100%);max-height:82vh;overflow:auto;margin:0"><div class="rz-actions" style="justify-content:space-between"><div><div class="rz-kicker">COMMENTS</div><h2 style="margin:4px 0">Join the conversation</h2></div><button id="rzCommentsClose" class="rz-btn">Close</button></div><div style="margin:8px 0 14px">'+(comments.length?comments.map(function(c){return commentHtml(c,0);}).join(""):'<div class="rz-mini">No comments yet. Start the conversation.</div>')+'</div><form id="rzCommentForm" data-post-id="'+esc(postId)+'"><textarea id="rzCommentText" class="rz-textarea" maxlength="1000" placeholder="Write a commentâ€¦"></textarea><button class="rz-btn primary" style="margin-top:8px">Comment</button><div id="rzCommentStatus" class="rz-error"></div></form></section>';
+    wrap.innerHTML='<section class="rz-card" style="width:min(720px,100%);max-height:82vh;overflow:auto;margin:0"><div class="rz-actions" style="justify-content:space-between"><div><div class="rz-kicker">COMMENTS</div><h2 style="margin:4px 0">Join the conversation</h2></div><button id="rzCommentsClose" class="rz-btn">Close</button></div><div style="margin:8px 0 14px">'+(comments.length?comments.map(function(c){return commentHtml(c,0);}).join(""):'<div class="rz-mini">No comments yet. Start the conversation.</div>')+'</div><form id="rzCommentForm" data-post-id="'+esc(postId)+'"><textarea id="rzCommentText" class="rz-textarea" maxlength="1000" placeholder="Write a comment..."></textarea><button class="rz-btn primary" style="margin-top:8px">Comment</button><div id="rzCommentStatus" class="rz-error"></div></form></section>';
     document.body.appendChild(wrap);
     wrap.querySelector("#rzCommentsClose").onclick=function(){wrap.remove();};
     wrap.onclick=function(e){if(e.target===wrap)wrap.remove();};
@@ -435,12 +435,12 @@ async function openComments(postId){
       if(!form)return;
       if(form.getAttribute("data-comment-parent")===parentId){
         form.removeAttribute("data-comment-parent");
-        wrap.querySelector("#rzCommentText").placeholder="Write a commentâ€¦";
+        wrap.querySelector("#rzCommentText").placeholder="Write a comment...";
         btn.classList.remove("primary");
         return;
       }
       form.setAttribute("data-comment-parent",parentId);
-      wrap.querySelector("#rzCommentText").placeholder="Reply to @"+username+"â€¦";
+      wrap.querySelector("#rzCommentText").placeholder="Reply to @"+username+"...";
       wrap.querySelector("#rzCommentText").focus();
       wrap.querySelectorAll("[data-comment-reply]").forEach(function(x){x.classList.remove("primary");});
       btn.classList.add("primary");
@@ -485,7 +485,7 @@ function wire(){
           remaining-=1;
           if(remaining>0){b.textContent="Started · 0:"+String(remaining).padStart(2,"0");return;}
           clearInterval(timer);
-          b.textContent="Claimingâ€¦";
+          b.textContent="Claiming...";
           api("/api/tasks/complete",{method:"POST",body:JSON.stringify({taskId:id})})
             .then(function(d){
               var reward=Number(d.reward||d.points||0);
@@ -505,7 +505,7 @@ function wire(){
     b.onclick=function(){
       if(b.disabled)return;
       b.disabled=true;
-      b.textContent="Completingâ€¦";
+      b.textContent="Completing...";
       api("/api/social/tasks/complete",{method:"POST",body:JSON.stringify({taskId:b.getAttribute("data-social")})})
         .then(function(d){
           var reward=Number(d.reward||d.points||0);
@@ -570,6 +570,7 @@ async function boot(){
   }
 }
 })();
+
 
 
 

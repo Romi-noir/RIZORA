@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 function ensureLabs(db) {
   db.rzV2 = db.rzV2 || {};
@@ -359,3 +359,4 @@ async function handleRizoraLabs(ctx) {
 }
 
 module.exports = { handleRizoraLabs };
+

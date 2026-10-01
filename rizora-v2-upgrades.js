@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 const crypto = require("crypto");
 
@@ -91,7 +91,7 @@ async function handleRizoraUpgrades(ctx) {
   ensureUpgrades(db);
 
   // ----------------------------------------------------------
-  // Trial Content — test a post with non-followers before
+  // Trial Content â€” test a post with non-followers before
   // deciding whether to publish it to the normal Flow.
   // ----------------------------------------------------------
   if (path === "/api/v2/trials" && method === "POST") {
@@ -282,7 +282,7 @@ async function handleRizoraUpgrades(ctx) {
   }
 
   // ----------------------------------------------------------
-  // Content Shield — durable SHA-256 proof-of-publication
+  // Content Shield â€” durable SHA-256 proof-of-publication
   // without pretending to be a web-wide copyright scanner.
   // ----------------------------------------------------------
   if (path === "/api/v2/protection/register" && method === "POST") {
@@ -380,3 +380,4 @@ async function handleRizoraUpgrades(ctx) {
 }
 
 module.exports = { handleRizoraUpgrades };
+

@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 const crypto = require("crypto");
 
@@ -525,12 +525,12 @@ async function handleRizoraEnterprise(ctx) {
     const priceNaira = Number(b.priceNaira);
     const perks = Array.isArray(b.perks) ? b.perks.slice(0, 12).map(x => safeString(x, 100)).filter(Boolean) : [];
     if (!name || !Number.isFinite(priceNaira) || priceNaira < 100 || priceNaira > 1000000) {
-      ctx.sendError(res, 400, "Enter a tier name and a monthly price between ₦100 and ₦1,000,000.");
+      ctx.sendError(res, 400, "Enter a tier name and a monthly price between NGN100 and NGN1,000,000.");
       return true;
     }
     const currency = String(process.env.RIZORA_CURRENCY || "NGN").toUpperCase();
     const planPayload = {
-      name: "RIZORA — " + String(user.displayName || user.username || "Creator") + " — " + name,
+      name: "RIZORA â€” " + String(user.displayName || user.username || "Creator") + " â€” " + name,
       description: description || ("Monthly membership for @" + String(user.publicUsername || user.username)),
       amount: Math.round(priceNaira * 100),
       interval: "monthly",
@@ -1115,8 +1115,8 @@ async function handleRizoraEnterprise(ctx) {
       }
       if (tip.status === "success" && !tip.notified) {
         db.notifications=db.notifications||[];
-        db.notifications.push({id:ctx.uid("notif_"),userId:tip.senderId,title:"Creator Support sent",message:"Your ₦"+Number(tip.amountNaira||0).toLocaleString()+" support payment was confirmed.",type:"support",read:false,createdAt:new Date().toISOString()});
-        db.notifications.push({id:ctx.uid("notif_"),userId:tip.creatorId,title:"You received Creator Support",message:"A supporter sent ₦"+Number(tip.amountNaira||0).toLocaleString()+" to your RIZORA creator account.",type:"support",read:false,createdAt:new Date().toISOString()});
+        db.notifications.push({id:ctx.uid("notif_"),userId:tip.senderId,title:"Creator Support sent",message:"Your NGN"+Number(tip.amountNaira||0).toLocaleString()+" support payment was confirmed.",type:"support",read:false,createdAt:new Date().toISOString()});
+        db.notifications.push({id:ctx.uid("notif_"),userId:tip.creatorId,title:"You received Creator Support",message:"A supporter sent NGN"+Number(tip.amountNaira||0).toLocaleString()+" to your RIZORA creator account.",type:"support",read:false,createdAt:new Date().toISOString()});
         tip.notified = true;
       }
     }
@@ -1163,3 +1163,4 @@ async function handleRizoraEnterprise(ctx) {
 }
 
 module.exports = { handleRizoraEnterprise };
+

@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 (function(){
   const API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   const MAX=25*1024*1024;
@@ -41,7 +41,7 @@
     if(file.size>MAX)throw new Error("Media files must be 25 MB or smaller.");
 
     if(file.size<=SIMPLE){
-      setStatus(statusEl,"Uploading…");
+      setStatus(statusEl,"Uploading...");
       const result=await request("/api/v2/media/upload",{method:"POST",body:JSON.stringify({
         filename:file.name,mimeType:file.type,data:await dataURL(file)
       })});
@@ -49,7 +49,7 @@
       return result.media;
     }
 
-    setStatus(statusEl,"Preparing secure upload…");
+    setStatus(statusEl,"Preparing secure upload...");
     const session=await request("/api/v2/media/sessions",{method:"POST",body:JSON.stringify({
       filename:file.name,mimeType:file.type,size:file.size
     })});
@@ -58,14 +58,14 @@
       const start=index*CHUNK;
       const end=Math.min(file.size,start+CHUNK);
       const chunk=file.slice(start,end);
-      setStatus(statusEl,"Uploading "+(index+1)+" / "+session.totalChunks+"…");
+      setStatus(statusEl,"Uploading "+(index+1)+" / "+session.totalChunks+"...");
       await request("/api/v2/media/sessions/"+encodeURIComponent(session.uploadId)+"/chunk",{
         method:"POST",
         body:JSON.stringify({index,data:await dataURL(chunk)})
       });
     }
 
-    setStatus(statusEl,"Finalizing media…");
+    setStatus(statusEl,"Finalizing media...");
     const done=await request("/api/v2/media/sessions/"+encodeURIComponent(session.uploadId)+"/complete",{
       method:"POST",body:"{}"
     });
@@ -126,3 +126,4 @@
   window.RIZORA_UPLOAD_FILE=upload;
   window.RIZORA_MEDIA_BIND=bind;
 })();
+

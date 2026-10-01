@@ -1,7 +1,7 @@
-"use strict";
+﻿"use strict";
 (function(){
   var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
-  var WATERMARK_TEXT="RIZORA  •  rizora.com.ng";
+  var WATERMARK_TEXT="RIZORA  â€¢  rizora.com.ng";
   var LOGO_URL="/rizora-cover.png";
 
   function toast(msg){
@@ -94,7 +94,7 @@
   }
 
   async function watermarkImage(url){
-    toast("Preparing your RIZORA-watermarked image…");
+    toast("Preparing your RIZORA-watermarked image...");
     var blob=await getBlob(url);
     var src=URL.createObjectURL(blob);
     try{
@@ -130,7 +130,7 @@
       toast("This browser cannot encode a watermarked video. Use a Chromium-based browser for RIZORA downloads.");
       throw new Error("Watermarked video export is not supported by this browser.");
     }
-    toast("Rendering RIZORA watermark onto the video…");
+    toast("Rendering RIZORA watermark onto the video...");
     var blob=await getBlob(url);
     var sourceUrl=URL.createObjectURL(blob),video=document.createElement("video");
     video.src=sourceUrl;video.crossOrigin="anonymous";video.playsInline=true;video.preload="auto";
@@ -192,7 +192,7 @@
   }
 
   async function downloadAudio(url){
-    toast("Preparing RIZORA-branded audio download…");
+    toast("Preparing RIZORA-branded audio download...");
     var blob=await getBlob(url);
     trigger(blob,audioFilename(url));
     toast("RIZORA-branded audio download ready.");
@@ -273,3 +273,4 @@
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
+

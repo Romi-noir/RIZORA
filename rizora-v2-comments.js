@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 function ensureCommentControls(db){db.rzV2=db.rzV2||{};db.rzV2.commentControls=db.rzV2.commentControls||{};}
 function readBody(req){let raw="";return (async function(){for await(const chunk of req){raw+=chunk.toString();if(raw.length>500000)throw new Error("Request body too large.");}return raw?JSON.parse(raw):{};})();}
 function controlsFor(db,userId){ensureCommentControls(db);if(!db.rzV2.commentControls[userId])db.rzV2.commentControls[userId]={blockedWords:[],guidelines:"",autoHideLinks:false};const c=db.rzV2.commentControls[userId];if(!Array.isArray(c.blockedWords))c.blockedWords=[];if(typeof c.guidelines!=="string")c.guidelines="";if(typeof c.autoHideLinks!=="boolean")c.autoHideLinks=false;return c;}
@@ -42,3 +42,4 @@ async function handleRizoraComments(ctx){
   return false;
 }
 module.exports={handleRizoraComments,ensureCommentControls,controlsFor,commentBlockedByControl};
+
