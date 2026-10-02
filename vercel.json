@@ -1,19 +1,7 @@
 {
-  "source": "/creator/:username/",
-  "destination": "/"
-},
-{
-  "source": "/creator/:username",
-  "destination": "/"
-},{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
       "source": "/join",
-      "destination": "/"
-    },
-    {
-      "source": "/join/",
       "destination": "/"
     },
     {
@@ -21,15 +9,7 @@
       "destination": "/"
     },
     {
-      "source": "/signup/",
-      "destination": "/"
-    },
-    {
       "source": "/login",
-      "destination": "/"
-    },
-    {
-      "source": "/login/",
       "destination": "/"
     },
     {
@@ -43,58 +23,15 @@
   ],
   "headers": [
     {
-      "source": "/",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
-        },
-        {
-          "key": "Content-Type",
-          "value": "text/html; charset=utf-8"
+          "value": "no-store, no-cache, must-revalidate"
         },
         {
           "key": "Permissions-Policy",
           "value": "microphone=(self)"
-        }
-      ]
-    },
-    {
-      "source": "/index.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
-        },
-        {
-          "key": "Content-Type",
-          "value": "text/html; charset=utf-8"
-        }
-      ]
-    },
-    {
-      "source": "/service-worker.js",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/verification.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
-        },
-        {
-          "key": "Content-Type",
-          "value": "text/html; charset=utf-8"
-        },
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
         }
       ]
     }
