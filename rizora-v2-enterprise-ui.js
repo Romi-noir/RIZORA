@@ -133,11 +133,11 @@ async function showCreatorLookup(){
   '<section class="rz-card"><form id="rzProfileLookup" class="rz-actions"><input id="rzProfileKey" class="rz-input" placeholder="@username or creator username" required><button class="rz-btn primary">Open profile</button></form><div id="rzProfileError" class="rz-error"></div></section><div id="rzProfileResult"></div>');
   document.getElementById("rzProfileLookup").onsubmit=async function(e){
     e.preventDefault();var key=document.getElementById("rzProfileKey").value.replace(/^@/,"").trim(),er=document.getElementById("rzProfileError");er.textContent="";
-    try{var d=await api("/api/v2/profiles/"+encodeURIComponent(key));renderProfile(d);}catch(x){er.textContent=x.message;}
+    try{var d=await api("/api/public/creator/"+encodeURIComponent(key));renderProfile(d);}catch(x){er.textContent=x.message;}
   };
 }
 function renderProfile(d){
-  var p=d.profile||{},result=document.getElementById("rzProfileResult");if(!result)return;
+  var p=d.creator||{},result=document.getElementById("rzProfileResult");if(!result)return;
   result.innerHTML='<section class="rz-card"><div class="rz-profile"><img class="rz-avatar" src="'+esc(p.avatarUrl)+'"><div><h2>'+esc(p.displayName)+' '+(p.verified?'<span class="rz-badge ok">✓ Verified</span>':"")+'</h2><div>@'+esc(p.publicUsername||p.username)+'</div><p class="rz-muted">'+esc(p.bio||"No bio yet.")+'</p></div></div><div class="rz-enterprise-stats">'+stat("Posts",p.posts)+stat("Followers",p.followers)+stat("Following",p.following)+stat("Likes",p.likes)+'</div></section><section class="rz-card"><button class="rz-btn primary" id="rzProfileSupport">Support Creator</button><p class="rz-mini">One-time Creator Support through RIZORA. Payment availability depends on platform Paystack configuration.</p></section><section class="rz-card"><h3>Recent content</h3><div class="rz-feed">'+(d.posts||[]).map(function(post){return '<article class="rz-card"><div class="rz-post-body">'+esc(post.text||post.content||"")+'</div><div class="rz-mini">'+new Date(post.createdAt).toLocaleString()+'</div></article>';}).join("")||'<div class="rz-empty">No public posts yet.</div>'+'</div></section>';
 }  var supportBtn=result.querySelector("#rzProfileSupport");
   if(supportBtn)supportBtn.onclick=function(){if(window.RIZORA_NEXT&&window.RIZORA_NEXT.supportCreator){window.RIZORA_NEXT.supportCreator(p.publicUsername||p.username);}};
@@ -244,4 +244,5 @@ function boot(){
 }
 setTimeout(boot,60);
 })();
+
 
