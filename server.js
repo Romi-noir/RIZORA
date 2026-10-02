@@ -9837,6 +9837,65 @@ if (
 
   return;
 }
+
+
+/* ============================================================
+   PUBLIC CREATOR PROFILE
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname.startsWith("/api/public/creator/")
+) {
+
+  const username =
+    decodeURIComponent(
+      pathname.slice(
+        "/api/public/creator/".length
+      )
+    ).replace(/^@/, "").trim();
+
+  const creator =
+    db.users.find(
+      user =>
+        normalizeUsername(user.username) === normalizeUsername(username) ||
+        normalizeUsername(user.publicUsername) === normalizeUsername(username)
+    );
+
+  if (!creator) {
+    sendError(res, 404, "Creator not found.");
+    return;
+  }
+
+  const profile =
+    creatorProfileFor(
+      db,
+      creator.id
+    );
+
+  sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      creator:{
+        id:creator.id,
+        username:creator.username,
+        publicUsername:creator.publicUsername,
+        displayName:creator.displayName,
+        verified:
+          creator.verified === true ||
+          creator.verificationStatus === "verified",
+        points:Number(creator.points || 0),
+        profile
+      }
+    }
+  );
+
+  return;
+}
+
+
 // STATIC FRONTEND
   // ----------------------------------------------------------
 
