@@ -37,13 +37,27 @@ box-shadow:0 20px 60px #000;
 text-align:center;
 }
 
-.rizora-logo img{
-width:120px;
-height:120px;
-object-fit:contain;
-margin-bottom:20px;
-border-radius:20px;
+
+/* RIZORA LOGO TOP */
+
+.rizora-logo{
+display:flex;
+justify-content:center;
+margin-bottom:25px;
 }
+
+.rizora-logo img{
+width:130px;
+height:130px;
+object-fit:cover;
+border-radius:50%;
+border:4px solid #7c3cff;
+box-shadow:0 0 30px rgba(124,60,255,.6);
+}
+
+
+
+/* NAME + VERIFIED BADGE */
 
 h1{
 font-size:55px;
@@ -51,19 +65,22 @@ margin:10px 0;
 display:flex;
 justify-content:center;
 align-items:center;
-gap:10px;
+gap:12px;
 }
 
+
 .verified-icon{
-width:38px;
-height:38px;
+width:40px;
+height:40px;
 object-fit:contain;
 }
+
 
 .username{
 color:#bda9ff;
 font-size:22px;
 }
+
 
 .role{
 font-size:20px;
@@ -71,11 +88,14 @@ font-weight:700;
 color:#ddd;
 }
 
+
+
 .stats{
 display:flex;
 gap:15px;
 margin-top:30px;
 }
+
 
 .stat{
 background:#171225;
@@ -84,25 +104,32 @@ border-radius:18px;
 flex:1;
 }
 
+
 .stat b{
 font-size:22px;
 display:block;
 }
+
+
 
 .section{
 margin-top:40px;
 text-align:left;
 }
 
+
 h2{
 color:#bda9ff;
 font-size:18px;
 }
 
+
 p{
 line-height:1.8;
 color:#ddd;
 }
+
+
 
 .links a{
 display:block;
@@ -112,7 +139,15 @@ margin:12px 0;
 border-radius:15px;
 color:white;
 text-decoration:none;
+transition:.2s;
 }
+
+
+.links a:hover{
+background:#241a3d;
+}
+
+
 
 .cta{
 display:inline-block;
@@ -124,6 +159,7 @@ color:white;
 font-weight:800;
 text-decoration:none;
 }
+
 
 </style>
 
@@ -137,11 +173,12 @@ text-decoration:none;
 <div class="card">
 
 
-<!-- RIZORA LOGO -->
+<!-- RIZORA CIRCLE LOGO -->
 
 <div class="rizora-logo">
 <img src="/rizora-cover.png" alt="RIZORA Logo">
 </div>
+
 
 
 <!-- NAME + VERIFIED BADGE -->
@@ -152,14 +189,17 @@ RoMi Noir
 </h1>
 
 
+
 <div class="username">
 @romi.noir
 </div>
 
 
+
 <p class="role">
 CEO • Software Developer • Artist • Founder of RIZORA
 </p>
+
 
 
 
@@ -170,10 +210,12 @@ CEO • Software Developer • Artist • Founder of RIZORA
 Platform
 </div>
 
+
 <div class="stat">
 <b>Verified</b>
 Creator
 </div>
+
 
 <div class="stat">
 <b>Nigeria</b>
@@ -181,6 +223,8 @@ Based
 </div>
 
 </div>
+
+
 
 
 
@@ -196,6 +240,8 @@ RoMi Noir is the CEO and founder of RIZORA — a creator growth platform built t
 
 
 
+
+
 <div class="section">
 
 <h2>CREATOR JOURNEY</h2>
@@ -208,6 +254,8 @@ RoMi Noir is the CEO and founder of RIZORA — a creator growth platform built t
 </p>
 
 </div>
+
+
 
 
 
@@ -227,9 +275,12 @@ A creator platform combining creator tools, missions, analytics, AI support and 
 
 
 
+
+
 <div class="section links">
 
 <h2>OFFICIAL LINKS</h2>
+
 
 
 <a href="https://rizora.com.ng/">
@@ -237,9 +288,11 @@ RIZORA — rizora.com.ng
 </a>
 
 
+
 <a href="https://www.tiktok.com/@rizora.hq">
 TikTok — @rizora.hq
 </a>
+
 
 
 <a href="https://www.instagram.com/rizora.hq">
@@ -247,9 +300,11 @@ Instagram — @rizora.hq
 </a>
 
 
+
 <a href="https://x.com/Rizora_hq">
 X — @Rizora_hq
 </a>
+
 
 
 <a href="https://www.tiktok.com/@romi.noir">
@@ -257,9 +312,11 @@ Creator TikTok — @romi.noir
 </a>
 
 
+
 <a href="https://www.linkedin.com/in/romi-noir-a98635440">
 LinkedIn — RoMi Noir
 </a>
+
 
 
 <a href="https://github.com/Romi-noir">
@@ -271,14 +328,18 @@ GitHub — Romi-noir
 
 
 
+
+
 <a class="cta" href="https://rizora.com.ng/">
 Open RIZORA
 </a>
 
 
+
 </div>
 
 </div>
+
 
 </body>
 </html>
