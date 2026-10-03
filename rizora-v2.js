@@ -150,6 +150,7 @@ function shell(){
     {id:"home",label:"Home",icon:"H"},
     {id:"flow",label:"For You",icon:"F"},
     {id:"discover",label:"Explore",icon:"E"},
+    {id:"live",label:"LIVE",icon:"LIVE"},
     {id:"notifications",label:"Notifications",icon:"N"},
     {id:"messages",label:"Messages",icon:"M"},
     {id:"grow",label:"Grow",icon:"G"},
@@ -162,6 +163,7 @@ function shell(){
   var mobile=[
     {id:"home",label:"Home",icon:"H"},
     {id:"discover",label:"Explore",icon:"E"},
+    {id:"live",label:"LIVE",icon:"LIVE"},
     {id:"flow",label:"Create",icon:"+"},
     {id:"messages",label:"Inbox",icon:"M"},
     {id:"profile",label:"Profile",icon:"P"}
@@ -570,6 +572,9 @@ async function boot(){
   }
 }
 })();
+
+
+
 
 
 
