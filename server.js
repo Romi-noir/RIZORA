@@ -1,4 +1,4 @@
-// RIZORA Backend — Version 8.1.0
+﻿// RIZORA Backend â€” Version 8.1.0
 // Clean copy-paste version
 
 "use strict";
@@ -19,9 +19,19 @@ const { handleRizoraSeries } = require("./rizora-v2-series");
 const { handleRizoraEvents } = require("./rizora-v2-events");
 const { handleRizoraLabs } = require("./rizora-v2-labs");
 const { handleRizoraEnterprise } = require("./rizora-v2-enterprise");
+const { handleRizoraLive } = require("./rizora-v2-live");
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";
+
+const APP_URL =
+  String(process.env.APP_URL || "https://rizora.com.ng").trim();
+
+const PAYSTACK_SECRET_KEY =
+  String(process.env.PAYSTACK_SECRET_KEY || "").trim();
+
+const PAYSTACK_PUBLIC_KEY =
+  String(process.env.PAYSTACK_PUBLIC_KEY || "").trim();
 const GOOGLE_CLIENT_ID =
   String(
     process.env.GOOGLE_CLIENT_ID ||
@@ -48,6 +58,19 @@ const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_BODY_SIZE = 1024 * 1024;
 
 const REFERRAL_SIGNUP_REWARD = 100;
+
+const RIZORA_PLANS = {
+  premium:{
+    name:"Premium",
+    amount:5000,
+    currency:"NGN"
+  },
+  premium_plus:{
+    name:"Premium+",
+    amount:14000,
+    currency:"NGN"
+  }
+};
 const REFERRAL_MILESTONE_REWARD = 250;
 
 const SUPER_ADMINS = new Set([
@@ -110,7 +133,15 @@ function normalizeDB(db) {
   normalized.userSettings ||= {};
   normalized.supportTickets ||= [];
   normalized.emailEvents ||= [];
-  return normalized;
+  normalized.payments ||= [];
+  normalized.subscriptions ||= [];
+  normalized.paymentEvents ||= [];
+  normalized.paymentEvents ||= [];
+ normalized.liveSessions ||= [];
+ normalized.creatorCoins ||= [];
+ normalized.walletTransactions ||= [];
+ normalized.gifts ||= [];
+ return normalized;
 }
 
 function loadLocalDB() {
@@ -525,7 +556,7 @@ function queueRizoraVerificationEmail(db,user,action,reason,req){
   const safe=function(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");};
   const base=getPublicBaseURL(req);
   const subject=isVerified?"Your RIZORA verification is approved":"RIZORA verification update";
-  const text=["Hi "+name+",","",isVerified?"Your RIZORA creator account @"+username+" is now verified.":"Your RIZORA verification request for @"+username+" is now "+statusLabel+".",why?"Review note: "+why:"","Open RIZORA: "+base,"","RIZORA · CREATE. GROW. EARN."].filter(Boolean).join("\n");
+  const text=["Hi "+name+",","",isVerified?"Your RIZORA creator account @"+username+" is now verified.":"Your RIZORA verification request for @"+username+" is now "+statusLabel+".",why?"Review note: "+why:"","Open RIZORA: "+base,"","RIZORA Â· CREATE. GROW. EARN."].filter(Boolean).join("\n");
   const html='<div style="margin:0;background:#07050d;color:#f8f6ff;font-family:Arial,Helvetica,sans-serif;padding:32px 16px"><div style="max-width:620px;margin:0 auto;background:#100b1d;border:1px solid #33215a;border-radius:22px;padding:30px"><div style="font-size:12px;letter-spacing:4px;color:#bba8ff;font-weight:800">RIZORA</div><h1 style="margin:12px 0 8px;font-size:30px">'+(isVerified?"Verification approved":"Verification update")+'</h1><p style="color:#b8aec9;line-height:1.7">Hi '+safe(name)+', your account @'+safe(username)+' has a verification status update: <b>'+safe(statusLabel)+'</b>.</p>'+(why?'<div style="margin:18px 0;padding:14px;border-radius:14px;background:#090611;border:1px solid #2a1a49;color:#c8bfd8">Review note: '+safe(why)+'</div>':"")+'<a href="'+safe(base)+'" style="display:inline-block;padding:13px 19px;background:#7b4dff;color:#fff;text-decoration:none;border-radius:12px;font-weight:800">Open RIZORA</a></div></div>';
   Promise.resolve().then(function(){return sendRizoraEmail({to:user.email,subject:subject,text:text,html:html});}).then(function(result){event.status="sent";event.provider=result&&result.provider||"resend";event.providerId=result&&result.id||"";event.sentAt=new Date().toISOString();saveDB(db);}).catch(function(error){event.status="failed";event.reason=String(error&&error.message||"Email delivery failed").slice(0,300);event.failedAt=new Date().toISOString();console.error("RIZORA verification email failed:",event.reason);try{saveDB(db);}catch(_){}});
   return {configured:true,queued:true,status:event.status};
@@ -2665,9 +2696,220 @@ async function handleRequest(
     pathname === "/api/ai/chat";
 
   if (!isRizoraAiChat) {
+    
+    // ============================================================
+    // PAYSTACK PAYMENT SYSTEM
+    // ============================================================
+
+    if (method === "POST" && pathname === "/api/paystack/initialize") {
+
+      const user = getCurrentUser(db, req);
+
+      if (!user) {
+        return sendError(res, 401, "Authentication required.");
+      }
+
+      if (!PAYSTACK_SECRET_KEY) {
+        return sendError(res, 500, "Paystack secret key missing.");
+      }
+
+      const body = await readBody(req);
+
+      const plan = String(body.plan || "").trim();
+
+      if (!RIZORA_PLANS[plan]) {
+        return sendError(res, 400, "Invalid plan.");
+      }
+
+      const selectedPlan = RIZORA_PLANS[plan];
+      const amount = selectedPlan.amount;
+
+      const reference =
+        "RIZORA_" +
+        Date.now() +
+        "_" +
+        crypto.randomBytes(4).toString("hex");
+
+      const response = await fetch(
+        "https://api.paystack.co/transaction/initialize",
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + PAYSTACK_SECRET_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: user.email,
+            amount: amount * 100,
+            reference,
+            callback_url: APP_URL + "/payment-success"
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.status) {
+        return sendError(res, 400, "Paystack initialization failed.");
+      }
+
+      db.payments.push({
+        id: uid(),
+        userId: user.id,
+        reference,
+        amount,
+        plan,
+        status: "pending",
+        createdAt: new Date().toISOString()
+      });
+
+      saveDB(db);
+
+      return sendJSON(res, {
+        success: true,
+        authorization_url: data.data.authorization_url,
+        reference
+      });
+    }
+
+
+// ============================================================
+// PAYSTACK VERIFY PAYMENT
+// ============================================================
+
+if (
+  method === "GET" &&
+  pathname.startsWith("/api/paystack/verify/")
+) {
+
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    return sendError(res, 401, "Authentication required.");
+  }
+
+  if (!PAYSTACK_SECRET_KEY) {
+    return sendError(res, 500, "Paystack secret key missing.");
+  }
+
+  const reference =
+    pathname.split("/").pop();
+
+  const response = await fetch(
+    "https://api.paystack.co/transaction/verify/" + reference,
+    {
+      headers: {
+        Authorization: "Bearer " + PAYSTACK_SECRET_KEY
+      }
+    }
+  );
+
+  const data = await response.json();
+
+  if (
+    data.status &&
+    data.data &&
+    data.data.status === "success"
+  ) {
+
+    const payment =
+      db.payments.find(
+        p => p.reference === reference
+      );
+
+    if (payment) {
+
+      payment.status = "success";
+      payment.paidAt =
+        new Date().toISOString();
+
+      user.plan = payment.plan || "premium";
+        user.verificationBoost = payment.plan === "premium_plus" ? 20 : 10;
+      user.planExpiry =
+        new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString();
+    }
+
+    saveDB(db);
+  }
+
+  return sendJSON(res, data);
+}
+// ============================================================
+// PAYSTACK WEBHOOK
+// ============================================================
+
+if (
+  method === "POST" &&
+  pathname === "/api/paystack/webhook"
+) {
+
+  if (!PAYSTACK_SECRET_KEY) {
+    return sendError(res, 500, "Paystack secret key missing.");
+  }
+
+  const body = await readBody(req);
+
+  const signature =
+    req.headers["x-paystack-signature"];
+
+  if (!signature) {
+    return sendError(res, 401, "Missing signature.");
+  }
+
+  const hash =
+    crypto
+      .createHmac("sha512", PAYSTACK_SECRET_KEY)
+      .update(JSON.stringify(body))
+      .digest("hex");
+
+  if (hash !== signature) {
+    return sendError(res, 401, "Invalid signature.");
+  }
+
+  if (body.event === "charge.success") {
+
+    const reference =
+      body.data.reference;
+
+    const payment =
+      db.payments.find(
+        p => p.reference === reference
+      );
+
+    if (payment) {
+
+      payment.status = "success";
+      payment.paidAt =
+        new Date().toISOString();
+
+      const user =
+        db.users.find(
+          u => u.id === payment.userId
+        );
+
+      if (user) {
+        user.plan = payment.plan || "premium";
+        user.verificationBoost = payment.plan === "premium_plus" ? 20 : 10;
+        user.planExpiry =
+          new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString();
+      }
+
+      saveDB(db);
+    }
+  }
+
+  return sendJSON(res, {
+    received: true
+  });
+}
     if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
     if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
+    if (await handleRizoraLive({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
     if (await handleRizoraLabs({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
@@ -3818,7 +4060,7 @@ if (
    * History prevents reuse of the same action/platform pair.
    */
   // ----------------------------------------------------------
-  // TASKS — START
+  // TASKS â€” START
   // ----------------------------------------------------------
 
   if (
@@ -4349,7 +4591,7 @@ const completion = {
 
 
 /* ============================================================
-   COMMUNITY TASK — CREATE
+   COMMUNITY TASK â€” CREATE
 ============================================================ */
 
 if (
@@ -4518,7 +4760,7 @@ if (
 }
 
 /* ============================================================
-   BOOSTS — AVAILABLE
+   BOOSTS â€” AVAILABLE
 ============================================================ */
 
 if (
@@ -4565,7 +4807,7 @@ if (
 
 
 /* ============================================================
-   BOOSTS — CREATE
+   BOOSTS â€” CREATE
 ============================================================ */
 
 if (
@@ -4785,7 +5027,7 @@ if (
 
 
 /* ============================================================
-   BOOSTS — COMPLETE
+   BOOSTS â€” COMPLETE
 ============================================================ */
 
 if (
@@ -5106,7 +5348,7 @@ if (
           provider: "rizora",
           deterministic: true,
           reply:
-            "RoMi (@romi.noir) is Ajiboye Hallelujah Oluwaronmi — an artist, developer, creator and builder, and the creator of RIZORA."
+            "RoMi (@romi.noir) is Ajiboye Hallelujah Oluwaronmi â€” an artist, developer, creator and builder, and the creator of RIZORA."
         }
       );
     }
@@ -5462,7 +5704,7 @@ if (
   return;
 }
 
-// REFERRALS — ME
+// REFERRALS â€” ME
   // ----------------------------------------------------------
 
   if (
@@ -5694,7 +5936,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — STATS
+  // ADMIN â€” STATS
   // ----------------------------------------------------------
 
   if (
@@ -5728,7 +5970,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — USERS
+  // ADMIN â€” USERS
   // ----------------------------------------------------------
 
   if (
@@ -5764,7 +6006,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — REFERRALS
+  // ADMIN â€” REFERRALS
   // ----------------------------------------------------------
 
   if (
@@ -5798,7 +6040,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — AUDIT
+  // ADMIN â€” AUDIT
   // ----------------------------------------------------------
 
   if (
@@ -5832,7 +6074,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — TASKS
+  // ADMIN â€” TASKS
   // ----------------------------------------------------------
 
   if (
@@ -5866,7 +6108,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — CHANGE ROLE
+  // ADMIN â€” CHANGE ROLE
   // ----------------------------------------------------------
 
   if (
@@ -5995,7 +6237,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — CHANGE STATUS
+  // ADMIN â€” CHANGE STATUS
   // ----------------------------------------------------------
 
   if (
@@ -6124,7 +6366,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN — POINTS
+  // ADMIN â€” POINTS
   // ----------------------------------------------------------
 
   if (
@@ -6238,7 +6480,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — DASHBOARD
+  // SUPER ADMIN â€” DASHBOARD
   // ----------------------------------------------------------
 
   if (
@@ -6289,7 +6531,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — USERS
+  // SUPER ADMIN â€” USERS
   // ----------------------------------------------------------
 
   if (
@@ -6325,7 +6567,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — AUDIT
+  // SUPER ADMIN â€” AUDIT
   // ----------------------------------------------------------
 
   if (
@@ -6359,7 +6601,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — REFERRALS
+  // SUPER ADMIN â€” REFERRALS
   // ----------------------------------------------------------
 
   if (
@@ -6393,7 +6635,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — ROLE
+  // SUPER ADMIN â€” ROLE
   // ----------------------------------------------------------
 
   if (
@@ -6519,7 +6761,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — STATUS
+  // SUPER ADMIN â€” STATUS
   // ----------------------------------------------------------
 
   if (
@@ -6645,7 +6887,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — POINTS
+  // SUPER ADMIN â€” POINTS
   // ----------------------------------------------------------
 
   if (
@@ -6756,7 +6998,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — TASKS
+  // SUPER ADMIN â€” TASKS
   // ----------------------------------------------------------
 
   if (
@@ -6790,7 +7032,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — TASK STATUS
+  // SUPER ADMIN â€” TASK STATUS
   // ----------------------------------------------------------
 
   if (
@@ -6880,7 +7122,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN — TASK LIST
+  // SUPER ADMIN â€” TASK LIST
   // ----------------------------------------------------------
 
   if (
@@ -7980,7 +8222,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION — MY STATUS
+   VERIFICATION â€” MY STATUS
 ------------------------------------------------------------ */
 
 if (
@@ -8081,7 +8323,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION — APPLY
+   VERIFICATION â€” APPLY
 ------------------------------------------------------------ */
 
 if (
@@ -8348,7 +8590,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION — PUBLIC USER STATUS
+   VERIFICATION â€” PUBLIC USER STATUS
 ------------------------------------------------------------ */
 
 if (
@@ -8418,7 +8660,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   SUPER ADMIN — VERIFICATION QUEUE
+   SUPER ADMIN â€” VERIFICATION QUEUE
 ------------------------------------------------------------ */
 
 if (
@@ -8534,7 +8776,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   SUPER ADMIN — VERIFICATION ACTION
+   SUPER ADMIN â€” VERIFICATION ACTION
 ------------------------------------------------------------ */
 
 if (
@@ -10726,6 +10968,25 @@ process.on(
     );
   }
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

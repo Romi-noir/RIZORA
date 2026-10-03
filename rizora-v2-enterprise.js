@@ -372,7 +372,7 @@ async function handleRizoraEnterprise(ctx) {
     const currentPlan=isPremium?(active.plan||"premium"):"free";
     const plans={
       premium:{name:"Premium",priceNaira:4000,configured:!!premiumCode},
-      premium_plus:{name:"Premium+",priceNaira:13000,configured:!!premiumPlusCode}
+      premium_plus:{name:"Premium+",priceNaira:14000,configured:!!premiumPlusCode}
     };
     ctx.sendJSON(res,200,{success:true,plan:currentPlan,active:isPremium,configured,provider:"paystack",
       status:active?active.status:"free",
@@ -416,7 +416,7 @@ async function handleRizoraEnterprise(ctx) {
     let b={};try{b=await readBody(req,50000);}catch(e){ctx.sendError(res,400,e.message);return true;}
     const requestedPlan=String(b.plan||"premium").trim().toLowerCase()==="premium_plus"?"premium_plus":"premium";
     const planCode=String(requestedPlan==="premium_plus"?process.env.PAYSTACK_PREMIUM_PLUS_PLAN_CODE:process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
-    const defaultAmountKobo=requestedPlan==="premium_plus"?1300000:400000;
+    const defaultAmountKobo=requestedPlan==="premium_plus"?1400000:400000;
     const amountEnv=requestedPlan==="premium_plus"?process.env.RIZORA_PREMIUM_PLUS_INITIAL_AMOUNT:process.env.RIZORA_PREMIUM_INITIAL_AMOUNT;
     const amountKobo=Number(amountEnv||defaultAmountKobo);
     const amountNaira=amountKobo/100;
