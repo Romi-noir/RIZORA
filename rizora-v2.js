@@ -5,8 +5,40 @@ window.RIZORA_CURRENT_USER=null;
 var state={user:null,profile:null,view:"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[],stories:[],communities:[],conversations:[],opportunities:[],analytics:null,boosts:[],official:[],admin:null,adminVerification:[],onboarding:[]};
 
 function $(id){return document.getElementById(id);}
+
+window.RIZORA_LIVE_USERS=[];
+
+function loadRizoraLivePresence(){
+  fetch(API+"/api/v2/live/status")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d && d.liveUsers){
+        window.RIZORA_LIVE_USERS=d.liveUsers.map(function(x){
+          return x.userId;
+        });
+      }else{
+        window.RIZORA_LIVE_USERS=[];
+      }
+    })
+    .catch(function(){});
+}
+
+loadRizoraLivePresence();
+setInterval(loadRizoraLivePresence,15000);
+
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function avatar(u){return u&&u.avatarUrl?'<img class="rz-avatar" src="'+esc(u.avatarUrl)+'">':'<div class="rz-avatar">'+esc((u&&(u.displayName||u.username)||"R").slice(0,2).toUpperCase())+"</div>";}
+function avatar(u){
+  var live="";
+  if(window.RIZORA_LIVE_USERS && u && window.RIZORA_LIVE_USERS.indexOf(u.id)!==-1){
+    live="<span class=\"rz-live-badge\">LIVE</span>";
+  }
+
+  var image=u&&u.avatarUrl
+    ? "<img class=\"rz-avatar\" src=\""+esc(u.avatarUrl)+"\">"
+    : "<div class=\"rz-avatar\">"+esc((u&&(u.displayName||u.username)||"R").slice(0,2).toUpperCase())+"</div>";
+
+  return "<span class=\"rz-avatar-wrap\">"+image+live+"</span>";
+}
 function renderMedia(url){
   var raw=String(url||"").trim(); if(!raw)return "";
   var safe=esc(raw), clean=raw.split("?")[0].toLowerCase();
@@ -572,6 +604,8 @@ async function boot(){
   }
 }
 })();
+
+
 
 
 

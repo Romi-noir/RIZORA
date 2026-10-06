@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 function ensureLive(db){
   db.liveSessions = db.liveSessions || [];
@@ -72,10 +72,16 @@ async function handleRizoraLive(ctx){
 
   if(path==="/api/v2/live/status" && method==="GET"){
 
+    const liveUsers=db.liveSessions.filter(x=>x.active).map(x=>({
+      userId:x.userId,
+      username:x.username
+    }));
+
     return sendJSON(res,200,{
       success:true,
       online:true,
-      liveCount:db.liveSessions.filter(x=>x.active).length
+      liveCount:liveUsers.length,
+      liveUsers
     });
 
   }
@@ -262,3 +268,6 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
+
+
