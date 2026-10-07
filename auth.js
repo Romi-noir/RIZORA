@@ -1,4 +1,4 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
@@ -91,6 +91,24 @@ function findUserByUsername(username) {
     user =>
       user.username.toLowerCase() === username.toLowerCase()
   );
+}
+
+function findUserBySession(token) {
+  const db = loadDatabase();
+
+  if (!db.sessions) return null;
+
+  const session = db.sessions.find(
+    item => item.token === token
+  );
+
+  if (!session) return null;
+
+  if (new Date(session.expiresAt) < new Date()) {
+    return null;
+  }
+
+  return findUserById(session.userId);
 }
 
 function findUserById(id) {
@@ -374,6 +392,7 @@ module.exports = {
   authenticate,
   seedSuperAdmins,
   findUserById,
+  findUserBySession,
   getAllUsers,
   updateUserRole,
   addPoints,
@@ -383,3 +402,5 @@ module.exports = {
   addAuditLog,
   getAuditLogs
 };
+
+
