@@ -27,6 +27,12 @@ const HOST = process.env.HOST || "0.0.0.0";
 const APP_URL =
   String(process.env.APP_URL || "https://rizora.com.ng").trim();
 
+const NODE_ENV =
+  String(process.env.NODE_ENV || "development").trim();
+
+const IS_PRODUCTION = NODE_ENV === "production";
+
+
 const PAYSTACK_SECRET_KEY =
   String(process.env.PAYSTACK_SECRET_KEY || "").trim();
 
@@ -55,7 +61,8 @@ let dbPersistenceReady = false;
 let dbWriteQueue = Promise.resolve();
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const MAX_BODY_SIZE = 1024 * 1024;
+const MAX_BODY_SIZE =
+  Number(process.env.MAX_BODY_SIZE || 1024 * 1024);
 
 const REFERRAL_SIGNUP_REWARD = 100;
 
@@ -73,10 +80,12 @@ const RIZORA_PLANS = {
 };
 const REFERRAL_MILESTONE_REWARD = 250;
 
-const SUPER_ADMINS = new Set([
-  "romi",
-  "superadmin2"
-]);
+const SUPER_ADMINS = new Set(
+  String(process.env.SUPER_ADMINS || "romi")
+    .split(",")
+    .map((v) => v.trim().toLowerCase())
+    .filter(Boolean)
+);
 
 const loginAttempts = new Map();
 const signupAttempts = new Map();
