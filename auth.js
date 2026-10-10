@@ -1,4 +1,4 @@
-﻿const fs = require("fs");
+const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
@@ -17,6 +17,7 @@ function ensureDatabase() {
       JSON.stringify(
         {
           users: [],
+          sessions: [],
           tasks: [],
           taskCompletions: [],
           auditLogs: []
@@ -36,9 +37,10 @@ function loadDatabase() {
   } catch {
     return {
       users: [],
-      tasks: [],
-      taskCompletions: [],
-      auditLogs: []
+          sessions: [],
+          tasks: [],
+          taskCompletions: [],
+          auditLogs: []
     };
   }
 }
@@ -81,7 +83,24 @@ function verifyPassword(password, storedPassword) {
 }
 
 function createSession(userId) {
-  return crypto.randomBytes(32).toString("hex");
+  const db = loadDatabase();
+
+  db.sessions ||= [];
+
+  const session = {
+    token: crypto.randomBytes(48).toString("hex"),
+    userId,
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    ).toISOString()
+  };
+
+  db.sessions.push(session);
+
+  saveDatabase(db);
+
+  return session.token;
 }
 
 function findUserByUsername(username) {
@@ -89,8 +108,20 @@ function findUserByUsername(username) {
 
   return db.users.find(
     user =>
-      user.username.toLowerCase() === username.toLowerCase()
+      user.username.trim().toLowerCase() === String(username).trim().toLowerCase()
   );
+}
+
+function cleanupSessions(db) {
+  if (!Array.isArray(db.sessions)) {
+    db.sessions = [];
+  }
+
+  const now = Date.now();
+
+  db.sessions = db.sessions.filter(function(session) {
+    return new Date(session.expiresAt).getTime() > now;
+  });
 }
 
 function findUserBySession(token) {
@@ -123,11 +154,23 @@ function createUser({
   password,
   role = "user"
 }) {
+  username = String(username || "").trim();
+  displayName = String(displayName || "").trim();
+  password = String(password || "");
+
+  if (username.length < 3) {
+    throw new Error("Username is too short.");
+  }
+
+  if (password.length < 8) {
+    throw new Error("Password must be at least 8 characters.");
+  }
+
   const db = loadDatabase();
 
   const exists = db.users.some(
     user =>
-      user.username.toLowerCase() === username.toLowerCase()
+      user.username.trim().toLowerCase() === String(username).trim().toLowerCase()
   );
 
   if (exists) {
@@ -402,5 +445,10 @@ module.exports = {
   addAuditLog,
   getAuditLogs
 };
+
+
+
+
+
 
 
