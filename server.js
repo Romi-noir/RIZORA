@@ -471,9 +471,7 @@ function getSessionToken(req) {
 function setSessionCookie(res, token) {
   res.setHeader(
     "Set-Cookie",
-    `rizora_session=${encodeURIComponent(token)}; HttpOnly; Path=/; Max-Age=${
-      SESSION_TTL_MS / 1000
-    }; SameSite=None; Secure`
+    `rizora_session=${encodeURIComponent(token)}; HttpOnly; Path=/; Max-Age=${SESSION_TTL_MS / 1000}; SameSite=None; Secure; Priority=High`
   );
 }
 
@@ -11020,6 +11018,8 @@ process.on(
     );
   }
 );
+
+
 
 
 
