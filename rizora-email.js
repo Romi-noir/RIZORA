@@ -27,6 +27,10 @@ function fromAddress(){
 
 async function sendRizoraEmail(options){
   const to=clean(options && options.to,320);
+
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)){
+    throw new Error("Invalid recipient email.");
+  }
   const subject=clean(options && options.subject,180);
   const text=clean(options && options.text,20000);
   const bodyHtml=String(options && options.html || "");
@@ -46,14 +50,30 @@ async function sendRizoraEmail(options){
   const reply=clean(process.env.RIZORA_EMAIL_REPLY_TO,320);
   if(reply)payload.reply_to=reply;
 
-  const response=await fetch("https://api.resend.com/emails",{
-    method:"POST",
-    headers:{
-      "Authorization":"Bearer "+key,
-      "Content-Type":"application/json"
+  const controller = new AbortController();
+
+  const timeout = setTimeout(
+    function(){
+      controller.abort();
     },
-    body:JSON.stringify(payload)
-  });
+    10000
+  );
+
+  let response;
+
+  try {
+    response = await fetch("https://api.resend.com/emails",{
+      method:"POST",
+      headers:{
+        "Authorization":"Bearer "+key,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify(payload),
+      signal:controller.signal
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
   const data=await response.json().catch(function(){return {};});
   if(!response.ok){
     const message=String(
@@ -123,3 +143,5 @@ async function sendRizoraWelcomeEmail(options){
 }
 
 module.exports={configured,sendRizoraEmail,sendRizoraWelcomeEmail};
+
+
