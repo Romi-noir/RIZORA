@@ -1,4 +1,4 @@
-﻿// RIZORA Backend â€” Version 8.1.0
+// RIZORA Backend — Version 8.1.0
 // Clean copy-paste version
 
 "use strict";
@@ -349,6 +349,51 @@ function cleanString(value, max = 500) {
   return String(value || "").trim().slice(0, max);
 }
 
+function refreshPlanStatus(user) {
+  if (!user) return user;
+
+  if (
+    user.planExpiry &&
+    new Date(user.planExpiry).getTime() <= Date.now()
+  ) {
+    user.plan = "free";
+    user.planExpiry = null;
+    user.verificationBoost = 0;
+  }
+
+  return user;
+}
+
+function getUserPlan(user) {
+  if (!user) return "free";
+
+  refreshPlanStatus(user);
+
+  return String(user.plan || "free").toLowerCase();
+}
+
+function hasPremium(user) {
+  const plan = getUserPlan(user);
+
+  return (
+    plan === "premium" ||
+    plan === "premium_plus"
+  );
+}
+
+function hasPremiumPlus(user) {
+  return (
+    getUserPlan(user) === "premium_plus"
+  );
+}
+
+function requirePremium(user) {
+  return hasPremium(user);
+}
+
+function requirePremiumPlus(user) {
+  return hasPremiumPlus(user);
+}
 function json(res, statusCode, data, extraHeaders = {}) {
   const body = JSON.stringify(data);
   const origin = res.getHeader("Access-Control-Allow-Origin") || "https://rizora.com.ng";
@@ -565,7 +610,7 @@ function queueRizoraVerificationEmail(db,user,action,reason,req){
   const safe=function(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");};
   const base=getPublicBaseURL(req);
   const subject=isVerified?"Your RIZORA verification is approved":"RIZORA verification update";
-  const text=["Hi "+name+",","",isVerified?"Your RIZORA creator account @"+username+" is now verified.":"Your RIZORA verification request for @"+username+" is now "+statusLabel+".",why?"Review note: "+why:"","Open RIZORA: "+base,"","RIZORA Â· CREATE. GROW. EARN."].filter(Boolean).join("\n");
+  const text=["Hi "+name+",","",isVerified?"Your RIZORA creator account @"+username+" is now verified.":"Your RIZORA verification request for @"+username+" is now "+statusLabel+".",why?"Review note: "+why:"","Open RIZORA: "+base,"","RIZORA · CREATE. GROW. EARN."].filter(Boolean).join("\n");
   const html='<div style="margin:0;background:#07050d;color:#f8f6ff;font-family:Arial,Helvetica,sans-serif;padding:32px 16px"><div style="max-width:620px;margin:0 auto;background:#100b1d;border:1px solid #33215a;border-radius:22px;padding:30px"><div style="font-size:12px;letter-spacing:4px;color:#bba8ff;font-weight:800">RIZORA</div><h1 style="margin:12px 0 8px;font-size:30px">'+(isVerified?"Verification approved":"Verification update")+'</h1><p style="color:#b8aec9;line-height:1.7">Hi '+safe(name)+', your account @'+safe(username)+' has a verification status update: <b>'+safe(statusLabel)+'</b>.</p>'+(why?'<div style="margin:18px 0;padding:14px;border-radius:14px;background:#090611;border:1px solid #2a1a49;color:#c8bfd8">Review note: '+safe(why)+'</div>':"")+'<a href="'+safe(base)+'" style="display:inline-block;padding:13px 19px;background:#7b4dff;color:#fff;text-decoration:none;border-radius:12px;font-weight:800">Open RIZORA</a></div></div>';
   Promise.resolve().then(function(){return sendRizoraEmail({to:user.email,subject:subject,text:text,html:html});}).then(function(result){event.status="sent";event.provider=result&&result.provider||"resend";event.providerId=result&&result.id||"";event.sentAt=new Date().toISOString();saveDB(db);}).catch(function(error){event.status="failed";event.reason=String(error&&error.message||"Email delivery failed").slice(0,300);event.failedAt=new Date().toISOString();console.error("RIZORA verification email failed:",event.reason);try{saveDB(db);}catch(_){}});
   return {configured:true,queued:true,status:event.status};
@@ -2066,8 +2111,9 @@ async function handleRequest(
   req,
   res
 ) {
-
-  /* ============================================================
+    
+    // ============================================================
+/* ============================================================
      RIZORA_VERIFICATION_V2
   ============================================================ */
 
@@ -2700,13 +2746,10 @@ async function handleRequest(
 
   cleanupSessions(db);
 
-  const isRizoraAiChat =
-    method === "POST" &&
-    pathname === "/api/ai/chat";
-
-  if (!isRizoraAiChat) {
+  
     
-    // ============================================================
+    
+
     // PAYSTACK PAYMENT SYSTEM
     // ============================================================
 
@@ -2915,16 +2958,16 @@ if (
     received: true
   });
 }
-    if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
+
+if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
     if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
     if (await handleRizoraLive({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
     if (await handleRizoraLabs({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
-  }
 
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
   // HEALTH
   // ----------------------------------------------------------
 
@@ -4069,7 +4112,7 @@ if (
    * History prevents reuse of the same action/platform pair.
    */
   // ----------------------------------------------------------
-  // TASKS â€” START
+  // TASKS — START
   // ----------------------------------------------------------
 
   if (
@@ -4600,7 +4643,7 @@ const completion = {
 
 
 /* ============================================================
-   COMMUNITY TASK â€” CREATE
+   COMMUNITY TASK — CREATE
 ============================================================ */
 
 if (
@@ -4769,7 +4812,7 @@ if (
 }
 
 /* ============================================================
-   BOOSTS â€” AVAILABLE
+   BOOSTS — AVAILABLE
 ============================================================ */
 
 if (
@@ -4816,7 +4859,7 @@ if (
 
 
 /* ============================================================
-   BOOSTS â€” CREATE
+   BOOSTS — CREATE
 ============================================================ */
 
 if (
@@ -5036,7 +5079,7 @@ if (
 
 
 /* ============================================================
-   BOOSTS â€” COMPLETE
+   BOOSTS — COMPLETE
 ============================================================ */
 
 if (
@@ -5357,7 +5400,7 @@ if (
           provider: "rizora",
           deterministic: true,
           reply:
-            "RoMi (@romi.noir) is Ajiboye Hallelujah Oluwaronmi â€” an artist, developer, creator and builder, and the creator of RIZORA."
+            "RoMi (@romi.noir) is Ajiboye Hallelujah Oluwaronmi — an artist, developer, creator and builder, and the creator of RIZORA."
         }
       );
     }
@@ -5713,7 +5756,7 @@ if (
   return;
 }
 
-// REFERRALS â€” ME
+// REFERRALS — ME
   // ----------------------------------------------------------
 
   if (
@@ -5945,7 +5988,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN â€” STATS
+  // ADMIN — STATS
   // ----------------------------------------------------------
 
   if (
@@ -5979,7 +6022,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN â€” USERS
+  // ADMIN — USERS
   // ----------------------------------------------------------
 
   if (
@@ -6015,7 +6058,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN â€” REFERRALS
+  // ADMIN — REFERRALS
   // ----------------------------------------------------------
 
   if (
@@ -6049,7 +6092,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN â€” AUDIT
+  // ADMIN — AUDIT
   // ----------------------------------------------------------
 
   if (
@@ -6083,7 +6126,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN â€” TASKS
+  // ADMIN — TASKS
   // ----------------------------------------------------------
 
   if (
@@ -6117,7 +6160,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN â€” CHANGE ROLE
+  // ADMIN — CHANGE ROLE
   // ----------------------------------------------------------
 
   if (
@@ -6246,7 +6289,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN â€” CHANGE STATUS
+  // ADMIN — CHANGE STATUS
   // ----------------------------------------------------------
 
   if (
@@ -6375,7 +6418,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // ADMIN â€” POINTS
+  // ADMIN — POINTS
   // ----------------------------------------------------------
 
   if (
@@ -6489,7 +6532,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN â€” DASHBOARD
+  // SUPER ADMIN — DASHBOARD
   // ----------------------------------------------------------
 
   if (
@@ -6540,7 +6583,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN â€” USERS
+  // SUPER ADMIN — USERS
   // ----------------------------------------------------------
 
   if (
@@ -6576,7 +6619,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN â€” AUDIT
+  // SUPER ADMIN — AUDIT
   // ----------------------------------------------------------
 
   if (
@@ -6610,7 +6653,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN â€” REFERRALS
+  // SUPER ADMIN — REFERRALS
   // ----------------------------------------------------------
 
   if (
@@ -6644,7 +6687,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN â€” ROLE
+  // SUPER ADMIN — ROLE
   // ----------------------------------------------------------
 
   if (
@@ -6770,7 +6813,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN â€” STATUS
+  // SUPER ADMIN — STATUS
   // ----------------------------------------------------------
 
   if (
@@ -6896,7 +6939,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN â€” POINTS
+  // SUPER ADMIN — POINTS
   // ----------------------------------------------------------
 
   if (
@@ -7007,7 +7050,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN â€” TASKS
+  // SUPER ADMIN — TASKS
   // ----------------------------------------------------------
 
   if (
@@ -7041,7 +7084,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN â€” TASK STATUS
+  // SUPER ADMIN — TASK STATUS
   // ----------------------------------------------------------
 
   if (
@@ -7131,7 +7174,7 @@ if (
   }
 
   // ----------------------------------------------------------
-  // SUPER ADMIN â€” TASK LIST
+  // SUPER ADMIN — TASK LIST
   // ----------------------------------------------------------
 
   if (
@@ -8231,7 +8274,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION â€” MY STATUS
+   VERIFICATION — MY STATUS
 ------------------------------------------------------------ */
 
 if (
@@ -8332,7 +8375,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION â€” APPLY
+   VERIFICATION — APPLY
 ------------------------------------------------------------ */
 
 if (
@@ -8599,7 +8642,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   VERIFICATION â€” PUBLIC USER STATUS
+   VERIFICATION — PUBLIC USER STATUS
 ------------------------------------------------------------ */
 
 if (
@@ -8669,7 +8712,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   SUPER ADMIN â€” VERIFICATION QUEUE
+   SUPER ADMIN — VERIFICATION QUEUE
 ------------------------------------------------------------ */
 
 if (
@@ -8785,7 +8828,7 @@ if (
 
 
 /* ------------------------------------------------------------
-   SUPER ADMIN â€” VERIFICATION ACTION
+   SUPER ADMIN — VERIFICATION ACTION
 ------------------------------------------------------------ */
 
 if (
@@ -10977,6 +11020,16 @@ process.on(
     );
   }
 );
+
+
+
+
+
+
+
+
+
+
 
 
 
