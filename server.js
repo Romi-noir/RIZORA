@@ -145,7 +145,6 @@ function normalizeDB(db) {
   normalized.payments ||= [];
   normalized.subscriptions ||= [];
   normalized.paymentEvents ||= [];
-  normalized.paymentEvents ||= [];
  normalized.liveSessions ||= [];
  normalized.creatorCoins ||= [];
  normalized.walletTransactions ||= [];
@@ -362,6 +361,61 @@ function refreshPlanStatus(user) {
   }
 
   return user;
+}
+
+function createRizoraSubscription(db,user,payment){
+  db.subscriptions ||= [];
+
+  const existing =
+    db.subscriptions.find(
+      item =>
+        item.reference === payment.reference &&
+        item.userId === user.id
+    );
+
+  if(existing){
+    existing.status = "active";
+    existing.plan = payment.plan || existing.plan;
+    existing.expiresAt = user.planExpiry;
+    return existing;
+  }
+
+  const subscription = {
+    id: uid("sub_"),
+    userId: user.id,
+    plan: payment.plan || "premium",
+    provider: "paystack",
+    reference: payment.reference,
+    status: "active",
+    autoRenew: false,
+    startedAt: new Date().toISOString(),
+    expiresAt: user.planExpiry,
+    createdAt: new Date().toISOString()
+  };
+
+  db.subscriptions.unshift(subscription);
+
+  if(db.subscriptions.length > 5000){
+    db.subscriptions =
+      db.subscriptions.slice(0,5000);
+  }
+
+  return subscription;
+}
+
+function recordPaymentEvent(db,event){
+  db.paymentEvents ||= [];
+
+  db.paymentEvents.unshift({
+    id: uid("payment_event_"),
+    ...event,
+    createdAt: new Date().toISOString()
+  });
+
+  if(db.paymentEvents.length > 10000){
+    db.paymentEvents =
+      db.paymentEvents.slice(0,10000);
+  }
 }
 
 function getUserPlan(user) {
@@ -2930,12 +2984,22 @@ if (
       payment.paidAt =
         new Date().toISOString();
 
+      recordPaymentEvent(db,{
+        type:"payment_success",
+        provider:"paystack",
+        reference:payment.reference,
+        userId:payment.userId,
+        plan:payment.plan
+      });
+
       user.plan = payment.plan || "premium";
         user.verificationBoost = payment.plan === "premium_plus" ? 20 : 10;
       user.planExpiry =
         new Date(
           Date.now() + 30 * 24 * 60 * 60 * 1000
         ).toISOString();
+
+      createRizoraSubscription(db,user,payment);
     }
 
     saveDB(db);
@@ -3006,6 +3070,14 @@ if (
       payment.paidAt =
         new Date().toISOString();
 
+      recordPaymentEvent(db,{
+        type:"payment_success",
+        provider:"paystack",
+        reference:payment.reference,
+        userId:payment.userId,
+        plan:payment.plan
+      });
+
       const user =
         db.users.find(
           u => u.id === payment.userId
@@ -3015,9 +3087,11 @@ if (
         user.plan = payment.plan || "premium";
         user.verificationBoost = payment.plan === "premium_plus" ? 20 : 10;
         user.planExpiry =
-          new Date(
-            Date.now() + 30 * 24 * 60 * 60 * 1000
-          ).toISOString();
+        new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString();
+
+      createRizoraSubscription(db,user,payment);
       }
 
       saveDB(db);
@@ -11090,6 +11164,12 @@ process.on(
     );
   }
 );
+
+
+
+
+
+
 
 
 
