@@ -1026,6 +1026,40 @@ async function readBody(req) {
 }
 
 
+async function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    let raw = "";
+    let settled = false;
+
+    req.setEncoding("utf8");
+
+    req.on("data", chunk => {
+      if (settled) return;
+      raw += chunk;
+
+      if (Buffer.byteLength(raw, "utf8") > MAX_BODY_SIZE) {
+        settled = true;
+        reject(new Error("Request body too large."));
+        try { req.destroy(); } catch (_) {}
+      }
+    });
+
+    req.on("end", () => {
+      if (settled) return;
+      settled = true;
+      resolve(raw);
+    });
+
+    req.on("error", error => {
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    });
+  });
+}
+
+
 async function readLargeJSONBody(req, limit) {
   return new Promise((resolve, reject) => {
     let raw = "";
@@ -2780,6 +2814,13 @@ async function handleRequest(
         "_" +
         crypto.randomBytes(4).toString("hex");
 
+      const controller = new AbortController();
+
+      const timeout = setTimeout(
+        () => controller.abort(),
+        10000
+      );
+
       const response = await fetch(
         "https://api.paystack.co/transaction/initialize",
         {
@@ -2792,7 +2833,12 @@ async function handleRequest(
             email: user.email,
             amount: amount * 100,
             reference,
-            callback_url: APP_URL + "/payment-success"
+            callback_url: APP_URL + "/payment-success",
+            metadata: {
+              userId: user.id,
+              username: user.username,
+              plan
+            }
           })
         }
       );
@@ -2843,7 +2889,11 @@ if (
   }
 
   const reference =
-    pathname.split("/").pop();
+    String(pathname.split("/").pop() || "").trim();
+
+  if(!reference || reference.length > 120){
+    return sendError(res,400,"Invalid payment reference.");
+  }
 
   const response = await fetch(
     "https://api.paystack.co/transaction/verify/" + reference,
@@ -2864,10 +2914,17 @@ if (
 
     const payment =
       db.payments.find(
-        p => p.reference === reference
+        p => p.reference === reference && p.userId === user.id
       );
 
     if (payment) {
+
+      if (payment.status === "success") {
+        return sendJSON(res, {
+          received: true,
+          duplicate: true
+        });
+      }
 
       payment.status = "success";
       payment.paidAt =
@@ -2899,7 +2956,15 @@ if (
     return sendError(res, 500, "Paystack secret key missing.");
   }
 
-  const body = await readBody(req);
+  const rawBody = await readRawBody(req);
+
+  let body = {};
+
+  try {
+    body = JSON.parse(rawBody || "{}");
+  } catch (_) {
+    return sendError(res,400,"Invalid webhook payload.");
+  }
 
   const signature =
     req.headers["x-paystack-signature"];
@@ -2911,7 +2976,7 @@ if (
   const hash =
     crypto
       .createHmac("sha512", PAYSTACK_SECRET_KEY)
-      .update(JSON.stringify(body))
+      .update(rawBody)
       .digest("hex");
 
   if (hash !== signature) {
@@ -2925,10 +2990,17 @@ if (
 
     const payment =
       db.payments.find(
-        p => p.reference === reference
+        p => p.reference === reference && p.userId === user.id
       );
 
     if (payment) {
+
+      if (payment.status === "success") {
+        return sendJSON(res, {
+          received: true,
+          duplicate: true
+        });
+      }
 
       payment.status = "success";
       payment.paidAt =
@@ -11018,6 +11090,14 @@ process.on(
     );
   }
 );
+
+
+
+
+
+
+
+
 
 
 
