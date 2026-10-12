@@ -4518,6 +4518,188 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     return;
   }
 
+// ----------------------------------------------------------
+// PASSWORD RESET
+// ----------------------------------------------------------
+
+if (
+  method === "POST" &&
+  pathname === "/api/auth/forgot-password"
+) {
+
+  let body;
+
+  try {
+    body = await readBody(req);
+  } catch (_) {
+    return sendError(res,400,"Invalid request.");
+  }
+
+  const email =
+    normalizeEmail(body.email || "");
+
+  if (email) {
+
+    const user =
+      db.users.find(
+        item =>
+          normalizeEmail(item.email) === email
+      );
+
+    if (user) {
+
+      db.passwordResetTokens ||= [];
+
+      const rawToken =
+        crypto.randomBytes(32).toString("hex");
+
+      const tokenHash =
+        crypto
+          .createHash("sha256")
+          .update(rawToken)
+          .digest("hex");
+
+      db.passwordResetTokens =
+        db.passwordResetTokens.filter(
+          item => item.userId !== user.id
+        );
+
+      db.passwordResetTokens.push({
+        id: uid("prt_"),
+        userId:user.id,
+        tokenHash,
+        expiresAt:
+          new Date(
+            Date.now() + 30 * 60 * 1000
+          ).toISOString(),
+        createdAt:
+          new Date().toISOString()
+      });
+
+      const resetUrl =
+        getPublicBaseURL(req) +
+        "/reset-password?token=" +
+        rawToken;
+
+      saveDB(db);
+
+      try {
+        await sendRizoraEmail({
+          to:user.email,
+          subject:"Reset your RIZORA password",
+          text:
+            "Use this link to reset your RIZORA password:\n\n" +
+            resetUrl,
+          html:
+            "<p>Reset your RIZORA password.</p>" +
+            "<p><a href=\"" +
+            resetUrl +
+            "\">Reset Password</a></p>"
+        });
+      } catch (_) {}
+    }
+  }
+
+  return sendJSON(res,200,{
+    success:true,
+    message:"If that email exists, a password reset link has been sent."
+  });
+}
+
+
+if (
+  method === "POST" &&
+  pathname === "/api/auth/reset-password"
+) {
+
+  let body;
+
+  try {
+    body = await readBody(req);
+  } catch (_) {
+    return sendError(res,400,"Invalid request.");
+  }
+
+  const token =
+    String(body.token || "").trim();
+
+  const password =
+    String(body.password || "");
+
+  if (!token || !password) {
+    return sendError(
+      res,
+      400,
+      "Token and password are required."
+    );
+  }
+
+  if (
+    password.length < 8 ||
+    !/[a-z]/.test(password) ||
+    !/[A-Z]/.test(password) ||
+    !/[0-9]/.test(password)
+  ) {
+    return sendError(
+      res,
+      400,
+      "Password must contain uppercase, lowercase and a number."
+    );
+  }
+
+  db.passwordResetTokens ||= [];
+
+  const tokenHash =
+    crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+  const reset =
+    db.passwordResetTokens.find(
+      item =>
+        item.tokenHash === tokenHash &&
+        new Date(item.expiresAt) > new Date()
+    );
+
+  if (!reset) {
+    return sendError(
+      res,
+      400,
+      "Invalid or expired reset token."
+    );
+  }
+
+  const user =
+    db.users.find(
+      item => item.id === reset.userId
+    );
+
+  if (!user) {
+    return sendError(
+      res,
+      404,
+      "User not found."
+    );
+  }
+
+  user.passwordHash =
+    await hashPassword(password);
+
+  user.passwordSetupRequired = false;
+
+  db.passwordResetTokens =
+    db.passwordResetTokens.filter(
+      item => item.id !== reset.id
+    );
+
+  saveDB(db);
+
+  return sendJSON(res,200,{
+    success:true,
+    message:"Password reset successful."
+  });
+}
   // ----------------------------------------------------------
   // AUTH / ME
   // ----------------------------------------------------------
@@ -11594,6 +11776,8 @@ process.on(
     );
   }
 );
+
+
 
 
 
