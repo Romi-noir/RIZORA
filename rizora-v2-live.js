@@ -8,6 +8,28 @@ function ensureLive(db){
   db.liveViewers = db.liveViewers || [];
 }
 
+function cleanupLiveSessions(db){
+
+  const now = Date.now();
+
+  db.liveSessions.forEach(
+    live=>{
+
+      if(
+        live.active &&
+        now - new Date(live.startedAt).getTime() > 6 * 60 * 60 * 1000
+      ){
+        live.active=false;
+        live.endedAt=new Date().toISOString();
+        live.autoClosed=true;
+      }
+
+    }
+  );
+
+}
+
+
 function uid(prefix){
   return prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
 }
@@ -119,12 +141,63 @@ async function handleRizoraLive(ctx){
 
   ensureLive(db);
 
+  cleanupLiveSessions(db);
+
   const url=new URL(req.url,"http://localhost");
   const path=url.pathname;
   const method=req.method;
 
   const user=getCurrentUser(db,req);
 
+
+  if(path==="/api/v2/live/analytics" && method==="GET"){
+
+    if(!user){
+      return sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+    }
+
+    const sessions =
+      db.liveSessions.filter(
+        x=>x.userId===user.id
+      );
+
+    const totalGiftRevenue =
+      sessions.reduce(
+        (sum,x)=>
+          sum + Number(x.giftRevenue || 0),
+        0
+      );
+
+    const peakViewers =
+      sessions.reduce(
+        (max,x)=>
+          Math.max(
+            max,
+            Number(x.peakViewers || 0)
+          ),
+        0
+      );
+
+    const totalViewerJoins =
+      sessions.reduce(
+        (sum,x)=>
+          sum + Number(x.totalViewerJoins || 0),
+        0
+      );
+
+    return sendJSON(res,200,{
+      success:true,
+      sessions:sessions.length,
+      peakViewers,
+      totalViewerJoins,
+      totalGiftRevenue
+    });
+
+  }
 
   if(path==="/api/v2/live/status" && method==="GET"){
 
@@ -195,7 +268,10 @@ async function handleRizoraLive(ctx){
       startedAt:new Date().toISOString(),
       active:true,
       rewardClaimed:false,
-      viewers:0
+      viewers:0,
+      peakViewers:0,
+      totalViewerJoins:0,
+      giftRevenue:0
     };
 
 
@@ -273,12 +349,20 @@ async function handleRizoraLive(ctx){
       active:true
     });
 
+    live.totalViewerJoins =
+      Number(live.totalViewerJoins || 0) + 1;
+
     live.viewers =
       db.liveViewers.filter(
         x=>
           x.liveId===liveId &&
           x.active
       ).length;
+
+    live.peakViewers = Math.max(
+      Number(live.peakViewers || 0),
+      live.viewers
+    );
 
     saveDB(db);
 
@@ -510,6 +594,18 @@ async function handleRizoraLive(ctx){
       "gift_received"
     );
 
+    const activeLive =
+      db.liveSessions.find(
+        x=>
+          x.userId===creatorId &&
+          x.active
+      );
+
+    if(activeLive){
+      activeLive.giftRevenue =
+        Number(activeLive.giftRevenue || 0) + amount;
+    }
+
 
     saveDB(db);
 
@@ -662,6 +758,13 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
+
+
+
+
+
+
 
 
 
