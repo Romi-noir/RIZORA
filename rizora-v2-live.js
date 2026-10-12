@@ -333,10 +333,20 @@ async function handleRizoraLive(ctx){
 
   if(path==="/api/v2/live/status" && method==="GET"){
 
-    const liveUsers=db.liveSessions.filter(x=>x.active).map(x=>({
-      userId:x.userId,
-      username:x.username
-    }));
+    const liveUsers =
+      db.liveSessions
+      .filter(
+        x=>x.active
+      )
+      .map(
+        x=>({
+          username:x.username || "creator",
+          title:x.title || "RIZORA Live",
+          category:x.category || "general",
+          viewers:Number(x.viewers || 0),
+          thumbnail:x.thumbnail || ""
+        })
+      );
 
     return sendJSON(res,200,{
       success:true,
@@ -1031,6 +1041,7 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
 
 
 
