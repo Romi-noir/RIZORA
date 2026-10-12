@@ -174,12 +174,26 @@ async function handleRizoraLive(ctx){
         "You need at least 800 followers to host live streams."
       );
     }
+
+    const existingLive =
+      db.liveSessions.find(
+        x=>x.userId===user.id && x.active
+      );
+
+    if(existingLive){
+      return sendError(
+        res,
+        400,
+        "You already have an active live session."
+      );
+    }
     const live={
       id:uid("live"),
       userId:user.id,
       username:user.username,
       startedAt:new Date().toISOString(),
       active:true,
+      rewardClaimed:false,
       viewers:0
     };
 
@@ -212,17 +226,28 @@ async function handleRizoraLive(ctx){
 
     if(live){
 
-      live.active=false;
-      live.endedAt=new Date().toISOString();
+      if(live.rewardClaimed){
+        return sendError(
+          res,
+          400,
+          "Live reward already claimed."
+        );
+      }
 
-
-      const minutes=Math.max(
-        1,
-        Math.floor(
-          (Date.now()-new Date(live.startedAt))/60000
-        )
+      const minutes=Math.floor(
+        (Date.now()-new Date(live.startedAt))/60000
       );
 
+      if(minutes < 5){
+        return sendError(
+          res,
+          400,
+          "Live session must last at least 5 minutes."
+        );
+      }
+
+      live.active=false;
+      live.endedAt=new Date().toISOString();
 
       addCoins(
         db,
@@ -230,6 +255,8 @@ async function handleRizoraLive(ctx){
         minutes,
         "live_time_reward"
       );
+
+      live.rewardClaimed=true;
 
     }
 
@@ -404,6 +431,13 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
+
+
+
+
+
+
 
 
 
