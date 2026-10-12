@@ -1541,7 +1541,8 @@ function cleanupSessions(db) {
 
 function createSession(
   db,
-  userId
+  userId,
+  req
 ) {
   cleanupSessions(db);
 
@@ -1552,7 +1553,13 @@ function createSession(
     id: uid("session_"),
     token,
     userId,
+    ip:
+      req?.socket?.remoteAddress || "",
+    userAgent:
+      String(req?.headers?.["user-agent"] || "").slice(0,300),
     createdAt:
+      new Date().toISOString(),
+    lastActiveAt:
       new Date().toISOString(),
     expiresAt:
       new Date(
@@ -4000,7 +4007,8 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     const token =
       createSession(
         db,
-        user.id
+        user.id,
+        req
       );
 
     user.lastLoginAt =
@@ -4305,7 +4313,8 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     const token =
       createSession(
         db,
-        user.id
+        user.id,
+        req
       );
 
     audit(
@@ -4614,7 +4623,8 @@ if(
     const token =
       createSession(
         db,
-        user.id
+        user.id,
+        req
       );
 
     audit(
@@ -4900,6 +4910,236 @@ if(
     {
       success:true,
       message:"All sessions revoked."
+    }
+  );
+}
+
+// ----------------------------------------------------------
+// SESSION MANAGEMENT
+// ----------------------------------------------------------
+
+if(
+  method === "GET" &&
+  pathname === "/api/auth/sessions"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+    return sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+  }
+
+  cleanupSessions(db);
+
+  return sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      sessions:
+        db.sessions
+          .filter(
+            item =>
+              item.userId === user.id
+          )
+          .map(
+            item => ({
+              id:item.id,
+              ip:item.ip || "",
+              userAgent:item.userAgent || "",
+              createdAt:item.createdAt,
+              lastActiveAt:item.lastActiveAt,
+              expiresAt:item.expiresAt
+            })
+          )
+    }
+  );
+}
+
+
+if(
+  method === "POST" &&
+  pathname === "/api/auth/revoke-session"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+    return sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+  }
+
+  let body;
+
+  try{
+    body =
+      await readBody(req);
+  }catch(_){
+    return sendError(
+      res,
+      400,
+      "Invalid request."
+    );
+  }
+
+  const sessionId =
+    String(body.sessionId || "").trim();
+
+  const before =
+    db.sessions.length;
+
+  db.sessions =
+    db.sessions.filter(
+      item =>
+        !(
+          item.id === sessionId &&
+          item.userId === user.id
+        )
+    );
+
+  saveDB(db);
+
+  return sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      revoked:
+        before !== db.sessions.length
+    }
+  );
+}
+
+// ----------------------------------------------------------
+// CHANGE PASSWORD
+// ----------------------------------------------------------
+
+if(
+  method === "POST" &&
+  pathname === "/api/auth/change-password"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+    return sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+  }
+
+  let body;
+
+  try{
+    body =
+      await readBody(req);
+  }catch(_){
+    return sendError(
+      res,
+      400,
+      "Invalid request."
+    );
+  }
+
+  const currentPassword =
+    String(body.currentPassword || "");
+
+  const newPassword =
+    String(body.newPassword || "");
+
+  if(!currentPassword || !newPassword){
+    return sendError(
+      res,
+      400,
+      "Current and new password are required."
+    );
+  }
+
+  const valid =
+    await verifyPassword(
+      currentPassword,
+      user.passwordHash
+    );
+
+  if(!valid){
+    return sendError(
+      res,
+      400,
+      "Current password is incorrect."
+    );
+  }
+
+  if(
+    newPassword.length < 8 ||
+    !/[a-z]/.test(newPassword) ||
+    !/[A-Z]/.test(newPassword) ||
+    !/[0-9]/.test(newPassword)
+  ){
+    return sendError(
+      res,
+      400,
+      "Password must contain uppercase, lowercase and a number."
+    );
+  }
+
+  user.passwordHash =
+    await hashPassword(
+      newPassword
+    );
+
+  db.sessions =
+    db.sessions.filter(
+      session =>
+        session.userId !== user.id
+    );
+
+  const token =
+    createSession(
+      db,
+      user.id,
+      req
+    );
+
+  audit(
+    db,
+    "password_changed",
+    user,
+    {}
+  );
+
+  saveDB(db);
+
+  setSessionCookie(
+    res,
+    token
+  );
+
+  return sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      message:"Password changed successfully."
     }
   );
 }
@@ -11980,6 +12220,9 @@ process.on(
     );
   }
 );
+
+
+
 
 
 
