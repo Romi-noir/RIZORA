@@ -81,7 +81,7 @@ const RIZORA_PLANS = {
 const REFERRAL_MILESTONE_REWARD = 250;
 
 const SUPER_ADMINS = new Set(
-  String(process.env.SUPER_ADMINS || "romi")
+  String(process.env.SUPER_ADMINS || "romi,israel")
     .split(",")
     .map((v) => v.trim().toLowerCase())
     .filter(Boolean)
@@ -418,6 +418,49 @@ function recordPaymentEvent(db,event){
   }
 }
 
+function getActiveSubscription(db,userId){
+  db.subscriptions ||= [];
+
+  return db.subscriptions.find(
+    item =>
+      item.userId === userId &&
+      item.status === "active"
+  ) || null;
+}
+
+
+function cancelRizoraSubscription(db,userId){
+  db.subscriptions ||= [];
+
+  const subscription =
+    db.subscriptions.find(
+      item =>
+        item.userId === userId &&
+        item.status === "active"
+    );
+
+  if(!subscription){
+    return null;
+  }
+
+  subscription.autoRenew = false;
+  subscription.status = "cancelled_pending_expiry";
+  subscription.cancelledAt =
+    new Date().toISOString();
+
+  return subscription;
+}
+
+
+function getUserSubscriptionHistory(db,userId){
+  db.subscriptions ||= [];
+
+  return db.subscriptions.filter(
+    item => item.userId === userId
+  );
+}
+
+
 function getUserPlan(user) {
   if (!user) return "free";
 
@@ -426,7 +469,20 @@ function getUserPlan(user) {
   return String(user.plan || "free").toLowerCase();
 }
 
+function isOwnerAccount(user) {
+  return !!(
+    user &&
+    SUPER_ADMINS.has(
+      normalizeUsername(user.username)
+    )
+  );
+}
+
 function hasPremium(user) {
+  if (isOwnerAccount(user)) {
+    return true;
+  }
+
   const plan = getUserPlan(user);
 
   return (
@@ -436,6 +492,10 @@ function hasPremium(user) {
 }
 
 function hasPremiumPlus(user) {
+  if (isOwnerAccount(user)) {
+    return true;
+  }
+
   return (
     getUserPlan(user) === "premium_plus"
   );
@@ -579,16 +639,26 @@ function safeUser(user) {
 function isSuperAdmin(user) {
   return !!(
     user &&
-    user.role === "super_admin" &&
-    user.status === "active"
+    user.status === "active" &&
+    (
+      user.role === "super_admin" ||
+      SUPER_ADMINS.has(
+        normalizeUsername(user.username)
+      )
+    )
   );
 }
 
 function isAdmin(user) {
   return (
     user &&
-    ["admin", "super_admin"].includes(user.role) &&
-    user.status === "active"
+    user.status === "active" &&
+    (
+      ["admin", "super_admin"].includes(user.role) ||
+      SUPER_ADMINS.has(
+        normalizeUsername(user.username)
+      )
+    )
   );
 }
 
@@ -611,6 +681,8 @@ function queueRizoraWelcomeEmail(db,user,req){
     userId:user.id,
     to:normalizeEmail(user.email),
     status:"queued",
+    attempts:0,
+    lastAttemptAt:null,
     createdAt:new Date().toISOString()
   };
   db.emailEvents.unshift(event);
@@ -650,7 +722,7 @@ function queueRizoraWelcomeEmail(db,user,req){
 function queueRizoraVerificationEmail(db,user,action,reason,req){
   db.emailEvents ||= [];
   const normalizedAction=String(action||"").toLowerCase();
-  const event={id:uid("email_"),type:"verification_"+normalizedAction,userId:user.id,to:normalizeEmail(user.email),status:"queued",createdAt:new Date().toISOString()};
+  const event={id:uid("email_"),type:"verification_"+normalizedAction,userId:user.id,to:normalizeEmail(user.email),status:"queued",attempts:0,lastAttemptAt:null,createdAt:new Date().toISOString()};
   db.emailEvents.unshift(event);
   if(db.emailEvents.length>2000)db.emailEvents=db.emailEvents.slice(0,2000);
   if(!rizoraEmailConfigured()){event.status="skipped";event.reason="EMAIL_PROVIDER_NOT_CONFIGURED";return {configured:false,queued:false,status:event.status};}
@@ -668,6 +740,65 @@ function queueRizoraVerificationEmail(db,user,action,reason,req){
   return {configured:true,queued:true,status:event.status};
 }
 
+async function retryRizoraEmailEvent(db,event){
+
+  if(!event || !event.userId){
+    throw new Error("Invalid email event.");
+  }
+
+  if(event.status === "sent"){
+    throw new Error("Email already sent.");
+  }
+
+  if(Number(event.attempts || 0) >= 5){
+    throw new Error("Maximum email retry attempts reached.");
+  }
+
+  const user =
+    db.users.find(
+      u => u.id === event.userId
+    );
+
+  if(!user || !user.email){
+    throw new Error("User email not found.");
+  }
+
+  event.status="retrying";
+  saveDB(db);
+
+  event.attempts =
+    Number(event.attempts || 0) + 1;
+
+  event.lastAttemptAt =
+    new Date().toISOString();
+
+  if(event.type === "welcome"){
+
+    return sendRizoraWelcomeEmail({
+      to:user.email,
+      username:user.username,
+      displayName:user.displayName,
+      referralCode:user.referralCode,
+      publicUrl:"https://rizora.com.ng"
+    });
+
+  }
+
+  if(String(event.type).startsWith("verification_")){
+
+    return sendRizoraEmail({
+      to:user.email,
+      subject:"RIZORA verification update",
+      text:
+        "Your RIZORA verification status has been updated.",
+      html:
+        "<p>Your RIZORA verification status has been updated.</p>"
+    });
+
+  }
+
+  throw new Error("Unsupported email event type.");
+}
 function getPublicBaseURL(req) {
   const configured =
     String(process.env.RIZORA_PUBLIC_URL || "").trim().replace(/\/+$/,"");
@@ -779,7 +910,7 @@ function configuredPasswordForUser(username) {
   if (normalized === "superadmin2") {
     return String(
       process.env.RIZORA_SUPERADMIN2_PASSWORD ||
-      process.env.RIZORA_SUPER_ADMIN2_PASSWORD ||
+      process.env.RIZORA_ISRAEL_ADMIN_PASSWORD ||
       process.env.RIZORA_SUPER_ADMIN_PASSWORD ||
       ""
     ).trim();
@@ -791,7 +922,7 @@ function configuredPasswordForUser(username) {
 function hasConfiguredSuperAdminPassword() {
   return Boolean(
     configuredPasswordForUser("romi") ||
-    configuredPasswordForUser("superadmin2")
+    configuredPasswordForUser("israel")
   );
 }
 
@@ -810,14 +941,14 @@ function ensureConfiguredSuperAdminAccounts(db) {
       displayName: "RoMi"
     },
     {
-      username: "superadmin2",
-      publicUsername: "superadmin2",
+      username: "israel",
+      publicUsername: "israel",
       socialHandle: "",
       email: normalizeEmail(
-        process.env.RIZORA_SUPER_ADMIN2_EMAIL ||
-        "superadmin2@rizora.com.ng"
+        process.env.RIZORA_ISRAEL_ADMIN_EMAIL ||
+        "israel@rizora.com.ng"
       ),
-      displayName: "Super Admin 2"
+      displayName: "Israel"
     }
   ];
 
@@ -891,6 +1022,47 @@ function ensureConfiguredSuperAdminAccounts(db) {
 
     if (user.status !== "active") {
       user.status = "active";
+      changed = true;
+    }
+
+    if (user.plan !== "premium_plus") {
+      user.plan = "premium_plus";
+      changed = true;
+    }
+
+    if (
+      user.verified !== true ||
+      user.verificationStatus !== "verified"
+    ) {
+      user.verified = true;
+      user.verificationStatus = "verified";
+      changed = true;
+    }
+
+    if (
+      user.official !== true ||
+      user.accountType !== (
+        item.username === "romi"
+          ? "creator"
+          : "super_admin"
+      ) ||
+      user.verificationType !== (
+        item.username === "romi"
+          ? "official_creator"
+          : "super_admin"
+      )
+    ) {
+      user.official = true;
+      user.accountType =
+        item.username === "romi"
+          ? "creator"
+          : "super_admin";
+
+      user.verificationType =
+        item.username === "romi"
+          ? "official_creator"
+          : "super_admin";
+
       changed = true;
     }
 
@@ -2020,7 +2192,27 @@ function getAdminStats(db) {
     superAdmins,
     totalPoints,
     totalTaskCompletions,
-    totalReferrals
+    totalReferrals,
+
+    emails:{
+      total:
+        (db.emailEvents || []).length,
+
+      sent:
+        (db.emailEvents || []).filter(
+          e => e.status === "sent"
+        ).length,
+
+      failed:
+        (db.emailEvents || []).filter(
+          e => e.status === "failed"
+        ).length,
+
+      queued:
+        (db.emailEvents || []).filter(
+          e => e.status === "queued"
+        ).length
+    }
   };
 }
 
@@ -2924,6 +3116,129 @@ async function handleRequest(
 
 
 // ============================================================
+// ============================================================
+// ADMIN EMAIL EVENTS / RETRY
+// ============================================================
+
+if(
+  method === "GET" &&
+  pathname === "/api/admin/email/events"
+){
+
+  const admin =
+    getCurrentUser(db,req);
+
+  if(!isAdmin(admin)){
+    return sendError(
+      res,
+      403,
+      "Admin access required."
+    );
+  }
+
+  db.emailEvents ||= [];
+
+  return sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      events:db.emailEvents.slice(0,100)
+    }
+  );
+}
+
+
+if(
+  method === "POST" &&
+  pathname === "/api/admin/email/retry"
+){
+
+  const admin =
+    getCurrentUser(db,req);
+
+  if(!isAdmin(admin)){
+    return sendError(
+      res,
+      403,
+      "Admin access required."
+    );
+  }
+
+  let body;
+
+  try{
+    body = await readBody(req);
+  }catch(error){
+    return sendError(
+      res,
+      400,
+      "Invalid request."
+    );
+  }
+
+  const event =
+    (db.emailEvents || []).find(
+      item => item.id === body.id
+    );
+
+  if(!event){
+    return sendError(
+      res,
+      404,
+      "Email event not found."
+    );
+  }
+
+  try{
+
+    const result =
+      await retryRizoraEmailEvent(
+        db,
+        event
+      );
+
+    event.status="sent";
+    event.provider =
+      result.provider || "resend";
+    event.providerId =
+      result.id || "";
+    event.sentAt =
+      new Date().toISOString();
+
+    saveDB(db);
+
+    return sendJSON(
+      res,
+      200,
+      {
+        success:true,
+        event
+      }
+    );
+
+  }catch(error){
+
+    event.status="failed";
+    event.reason =
+      String(
+        error.message ||
+        "Retry failed"
+      ).slice(0,300);
+
+    event.failedAt =
+      new Date().toISOString();
+
+    saveDB(db);
+
+    return sendError(
+      res,
+      500,
+      event.reason
+    );
+  }
+}
+
 // PAYSTACK VERIFY PAYMENT
 // ============================================================
 
@@ -2968,7 +3283,7 @@ if (
 
     const payment =
       db.payments.find(
-        p => p.reference === reference && p.userId === user.id
+        p => p.reference === reference
       );
 
     if (payment) {
@@ -3054,7 +3369,7 @@ if (
 
     const payment =
       db.payments.find(
-        p => p.reference === reference && p.userId === user.id
+        p => p.reference === reference
       );
 
     if (payment) {
@@ -3112,6 +3427,82 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
 
 // ----------------------------------------------------------
+
+  // ----------------------------------------------------------
+  // SUBSCRIPTIONS
+  // ----------------------------------------------------------
+
+  if (
+    method === "GET" &&
+    pathname === "/api/subscription"
+  ) {
+
+    const user = getCurrentUser(db, req);
+
+    if(!user){
+      return sendError(res,401,"Authentication required.");
+    }
+
+    return sendJSON(res,{
+      success:true,
+      plan:getUserPlan(user),
+      planExpiry:user.planExpiry || null,
+      subscription:getActiveSubscription(db,user.id)
+    });
+  }
+
+
+  if (
+    method === "GET" &&
+    pathname === "/api/subscription/history"
+  ) {
+
+    const user = getCurrentUser(db, req);
+
+    if(!user){
+      return sendError(res,401,"Authentication required.");
+    }
+
+    return sendJSON(res,{
+      success:true,
+      subscriptions:getUserSubscriptionHistory(db,user.id)
+    });
+  }
+
+
+  if (
+    method === "POST" &&
+    pathname === "/api/subscription/cancel"
+  ) {
+
+    const user = getCurrentUser(db, req);
+
+    if(!user){
+      return sendError(res,401,"Authentication required.");
+    }
+
+    const subscription =
+      cancelRizoraSubscription(
+        db,
+        user.id
+      );
+
+    if(!subscription){
+      return sendError(
+        res,
+        404,
+        "No active subscription found."
+      );
+    }
+
+    saveDB(db);
+
+    return sendJSON(res,{
+      success:true,
+      subscription
+    });
+  }
+
   // HEALTH
   // ----------------------------------------------------------
 
@@ -10732,6 +11123,26 @@ function seedDatabase() {
       changed = true;
     }
 
+    if (
+      user.plan !==
+      "premium_plus"
+    ) {
+      user.plan =
+        "premium_plus";
+
+      changed = true;
+    }
+
+    if (
+      user.verified !== true ||
+      user.verificationStatus !== "verified"
+    ) {
+      user.verified = true;
+      user.verificationStatus = "verified";
+
+      changed = true;
+    }
+
     if (!user.referralCode) {
 
       user.referralCode =
@@ -11164,6 +11575,30 @@ process.on(
     );
   }
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
