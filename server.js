@@ -688,6 +688,10 @@ function queueRizoraWelcomeEmail(db,user,req){
   db.emailEvents.unshift(event);
   if(db.emailEvents.length>2000)db.emailEvents=db.emailEvents.slice(0,2000);
 
+  try{
+    saveDB(db);
+  }catch(_){}
+
   if(!rizoraEmailConfigured()){
     event.status="skipped";
     event.reason="EMAIL_PROVIDER_NOT_CONFIGURED";
@@ -725,6 +729,11 @@ function queueRizoraVerificationEmail(db,user,action,reason,req){
   const event={id:uid("email_"),type:"verification_"+normalizedAction,userId:user.id,to:normalizeEmail(user.email),status:"queued",attempts:0,lastAttemptAt:null,createdAt:new Date().toISOString()};
   db.emailEvents.unshift(event);
   if(db.emailEvents.length>2000)db.emailEvents=db.emailEvents.slice(0,2000);
+
+  try{
+    saveDB(db);
+  }catch(_){}
+
   if(!rizoraEmailConfigured()){event.status="skipped";event.reason="EMAIL_PROVIDER_NOT_CONFIGURED";return {configured:false,queued:false,status:event.status};}
   const name=String(user.displayName||user.username||"Creator").trim().slice(0,120);
   const username=String(user.publicUsername||user.username||"creator").replace(/^@/,"").trim().slice(0,80);
@@ -736,6 +745,16 @@ function queueRizoraVerificationEmail(db,user,action,reason,req){
   const subject=isVerified?"Your RIZORA verification is approved":"RIZORA verification update";
   const text=["Hi "+name+",","",isVerified?"Your RIZORA creator account @"+username+" is now verified.":"Your RIZORA verification request for @"+username+" is now "+statusLabel+".",why?"Review note: "+why:"","Open RIZORA: "+base,"","RIZORA · CREATE. GROW. EARN."].filter(Boolean).join("\n");
   const html='<div style="margin:0;background:#07050d;color:#f8f6ff;font-family:Arial,Helvetica,sans-serif;padding:32px 16px"><div style="max-width:620px;margin:0 auto;background:#100b1d;border:1px solid #33215a;border-radius:22px;padding:30px"><div style="font-size:12px;letter-spacing:4px;color:#bba8ff;font-weight:800">RIZORA</div><h1 style="margin:12px 0 8px;font-size:30px">'+(isVerified?"Verification approved":"Verification update")+'</h1><p style="color:#b8aec9;line-height:1.7">Hi '+safe(name)+', your account @'+safe(username)+' has a verification status update: <b>'+safe(statusLabel)+'</b>.</p>'+(why?'<div style="margin:18px 0;padding:14px;border-radius:14px;background:#090611;border:1px solid #2a1a49;color:#c8bfd8">Review note: '+safe(why)+'</div>':"")+'<a href="'+safe(base)+'" style="display:inline-block;padding:13px 19px;background:#7b4dff;color:#fff;text-decoration:none;border-radius:12px;font-weight:800">Open RIZORA</a></div></div>';
+  event.payload = {
+    subject: String(subject || "").slice(0,200),
+    text: String(text || "").slice(0,3000),
+    html: String(html || "").slice(0,8000)
+  };
+
+  try{
+    saveDB(db);
+  }catch(_){}
+
   Promise.resolve().then(function(){return sendRizoraEmail({to:user.email,subject:subject,text:text,html:html});}).then(function(result){event.status="sent";event.provider=result&&result.provider||"resend";event.providerId=result&&result.id||"";event.sentAt=new Date().toISOString();saveDB(db);}).catch(function(error){event.status="failed";event.reason=String(error&&error.message||"Email delivery failed").slice(0,300);event.failedAt=new Date().toISOString();console.error("RIZORA verification email failed:",event.reason);try{saveDB(db);}catch(_){}});
   return {configured:true,queued:true,status:event.status};
 }
@@ -786,13 +805,13 @@ async function retryRizoraEmailEvent(db,event){
 
   if(String(event.type).startsWith("verification_")){
 
+    const payload = event.payload || {};
+
     return sendRizoraEmail({
       to:user.email,
-      subject:"RIZORA verification update",
-      text:
-        "Your RIZORA verification status has been updated.",
-      html:
-        "<p>Your RIZORA verification status has been updated.</p>"
+      subject:payload.subject || "RIZORA verification update",
+      text:payload.text || "Your RIZORA verification status has been updated.",
+      html:payload.html || "<p>Your RIZORA verification status has been updated.</p>"
     });
 
   }
@@ -11575,6 +11594,10 @@ process.on(
     );
   }
 );
+
+
+
+
 
 
 
