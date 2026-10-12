@@ -673,6 +673,79 @@ function randomReferralCode(username) {
     .toUpperCase()}`;
 }
 
+function createEmailVerificationToken(db,user){
+
+  db.emailVerificationTokens ||= [];
+
+  const rawToken =
+    crypto.randomBytes(32).toString("hex");
+
+  const tokenHash =
+    crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+
+  db.emailVerificationTokens =
+    db.emailVerificationTokens.filter(
+      item => item.userId !== user.id
+    );
+
+  db.emailVerificationTokens.push({
+    id: uid("evt_"),
+    userId:user.id,
+    tokenHash,
+    expiresAt:
+      new Date(
+        Date.now() + 24 * 60 * 60 * 1000
+      ).toISOString(),
+    createdAt:
+      new Date().toISOString()
+  });
+
+  return rawToken;
+}
+
+
+async function sendEmailVerificationEmail(db,user,req){
+
+  const token =
+    createEmailVerificationToken(
+      db,
+      user
+    );
+
+  const url =
+    getPublicBaseURL(req) +
+    "/verify-email?token=" +
+    token;
+
+  try{
+
+    await sendRizoraEmail({
+      to:user.email,
+      subject:"Verify your RIZORA email",
+      text:
+        "Verify your RIZORA email:\n\n" +
+        url,
+      html:
+        "<h2>Verify your RIZORA email</h2>" +
+        "<p><a href=\"" +
+        url +
+        "\">Verify Email</a></p>"
+    });
+
+  }catch(error){
+
+    console.error(
+      "RIZORA email verification failed:",
+      error.message
+    );
+
+  }
+
+}
+
 function queueRizoraWelcomeEmail(db,user,req){
   db.emailEvents ||= [];
   const event={
@@ -4243,6 +4316,12 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
 
     const welcomeEmailDelivery = queueRizoraWelcomeEmail(db,user,req);
 
+    sendEmailVerificationEmail(
+      db,
+      user,
+      req
+    );
+
     db.notifications ||= [];
     db.notifications.unshift({
       id:uid("notif_"),
@@ -4279,6 +4358,84 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
 
     return;
   }
+
+// ----------------------------------------------------------
+// VERIFY EMAIL
+// ----------------------------------------------------------
+
+if(
+  method === "GET" &&
+  pathname === "/api/auth/verify-email"
+){
+
+  const url =
+    new URL(req.url,"http://localhost");
+
+  const token =
+    String(url.searchParams.get("token") || "").trim();
+
+  if(!token){
+    return sendError(
+      res,
+      400,
+      "Verification token missing."
+    );
+  }
+
+  db.emailVerificationTokens ||= [];
+
+  const tokenHash =
+    crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+  const record =
+    db.emailVerificationTokens.find(
+      item =>
+        item.tokenHash === tokenHash &&
+        new Date(item.expiresAt) > new Date()
+    );
+
+  if(!record){
+    return sendError(
+      res,
+      400,
+      "Invalid or expired verification token."
+    );
+  }
+
+  const user =
+    db.users.find(
+      item => item.id === record.userId
+    );
+
+  if(!user){
+    return sendError(
+      res,
+      404,
+      "User not found."
+    );
+  }
+
+  user.emailVerified = true;
+
+  db.emailVerificationTokens =
+    db.emailVerificationTokens.filter(
+      item => item.id !== record.id
+    );
+
+  saveDB(db);
+
+  return sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      message:"Email verified successfully."
+    }
+  );
+}
 
   // ----------------------------------------------------------
   // LOGIN
@@ -11776,6 +11933,8 @@ process.on(
     );
   }
 );
+
+
 
 
 
