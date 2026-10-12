@@ -385,6 +385,71 @@ async function handleRizoraLive(ctx){
 
 
 
+  if(path==="/api/v2/gifts" && method==="GET"){
+
+    if(!user){
+      return sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+    }
+
+    const sent =
+      db.gifts
+      .filter(
+        x=>x.from===user.id
+      )
+      .map(
+        x=>{
+          const creator =
+            db.users &&
+            db.users.find(
+              u=>u.id===x.to
+            );
+
+          return {
+            username:
+              creator?.username ||
+              "creator",
+            amount:Number(x.amount || 0),
+            createdAt:x.createdAt
+          };
+        }
+      );
+
+    const received =
+      db.gifts
+      .filter(
+        x=>x.to===user.id
+      )
+      .map(
+        x=>{
+          const sender =
+            db.users &&
+            db.users.find(
+              u=>u.id===x.from
+            );
+
+          return {
+            username:
+              sender?.username ||
+              "creator",
+            amount:Number(x.amount || 0),
+            createdAt:x.createdAt
+          };
+        }
+      );
+
+    return sendJSON(res,200,{
+      success:true,
+      sent,
+      received
+    });
+
+  }
+
+
   if(path==="/api/v2/wallet" && method==="GET"){
 
     if(!user){
@@ -459,6 +524,7 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
 
 
 
