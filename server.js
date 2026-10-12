@@ -6345,6 +6345,22 @@ if (
   const user =
     getCurrentUser(db, req);
 
+  if(!user){
+    return sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+  }
+
+  if(!hasPremium(user)){
+    return sendError(
+      res,
+      403,
+      "Premium subscription required to create boosts."
+    );
+  }
+
   let body = {};
 
   try {
@@ -12515,6 +12531,7 @@ process.on(
     );
   }
 );
+
 
 
 
