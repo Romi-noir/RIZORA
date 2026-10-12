@@ -419,10 +419,29 @@ async function handleRizoraLive(ctx){
 
   if(path==="/api/v2/live/leaderboard" && method==="GET"){
 
-    const leaderboard=
+    const leaderboard =
       db.creatorCoins
-      .sort((a,b)=>b.coins-a.coins)
-      .slice(0,50);
+      .slice()
+      .sort(
+        (a,b)=>b.coins-a.coins
+      )
+      .slice(0,50)
+      .map(
+        x=>{
+          const creator =
+            db.users &&
+            db.users.find(
+              u=>u.id===x.userId
+            );
+
+          return {
+            username:
+              creator?.username ||
+              "creator",
+            coins:Number(x.coins || 0)
+          };
+        }
+      );
 
 
     return sendJSON(res,200,{
@@ -440,6 +459,7 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
 
 
 
