@@ -1622,6 +1622,25 @@ function clearFailedLogin(user){
   user.lockedUntil = null;
 
 }
+function createCSRFToken(){
+
+  return crypto
+    .randomBytes(32)
+    .toString("hex");
+
+}
+
+
+function validateCSRF(req){
+
+  const token =
+    String(
+      req.headers["x-csrf-token"] || ""
+    ).trim();
+
+  return Boolean(token);
+}
+
 function createSession(
   db,
   userId,
@@ -12387,6 +12406,7 @@ process.on(
     );
   }
 );
+
 
 
 
