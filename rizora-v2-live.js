@@ -505,6 +505,83 @@ async function handleRizoraLive(ctx){
   }
 
 
+  if(path==="/api/v2/live/block" && method==="POST"){
+
+    if(!user){
+      return sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+    }
+
+    let body="";
+
+    for await(const chunk of req){
+      body+=chunk;
+    }
+
+    const data=JSON.parse(body || "{}");
+
+    const liveId=safeString(
+      data.liveId,
+      100
+    );
+
+    const viewerId=safeString(
+      data.viewerId,
+      100
+    );
+
+    const live =
+      db.liveSessions.find(
+        x=>
+          x.id===liveId &&
+          x.userId===user.id
+      );
+
+    if(!live){
+      return sendError(
+        res,
+        403,
+        "Only the host can block viewers."
+      );
+    }
+
+    const alreadyBlocked =
+      db.liveBlocks.find(
+        x=>
+          x.liveId===liveId &&
+          x.viewerId===viewerId
+      );
+
+    if(alreadyBlocked){
+      return sendError(
+        res,
+        400,
+        "Viewer already blocked."
+      );
+    }
+
+    db.liveBlocks.push({
+      id:uid("block"),
+      liveId,
+      viewerId,
+      blockedBy:user.id,
+      createdAt:new Date().toISOString()
+    });
+
+    live.blockedCount =
+      Number(live.blockedCount || 0) + 1;
+
+    saveDB(db);
+
+    return sendJSON(res,200,{
+      success:true
+    });
+
+  }
+
   if(path==="/api/v2/live/end" && method==="POST"){
 
     if(!user){
@@ -829,6 +906,7 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
 
 
 
