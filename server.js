@@ -2590,10 +2590,50 @@ function serveStatic(
 // REQUEST HANDLER
 // ============================================================
 
+function applySecurityHeaders(res){
+
+  res.setHeader(
+    "X-Content-Type-Options",
+    "nosniff"
+  );
+
+  res.setHeader(
+    "X-Frame-Options",
+    "SAMEORIGIN"
+  );
+
+  res.setHeader(
+    "Referrer-Policy",
+    "strict-origin-when-cross-origin"
+  );
+
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(self), geolocation=()"
+  );
+
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
+  );
+
+  if(
+    process.env.NODE_ENV === "production"
+  ){
+    res.setHeader(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains"
+    );
+  }
+
+}
+
 async function handleRequest(
   req,
   res
-) {
+){
+
+  applySecurityHeaders(res);
     
     // ============================================================
 /* ============================================================
@@ -12406,6 +12446,10 @@ process.on(
     );
   }
 );
+
+
+
+
 
 
 
