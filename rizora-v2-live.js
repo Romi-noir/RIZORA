@@ -57,7 +57,8 @@ async function handleRizoraLive(ctx){
     saveDB,
     getCurrentUser,
     sendJSON,
-    sendError
+    sendError,
+    hasPremium
   }=ctx;
 
 
@@ -93,6 +94,32 @@ async function handleRizoraLive(ctx){
       return sendError(res,401,"Authentication required.");
     }
 
+
+    if(
+      typeof hasPremium === "function" &&
+      !hasPremium(user)
+    ){
+      return sendError(
+        res,
+        403,
+        "Premium subscription required to host live streams."
+      );
+    }
+
+    const followers =
+      Number(
+        user.followersCount ||
+        user.followers ||
+        0
+      );
+
+    if(followers < 800){
+      return sendError(
+        res,
+        403,
+        "You need at least 800 followers to host live streams."
+      );
+    }
     const live={
       id:uid("live"),
       userId:user.id,
@@ -268,6 +295,15 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
+
+
+
+
+
+
+
+
 
 
 
