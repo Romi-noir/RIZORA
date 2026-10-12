@@ -32,21 +32,75 @@ function coinAccount(db,userId){
 }
 
 function addCoins(db,userId,amount,type){
+
+  const value = Number(amount);
+
+  if(
+    !userId ||
+    !Number.isFinite(value) ||
+    value <= 0
+  ){
+    return null;
+  }
+
   const account=coinAccount(db,userId);
 
-  account.coins+=Number(amount);
+  account.coins = Math.max(
+    0,
+    Number(account.coins || 0) + value
+  );
+
   account.updatedAt=new Date().toISOString();
 
-  db.walletTransactions.push({
+  const transaction = {
     id:uid("wallet"),
     userId,
-    amount:Number(amount),
+    amount:value,
     type,
     createdAt:new Date().toISOString()
-  });
+  };
+
+  db.walletTransactions.push(transaction);
 
   return account;
 }
+
+function removeCoins(db,userId,amount,type){
+
+  const value = Number(amount);
+
+  if(
+    !userId ||
+    !Number.isFinite(value) ||
+    value <= 0
+  ){
+    return null;
+  }
+
+  const account=coinAccount(db,userId);
+
+  if(
+    Number(account.coins || 0) < value
+  ){
+    return null;
+  }
+
+  account.coins -= value;
+  account.updatedAt=new Date().toISOString();
+
+  const transaction = {
+    id:uid("wallet"),
+    userId,
+    amount:-value,
+    type,
+    createdAt:new Date().toISOString()
+  };
+
+  db.walletTransactions.push(transaction);
+
+  return account;
+}
+
 
 async function handleRizoraLive(ctx){
 
@@ -258,7 +312,28 @@ async function handleRizoraLive(ctx){
       amount,
       createdAt:new Date().toISOString()
     };
+    const senderBalance =
+      coinAccount(
+        db,
+        user.id
+      );
 
+    if(
+      Number(senderBalance.coins || 0) < amount
+    ){
+      return sendError(
+        res,
+        400,
+        "Insufficient coins."
+      );
+    }
+
+    removeCoins(
+      db,
+      user.id,
+      amount,
+      "gift_sent"
+    );
 
     db.gifts.push(gift);
 
@@ -329,6 +404,11 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
+
+
+
+
 
 
 
