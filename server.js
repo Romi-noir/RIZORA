@@ -1609,6 +1609,10 @@ function getCurrentUser(
       );
 
     if (user) {
+
+      session.lastActiveAt =
+        new Date().toISOString();
+
       return user;
     }
   }
@@ -4857,6 +4861,49 @@ if (
     message:"Password reset successful."
   });
 }
+// ----------------------------------------------------------
+// LOGOUT ALL DEVICES
+// ----------------------------------------------------------
+
+if(
+  method === "POST" &&
+  pathname === "/api/auth/logout-all"
+){
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+    return sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+  }
+
+  db.sessions =
+    db.sessions.filter(
+      session =>
+        session.userId !== user.id
+    );
+
+  saveDB(db);
+
+  clearSessionCookie(res);
+
+  return sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      message:"All sessions revoked."
+    }
+  );
+}
+
   // ----------------------------------------------------------
   // AUTH / ME
   // ----------------------------------------------------------
@@ -11933,6 +11980,7 @@ process.on(
     );
   }
 );
+
 
 
 
