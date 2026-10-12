@@ -261,6 +261,76 @@ async function handleRizoraLive(ctx){
 
   }
 
+  if(path==="/api/v2/live/discover" && method==="GET"){
+
+    const lives =
+      db.liveSessions
+      .filter(
+        x=>x.active
+      )
+      .map(
+        x=>{
+
+          const ageMinutes =
+            Math.max(
+              1,
+              Math.floor(
+                (Date.now()-new Date(x.startedAt).getTime())/60000
+              )
+            );
+
+          const freshness =
+            Math.max(
+              0,
+              100 - ageMinutes
+            );
+
+          const engagementScore =
+            Math.floor(
+              (
+                Number(x.viewers || 0) * 5
+              ) +
+              (
+                Number(x.peakViewers || 0) * 2
+              ) +
+              (
+                Number(x.giftRevenue || 0) * 3
+              ) +
+              freshness -
+              (
+                Number(x.reports || 0) * 20
+              )
+            );
+
+          x.engagementScore = engagementScore;
+
+          return {
+            id:x.id,
+            username:x.username,
+            title:x.title || "RIZORA Live",
+            category:x.category || "general",
+            tags:x.tags || [],
+            thumbnail:x.thumbnail || "",
+            viewers:Number(x.viewers || 0),
+            giftRevenue:Number(x.giftRevenue || 0),
+            engagementScore
+          };
+
+        }
+      )
+      .sort(
+        (a,b)=>
+          b.engagementScore-a.engagementScore
+      )
+      .slice(0,50);
+
+    return sendJSON(res,200,{
+      success:true,
+      lives
+    });
+
+  }
+
   if(path==="/api/v2/live/status" && method==="GET"){
 
     const liveUsers=db.liveSessions.filter(x=>x.active).map(x=>({
@@ -961,6 +1031,7 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
 
 
 
