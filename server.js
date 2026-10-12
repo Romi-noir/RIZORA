@@ -5187,6 +5187,20 @@ if(
   pathname === "/api/auth/change-password"
 ){
 
+  if(
+    !checkAuthRateLimit(
+      db,
+      req,
+      "change_password"
+    )
+  ){
+    return sendError(
+      res,
+      429,
+      "Too many password change attempts. Try again later."
+    );
+  }
+
   const user =
     getCurrentUser(
       db,
@@ -12373,6 +12387,7 @@ process.on(
     );
   }
 );
+
 
 
 
