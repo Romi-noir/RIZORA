@@ -6,6 +6,8 @@ function ensureLive(db){
   db.walletTransactions = db.walletTransactions || [];
   db.gifts = db.gifts || [];
   db.liveViewers = db.liveViewers || [];
+  db.liveReports = db.liveReports || [];
+  db.liveBlocks = db.liveBlocks || [];
 }
 
 function cleanupLiveSessions(db){
@@ -265,13 +267,22 @@ async function handleRizoraLive(ctx){
       id:uid("live"),
       userId:user.id,
       username:user.username,
+      title:safeString(data.title || "RIZORA Live",100),
+      category:safeString(data.category || "general",50),
+      tags:Array.isArray(data.tags)
+        ? data.tags.slice(0,10).map(x=>safeString(x,30))
+        : [],
+      thumbnail:safeString(data.thumbnail || "",300),
       startedAt:new Date().toISOString(),
       active:true,
       rewardClaimed:false,
       viewers:0,
       peakViewers:0,
       totalViewerJoins:0,
-      giftRevenue:0
+      giftRevenue:0,
+      engagementScore:0,
+      reports:0,
+      blockedCount:0
     };
 
 
@@ -758,6 +769,9 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
+
+
 
 
 
