@@ -4128,6 +4128,20 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     method === "POST" &&
     pathname === "/api/auth/signup"
   ) {
+
+    if(
+      !checkAuthRateLimit(
+        db,
+        req,
+        "signup"
+      )
+    ){
+      return sendError(
+        res,
+        429,
+        "Too many signup attempts. Try again later."
+      );
+    }
     let body;
 
     try {
@@ -12359,6 +12373,7 @@ process.on(
     );
   }
 );
+
 
 
 
