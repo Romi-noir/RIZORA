@@ -3719,7 +3719,7 @@ if (
 if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
     if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
-    if (await handleRizoraLive({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
+    if (await handleRizoraLive({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, hasPremium })) return;
     if (await handleRizoraLabs({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
@@ -12531,6 +12531,7 @@ process.on(
     );
   }
 );
+
 
 
 

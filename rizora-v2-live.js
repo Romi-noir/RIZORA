@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 function ensureLive(db){
   db.liveSessions = db.liveSessions || [];
@@ -268,6 +268,7 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
 
 
 
