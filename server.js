@@ -1539,6 +1539,89 @@ function cleanupSessions(db) {
   );
 }
 
+// ============================================================
+// AUTH RATE LIMIT + SECURITY HELPERS
+// ============================================================
+
+const AUTH_RATE_LIMIT_WINDOW_MS =
+  15 * 60 * 1000;
+
+const AUTH_RATE_LIMIT_MAX_ATTEMPTS =
+  10;
+
+function getRequestIP(req){
+  return String(
+    req?.headers?.["x-forwarded-for"] ||
+    req?.socket?.remoteAddress ||
+    ""
+  )
+  .split(",")[0]
+  .trim();
+}
+
+function checkAuthRateLimit(db, req, action){
+
+  db.authRateLimits ||= [];
+
+  const nowTime = Date.now();
+
+  db.authRateLimits =
+    db.authRateLimits.filter(
+      item =>
+        nowTime - item.createdAt <
+        AUTH_RATE_LIMIT_WINDOW_MS
+    );
+
+  const key =
+    action + ":" + getRequestIP(req);
+
+  const attempts =
+    db.authRateLimits.filter(
+      item => item.key === key
+    ).length;
+
+  if(
+    attempts >= AUTH_RATE_LIMIT_MAX_ATTEMPTS
+  ){
+    return false;
+  }
+
+  db.authRateLimits.push({
+    key,
+    action,
+    createdAt: nowTime
+  });
+
+  return true;
+}
+
+
+function recordFailedLogin(db,user){
+
+  if(!user){
+    return;
+  }
+
+  user.failedLoginAttempts =
+    Number(user.failedLoginAttempts || 0) + 1;
+
+  if(
+    user.failedLoginAttempts >= 5
+  ){
+    user.lockedUntil =
+      new Date(
+        Date.now() + 15 * 60 * 1000
+      ).toISOString();
+  }
+}
+
+
+function clearFailedLogin(user){
+
+  user.failedLoginAttempts = 0;
+  user.lockedUntil = null;
+
+}
 function createSession(
   db,
   userId,
@@ -4458,6 +4541,21 @@ if(
     method === "POST" &&
     pathname === "/api/auth/login"
   ) {
+
+    if(
+      !checkAuthRateLimit(
+        db,
+        req,
+        "login"
+      )
+    ){
+      return sendError(
+        res,
+        429,
+        "Too many login attempts. Try again later."
+      );
+    }
+
     let body;
 
     try {
@@ -4551,6 +4649,17 @@ if(
       return;
     }
 
+    if(
+      user.lockedUntil &&
+      new Date(user.lockedUntil) > new Date()
+    ){
+      return sendError(
+        res,
+        423,
+        "Account temporarily locked. Try again later."
+      );
+    }
+
     let validPassword =
       await verifyPassword(
         password,
@@ -4580,6 +4689,23 @@ if(
     }
 
     if (!validPassword) {
+
+      recordFailedLogin(
+        db,
+        user
+      );
+
+      saveDB(db);
+
+      audit(
+        db,
+        "failed_login_attempt",
+        user,
+        {
+          identifier
+        }
+      );
+
       sendError(
         res,
         401,
@@ -4588,6 +4714,8 @@ if(
 
       return;
     }
+
+    clearFailedLogin(user);
 
     if (
       user.status !== "active"
@@ -12220,6 +12348,11 @@ process.on(
     );
   }
 );
+
+
+
+
+
 
 
 
