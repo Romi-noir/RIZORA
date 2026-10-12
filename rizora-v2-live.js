@@ -201,6 +201,66 @@ async function handleRizoraLive(ctx){
 
   }
 
+  if(path==="/api/v2/live/report" && method==="POST"){
+
+    if(!user){
+      return sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+    }
+
+    let body="";
+
+    for await(const chunk of req){
+      body+=chunk;
+    }
+
+    const data=JSON.parse(body || "{}");
+
+    const liveId=safeString(
+      data.liveId,
+      100
+    );
+
+    const reason=safeString(
+      data.reason || "community violation",
+      200
+    );
+
+    const live =
+      db.liveSessions.find(
+        x=>x.id===liveId
+      );
+
+    if(!live){
+      return sendError(
+        res,
+        404,
+        "Live session not found."
+      );
+    }
+
+    db.liveReports.push({
+      id:uid("report"),
+      liveId,
+      reporterId:user.id,
+      reason,
+      createdAt:new Date().toISOString()
+    });
+
+    live.reports =
+      Number(live.reports || 0) + 1;
+
+    saveDB(db);
+
+    return sendJSON(res,200,{
+      success:true
+    });
+
+  }
+
   if(path==="/api/v2/live/status" && method==="GET"){
 
     const liveUsers=db.liveSessions.filter(x=>x.active).map(x=>({
@@ -769,6 +829,7 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
 
 
 
