@@ -582,6 +582,61 @@ async function handleRizoraLive(ctx){
 
   }
 
+  if(path==="/api/v2/live/moderation" && method==="GET"){
+
+    if(!user){
+      return sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+    }
+
+    const liveId =
+      safeString(
+        url.searchParams.get("liveId"),
+        100
+      );
+
+    const live =
+      db.liveSessions.find(
+        x=>
+          x.id===liveId &&
+          x.userId===user.id
+      );
+
+    if(!live){
+      return sendError(
+        res,
+        403,
+        "Only the host can access moderation."
+      );
+    }
+
+    const reports =
+      db.liveReports.filter(
+        x=>x.liveId===liveId
+      );
+
+    const blocks =
+      db.liveBlocks.filter(
+        x=>x.liveId===liveId
+      );
+
+    return sendJSON(res,200,{
+      success:true,
+      live:{
+        id:live.id,
+        title:live.title,
+        reports:live.reports,
+        blockedCount:live.blockedCount
+      },
+      reports,
+      blocks
+    });
+
+  }
+
   if(path==="/api/v2/live/end" && method==="POST"){
 
     if(!user){
@@ -906,6 +961,7 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
 
 
 
