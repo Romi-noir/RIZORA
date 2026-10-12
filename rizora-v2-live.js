@@ -399,8 +399,17 @@ async function handleRizoraLive(ctx){
       success:true,
       coins:account.coins,
       transactions:
-        db.walletTransactions.filter(
+        db.walletTransactions
+        .filter(
           x=>x.userId===user.id
+        )
+        .map(
+          x=>({
+            id:x.id,
+            amount:x.amount,
+            type:x.type,
+            createdAt:x.createdAt
+          })
         )
     });
 
@@ -431,6 +440,7 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
 
 
 
