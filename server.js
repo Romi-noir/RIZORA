@@ -38,6 +38,29 @@ const PAYSTACK_SECRET_KEY =
 
 const PAYSTACK_PUBLIC_KEY =
   String(process.env.PAYSTACK_PUBLIC_KEY || "").trim();
+
+
+function validatePaystackPayment(data,payment){
+
+  if(!data || !payment){
+    return false;
+  }
+
+  const amount =
+    Number(data.amount || 0);
+
+  const expected =
+    Number(payment.amount || 0) * 100;
+
+  const currency =
+    String(data.currency || "").toUpperCase();
+
+  return (
+    amount === expected &&
+    currency === "NGN"
+  );
+
+}
 const GOOGLE_CLIENT_ID =
   String(
     process.env.GOOGLE_CLIENT_ID ||
@@ -12492,6 +12515,9 @@ process.on(
     );
   }
 );
+
+
+
 
 
 
