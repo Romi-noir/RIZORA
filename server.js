@@ -4717,6 +4717,17 @@ if(
 
     clearFailedLogin(user);
 
+    if(
+      user.email &&
+      user.emailVerified === false
+    ){
+      return sendError(
+        res,
+        403,
+        "Please verify your email before logging in."
+      );
+    }
+
     if (
       user.status !== "active"
     ) {
@@ -12348,6 +12359,7 @@ process.on(
     );
   }
 );
+
 
 
 
