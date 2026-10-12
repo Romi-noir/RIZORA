@@ -212,9 +212,43 @@ async function handleRizoraLive(ctx){
     const amount=Number(data.amount || 0);
 
 
-    if(!creatorId || amount<=0){
-      return sendError(res,400,"Invalid gift.");
+    
+    const creator =
+      db.users &&
+      db.users.find(
+        x=>x.id===creatorId
+      );
+
+    if(
+      !creatorId ||
+      !Number.isFinite(amount) ||
+      amount<=0 ||
+      amount>100000
+    ){
+      return sendError(
+        res,
+        400,
+        "Invalid gift."
+      );
     }
+
+    if(creatorId===user.id){
+      return sendError(
+        res,
+        400,
+        "You cannot gift yourself."
+      );
+    }
+
+    if(!creator){
+      return sendError(
+        res,
+        404,
+        "Creator not found."
+      );
+    }
+
+
 
 
     const gift={
@@ -295,6 +329,8 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
+
 
 
 
