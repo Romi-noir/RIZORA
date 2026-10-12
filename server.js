@@ -596,6 +596,29 @@ function clearSessionCookie(res) {
   );
 }
 
+
+function setCSRFCookie(res){
+
+  const token =
+    createCSRFToken();
+
+  res.setHeader(
+    "Set-Cookie",
+    `rizora_csrf=${encodeURIComponent(token)}; Path=/; Max-Age=${SESSION_TTL_MS / 1000}; SameSite=None; Secure`
+  );
+
+}
+
+
+function clearCSRFCookie(res){
+
+  res.setHeader(
+    "Set-Cookie",
+    "rizora_csrf=; Path=/; Max-Age=0; SameSite=None; Secure"
+  );
+
+}
+
 function safeUser(user) {
   if (!user) return null;
 
@@ -1633,12 +1656,19 @@ function createCSRFToken(){
 
 function validateCSRF(req){
 
-  const token =
+  const headerToken =
     String(
       req.headers["x-csrf-token"] || ""
     ).trim();
 
-  return Boolean(token);
+  const cookieToken =
+    parseCookies(req).rizora_csrf || "";
+
+  return Boolean(
+    headerToken &&
+    cookieToken &&
+    headerToken === cookieToken
+  );
 }
 
 function createSession(
@@ -4163,6 +4193,10 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
       token
     );
 
+    setCSRFCookie(
+      res
+    );
+
     sendJSON(
       res,
       200,
@@ -4509,6 +4543,10 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
       token
     );
 
+    setCSRFCookie(
+      res
+    );
+
     sendJSON(
       res,
       201,
@@ -4852,6 +4890,10 @@ if(
       token
     );
 
+    setCSRFCookie(
+      res
+    );
+
     sendJSON(
       res,
       200,
@@ -4889,6 +4931,8 @@ if(
     }
 
     clearSessionCookie(res);
+
+  clearCSRFCookie(res);
 
     sendJSON(
       res,
@@ -5115,6 +5159,8 @@ if(
   saveDB(db);
 
   clearSessionCookie(res);
+
+  clearCSRFCookie(res);
 
   return sendJSON(
     res,
@@ -12446,6 +12492,9 @@ process.on(
     );
   }
 );
+
+
+
 
 
 
