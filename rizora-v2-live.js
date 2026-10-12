@@ -5,6 +5,7 @@ function ensureLive(db){
   db.creatorCoins = db.creatorCoins || [];
   db.walletTransactions = db.walletTransactions || [];
   db.gifts = db.gifts || [];
+  db.liveViewers = db.liveViewers || [];
 }
 
 function uid(prefix){
@@ -210,6 +211,143 @@ async function handleRizoraLive(ctx){
 
   }
 
+
+
+  if(path==="/api/v2/live/join" && method==="POST"){
+
+    if(!user){
+      return sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+    }
+
+    let body="";
+
+    for await(const chunk of req){
+      body+=chunk;
+    }
+
+    const data=JSON.parse(body || "{}");
+
+    const liveId=safeString(
+      data.liveId,
+      100
+    );
+
+    const live =
+      db.liveSessions.find(
+        x=>x.id===liveId && x.active
+      );
+
+    if(!live){
+      return sendError(
+        res,
+        404,
+        "Live session not found."
+      );
+    }
+
+    const existing =
+      db.liveViewers.find(
+        x=>
+          x.liveId===liveId &&
+          x.userId===user.id &&
+          x.active
+      );
+
+    if(existing){
+      return sendError(
+        res,
+        400,
+        "Already joined."
+      );
+    }
+
+    db.liveViewers.push({
+      id:uid("viewer"),
+      liveId,
+      userId:user.id,
+      joinedAt:new Date().toISOString(),
+      active:true
+    });
+
+    live.viewers =
+      db.liveViewers.filter(
+        x=>
+          x.liveId===liveId &&
+          x.active
+      ).length;
+
+    saveDB(db);
+
+    return sendJSON(res,200,{
+      success:true,
+      viewers:live.viewers
+    });
+
+  }
+
+
+  if(path==="/api/v2/live/leave" && method==="POST"){
+
+    if(!user){
+      return sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+    }
+
+    let body="";
+
+    for await(const chunk of req){
+      body+=chunk;
+    }
+
+    const data=JSON.parse(body || "{}");
+
+    const liveId=safeString(
+      data.liveId,
+      100
+    );
+
+    const viewer =
+      db.liveViewers.find(
+        x=>
+          x.liveId===liveId &&
+          x.userId===user.id &&
+          x.active
+      );
+
+    if(viewer){
+      viewer.active=false;
+      viewer.leftAt=new Date().toISOString();
+    }
+
+    const live =
+      db.liveSessions.find(
+        x=>x.id===liveId
+      );
+
+    if(live){
+      live.viewers =
+        db.liveViewers.filter(
+          x=>
+            x.liveId===liveId &&
+            x.active
+        ).length;
+    }
+
+    saveDB(db);
+
+    return sendJSON(res,200,{
+      success:true,
+      viewers:live?.viewers || 0
+    });
+
+  }
 
 
   if(path==="/api/v2/live/end" && method==="POST"){
@@ -524,6 +662,8 @@ async function handleRizoraLive(ctx){
 module.exports={
   handleRizoraLive
 };
+
+
 
 
 
