@@ -2846,6 +2846,7 @@ document.addEventListener(
     loadLiveDiscovery();
     loadSubscriptionState();
     loadCreatorOS();
+    renderCreatorOS();
 
   }
 );
@@ -2901,6 +2902,64 @@ async function loadSubscriptionState(){
 }
 
 
+function renderCreatorOS(){
+
+  const dashboard =
+    document.getElementById("dashboard");
+
+  if(!dashboard){
+    return;
+  }
+
+  if(document.getElementById("rizoraCreatorOS")){
+    return;
+  }
+
+
+  const box =
+    document.createElement("div");
+
+  box.id="rizoraCreatorOS";
+
+  box.className="dashboard-card";
+
+  const liveCount =
+    (window.RIZORA_LIVE_DISCOVERY || []).length;
+
+  const plan =
+    window.RIZORA_SUBSCRIPTION?.plan ||
+    "Free";
+
+
+  box.innerHTML = `
+    <div class="dashboard-icon">?</div>
+
+    <h3>RIZORA Creator OS</h3>
+
+    <p>
+      Your creator command center.
+    </p>
+
+    <div>
+      Live creators:
+      <strong>${liveCount}</strong>
+    </div>
+
+    <div>
+      Plan:
+      <strong>${plan}</strong>
+    </div>
+
+    <button class="btn" onclick="openBestDashboard()">
+      Open Creator Center
+    </button>
+  `;
+
+
+  dashboard.prepend(box);
+
+}
+
 async function loadCreatorOS(){
 
   window.RIZORA_CREATOR_OS = {
@@ -2932,6 +2991,10 @@ window.addEventListener(
     );
   }
 );
+
+
+
+
 
 
 
