@@ -2847,6 +2847,7 @@ document.addEventListener(
     loadSubscriptionState();
     loadCreatorOS();
     renderCreatorOS();
+    renderCreatorOSModules();
 
   }
 );
@@ -2901,6 +2902,94 @@ async function loadSubscriptionState(){
 
 }
 
+
+function renderCreatorOSModules(){
+
+  const host =
+    document.getElementById("rizoraCreatorOS");
+
+  if(!host){
+    return;
+  }
+
+
+  if(document.getElementById("creatorOSModules")){
+    return;
+  }
+
+
+  const modules =
+    document.createElement("div");
+
+
+  modules.id="creatorOSModules";
+
+
+  modules.innerHTML = `
+
+    <div class="dashboard-card">
+      <div class="dashboard-icon">??</div>
+      <h3>Music Studio</h3>
+      <p>Create, manage and grow your music projects.</p>
+      <button class="btn">
+        Open Studio
+      </button>
+    </div>
+
+
+    <div class="dashboard-card">
+      <div class="dashboard-icon">??</div>
+      <h3>AI Studio</h3>
+      <p>Generate hooks, captions, ideas and creator strategy.</p>
+      <button class="btn">
+        Open AI Tools
+      </button>
+    </div>
+
+
+    <div class="dashboard-card">
+      <div class="dashboard-icon">??</div>
+      <h3>RIZORA LIVE</h3>
+      <p>
+        Discover creators and grow your audience.
+      </p>
+      <strong>
+        ${
+          (window.RIZORA_LIVE_DISCOVERY || []).length
+        }
+        Live creators
+      </strong>
+    </div>
+
+
+    <div class="dashboard-card">
+      <div class="dashboard-icon">??</div>
+      <h3>Premium Center</h3>
+      <p>
+        Unlock creator growth features.
+      </p>
+      <strong>
+        ${
+          window.RIZORA_SUBSCRIPTION?.plan || "Free"
+        }
+      </strong>
+    </div>
+
+
+    <div class="dashboard-card">
+      <div class="dashboard-icon">??</div>
+      <h3>Growth Command</h3>
+      <p>
+        Track missions, analytics and creator progress.
+      </p>
+    </div>
+
+  `;
+
+
+  host.appendChild(modules);
+
+}
 
 function renderCreatorOS(){
 
@@ -2991,6 +3080,9 @@ window.addEventListener(
     );
   }
 );
+
+
+
 
 
 
