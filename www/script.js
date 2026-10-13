@@ -2848,6 +2848,7 @@ document.addEventListener(
     loadCreatorOS();
     renderCreatorOS();
     renderCreatorOSModules();
+    mountCreatorOSWorkspace();
 
   }
 );
@@ -2959,6 +2960,64 @@ function openGrowthCommand(){
   loadAnalytics();
 
   loadAnalyticsInsights();
+
+}
+
+function mountCreatorOSWorkspace(){
+
+  const dashboard =
+    document.getElementById("dashboard");
+
+  if(!dashboard){
+    return;
+  }
+
+
+  if(document.getElementById("creatorOSWorkspace")){
+    return;
+  }
+
+
+  const workspace =
+    document.createElement("section");
+
+
+  workspace.id="creatorOSWorkspace";
+
+
+  workspace.innerHTML = `
+
+    <div class="dashboard-card">
+      <div class="dashboard-icon">??</div>
+      <h3>Music Studio Workspace</h3>
+      <p>
+        Manage tracks, releases and creator audio projects.
+      </p>
+    </div>
+
+
+    <div class="dashboard-card">
+      <div class="dashboard-icon">??</div>
+      <h3>RIZORA AI Studio</h3>
+      <p>
+        AI-powered creator assistance and content intelligence.
+      </p>
+    </div>
+
+
+    <div class="dashboard-card">
+      <div class="dashboard-icon">??</div>
+      <h3>Creator Network</h3>
+      <p>
+        Community, channels, collaborations and opportunities.
+      </p>
+    </div>
+
+
+  `;
+
+
+  dashboard.appendChild(workspace);
 
 }
 
@@ -3135,6 +3194,9 @@ window.addEventListener(
     );
   }
 );
+
+
+
 
 
 
