@@ -2903,6 +2903,65 @@ async function loadSubscriptionState(){
 }
 
 
+function openMusicStudio(){
+
+  alert(
+    "RIZORA Music Studio is coming to Creator OS."
+  );
+
+}
+
+
+function openAIStudio(){
+
+  showSection(
+    "dashboard"
+  );
+
+  document
+    .getElementById("generateHookBtn")
+    ?.scrollIntoView({
+      behavior:"smooth"
+    });
+
+}
+
+
+function openLiveDiscovery(){
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+
+  console.log(
+    "RIZORA LIVE",
+    window.RIZORA_LIVE_DISCOVERY || []
+  );
+
+}
+
+
+function openPremiumCenter(){
+
+  console.log(
+    "Subscription",
+    window.RIZORA_SUBSCRIPTION
+  );
+
+}
+
+
+function openGrowthCommand(){
+
+  refreshDashboard();
+
+  loadAnalytics();
+
+  loadAnalyticsInsights();
+
+}
+
 function renderCreatorOSModules(){
 
   const host =
@@ -2931,9 +2990,7 @@ function renderCreatorOSModules(){
       <div class="dashboard-icon">??</div>
       <h3>Music Studio</h3>
       <p>Create, manage and grow your music projects.</p>
-      <button class="btn">
-        Open Studio
-      </button>
+      <button class="btn" onclick="openMusicStudio()">Open Studio</button>
     </div>
 
 
@@ -2941,15 +2998,13 @@ function renderCreatorOSModules(){
       <div class="dashboard-icon">??</div>
       <h3>AI Studio</h3>
       <p>Generate hooks, captions, ideas and creator strategy.</p>
-      <button class="btn">
-        Open AI Tools
-      </button>
+      <button class="btn" onclick="openAIStudio()">Open AI Tools</button>
     </div>
 
 
     <div class="dashboard-card">
       <div class="dashboard-icon">??</div>
-      <h3>RIZORA LIVE</h3>
+      <h3 onclick="openLiveDiscovery()" style="cursor:pointer">RIZORA LIVE</h3>
       <p>
         Discover creators and grow your audience.
       </p>
@@ -3080,6 +3135,8 @@ window.addEventListener(
     );
   }
 );
+
+
 
 
 
