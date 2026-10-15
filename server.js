@@ -550,6 +550,7 @@ function json(res, statusCode, data, extraHeaders = {}) {
   });
 
   res.end(body);
+  return true;
 }
 
 function sendJSON(res, statusCode, data) {
