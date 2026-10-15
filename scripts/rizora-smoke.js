@@ -103,6 +103,7 @@ async function main() {
     assert(require("fs").existsSync(fsPath), "Service worker asset is missing: " + assetPath);
   }
   assert(indexSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not linked");
+  assert(indexSource.includes("/rizora-v2-creator-os.css"), "RIZORA Creator OS stylesheet is not linked");
   assert(indexSource.includes("/rizora-v2-voice.js"), "RIZORA voice module is not linked");
   const voiceSource = require("fs").readFileSync("rizora-v2-voice.js", "utf8");
   const commentsSource = require("fs").readFileSync("rizora-v2-comments.js", "utf8");
@@ -203,10 +204,11 @@ async function main() {
     const suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     const username = "smoke_" + suffix;
     const email = username + "@example.com";
+    const smokeIp = "198.51.100." + (Math.floor(Math.random() * 200) + 1);
 
     const signup = await request("/api/auth/signup", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": smokeIp },
       body: JSON.stringify({
         username,
         displayName: "RIZORA Smoke",
@@ -359,7 +361,7 @@ async function main() {
     const voicePeerEmail = voicePeerUsername + "@example.com";
     const voicePeerSignup = await request("/api/auth/signup", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": smokeIp },
       body: JSON.stringify({
         username: voicePeerUsername,
         displayName: "RIZORA Voice Peer",
@@ -579,7 +581,7 @@ async function main() {
     const joinEmail = joinUsername + "@example.com";
     const signup2 = await request("/api/auth/signup", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": smokeIp },
       body: JSON.stringify({
         username: joinUsername,
         displayName: "RIZORA Smoke Member",

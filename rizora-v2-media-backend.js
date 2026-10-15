@@ -112,7 +112,21 @@ function mediaIsAccessible(db, user, record){
     const profile=(db.creatorProfiles&&db.creatorProfiles[target.id])||{};
     return activeUserId(target.id)&&(profile.avatarUrl===url||target.avatarUrl===url);
   }))return true;
+  const musicCatalog=db.musicCatalog||[];
+  if(musicCatalog.some(function(item){
+    if(item.visibility==="private")return false;
+    return [item.artwork,item.audioUrl,item.videoUrl,item.visualUrl].filter(Boolean).includes(url);
+  }))return true;
   return false;
+}
+
+function mediaIsPublic(db, record){
+  if(!record)return false;
+  const url=String(record.url||"");
+  return (db.musicCatalog||[]).some(function(item){
+    if(item.visibility === "private")return false;
+    return [item.artwork,item.audioUrl,item.videoUrl,item.visualUrl].filter(Boolean).includes(url);
+  });
 }
 
 function publicMedia(record){
@@ -157,8 +171,24 @@ async function handleRizoraMedia(ctx){
 
   if(!pathName.startsWith("/api/v2/media")) return false;
 
+  const publicFileMatch = pathName.match(/^\/api\/v2\/media\/([^/.]+)(?:\.([a-z0-9]+))?$/i);
   const user = getCurrentUser(db, req);
   if(!user){
+    if(method === "GET" && publicFileMatch){
+      const id = decodeURIComponent(publicFileMatch[1]);
+      const record = (db.rzV2.media||[]).find(x => x.id === id);
+      if(record && record.path && fs.existsSync(record.path) && mediaIsPublic(db,record)){
+        res.writeHead(200,{
+          "Content-Type":record.mimeType,
+          "Content-Length":String(record.bytes),
+          "Cache-Control":"public, max-age=3600",
+          "Access-Control-Allow-Origin":"*",
+          "Access-Control-Expose-Headers":"Content-Length,Content-Type,Content-Disposition"
+        });
+        fs.createReadStream(record.path).pipe(res);
+        return true;
+      }
+    }
     sendError(res,401,"Authentication required.");
     return true;
   }

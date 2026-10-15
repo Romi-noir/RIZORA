@@ -606,16 +606,25 @@ function getSessionToken(req) {
   return cookies.rizora_session || "";
 }
 
+function appendSetCookie(res, value) {
+  const current = res.getHeader("Set-Cookie");
+  if (current === undefined) {
+    res.setHeader("Set-Cookie", value);
+    return;
+  }
+  res.setHeader("Set-Cookie", Array.isArray(current) ? current.concat(value) : [current, value]);
+}
+
 function setSessionCookie(res, token) {
-  res.setHeader(
-    "Set-Cookie",
+  appendSetCookie(
+    res,
     `rizora_session=${encodeURIComponent(token)}; HttpOnly; Path=/; Max-Age=${SESSION_TTL_MS / 1000}; SameSite=None; Secure; Priority=High`
   );
 }
 
 function clearSessionCookie(res) {
-  res.setHeader(
-    "Set-Cookie",
+  appendSetCookie(
+    res,
     "rizora_session=; HttpOnly; Path=/; Max-Age=0; SameSite=None; Secure"
   );
 }
@@ -626,8 +635,8 @@ function setCSRFCookie(res){
   const token =
     createCSRFToken();
 
-  res.setHeader(
-    "Set-Cookie",
+  appendSetCookie(
+    res,
     `rizora_csrf=${encodeURIComponent(token)}; Path=/; Max-Age=${SESSION_TTL_MS / 1000}; SameSite=None; Secure`
   );
 
@@ -2527,7 +2536,7 @@ const PUBLIC_ROOT_FILES = new Set([
   "rizora-v2.css", "rizora-v2.js", "rizora-v2-ads-ui.js", "rizora-v2-business.css", "rizora-v2-business-ui.js",
   "rizora-v2-comments.css", "rizora-v2-comments-ui.js", "rizora-v2-downloads.css", "rizora-v2-downloads.js",
   "rizora-v2-enterprise.css", "rizora-v2-enterprise-ui.js", "rizora-v2-events.css", "rizora-v2-events-ui.js",
-  "rizora-v2-experience.css", "rizora-v2-global.css", "rizora-v2-global-ui.js", "rizora-v2-growth.css",
+  "rizora-v2-experience.css", "rizora-v2-creator-os.css", "rizora-v2-global.css", "rizora-v2-global-ui.js", "rizora-v2-growth.css",
   "rizora-v2-growth-ui.js", "rizora-v2-hub.js", "rizora-v2-labs.css", "rizora-v2-labs-ui.js", "rizora-v2-live.js",
   "rizora-v2-media.css", "rizora-v2-media.js", "rizora-v2-modern.css", "rizora-v2-modern-ui.js",
   "rizora-v2-music-ui.js", "rizora-v2-next.css", "rizora-v2-next.js", "rizora-v2-series.css",
@@ -2700,7 +2709,7 @@ function applySecurityHeaders(res){
 
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
+    "default-src 'self'; img-src 'self' data: https:; media-src 'self' https://rizora-guse.onrender.com; connect-src 'self' https://rizora-guse.onrender.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
   );
 
   if(

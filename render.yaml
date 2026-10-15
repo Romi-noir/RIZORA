@@ -1,13 +1,21 @@
+databases:
+  - name: rizora-production-db
+    plan: basic-256mb
+
 services:
   - type: web
     name: RIZORA
     runtime: node
-    plan: free
+    plan: starter
     branch: main
     repo: https://github.com/Romi-noir/RIZORA
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
+    disk:
+      name: rizora-media
+      mountPath: /var/data
+      sizeGB: 10
     envVars:
       - key: NODE_ENV
         value: production
@@ -17,3 +25,5 @@ services:
         fromDatabase:
           name: rizora-production-db
           property: connectionString
+      - key: RIZORA_MEDIA_ROOT
+        value: /var/data/rizora

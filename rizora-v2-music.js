@@ -169,6 +169,15 @@ function createReleaseMetadata(data,user,db){
   artwork:
    data.artwork || null,
 
+  audioUrl:
+   data.audioUrl || null,
+
+  videoUrl:
+   data.videoUrl || null,
+
+  visualUrl:
+   data.visualUrl || null,
+
   genre:
    data.genre || "Afrobeats",
 
@@ -238,14 +247,15 @@ function createDistributionPackage(data,user,db){
  );
 
 
+ const releaseTitle = String(data.title || data.releaseTitle || "Untitled Release").trim() || "Untitled Release";
  const releaseId = data.releaseId ? String(data.releaseId) : null;
 
  const existing =
  db.musicPlatformReleases.find(
   r =>
-   releaseId &&
    r.userId === user.id &&
-   r.releaseId === releaseId
+   ((releaseId && r.releaseId === releaseId) ||
+    (!releaseId && !r.releaseId && String(r.title || "").trim() === releaseTitle))
  );
 
 
@@ -261,6 +271,12 @@ function createDistributionPackage(data,user,db){
    if(data.artist){
     existing.artist = String(data.artist);
    }
+
+   if(data.artwork !== undefined) existing.artwork = data.artwork || null;
+   if(data.audioUrl !== undefined) existing.audioUrl = data.audioUrl || null;
+   if(data.videoUrl !== undefined) existing.videoUrl = data.videoUrl || null;
+   if(data.visualUrl !== undefined) existing.visualUrl = data.visualUrl || null;
+   if(data.visibility !== undefined) existing.visibility = data.visibility === "private" ? "private" : "public";
 
    existing.status = "submitted";
 
@@ -279,13 +295,13 @@ function createDistributionPackage(data,user,db){
   userId:user.id,
 
   releaseId:
-   releaseId,
+   releaseId || uid("release"),
 
   artist:
    data.artist || user.username,
 
   title:
-   String(data.title || data.releaseTitle || "Untitled Release"),
+   releaseTitle,
 
   distributor:
    isRomi && data.distributorChoice
@@ -298,6 +314,21 @@ function createDistributionPackage(data,user,db){
     : "Royal Saents Records",
 
   platforms,
+
+  artwork:
+   data.artwork || null,
+
+  audioUrl:
+   data.audioUrl || null,
+
+  videoUrl:
+   data.videoUrl || null,
+
+  visualUrl:
+   data.visualUrl || null,
+
+  visibility:
+   data.visibility === "private" ? "private" : "public",
 
   status:"submitted",
 
@@ -359,6 +390,32 @@ if(!path.startsWith("/api/music/")){
  return false;
 }
 
+ensureMusic(db);
+
+if(method==="GET" && path==="/api/music/public-catalog"){
+ const publicCatalog=db.musicCatalog
+  .filter(c=>c.visibility!=="private")
+  .slice()
+  .sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0))
+  .slice(0,100)
+  .map(c=>({
+   id:c.id,
+   releaseId:c.releaseId,
+   title:c.title||"Untitled Release",
+   artist:c.artist||"Unknown artist",
+   artwork:c.artwork||null,
+   audioUrl:c.audioUrl||null,
+   videoUrl:c.videoUrl||null,
+   visualUrl:c.visualUrl||null,
+   platforms:Array.isArray(c.platforms)?c.platforms:[],
+   distributor:c.distributor||"RIZORA",
+   label:c.label||"Royal Saents Records",
+   status:c.status||"submitted",
+   createdAt:c.createdAt||null
+  }));
+ sendJSON(res,200,{success:true,catalog:publicCatalog});
+ return true;
+}
 
 
 
@@ -1253,6 +1310,11 @@ if(
 
    platforms:
     release.platforms || [],
+   artwork:release.artwork||null,
+   audioUrl:release.audioUrl||null,
+   videoUrl:release.videoUrl||null,
+   visualUrl:release.visualUrl||null,
+   visibility:release.visibility||"public",
    artist:
     release.artist,
 
@@ -1284,6 +1346,11 @@ if(
    catalogEntry.title = release.title || "Untitled Release";
    catalogEntry.artist = release.artist;
    catalogEntry.platforms = release.platforms || [];
+   catalogEntry.artwork = release.artwork || null;
+   catalogEntry.audioUrl = release.audioUrl || null;
+   catalogEntry.videoUrl = release.videoUrl || null;
+   catalogEntry.visualUrl = release.visualUrl || null;
+   catalogEntry.visibility = release.visibility || "public";
    catalogEntry.distributor = release.distributor;
    catalogEntry.label = release.label;
    catalogEntry.status = "pending";

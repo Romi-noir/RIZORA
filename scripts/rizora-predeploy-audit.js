@@ -29,7 +29,7 @@ const requiredScripts=[
 ];
 const requiredStyles=[
   "rizora-v2.css","rizora-v2-enterprise.css","rizora-v2-suite.css","rizora-v2-next.css",
-  "rizora-v2-growth.css","rizora-v2-modern.css","rizora-v2-upgrades.css","rizora-v2-global.css",
+  "rizora-v2-growth.css","rizora-v2-modern.css","rizora-v2-upgrades.css","rizora-v2-global.css","rizora-v2-creator-os.css",
   "rizora-v2-media.css","rizora-v2-series.css","rizora-v2-events.css","rizora-v2-business.css",
   "rizora-v2-comments.css","rizora-v2-labs.css","rizora-v2-downloads.css","rizora-v2-experience.css"
 ];
@@ -98,4 +98,8 @@ const verifiedPath=/verifiedBadgeUrl/;
 assert(verifiedPath.test(server),"Backend public profile does not expose verified badge metadata.");
 const vercel=JSON.parse(read("vercel.json"));
 assert(Array.isArray(vercel.rewrites) && vercel.rewrites.some(rule=>rule && rule.source==="/login" && rule.destination==="/"),"Vercel rewrite/config is missing.");
+const render=read("render.yaml");
+assert(/databases:\s*[\s\S]*name:\s*rizora-production-db/.test(render),"Render Blueprint must declare the production database.");
+assert(/fromDatabase:\s*[\s\S]*name:\s*rizora-production-db/.test(render),"Render backend is not wired to the production database.");
+assert(/mountPath:\s*\/var\/data/.test(render) && /RIZORA_MEDIA_ROOT\s*\n\s*value:\s*\/var\/data\/rizora/.test(render),"Render media storage must use the persistent disk.");
 console.log("RIZORA predeploy audit: PASS");
