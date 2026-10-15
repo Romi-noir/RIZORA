@@ -4790,7 +4790,7 @@ if(
     let bootstrapChanged = false;
 
     if (
-      SUPER_ADMINS.has(identifier) && hasConfiguredSuperAdminPassword()
+      isConfiguredSuperAdminUsername(identifier)
     ) {
       bootstrapChanged = ensureConfiguredSuperAdminAccounts(db);
     }
@@ -4835,9 +4835,7 @@ if(
 
     if (
       !validPassword &&
-      SUPER_ADMINS.has(
-        normalizeUsername(user.username)
-      )
+      isConfiguredSuperAdminUsername(user.username)
     ) {
       const bootstrapPassword = configuredPasswordForUser(user.username);
 
@@ -7764,11 +7762,7 @@ if (
     }
 
     if (
-      SUPER_ADMINS.has(
-        normalizeUsername(
-          target.username
-        )
-      ) &&
+      isConfiguredSuperAdminUsername(target.username) &&
       role !== "super_admin"
     ) {
       sendError(
@@ -7892,11 +7886,7 @@ if (
     }
 
     if (
-      SUPER_ADMINS.has(
-        normalizeUsername(
-          target.username
-        )
-      ) &&
+      isConfiguredSuperAdminUsername(target.username) &&
       status !== "active"
     ) {
       sendError(
@@ -8291,11 +8281,7 @@ if (
     }
 
     if (
-      SUPER_ADMINS.has(
-        normalizeUsername(
-          target.username
-        )
-      ) &&
+      isConfiguredSuperAdminUsername(target.username) &&
       role !== "super_admin"
     ) {
       sendError(
@@ -8416,11 +8402,7 @@ if (
     }
 
     if (
-      SUPER_ADMINS.has(
-        normalizeUsername(
-          target.username
-        )
-      ) &&
+      isConfiguredSuperAdminUsername(target.username) &&
       status !== "active"
     ) {
       sendError(
@@ -9830,9 +9812,7 @@ if (
 
   const isSuperAdmin =
     user.role === "super_admin" &&
-    SUPER_ADMINS.has(
-      username
-    );
+    isConfiguredSuperAdminUsername(username);
 
   if (isSuperAdmin) {
 
@@ -9931,7 +9911,7 @@ if (
 
   if (
     user.role === "super_admin" &&
-    SUPER_ADMINS.has(username)
+    isConfiguredSuperAdminUsername(username)
   ) {
 
     user.verified = true;
@@ -10265,11 +10245,7 @@ if (
   const allowed =
     admin.role ===
       "super_admin" &&
-    SUPER_ADMINS.has(
-      normalizeUsername(
-        admin.username
-      )
-    );
+    isConfiguredSuperAdminUsername(admin.username);
 
   if (!allowed) {
 
@@ -10381,11 +10357,7 @@ if (
   const allowed =
     admin.role ===
       "super_admin" &&
-    SUPER_ADMINS.has(
-      normalizeUsername(
-        admin.username
-      )
-    );
+    isConfiguredSuperAdminUsername(admin.username);
 
   if (!allowed) {
 
