@@ -49,7 +49,8 @@ function ensureMusic(db){
 function createCredits(user,body={}){
   return {
 
-    distributor:"RIZORA",
+    distributor:null,
+    catalog:"RIZORA",
 
     label:
       (user.username === "romi" || user.username === "RoMi") && body.labelChoice
@@ -196,7 +197,8 @@ function createReleaseMetadata(data,user,db){
     data
    ),
 
-  status:"ready",
+  status:"draft",
+  deliveryState:"not_sent",
 
   createdAt:
    new Date().toISOString()
@@ -223,7 +225,7 @@ function sameDistributionRelease(candidate,release){
 
 function createDistributionPackage(data,user,db){
  const isRomi=normalizeDistributionIdentity(user.username)==="romi";
- const allowedPlatforms=new Set(["spotify","apple_music","youtube_music","tiktok_music"]);
+ const allowedPlatforms=new Set(["spotify","apple_music","youtube_music","tiktok","tiktok_music"]);
  const requestedPlatforms=Array.isArray(data.platforms)?data.platforms:["spotify","apple_music","youtube_music","tiktok_music"];
  const platforms=Array.from(new Set(["rizora",...requestedPlatforms.map(function(platform){return String(platform||"").trim().toLowerCase();}).filter(function(platform){return allowedPlatforms.has(platform);})]));
  const releaseTitle=musicText(data.title||data.releaseTitle,"Untitled Release",160)||"Untitled Release";
@@ -239,15 +241,18 @@ function createDistributionPackage(data,user,db){
   existing.artist=releaseArtist;
   existing.genre=musicText(data.genre,existing.genre||"Afrobeats",80);
   existing.mood=musicText(data.mood,existing.mood||"Modern",80);
-  existing.distributor="RIZORA";
+  existing.distributor=null;
+  existing.catalog="RIZORA";
   existing.label=isRomi&&data.labelChoice?label:(existing.label||"Royal Saents Records");
   existing.platforms=platforms;
   if(data.artwork!==undefined)existing.artwork=data.artwork||null;
   if(data.audioUrl!==undefined)existing.audioUrl=data.audioUrl||null;
   if(data.videoUrl!==undefined)existing.videoUrl=data.videoUrl||null;
   if(data.visualUrl!==undefined)existing.visualUrl=data.visualUrl||null;
-  if(data.visibility!==undefined)existing.visibility=data.visibility==="private"?"private":"public";
-  existing.status="submitted";
+  if(data.visibility!==undefined)existing.visibility=data.visibility==="public"?"public":"private";
+  existing.status="draft";
+  existing.deliveryState="not_sent";
+  existing.deliveryProvider=null;
   existing.updatedAt=new Date().toISOString();
   return existing;
  }
@@ -260,15 +265,18 @@ function createDistributionPackage(data,user,db){
   title:releaseTitle,
   genre:musicText(data.genre,"Afrobeats",80),
   mood:musicText(data.mood,"Modern",80),
-  distributor:"RIZORA",
+  distributor:null,
+  catalog:"RIZORA",
   label:label,
   platforms:platforms,
   artwork:data.artwork||null,
   audioUrl:data.audioUrl||null,
   videoUrl:data.videoUrl||null,
   visualUrl:data.visualUrl||null,
-  visibility:data.visibility==="private"?"private":"public",
-  status:"submitted",
+  visibility:data.visibility==="public"?"public":"private",
+  status:"draft",
+  deliveryState:"not_sent",
+  deliveryProvider:null,
   createdAt:new Date().toISOString()
  };
 }
@@ -307,9 +315,10 @@ function upsertDistributionCatalog(db,release){
  catalogEntry.videoUrl=release.videoUrl||null;
  catalogEntry.visualUrl=release.visualUrl||null;
  catalogEntry.visibility=release.visibility||"public";
- catalogEntry.distributor="RIZORA";
+ catalogEntry.distributor=null;
+ catalogEntry.catalog="RIZORA";
  catalogEntry.label=release.label||"Royal Saents Records";
- catalogEntry.status="pending";
+ catalogEntry.status="draft";
  catalogEntry.updatedAt=release.updatedAt||new Date().toISOString();
  for(let index=db.musicCatalog.length-1;index>=0;index--){
   const candidate=db.musicCatalog[index];
@@ -438,7 +447,11 @@ const {
  getCurrentUser,
  sendJSON,
  sendError,
- generateMusicAI
+ generateMusicAI,
+ generateMusicAudio,
+ musicAudioConfigured,
+ musicAudioRequirements,
+ storeGeneratedAudio
 }=ctx;
 
 
@@ -471,9 +484,11 @@ if(method==="GET" && path==="/api/music/public-catalog"){
    videoUrl:c.videoUrl||null,
    visualUrl:c.visualUrl||null,
    platforms:Array.isArray(c.platforms)?c.platforms:[],
-   distributor:c.distributor||"RIZORA",
+  distributor:null,
+  catalog:"RIZORA",
    label:c.label||"Royal Saents Records",
-   status:c.status||"submitted",
+  status:c.deliveryState==="delivered"?(c.status||"delivered"):"RIZORA catalog",
+  deliveryState:c.deliveryState||"not_sent",
    createdAt:c.createdAt||null
   }));
  sendJSON(res,200,{success:true,catalog:publicCatalog});
@@ -502,6 +517,71 @@ if(!user){
 
 
 ensureMusic(db);
+
+
+if(method==="GET" && path==="/api/music/audio-status"){
+ const missingSettings=typeof musicAudioRequirements==="function"?musicAudioRequirements():[];
+ return writeJSON({
+  success:true,
+  provider:"ElevenLabs",
+  configured:typeof musicAudioConfigured==="function"&&musicAudioConfigured()&&missingSettings.length===0,
+  missingSettings,
+  durationOptionsSeconds:[15,30,60]
+ });
+}
+
+
+if(method==="POST" && path==="/api/music/generate-audio"){
+ const body=await readBody(req);
+ const prompt=musicText(body.prompt,"",1000);
+ const durationMs=Math.round(Number(body.durationMs)||0);
+ const genre=musicText(body.genre,"Afrobeats",80);
+ const mood=musicText(body.mood,"Modern",80);
+ const format=musicText(body.format,"Full track",80);
+ const allowedDurations=new Set([15000,30000,60000]);
+ if(prompt.length<8)return writeError(400,"Describe the music you want in at least 8 characters.");
+ if(!allowedDurations.has(durationMs))return writeError(400,"Choose a 15, 30 or 60 second generation.");
+ if(typeof musicAudioConfigured!=="function"||!musicAudioConfigured()){
+  return writeError(503,"Audio generation is not ready. Configure the provider key and durable media storage before enabling it.");
+ }
+ if(typeof generateMusicAudio!=="function"||typeof storeGeneratedAudio!=="function"){
+  return writeError(503,"RIZORA audio generation is not available right now.");
+ }
+
+ let generated;
+ try{
+  generated=await generateMusicAudio({
+   userId:user.id,
+   prompt:[genre,mood,format,prompt].filter(Boolean).join(". "),
+   durationMs,
+   forceInstrumental:body.forceInstrumental===true
+  });
+ }catch(error){
+  return writeError(error.status||503,error.message||"Audio generation failed. Try again shortly.");
+ }
+
+ try{
+  const media=storeGeneratedAudio(db,user.id,generated&&generated.buffer,"rizora-generated-track.mp3");
+  const output={
+   id:uid("music_output"),
+   userId:user.id,
+   mediaId:media.id,
+   audioUrl:media.url,
+   provider:"ElevenLabs",
+   modelId:"music_v2_5",
+   durationMs,
+   forceInstrumental:body.forceInstrumental===true,
+   prompt:[genre,mood,format,prompt].filter(Boolean).join(". "),
+   status:"ready",
+   createdAt:new Date().toISOString()
+  };
+  db.musicOutputs.push(output);
+  saveDB(db);
+  return writeJSON({success:true,output,media});
+ }catch(error){
+  return writeError(error.status||500,error.status?error.message:"Generated audio could not be saved.");
+ }
+}
 
 
 
@@ -1401,7 +1481,15 @@ if(
         r.userId === user.id
       )
      )
-   )
+   ).map(function(entry){
+    const delivered=entry.deliveryState==="delivered";
+    return Object.assign({},entry,{
+     distributor:null,
+     catalog:"RIZORA",
+     status:delivered?(entry.status||"delivered"):"draft",
+     deliveryState:entry.deliveryState||"not_sent"
+    });
+   })
 
  });
 
@@ -1432,7 +1520,12 @@ if(
 
  return writeJSON({
   success:true,
-  release
+  release:Object.assign({},release,{
+   distributor:null,
+   catalog:"RIZORA",
+   status:release.deliveryState==="delivered"?(release.status||"delivered"):"draft",
+   deliveryState:release.deliveryState||"not_sent"
+  })
  });
 
 }

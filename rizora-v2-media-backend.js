@@ -144,6 +144,39 @@ function publicMedia(record){
   };
 }
 
+function storeGeneratedAudio(db, ownerId, buffer, filename){
+  ensureState(db);
+  if(!Buffer.isBuffer(buffer) || !buffer.length || buffer.length > MAX_FILE_BYTES){
+    const error = new Error("Generated audio is empty or exceeds the media size limit.");
+    error.status = 413;
+    throw error;
+  }
+  if(!canUse(db, ownerId, buffer.length)){
+    const error = new Error("Your daily RIZORA media allowance has been reached.");
+    error.status = 413;
+    throw error;
+  }
+
+  const id = "media_" + crypto.randomBytes(12).toString("hex");
+  const mimeType = "audio/mpeg";
+  const safeFilename = safeName(filename || "rizora-generated-track.mp3");
+  const paths = buildPaths(ownerId, id, extFor(mimeType, safeFilename));
+  fs.writeFileSync(paths.file, buffer);
+  const record = {
+    id,
+    ownerId,
+    filename:safeFilename,
+    mimeType,
+    bytes:buffer.length,
+    url:"/api/v2/media/" + encodeURIComponent(id) + ".mp3",
+    path:paths.file,
+    createdAt:new Date().toISOString()
+  };
+  db.rzV2.media.push(record);
+  addUsage(db, ownerId, buffer.length);
+  return publicMedia(record);
+}
+
 function buildPaths(userId, id, ext){
   const base = path.join(mediaRoot(), safeName(userId));
   fs.mkdirSync(base, {recursive:true});
@@ -421,5 +454,5 @@ async function handleRizoraMedia(ctx){
   return false;
 }
 
-module.exports = { handleRizoraMedia };
+module.exports = { handleRizoraMedia, storeGeneratedAudio };
 

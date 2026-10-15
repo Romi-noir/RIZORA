@@ -21,7 +21,7 @@ const { handleRizoraLabs } = require("./rizora-v2-labs");
 const { handleRizoraEnterprise } = require("./rizora-v2-enterprise");
 const { handleRizoraLive } = require("./rizora-v2-live");
 const { handleRizoraMusic } = require("./rizora-v2-music");
-const { handleRizoraMedia } = require("./rizora-v2-media-backend");
+const { handleRizoraMedia, storeGeneratedAudio } = require("./rizora-v2-media-backend");
 const { handleRizoraMessaging } = require("./rizora-v2-messaging");
 
 const PORT = Number(process.env.PORT || 3000);
@@ -116,6 +116,7 @@ const SUPER_ADMINS = new Set(
 const loginAttempts = new Map();
 const signupAttempts = new Map();
 const aiRateLimits = new Map();
+const musicAudioRateLimits = new Map();
 
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_ATTEMPTS = 10;
@@ -3766,7 +3767,63 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
     if (await handleRizoraLive({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, hasPremium })) return;
-    if (await handleRizoraMusic({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, generateMusicAI: function(options) {
+    if (await handleRizoraMusic({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, storeGeneratedAudio, musicAudioRequirements: function() {
+      const missing = [];
+      if (!String(process.env.ELEVENLABS_API_KEY || "").trim()) missing.push("ELEVENLABS_API_KEY");
+      if (IS_PRODUCTION && !String(process.env.RIZORA_MEDIA_ROOT || "").trim()) missing.push("persistent media storage (RIZORA_MEDIA_ROOT)");
+      return missing;
+    }, musicAudioConfigured: function() {
+      return Boolean(String(process.env.ELEVENLABS_API_KEY || "").trim()) && (!IS_PRODUCTION || Boolean(String(process.env.RIZORA_MEDIA_ROOT || "").trim()));
+    }, generateMusicAudio: async function(options) {
+      const apiKey = String(process.env.ELEVENLABS_API_KEY || "").trim();
+      if (!apiKey) return null;
+      if (!checkRateLimit(musicAudioRateLimits, options.userId, 60 * 60 * 1000, 5)) {
+        const error = new Error("Audio generation is at its hourly limit. Try again later.");
+        error.status = 429;
+        throw error;
+      }
+      let response;
+      try {
+        response = await fetch("https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128", {
+          method: "POST",
+          headers: {"xi-api-key": apiKey, "Content-Type": "application/json"},
+          body: JSON.stringify({
+            prompt: options.prompt,
+            music_length_ms: options.durationMs,
+            model_id: "music_v2_5",
+            force_instrumental: options.forceInstrumental
+          }),
+          signal: AbortSignal.timeout(120000)
+        });
+      } catch (_) {
+        const error = new Error("The music generation service could not be reached. Try again shortly.");
+        error.status = 503;
+        throw error;
+      }
+      if (!response.ok) {
+        const error = response.status === 422
+          ? new Error("This prompt was rejected. Remove artist names, song titles or copyrighted lyrics and try again.")
+          : response.status === 429
+          ? new Error("The music generation service is busy. Try again shortly.")
+          : response.status === 401 || response.status === 403
+            ? new Error("The configured music generation key was rejected.")
+            : new Error("The music generation service could not create this track.");
+        error.status = response.status === 422 ? 422 : response.status === 429 ? 429 : 503;
+        throw error;
+      }
+      if (!String(response.headers.get("content-type") || "").toLowerCase().startsWith("audio/")) {
+        const error = new Error("The generation service returned an unsupported audio format.");
+        error.status = 502;
+        throw error;
+      }
+      const buffer = Buffer.from(await response.arrayBuffer());
+      if (!buffer.length || buffer.length > 25 * 1024 * 1024) {
+        const error = new Error("The generated audio exceeded RIZORA’s file limit.");
+        error.status = 413;
+        throw error;
+      }
+      return {buffer, mimeType: "audio/mpeg", modelId: "music_v2_5"};
+    }, generateMusicAI: function(options) {
     const apiKey = String(process.env.GROQ_API_KEY || "").trim();
     if (!apiKey) return null;
     if (!checkRateLimit(aiRateLimits, options.userId, 10 * 60 * 1000, 20)) {
@@ -7030,7 +7087,7 @@ if (
       "Do not use generic motivational endings such as 'Good luck', 'You are already verified', or 'clean slate' unless that fact is present in the supplied account context. " +
       "Do not pad the answer with advice the user did not ask for. If relevant data is missing, say so plainly. " +
       "Treat these as real RIZORA surfaces when they fit the request: Creator OS and Command Center, Flow, Explore, Live, Messages, Grow, RIZORA AI, Music Studio and Music AI, Creator Hub, Profile, Analytics, Boosts, Opportunities, Communities, Stories and Creator Suite. " +
-      "RIZORA is the first-party music distributor and catalog home; Spotify, Apple Music, YouTube Music and TikTok Music are external delivery destinations. Never claim an external release was delivered unless the backend confirms it. " +
+      "RIZORA provides an in-app music catalog and release drafts; Spotify, Apple Music, YouTube Music and TikTok/CapCut sound libraries require an authorized external distributor connection. Never claim an external release was delivered unless the backend confirms it. " +
       "RoMi (@romi.noir), Ajiboye Hallelujah Oluwaronmi, is the artist, developer, creator and builder who created RIZORA. The official RIZORA account is @rizora. " +
       "When the signed-in role or username identifies RoMi or Israel as a privileged RIZORA account, respect that context without exposing credentials or private account details. " +
       "Do not invent investors, shareholders, funding rounds, press releases, companies, or unrelated people. If legal ownership percentages or shareholder records are not explicitly available, say they are not specified. " +
