@@ -663,6 +663,9 @@ function safeUser(user) {
     email: user.email || "",
     role: user.role || "user",
     status: user.status || "active",
+    plan: isOwnerAccount(user) ? "premium_plus" : String(user.plan || "free").toLowerCase(),
+    premiumPlus: hasPremiumPlus(user),
+    ownerAccount: isOwnerAccount(user),
     points: Number(user.points || 0),
     referralCode: user.referralCode || "",
     socialHandle: user.socialHandle || "",
@@ -1057,7 +1060,7 @@ function configuredPasswordForUser(username) {
     ).trim();
   }
 
-  if (normalized === "superadmin2") {
+  if (normalized === "israel" || normalized === "superadmin2") {
     return String(
       process.env.RIZORA_SUPERADMIN2_PASSWORD ||
       process.env.RIZORA_ISRAEL_ADMIN_PASSWORD ||
@@ -3763,7 +3766,20 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
     if (await handleRizoraLive({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, hasPremium })) return;
-    if (await handleRizoraMusic({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
+    if (await handleRizoraMusic({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, generateMusicAI: function(options) {
+    const apiKey = String(process.env.GROQ_API_KEY || "").trim();
+    if (!apiKey) return null;
+    if (!checkRateLimit(aiRateLimits, options.userId, 10 * 60 * 1000, 20)) {
+      const error = new Error("Music AI is busy right now. Try again in a few minutes.");
+      error.status = 429;
+      throw error;
+    }
+    return rizoraGroqCompletion({
+      apiKey,
+      model: process.env.GROQ_MODEL,
+      messages: options.messages
+    });
+  } })) return;
     if (await handleRizoraMedia({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
     if (await handleRizoraMessaging({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
     if (await handleRizoraLabs({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;

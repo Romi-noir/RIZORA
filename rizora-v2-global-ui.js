@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 (function(){
   var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   var mounted=false, user=null, modal=null;
@@ -53,7 +53,7 @@
     try{
       var d=await api("/api/v2/channels/"+encodeURIComponent(id));
       var c=d.channel;
-      var messageCards=(d.messages||[]).map(function(m){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((m.user&&(m.user.publicUsername||m.user.username))||"creator")+'</strong><span class="rz-mini">'+esc(m.createdAt||"")+'</span></div><p>'+esc(m.text||"")+'</p><div class="rz-global-reactions"><button class="rz-btn" data-global-react="'+esc(m.id)+'">HEART¥ '+Number((m.reactions||{}).heart||0)+'</button><button class="rz-btn" data-global-react-value="fire" data-global-react="'+esc(m.id)+'">ðŸ”¥ '+Number((m.reactions||{}).fire||0)+'</button></div></article>';}).join("");
+      var messageCards=(d.messages||[]).map(function(m){return '<article class="rz-global-card"><div class="rz-global-row"><strong>@'+esc((m.user&&(m.user.publicUsername||m.user.username))||"creator")+'</strong><span class="rz-mini">'+esc(m.createdAt||"")+'</span></div><p>'+esc(m.text||"")+'</p><div class="rz-global-reactions"><button class="rz-btn" data-global-react="'+esc(m.id)+'">Likes '+Number((m.reactions||{}).heart||0)+'</button><button class="rz-btn" data-global-react-value="fire" data-global-react="'+esc(m.id)+'">Fire '+Number((m.reactions||{}).fire||0)+'</button></div></article>';}).join("");
       var canBroadcast=c.ownerId===user.id;
       shell(c.name,
         '<div class="rz-global-row"><div><span class="rz-mini">'+Number(c.memberCount||0)+' members</span><p>'+esc(c.description||"")+'</p></div><button id="rzChannelMembership" class="rz-btn">'+(c.joined?"Leave":"Join")+'</button></div>'+

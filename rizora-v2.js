@@ -180,19 +180,21 @@ function googleButton(){
 }
 function shell(){
   var desktopItems=[
-    {id:"home",label:"Home",icon:"H"},
-    {id:"flow",label:"For You",icon:"F"},
-    {id:"discover",label:"Explore",icon:"E"},
-    {id:"live",label:"LIVE",icon:"LIVE"},
-    {id:"notifications",label:"Notifications",icon:"N"},
-    {id:"messages",label:"Messages",icon:"M"},
-    {id:"grow",label:"Grow",icon:"G"},
-    {id:"ai",label:"RIZORA AI",icon:"AI"},
-    {id:"profile",label:"Profile",icon:"P"}
+    {id:"home",label:"Command Center",icon:"H",group:"WORKSPACE"},
+    {id:"flow",label:"For You",icon:"F",group:"WORKSPACE"},
+    {id:"discover",label:"Explore",icon:"E",group:"WORKSPACE"},
+    {id:"live",label:"Live",icon:"LIVE",group:"COMMUNITY"},
+    {id:"notifications",label:"Notifications",icon:"N",group:"COMMUNITY"},
+    {id:"messages",label:"Messages",icon:"M",group:"COMMUNITY"},
+    {id:"grow",label:"Grow",icon:"G",group:"CREATOR TOOLS"},
+    {id:"ai",label:"RIZORA AI",icon:"AI",group:"CREATOR TOOLS"},
+    {id:"profile",label:"Profile",icon:"P",group:"ACCOUNT"}
   ];
-  var side=desktopItems.map(function(item){
-    return '<button class="rz-xnav-item '+(state.view===item.id?"active":"")+'" data-nav="'+item.id+'"><span class="rz-xnav-icon" aria-hidden="true">'+item.icon+'</span><span>'+item.label+'</span></button>';
-  }).join("");
+  var side="",activeGroup="";
+  desktopItems.forEach(function(item){
+    if(item.group!==activeGroup){activeGroup=item.group;side+='<div class="rz-xnav-heading">'+activeGroup+'</div>';}
+    side+='<button class="rz-xnav-item '+(state.view===item.id?"active":"")+'" data-nav="'+item.id+'"><span class="rz-xnav-icon" aria-hidden="true">'+item.icon+'</span><span>'+item.label+'</span></button>';
+  });
   var mobile=[
     {id:"home",label:"Home",icon:"H"},
     {id:"discover",label:"Explore",icon:"E"},
@@ -263,14 +265,14 @@ function creatorCommandCenter(){
   var next=openTasks[0];
   var firstName=String((state.user&&state.user.displayName)||state.user&&state.user.username||'Creator').split(/\s+/)[0];
   var feedCount=Number((state.feed||[]).length);
+  var owner=!!(state.user&&(state.user.ownerAccount===true||state.user.role==='super_admin'));
+  var ownerCard=owner?'<article class="rz-command-card rz-command-owner"><div class="rz-command-icon">◆</div><div class="rz-kicker">OWNER WORKSPACE</div><h3>Platform command</h3><p>Premium+ creator tools, moderation, support and live platform controls.</p><div class="rz-command-actions"><button class="rz-btn primary" data-go="admin">Open command center</button></div></article>':'';
   return '<div class="rz-command-center">'+
-    '<section class="rz-command-hero"><div><div class="rz-kicker">RIZORA COMMAND CENTER</div><h2>Good to see you, '+esc(firstName)+'.</h2><p>Your creative work, audience, intelligence and growth are ready in one calm workspace.</p><div class="rz-command-actions"><button class="rz-btn primary" data-go="flow">Create a post</button><button class="rz-btn" data-go="ai">Ask RIZORA AI</button><button class="rz-btn" data-open-music="1">Open Music Studio</button></div></div><div class="rz-command-score"><b>'+Number(state.points||0)+'</b><span>creator points</span><div class="rz-command-progress"><i style="width:'+Math.min(100,Math.max(8,Number(state.points||0)%101))+'%"></i></div></div></section>'+
+    '<section class="rz-command-hero"><div><div class="rz-kicker">RIZORA COMMAND CENTER '+(owner?'<span class="rz-owner-chip">PREMIUM+ · OWNER</span>':'')+'</div><h2>Good to see you, '+esc(firstName)+'.</h2><p>Your creative work, audience, intelligence and growth are ready in one calm workspace.</p><div class="rz-command-actions"><button class="rz-btn primary" data-go="flow">Create a post</button><button class="rz-btn" data-go="ai">Ask RIZORA AI</button><button class="rz-btn" data-open-music="1">Open Music Studio</button></div></div><div class="rz-command-score"><b>'+Number(state.points||0)+'</b><span>creator points</span><div class="rz-command-progress"><i style="width:'+Math.min(100,Math.max(8,Number(state.points||0)%101))+'%"></i></div></div></section>'+ 
     '<section class="rz-command-grid">'+
-      '<article class="rz-command-card wide"><div class="rz-command-icon">AI</div><h3>Turn a thought into the next move.</h3><p>Use creator-aware ideas, hooks, content plans and strategy in a focused conversation with RIZORA AI.</p><div class="rz-command-actions"><button class="rz-btn primary" data-go="ai">Open intelligence</button><button class="rz-btn" data-go="studio">Quick tools</button></div></article>'+
-      '<article class="rz-command-card"><div class="rz-command-icon">♪</div><h3>Music Studio</h3><p>Shape a release, add artwork or a visual, then keep distribution and catalog status together.</p><div class="rz-command-actions"><button class="rz-btn" data-open-music="1">Enter studio</button></div></article>'+
-      '<article class="rz-command-card"><div class="rz-command-icon">↗</div><h3>Momentum</h3><p>'+Number(state.tasks.length||0)+' growth tasks and social missions are ready for your next consistent move.</p><div class="rz-command-actions"><button class="rz-btn" data-go="grow">Open Grow</button></div></article>'+
-      '<article class="rz-command-card"><div class="rz-command-icon">◎</div><h3>Audience</h3><p>'+feedCount+' posts are in your current feed. Keep your people close through posts, messages, stories and live.</p><div class="rz-command-actions"><button class="rz-btn" data-go="flow">Open Flow</button><button class="rz-btn" data-go="messages">Inbox</button></div></article>'+
-      '<article class="rz-command-card wide"><div class="rz-kicker">START HERE</div><h3>'+(next?esc(next.title):'Your Creator OS is ready')+'</h3><p>'+(next?esc(next.description||'Complete this step to build your RIZORA foundation.'): 'Publish something, shape your profile, or open Music Studio when you are ready.')+'</p><div class="rz-command-actions">'+(next?'<button class="rz-btn primary" data-onboarding-follow="'+esc(next.username)+'">Follow + earn</button>':'<button class="rz-btn primary" data-go="profile">Open profile</button>')+'<button class="rz-btn" data-go="discover">Explore RIZORA</button></div></article>'+
+      '<article class="rz-command-card"><div class="rz-command-icon">↗</div><div class="rz-kicker">GROW</div><h3>Build momentum</h3><p>'+Number(state.tasks.length||0)+' growth tasks are ready. Track progress and find your next move in one place.</p><div class="rz-command-actions"><button class="rz-btn" data-go="grow">Open Grow</button></div></article>'+ 
+      '<article class="rz-command-card"><div class="rz-command-icon">◎</div><div class="rz-kicker">COMMUNITY</div><h3>Stay close to your people</h3><p>'+feedCount+' posts in your feed, with messages and live rooms close by.</p><div class="rz-command-actions"><button class="rz-btn" data-go="flow">Open Flow</button><button class="rz-btn" data-go="messages">Inbox</button><button class="rz-btn" data-go="live">Live</button></div></article>'+ 
+      '<article class="rz-command-card wide"><div class="rz-kicker">START HERE</div><h3>'+(next?esc(next.title):'Your Creator OS is ready')+'</h3><p>'+(next?esc(next.description||'Complete this step to build your RIZORA foundation.'): 'Publish something, shape your profile, or open Music Studio when you are ready.')+'</p><div class="rz-command-actions">'+(next?'<button class="rz-btn primary" data-onboarding-follow="'+esc(next.username)+'">Follow + earn</button>':'<button class="rz-btn primary" data-go="profile">Open profile</button>')+'<button class="rz-btn" data-go="discover">Explore RIZORA</button></div></article>'+ownerCard+
     '</section></div>';
 }
 function liveView(){

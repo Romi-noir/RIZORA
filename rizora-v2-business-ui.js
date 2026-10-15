@@ -176,6 +176,44 @@ async function loadMine(m){
   }catch(e){host.textContent=e.message;}
 }
 
+var adMediaFieldIndex=0;
+function enhanceAdMediaFields(root){
+  root.querySelectorAll('input[name="imageUrl"][type="url"]').forEach(function(hidden){
+    hidden.type="hidden";
+    hidden.removeAttribute("placeholder");
+    hidden.value="";
+    var file=document.createElement("input");
+    file.type="file";
+    file.accept="image/jpeg,image/png,image/webp,image/gif";
+    file.className="rz-input";
+    file.id="rzAdImageUpload"+(++adMediaFieldIndex);
+    file.setAttribute("aria-label","Upload an ad image from this device");
+    var status=document.createElement("small");
+    status.className="rz-muted";
+    status.textContent="Choose an image from this device. No URL needed.";
+    hidden.parentNode.insertBefore(file,hidden);
+    hidden.parentNode.insertBefore(status,hidden);
+    file.addEventListener("change",function(){
+      if(!file.files||!file.files[0])return;
+      var version=(file._rzUploadVersion||0)+1;
+      file._rzUploadVersion=version;
+      hidden.value="";
+      var form=file.form;
+      var buttons=form?Array.prototype.slice.call(form.querySelectorAll('button[type="submit"],button:not([type])')):[];
+      buttons.forEach(function(button){button.disabled=true;});
+      Promise.resolve().then(function(){
+        if(typeof window.RIZORA_UPLOAD_FILE!=="function")throw new Error("File uploads are not available yet. Refresh and try again.");
+        return window.RIZORA_UPLOAD_FILE(file.files[0],status);
+      }).then(function(media){
+        if(version===file._rzUploadVersion)hidden.value=API+media.url;
+      }).catch(function(error){
+        if(version===file._rzUploadVersion)status.textContent=error.message||"Image upload failed.";
+      }).finally(function(){
+        if(version===file._rzUploadVersion)buttons.forEach(function(button){button.disabled=false;});
+      });
+    });
+  });
+}
 function inject(){
   var aside=document.querySelector(".rz-sidebar");
   if(!aside||document.getElementById("rzBusinessTools"))return;
@@ -190,8 +228,8 @@ function inject(){
   box.querySelector('[data-business="gift"]').onclick=membershipGift;
 }
 window.RIZORA_BUSINESS={earnings:earnings,freeMembership:freeMembership,membershipGift:membershipGift,ads:adsManager,externalAds:renderExternalAdForm};
-setTimeout(inject,260);
-var mo=new MutationObserver(inject);
+setTimeout(function(){enhanceAdMediaFields(document);inject();},260);
+var mo=new MutationObserver(function(){enhanceAdMediaFields(document);inject();});
 setTimeout(function(){if(document.body)mo.observe(document.body,{childList:true,subtree:true});},500);
 })();
 

@@ -209,113 +209,113 @@ function createReleaseMetadata(data,user,db){
 }
 
 
+function normalizeDistributionIdentity(value){
+ return String(value||"").normalize("NFKC").trim().replace(/\s+/g," ").toLowerCase();
+}
+
+function sameDistributionRelease(candidate,release){
+ if(!candidate||!release||candidate.userId!==release.userId)return false;
+ if(candidate.releaseId&&release.releaseId&&String(candidate.releaseId)===String(release.releaseId))return true;
+ return Boolean(normalizeDistributionIdentity(candidate.title)&&normalizeDistributionIdentity(candidate.artist)&&
+  normalizeDistributionIdentity(candidate.title)===normalizeDistributionIdentity(release.title)&&
+  normalizeDistributionIdentity(candidate.artist)===normalizeDistributionIdentity(release.artist));
+}
+
 function createDistributionPackage(data,user,db){
-
- const isRomi =
- user.username === "romi" ||
- user.username === "RoMi";
-
-
- const platforms = Array.from(
-   new Set([
-    "rizora",
-    ...(data.platforms || [
-      "spotify",
-      "apple_music",
-      "youtube_music",
-      "tiktok_music"
-    ])
-   ])
- );
-
-
- const releaseTitle = String(data.title || data.releaseTitle || "Untitled Release").trim() || "Untitled Release";
- const releaseId = data.releaseId ? String(data.releaseId) : null;
-
- const existing =
- db.musicPlatformReleases.find(
-  r =>
-   r.userId === user.id &&
-   ((releaseId && r.releaseId === releaseId) ||
-    (!releaseId && !r.releaseId && String(r.title || "").trim() === releaseTitle))
- );
-
+ const isRomi=normalizeDistributionIdentity(user.username)==="romi";
+ const allowedPlatforms=new Set(["spotify","apple_music","youtube_music","tiktok_music"]);
+ const requestedPlatforms=Array.isArray(data.platforms)?data.platforms:["spotify","apple_music","youtube_music","tiktok_music"];
+ const platforms=Array.from(new Set(["rizora",...requestedPlatforms.map(function(platform){return String(platform||"").trim().toLowerCase();}).filter(function(platform){return allowedPlatforms.has(platform);})]));
+ const releaseTitle=musicText(data.title||data.releaseTitle,"Untitled Release",160)||"Untitled Release";
+ const releaseArtist=musicText(data.artist,user.username||"Unknown artist",120)||"Unknown artist";
+ const releaseId=musicText(data.releaseId,"",160)||null;
+ const identity={userId:user.id,releaseId:releaseId,title:releaseTitle,artist:releaseArtist};
+ const existing=db.musicPlatformReleases.find(function(release){return sameDistributionRelease(release,identity);});
+ const label=isRomi&&data.labelChoice?musicText(data.labelChoice,"Royal Saents Records",120):"Royal Saents Records";
 
  if(existing){
-
-   existing.platforms = platforms;
-
-   
-   if(data.title){
-    existing.title = String(data.title);
-   }
-
-   if(data.artist){
-    existing.artist = String(data.artist);
-   }
-
-   if(data.artwork !== undefined) existing.artwork = data.artwork || null;
-   if(data.audioUrl !== undefined) existing.audioUrl = data.audioUrl || null;
-   if(data.videoUrl !== undefined) existing.videoUrl = data.videoUrl || null;
-   if(data.visualUrl !== undefined) existing.visualUrl = data.visualUrl || null;
-   if(data.visibility !== undefined) existing.visibility = data.visibility === "private" ? "private" : "public";
-
-   existing.status = "submitted";
-
-   existing.updatedAt =
-    new Date().toISOString();
-
-   return existing;
-
+  existing.releaseId=existing.releaseId||releaseId||uid("release");
+  existing.title=releaseTitle;
+  existing.artist=releaseArtist;
+  existing.genre=musicText(data.genre,existing.genre||"Afrobeats",80);
+  existing.mood=musicText(data.mood,existing.mood||"Modern",80);
+  existing.distributor="RIZORA";
+  existing.label=isRomi&&data.labelChoice?label:(existing.label||"Royal Saents Records");
+  existing.platforms=platforms;
+  if(data.artwork!==undefined)existing.artwork=data.artwork||null;
+  if(data.audioUrl!==undefined)existing.audioUrl=data.audioUrl||null;
+  if(data.videoUrl!==undefined)existing.videoUrl=data.videoUrl||null;
+  if(data.visualUrl!==undefined)existing.visualUrl=data.visualUrl||null;
+  if(data.visibility!==undefined)existing.visibility=data.visibility==="private"?"private":"public";
+  existing.status="submitted";
+  existing.updatedAt=new Date().toISOString();
+  return existing;
  }
 
-
  return {
-
   id:uid("distribution"),
-
   userId:user.id,
-
-  releaseId:
-   releaseId || uid("release"),
-
-  artist:
-   data.artist || user.username,
-
-  title:
-   releaseTitle,
-
-   distributor:"RIZORA",
-
-  label:
-   isRomi && data.labelChoice
-    ? data.labelChoice
-    : "Royal Saents Records",
-
-  platforms,
-
-  artwork:
-   data.artwork || null,
-
-  audioUrl:
-   data.audioUrl || null,
-
-  videoUrl:
-   data.videoUrl || null,
-
-  visualUrl:
-   data.visualUrl || null,
-
-  visibility:
-   data.visibility === "private" ? "private" : "public",
-
+  releaseId:releaseId||uid("release"),
+  artist:releaseArtist,
+  title:releaseTitle,
+  genre:musicText(data.genre,"Afrobeats",80),
+  mood:musicText(data.mood,"Modern",80),
+  distributor:"RIZORA",
+  label:label,
+  platforms:platforms,
+  artwork:data.artwork||null,
+  audioUrl:data.audioUrl||null,
+  videoUrl:data.videoUrl||null,
+  visualUrl:data.visualUrl||null,
+  visibility:data.visibility==="private"?"private":"public",
   status:"submitted",
-
-  createdAt:
-   new Date().toISOString()
-
+  createdAt:new Date().toISOString()
  };
+}
 
+function upsertDistributionCatalog(db,release){
+ const duplicateReleases=db.musicPlatformReleases.filter(function(candidate){return sameDistributionRelease(candidate,release)&&candidate!==release;});
+ const distributionIds=new Set([release.id,...duplicateReleases.map(function(candidate){return candidate.id;})].filter(Boolean));
+ if(!db.musicPlatformReleases.includes(release))db.musicPlatformReleases.push(release);
+ for(let index=db.musicPlatformReleases.length-1;index>=0;index--){
+  const candidate=db.musicPlatformReleases[index];
+  if(candidate!==release&&sameDistributionRelease(candidate,release))db.musicPlatformReleases.splice(index,1);
+ }
+
+ const catalogEntries=db.musicCatalog.filter(function(entry){
+  const linked=distributionIds.has(entry.releaseId);
+  const owned=entry.userId===release.userId||(!entry.userId&&linked);
+  const releaseTitle=normalizeDistributionIdentity(release.title);
+  const releaseArtist=normalizeDistributionIdentity(release.artist);
+  const sameIdentity=Boolean(releaseTitle&&releaseArtist&&normalizeDistributionIdentity(entry.title)===releaseTitle&&normalizeDistributionIdentity(entry.artist)===releaseArtist);
+  return owned&&(linked||sameIdentity);
+ });
+ let catalogEntry=catalogEntries[0];
+ if(!catalogEntry){
+  catalogEntry={id:uid("catalog"),createdAt:new Date().toISOString()};
+  db.musicCatalog.push(catalogEntry);
+ }
+ catalogEntry.userId=release.userId;
+ catalogEntry.releaseId=release.id;
+ catalogEntry.title=release.title||"Untitled Release";
+ catalogEntry.artist=release.artist;
+ catalogEntry.genre=release.genre||"Afrobeats";
+ catalogEntry.mood=release.mood||"Modern";
+ catalogEntry.platforms=release.platforms||["rizora"];
+ catalogEntry.artwork=release.artwork||null;
+ catalogEntry.audioUrl=release.audioUrl||null;
+ catalogEntry.videoUrl=release.videoUrl||null;
+ catalogEntry.visualUrl=release.visualUrl||null;
+ catalogEntry.visibility=release.visibility||"public";
+ catalogEntry.distributor="RIZORA";
+ catalogEntry.label=release.label||"Royal Saents Records";
+ catalogEntry.status="pending";
+ catalogEntry.updatedAt=release.updatedAt||new Date().toISOString();
+ for(let index=db.musicCatalog.length-1;index>=0;index--){
+  const candidate=db.musicCatalog[index];
+  if(candidate!==catalogEntry&&catalogEntries.includes(candidate))db.musicCatalog.splice(index,1);
+ }
+ return release;
 }
 
 function createAIJob(type,user,target,extra={}){
@@ -340,8 +340,91 @@ function createAIJob(type,user,target,extra={}){
 
 }
 
+function musicError(status,message){
+  return Object.assign(new Error(message),{status});
+}
 
+function parseMusicResult(content){
+  const text=String(content||"").trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/i,"");
+  const start=text.indexOf("{");
+  const end=text.lastIndexOf("}");
+  if(start<0||end<=start)throw musicError(502,"Music AI returned an incomplete result. Try again.");
+  try{return JSON.parse(text.slice(start,end+1));}
+  catch(_){throw musicError(502,"Music AI returned an unreadable result. Try again.");}
+}
 
+function musicText(value,fallback,maxLength){
+  return String(value||fallback||"").trim().slice(0,maxLength||300);
+}
+
+function musicList(value,fallback,maxItems){
+  const items=Array.isArray(value)&&value.length?value:fallback;
+  return items.slice(0,maxItems).map(item=>musicText(item,"",240)).filter(Boolean);
+}
+
+async function generateMusicResult(body,generateAI,type,userId){
+  if(typeof generateAI!=="function")throw musicError(503,"RIZORA Music AI is not configured right now.");
+  const genre=musicText(body.genre,"Afrobeats",80);
+  const mood=musicText(body.mood,"Modern",80);
+  const prompt=musicText(body.prompt,"",1200);
+  const format=musicText(body.format,"Full track",80);
+  const schema=type==="beat_concept"
+    ? "Return JSON only with type, title, tempoBpm, key, groove, bass, palette, structure (array of strings), and producerNote."
+    : "Return JSON only with type, title, tempoBpm, key, sections (array of objects with name, bars, focus), layers (array of strings), vocalDirection, and mixNotes (array of strings).";
+  let response;
+  try{
+    response=await generateAI({userId,messages:[
+      {role:"system",content:"You are RIZORA Music AI, a practical producer and vocal-arrangement partner. Turn the creator's idea into a specific, original production direction. Respect their genre and mood. For short social formats, start with the strongest hook and fit the chosen duration. Never claim you rendered audio, mastered a track, or delivered music to an external platform. " + schema},
+      {role:"user",content:JSON.stringify({genre,mood,format,idea:prompt})}
+    ]});
+  }catch(error){if(error&&error.status)throw error;throw musicError(503,"RIZORA Music AI could not connect. Try again shortly.");}
+  if(!response)throw musicError(503,"RIZORA Music AI is not configured right now.");
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){
+    if(response.status===429)throw musicError(429,"Music AI is busy right now. Try again in a moment.");
+    throw musicError(503,"Music AI is temporarily unavailable. Try again shortly.");
+  }
+  const generated=parseMusicResult(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content);
+  if(!generated||typeof generated!=="object"||Array.isArray(generated))throw musicError(502,"Music AI returned an incomplete result. Try again.");
+  const title=musicText(generated.title,type==="beat_concept"?"Beat concept":"Arrangement direction",100);
+  const result={
+    type,
+    title:format+" · "+title,
+    prompt,
+    format,
+    genre,
+    mood,
+    tempoBpm:Math.max(40,Math.min(220,Math.round(Number(generated.tempoBpm)||100))),
+    key:musicText(generated.key,"Key not specified",40)
+  };
+  if(type==="beat_concept"){
+    result.groove=musicText(generated.groove,"Build a pocket that supports the hook.",240);
+    result.bass=musicText(generated.bass,"Shape a bass line around the kick.",240);
+    result.palette=musicText(generated.palette,"Keep the instrumental palette focused.",240);
+    result.structure=musicList(generated.structure,["8-bar loop","Hook variation","Drop and vocal space"],6);
+    result.producerNote=musicText(generated.producerNote,"Build an eight-bar loop, then shape its energy around the strongest phrase.",400);
+  }else{
+    const sections=Array.isArray(generated.sections)?generated.sections.slice(0,8):[];
+    if(!sections.length)throw musicError(502,"Music AI returned an incomplete arrangement. Try again.");
+    result.sections=sections.map(section=>({
+      name:musicText(section&&section.name,"Section",50),
+      bars:Math.max(1,Math.min(64,Math.round(Number(section&&section.bars)||8))),
+      focus:musicText(section&&section.focus,"Develop the musical idea.",240)
+    }));
+    result.layers=musicList(generated.layers,["Drums","Bass","Lead texture"],6);
+    result.vocalDirection=musicText(generated.vocalDirection,"Leave clear space for the lead vocal.",300);
+    result.mixNotes=musicList(generated.mixNotes,["Keep headroom before mastering.","Make room for the lead vocal."],5);
+  }
+  return result;
+}
+
+function musicDirection(body={},generateAI,userId){
+  return generateMusicResult(body,generateAI,"arrangement",userId);
+}
+
+function beatConcept(body={},generateAI,userId){
+  return generateMusicResult(body,generateAI,"beat_concept",userId);
+}
 
 const REGISTERED_MUSIC_PATCHES = new Set();
 
@@ -354,7 +437,8 @@ const {
  saveDB,
  getCurrentUser,
  sendJSON,
- sendError
+ sendError,
+ generateMusicAI
 }=ctx;
 
 
@@ -453,7 +537,7 @@ if(
    body.beat || null,
 
   prompt:
-   String(body.prompt || ""),
+   musicText(body.prompt,"",1200),
 
   genre:
    body.genre || "Afrobeats",
@@ -461,16 +545,15 @@ if(
   mood:
    body.mood || "modern",
 
+  format:
+   musicText(body.format,"Full track",80),
+
   status:"processing",
 
   createdAt:
    new Date().toISOString()
 
  };
-
-
- db.musicProjects.push(project);
-
 
 
  const job=createAIJob(
@@ -482,6 +565,16 @@ if(
     project.prompt
   }
  );
+
+ let result;
+ try{result=await musicDirection(body,generateMusicAI,user.id);}
+ catch(error){return writeError(error.status||503,error.message||"Music AI is unavailable.");}
+ db.musicProjects.push(project);
+ project.status="ready";
+ project.arrangement=result;
+ job.status="ready";
+ job.result=result;
+ job.completedAt=new Date().toISOString();
 
 
  db.musicAIJobs.push(job);
@@ -496,8 +589,8 @@ if(
   success:true,
 
   project,
-
-  job
+  job,
+  result
 
  });
 
@@ -549,8 +642,11 @@ if(
   body.mood ||
   "energetic",
 
+ format:
+  musicText(body.format,"Full track",80),
+
  prompt:
-  String(body.prompt || ""),
+  musicText(body.prompt,"",1200),
 
  status:"processing",
 
@@ -560,9 +656,11 @@ if(
  };
 
 
+ let result;
+ try{result=await beatConcept(body,generateMusicAI,user.id);}
+ catch(error){return writeError(error.status||503,error.message||"Music AI is unavailable.");}
+
  db.musicBeats.push(beat);
-
-
  db.musicAIJobs.push(
   createAIJob(
    "beat_generation",
@@ -575,6 +673,13 @@ if(
   )
  );
 
+ beat.status="ready";
+ beat.concept=result;
+ const beatJob=db.musicAIJobs[db.musicAIJobs.length-1];
+ beatJob.status="ready";
+ beatJob.result=result;
+ beatJob.completedAt=new Date().toISOString();
+
 
  saveDB(db);
 
@@ -584,7 +689,8 @@ if(
 
   success:true,
 
-  beat
+  beat,
+  result
 
  });
 
@@ -1263,78 +1369,7 @@ if(
   db
  );
 
-
-  const isNewRelease =
-  !db.musicPlatformReleases.includes(release);
-
-
- if(isNewRelease){
-
-  db.musicPlatformReleases.push(
-   release
-  );
-
-
-  db.musicCatalog.push({
-   id:uid("catalog"),
-
-   userId:
-    release.userId,
-
-   releaseId:
-    release.id,
-
-   title:
-    release.title || "Untitled Release",
-
-   platforms:
-    release.platforms || [],
-   artwork:release.artwork||null,
-   audioUrl:release.audioUrl||null,
-   videoUrl:release.videoUrl||null,
-   visualUrl:release.visualUrl||null,
-   visibility:release.visibility||"public",
-   artist:
-    release.artist,
-
-   distributor:
-    release.distributor,
-
-   label:
-    release.label,
-
-   status:
-    "pending",
-
-   createdAt:
-    new Date().toISOString()
-  });
-
- }
-
-
-
-
- if(!isNewRelease){
-  const catalogEntry = db.musicCatalog.find(
-   c=>c.releaseId===release.id &&
-   c.userId===release.userId
-  );
-
-  if(catalogEntry){
-   catalogEntry.title = release.title || "Untitled Release";
-   catalogEntry.artist = release.artist;
-   catalogEntry.platforms = release.platforms || [];
-   catalogEntry.artwork = release.artwork || null;
-   catalogEntry.audioUrl = release.audioUrl || null;
-   catalogEntry.videoUrl = release.videoUrl || null;
-   catalogEntry.visualUrl = release.visualUrl || null;
-   catalogEntry.visibility = release.visibility || "public";
-   catalogEntry.distributor = release.distributor;
-   catalogEntry.label = release.label;
-   catalogEntry.status = "pending";
-  }
- }
+ upsertDistributionCatalog(db,release);
  saveDB(db);
 
 

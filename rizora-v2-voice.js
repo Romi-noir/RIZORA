@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 (function(){
   var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   var active=null;
@@ -50,7 +50,7 @@
   function resetButton(button,kind){
     if(!button)return;
     button.disabled=false;
-    button.textContent=kind==="ai"?"ðŸŽ™ Talk to AI":"ðŸŽ™ Voice";
+    button.textContent=kind==="ai"?"Talk to AI":"Voice";
     button.setAttribute("aria-pressed","false");
   }
 
@@ -99,7 +99,7 @@
     var started=Date.now();
     var timer=setInterval(function(){
       var sec=Math.floor((Date.now()-started)/1000);
-      button.textContent="â–  Stop "+Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0");
+      button.textContent="Stop "+Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0");
       if(sec>=MAX_RECORDING_SECONDS)stopActive();
     },250);
 
@@ -162,7 +162,7 @@
     };
 
     recorder.start(250);
-    button.textContent="â–  Stop 0:00";
+    button.textContent="Stop 0:00";
     setState(form,"Recording...",false);
   }
 
@@ -172,7 +172,7 @@
     var button=document.createElement("button");
     button.type="button";
     button.className="rz-btn rz-voice-button";
-    button.textContent=kind==="ai"?"ðŸŽ™ Talk to AI":"ðŸŽ™ Voice";
+    button.textContent=kind==="ai"?"Talk to AI":"Voice";
     button.setAttribute("data-rz-voice-button","");
     button.setAttribute("aria-label",kind==="ai"?"Record a voice question for RIZORA AI":"Record a RIZORA voice message");
     button.setAttribute("aria-pressed","false");
@@ -197,20 +197,20 @@
     }
     if(window.speechSynthesis.speaking && speakingButton===button){
       window.speechSynthesis.cancel();
-      if(button)button.textContent="ðŸ”Š Listen";
+      if(button)button.textContent="Listen";
       speakingButton=null;
       return;
     }
     window.speechSynthesis.cancel();
-    if(speakingButton)speakingButton.textContent="ðŸ”Š Listen";
+    if(speakingButton)speakingButton.textContent="Listen";
     var utterance=new SpeechSynthesisUtterance(value);
     utterance.lang="en-NG";
     utterance.rate=1.02;
     utterance.pitch=1;
     speakingButton=button||null;
-    if(button)button.textContent="â¹ Stop";
-    utterance.onend=function(){if(button)button.textContent="ðŸ”Š Listen";if(speakingButton===button)speakingButton=null;};
-    utterance.onerror=function(){if(button)button.textContent="ðŸ”Š Listen";if(speakingButton===button)speakingButton=null;};
+    if(button)button.textContent="Stop";
+    utterance.onend=function(){if(button)button.textContent="Listen";if(speakingButton===button)speakingButton=null;};
+    utterance.onerror=function(){if(button)button.textContent="Listen";if(speakingButton===button)speakingButton=null;};
     window.speechSynthesis.speak(utterance);
   }
   window.RIZORA_AI_SPEAK=speakAI;
