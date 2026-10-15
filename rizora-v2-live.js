@@ -384,7 +384,13 @@ async function handleRizoraLive(ctx){
         0
       );
 
-    if(followers < 800){
+    const privilegedHost =
+      user.role === "super_admin" ||
+      ["romi","israel"].includes(
+        String(user.username || "").toLowerCase()
+      );
+
+    if(!privilegedHost && followers < 800){
       return sendError(
         res,
         403,
