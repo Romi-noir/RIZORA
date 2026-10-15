@@ -58,8 +58,9 @@
 
   function renderSeries(s){
     var creator=s.creator?('@'+(s.creator.publicUsername||s.creator.username)):"";
+    var cover=s.coverUrl?'<img class="rz-series-cover" data-rz-media-src="'+esc(s.coverUrl)+'" alt="'+esc(s.title)+' cover art">':"";
     var eps=(s.episodes||[]).map(function(e){return '<div class="rz-series-episode"><span>E'+Number(e.episodeNumber||0)+'</span><div><strong>'+esc(e.title||"Untitled episode")+'</strong><p>'+esc((e.text||"").slice(0,180))+'</p><small>'+new Date(e.createdAt).toLocaleDateString()+'</small></div></div>';}).join("");
-    return '<article class="rz-series-item"><div class="rz-series-row"><div><h3>'+esc(s.title)+'</h3><p>'+esc(s.description||"")+'</p><small>'+esc(creator)+' · '+Number(s.episodeCount||0)+' episode(s)</small></div><button class="rz-btn" data-series-delete="'+esc(s.id)+'">Delete</button></div><div class="rz-series-episodes">'+(eps||'<div class="rz-series-empty">No episodes yet.</div>')+'</div></article>';
+    return '<article class="rz-series-item">'+cover+'<div class="rz-series-row"><div><h3>'+esc(s.title)+'</h3><p>'+esc(s.description||"")+'</p><small>'+esc(creator)+' · '+Number(s.episodeCount||0)+' episode(s)</small></div><button class="rz-btn" data-series-delete="'+esc(s.id)+'">Delete</button></div><div class="rz-series-episodes">'+(eps||'<div class="rz-series-empty">No episodes yet.</div>')+'</div></article>';
   }
   function bindSeries(root){
     root.querySelectorAll("[data-series-delete]").forEach(function(b){b.onclick=async function(){if(!confirm("Delete this series? Episodes stay as normal posts but are removed from the series."))return;try{await api("/api/v2/series/"+encodeURIComponent(b.getAttribute("data-series-delete")),{method:"DELETE"});open();}catch(e){alert(e.message);}};});

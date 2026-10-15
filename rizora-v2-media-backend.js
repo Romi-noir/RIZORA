@@ -117,6 +117,8 @@ function mediaIsAccessible(db, user, record){
     if(item.visibility==="private")return false;
     return [item.artwork,item.audioUrl,item.videoUrl,item.visualUrl].filter(Boolean).includes(url);
   }))return true;
+  const series=(db.rzV2&&db.rzV2.series)||[];
+  if(series.some(function(item){return item.coverUrl===url&&activeUserId(item.creatorId);}))return true;
   return false;
 }
 

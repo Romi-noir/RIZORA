@@ -70,4 +70,13 @@
   }
   function inject(){var aside=document.querySelector('.rz-sidebar');if(aside&&!document.getElementById('rzMusicSidebar')){var box=document.createElement('div');box.id='rzMusicSidebar';box.className='rz-music-sidebar';box.innerHTML='<div class="rz-enterprise-heading">RIZORA MUSIC</div><button type="button" class="rz-btn" id="rzMusicOpenSidebar">Open Music Studio</button>';aside.appendChild(box);box.querySelector('#rzMusicOpenSidebar').onclick=open;}}
   window.RIZORA_MUSIC={open:open,loadCatalog:function(){var root=document.getElementById('rzMusicOverlay');if(root)loadCatalog(root,'mine');else open();}};setTimeout(function(){inject();if(document.body)new MutationObserver(function(){inject();addMusicFormatSelector(document.getElementById('rzMusicOverlay'));}).observe(document.body,{childList:true,subtree:true});},260);
+  document.addEventListener("submit",function(event){
+    var form=event.target;
+    if(!form||form.id!=="rzMusicReleaseForm"||form.querySelector('[name="labelChoice"]'))return;
+    var labelChoice=document.createElement("input");
+    labelChoice.type="hidden";
+    labelChoice.name="labelChoice";
+    labelChoice.value="";
+    form.appendChild(labelChoice);
+  },true);
 })();

@@ -88,7 +88,10 @@
 
   function bindPlayback(root){
     root=root||document;
-    root.querySelectorAll("[data-rz-media-src]").forEach(function(el){
+    var elements=[];
+    if(root.matches&&root.matches("[data-rz-media-src]"))elements.push(root);
+    root.querySelectorAll("[data-rz-media-src]").forEach(function(el){elements.push(el);});
+    elements.forEach(function(el){
       if(el.getAttribute("data-rz-media-ready")==="1")return;
       el.setAttribute("data-rz-media-ready","1");
       var raw=el.getAttribute("data-rz-media-src");
@@ -119,9 +122,71 @@
     });
   }
 
+  var uploadFieldRules={
+    coverUrl:{accept:"image/jpeg,image/png,image/webp,image/gif",label:"Upload a series cover image"},
+    mediaA:{accept:"image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/webm",label:"Upload media for variant A"},
+    mediaB:{accept:"image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/webm",label:"Upload media for variant B"}
+  };
+  var uploadFieldIndex=0;
+
+  function enhanceUploadField(field){
+    var rule=field&&uploadFieldRules[field.name];
+    if(!rule||field.type==="hidden"||field.getAttribute("data-rz-file-first")==="1"||!field.parentNode)return;
+    field.setAttribute("data-rz-file-first","1");
+    field.type="hidden";
+    field.removeAttribute("placeholder");
+    field.value="";
+    var file=document.createElement("input");
+    file.type="file";
+    file.accept=rule.accept;
+    file.className=field.className||"rz-input";
+    file.id="rzUploadField"+(++uploadFieldIndex);
+    file.setAttribute("aria-label",rule.label);
+    var status=document.createElement("small");
+    status.className="rz-muted";
+    status.setAttribute("role","status");
+    status.setAttribute("aria-live","polite");
+    status.textContent="Choose a file from this device. No URL needed.";
+    field.parentNode.insertBefore(file,field);
+    field.parentNode.insertBefore(status,field);
+    file.addEventListener("change",function(){
+      if(!file.files||!file.files[0])return;
+      var version=(file._rzUploadVersion||0)+1;
+      file._rzUploadVersion=version;
+      field.value="";
+      var form=field.form;
+      var buttons=form?Array.prototype.slice.call(form.querySelectorAll('button[type="submit"],button:not([type])')):[];
+      buttons.forEach(function(button){button.disabled=true;});
+      upload(file.files[0],status).then(function(media){
+        if(version===file._rzUploadVersion)field.value=API+media.url;
+      }).catch(function(error){
+        if(version===file._rzUploadVersion)status.textContent=error.message||"Media upload failed.";
+      }).finally(function(){
+        if(version===file._rzUploadVersion)buttons.forEach(function(button){button.disabled=false;});
+      });
+    });
+  }
+
+  function enhanceFileFirstUploads(root){
+    if(!root)return;
+    var selector='input[name="coverUrl"],input[name="mediaA"],input[name="mediaB"]';
+    if(root.matches&&root.matches(selector))enhanceUploadField(root);
+    if(root.querySelectorAll)root.querySelectorAll(selector).forEach(enhanceUploadField);
+  }
+
   window.RIZORA_MEDIA_OBJECT_URL=objectUrl;
   window.RIZORA_MEDIA_BIND_PLAYBACK=bindPlayback;
-  var observer=new MutationObserver(function(){bindPlayback(document);});
+  bindPlayback(document);
+  enhanceFileFirstUploads(document);
+  var observer=new MutationObserver(function(records){
+    records.forEach(function(record){
+      record.addedNodes.forEach(function(node){
+        if(!node||node.nodeType!==1)return;
+        bindPlayback(node);
+        enhanceFileFirstUploads(node);
+      });
+    });
+  });
   observer.observe(document.documentElement,{childList:true,subtree:true});
   window.RIZORA_UPLOAD_FILE=upload;
   window.RIZORA_MEDIA_BIND=bind;
