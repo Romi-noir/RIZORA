@@ -47,34 +47,16 @@ function ensureMusic(db){
 
 
 function createCredits(user,body={}){
-
-  if(
-    user.username === "romi" ||
-    user.username === "RoMi"
-  ){
-
-    return {
-
-      distributor:
-        body.distributorChoice || null,
-
-      label:
-        body.labelChoice || null,
-
-      ownerChoice:true
-
-    };
-
-  }
-
-
   return {
 
     distributor:"RIZORA",
 
-    label:"Royal Saents Records",
+    label:
+      (user.username === "romi" || user.username === "RoMi") && body.labelChoice
+        ? body.labelChoice
+        : "Royal Saents Records",
 
-    ownerChoice:false
+    ownerChoice:user.username === "romi" || user.username === "RoMi"
 
   };
 

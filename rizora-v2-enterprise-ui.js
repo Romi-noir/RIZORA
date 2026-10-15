@@ -244,8 +244,16 @@ function bindView(){
 function injectPasswordToggles(){
   ["password","confirmPassword"].forEach(function(id){
     var input=document.getElementById(id);
-    if(!input || input.parentElement.getAttribute("data-rz-password"))return;
-    if(input.parentElement.querySelector('[data-rz-password-toggle="'+id+'"]'))return;
+    if(!input)return;
+    var field=input.closest(".rz-field")||input.parentElement;
+    var canonical=field&&field.querySelector('[data-rz-password-toggle="'+id+'"]');
+    var legacy=field&&field.querySelector(".rz-password-toggle");
+    if(canonical){
+      var legacyWrap=legacy&&legacy.closest('[data-rz-password="1"]');
+      if(legacyWrap)legacyWrap.remove();
+      return;
+    }
+    if(input.parentElement.getAttribute("data-rz-password")||legacy)return;
     var wrap=document.createElement("div");
     wrap.className="rz-password-wrap";
     wrap.setAttribute("data-rz-password","1");
