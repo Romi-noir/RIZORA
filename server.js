@@ -20,6 +20,9 @@ const { handleRizoraEvents } = require("./rizora-v2-events");
 const { handleRizoraLabs } = require("./rizora-v2-labs");
 const { handleRizoraEnterprise } = require("./rizora-v2-enterprise");
 const { handleRizoraLive } = require("./rizora-v2-live");
+const { handleRizoraMusic } = require("./rizora-v2-music");
+const { handleRizoraMedia } = require("./rizora-v2-media-backend");
+const { handleRizoraMessaging } = require("./rizora-v2-messaging");
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -495,9 +498,7 @@ function getUserPlan(user) {
 function isOwnerAccount(user) {
   return !!(
     user &&
-    SUPER_ADMINS.has(
-      normalizeUsername(user.username)
-    )
+    isConfiguredSuperAdminUsername(user.username)
   );
 }
 
@@ -682,15 +683,18 @@ function safeUser(user) {
       user.twoFactorEnabled === true
   };
 }
+function isConfiguredSuperAdminUsername(username) {
+  const normalized = normalizeUsername(username);
+  return SUPER_ADMINS.has(normalized) && Boolean(configuredPasswordForUser(normalized));
+}
+
 function isSuperAdmin(user) {
   return !!(
     user &&
     user.status === "active" &&
     (
       user.role === "super_admin" ||
-      SUPER_ADMINS.has(
-        normalizeUsername(user.username)
-      )
+      isConfiguredSuperAdminUsername(user.username)
     )
   );
 }
@@ -701,9 +705,7 @@ function isAdmin(user) {
     user.status === "active" &&
     (
       ["admin", "super_admin"].includes(user.role) ||
-      SUPER_ADMINS.has(
-        normalizeUsername(user.username)
-      )
+      isConfiguredSuperAdminUsername(user.username)
     )
   );
 }
@@ -2520,12 +2522,33 @@ const MIME_TYPES = {
     "text/plain; charset=utf-8"
 };
 
+const PUBLIC_ROOT_FILES = new Set([
+  "index.html", "verification.html", "manifest.json", "robots.txt", "sitemap.xml", "service-worker.js", "sw.js", "rizora-cover.png", "rizora-space.png",
+  "rizora-v2.css", "rizora-v2.js", "rizora-v2-ads-ui.js", "rizora-v2-business.css", "rizora-v2-business-ui.js",
+  "rizora-v2-comments.css", "rizora-v2-comments-ui.js", "rizora-v2-downloads.css", "rizora-v2-downloads.js",
+  "rizora-v2-enterprise.css", "rizora-v2-enterprise-ui.js", "rizora-v2-events.css", "rizora-v2-events-ui.js",
+  "rizora-v2-experience.css", "rizora-v2-global.css", "rizora-v2-global-ui.js", "rizora-v2-growth.css",
+  "rizora-v2-growth-ui.js", "rizora-v2-hub.js", "rizora-v2-labs.css", "rizora-v2-labs-ui.js", "rizora-v2-live.js",
+  "rizora-v2-media.css", "rizora-v2-media.js", "rizora-v2-modern.css", "rizora-v2-modern-ui.js",
+  "rizora-v2-music-ui.js", "rizora-v2-next.css", "rizora-v2-next.js", "rizora-v2-series.css",
+  "rizora-v2-series-ui.js", "rizora-v2-suite.css", "rizora-v2-suite.js", "rizora-v2-upgrades.css",
+  "rizora-v2-upgrades-ui.js", "rizora-v2-voice.js"
+]);
+
+function isAllowedStaticPath(relativePath) {
+  const normalized = String(relativePath || "").replace(/\\/g, "/");
+  return PUBLIC_ROOT_FILES.has(normalized) || normalized.startsWith("assets/") || normalized.startsWith("creator/");
+}
+
 function serveStatic(
   req,
   res,
   pathname
 ) {
   let requestedPath = pathname;
+
+  if (requestedPath === "/login" || requestedPath === "/signup" || requestedPath === "/join") requestedPath = "/index.html";
+  if (requestedPath === "/verification" || requestedPath === "/verification/") requestedPath = "/verification.html";
 
   if (
     requestedPath === "/" ||
@@ -2556,7 +2579,12 @@ function serveStatic(
   const relativePath =
     requestedPath.replace(/^\/+/, "");
 
-  const filePath =
+  if (!isAllowedStaticPath(relativePath)) {
+    sendError(res, 404, "File not found.");
+    return;
+  }
+
+  let filePath =
     path.resolve(
       ROOT,
       relativePath
@@ -2582,14 +2610,19 @@ function serveStatic(
     return;
   }
 
-  const stat = fs.statSync(filePath);
+  let stat = fs.statSync(filePath);
+
+  if (stat.isDirectory()) {
+    filePath = path.join(filePath, "index.html");
+    if (!filePath.startsWith(rootPath + path.sep) || !fs.existsSync(filePath)) {
+      sendError(res, 404, "File not found.");
+      return;
+    }
+    stat = fs.statSync(filePath);
+  }
 
   if (!stat.isFile()) {
-    sendError(
-      res,
-      404,
-      "File not found."
-    );
+    sendError(res, 404, "File not found.");
     return;
   }
 
@@ -3405,7 +3438,7 @@ async function handleRequest(
 
       saveDB(db);
 
-      return sendJSON(res, {
+      return sendJSON(res, 200, {
         success: true,
         authorization_url: data.data.authorization_url,
         reference
@@ -3587,7 +3620,7 @@ if (
     if (payment) {
 
       if (payment.status === "success") {
-        return sendJSON(res, {
+        return sendJSON(res, 200, {
           received: true,
           duplicate: true
         });
@@ -3618,7 +3651,7 @@ if (
     saveDB(db);
   }
 
-  return sendJSON(res, data);
+  return sendJSON(res, 200, data);
 }
 // ============================================================
 // PAYSTACK WEBHOOK
@@ -3673,7 +3706,7 @@ if (
     if (payment) {
 
       if (payment.status === "success") {
-        return sendJSON(res, {
+        return sendJSON(res, 200, {
           received: true,
           duplicate: true
         });
@@ -3711,7 +3744,7 @@ if (
     }
   }
 
-  return sendJSON(res, {
+  return sendJSON(res, 200, {
     received: true
   });
 }
@@ -3720,6 +3753,9 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
     if (await handleRizoraLive({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, hasPremium })) return;
+    if (await handleRizoraMusic({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
+    if (await handleRizoraMedia({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
+    if (await handleRizoraMessaging({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
     if (await handleRizoraLabs({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
@@ -3741,7 +3777,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
       return sendError(res,401,"Authentication required.");
     }
 
-    return sendJSON(res,{
+    return sendJSON(res, 200, {
       success:true,
       plan:getUserPlan(user),
       planExpiry:user.planExpiry || null,
@@ -3761,7 +3797,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
       return sendError(res,401,"Authentication required.");
     }
 
-    return sendJSON(res,{
+    return sendJSON(res, 200, {
       success:true,
       subscriptions:getUserSubscriptionHistory(db,user.id)
     });
@@ -3795,7 +3831,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
 
     saveDB(db);
 
-    return sendJSON(res,{
+    return sendJSON(res, 200, {
       success:true,
       subscription
     });
@@ -4467,10 +4503,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         password
       );
 
-    const isProtected =
-      SUPER_ADMINS.has(
-        username
-      );
+    const isProtected = isConfiguredSuperAdminUsername(username);
 
     const user = {
       id: uid("user_"),
@@ -12531,6 +12564,14 @@ process.on(
     );
   }
 );
+
+
+
+
+
+
+
+
 
 
 

@@ -25,7 +25,7 @@ const requiredScripts=[
   "rizora-v2-global-ui.js","rizora-v2-media.js","rizora-v2-voice.js",
   "rizora-v2-series-ui.js","rizora-v2-events-ui.js","rizora-v2-business-ui.js",
   "rizora-v2-ads-ui.js","rizora-v2-comments-ui.js","rizora-v2-labs-ui.js",
-  "rizora-v2-hub.js","rizora-v2-downloads.js"
+  "rizora-v2-hub.js","rizora-v2-music-ui.js","rizora-v2-live.js","rizora-v2-downloads.js"
 ];
 const requiredStyles=[
   "rizora-v2.css","rizora-v2-enterprise.css","rizora-v2-suite.css","rizora-v2-next.css",
@@ -45,7 +45,7 @@ const definedExports=new Set();
 for(const m of source.matchAll(/window\.([A-Z][A-Z0-9_]+)\s*=/g)) definedExports.add(m[1]);
 const refs=new Set();
 for(const m of source.matchAll(/window\.([A-Z][A-Z0-9_]+)\b/g)) refs.add(m[1]);
-const ignore=new Set(["RIZORA_API_BASE","RIZORA_CURRENT_USER","RIZORA_SUITE_PROMPT","RIZORA_ADS_OBSERVER"]);
+const ignore=new Set(["RIZORA_API_BASE","RIZORA_CURRENT_USER","RIZORA_SUITE_PROMPT","RIZORA_ADS_OBSERVER","RIZORA_UPGRADES"]);
 for(const x of [...refs].filter(x=>x.startsWith("RIZORA_")&&!ignore.has(x))) {
   assert(definedExports.has(x),"Undefined cross-module RIZORA export: window."+x);
 }
@@ -96,5 +96,6 @@ assert(sw.includes("rizora-v2-experience.css"),"Service worker does not cache ex
 
 const verifiedPath=/verifiedBadgeUrl/;
 assert(verifiedPath.test(server),"Backend public profile does not expose verified badge metadata.");
-assert(read("vercel.json").includes('"source": "/"'),"Vercel rewrite/config is missing.");
+const vercel=JSON.parse(read("vercel.json"));
+assert(Array.isArray(vercel.rewrites) && vercel.rewrites.some(rule=>rule && rule.source==="/login" && rule.destination==="/"),"Vercel rewrite/config is missing.");
 console.log("RIZORA predeploy audit: PASS");

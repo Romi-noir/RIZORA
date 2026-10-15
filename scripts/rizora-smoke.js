@@ -53,6 +53,8 @@ async function main() {
     "rizora-v2-comments-ui.js",
     "rizora-v2-labs-ui.js",
     "rizora-v2-hub.js",
+    "rizora-v2-music-ui.js",
+    "rizora-v2-live.js",
     "rizora-v2-downloads.js"
   ];
   for (const modulePath of frontendModules) {
@@ -122,6 +124,8 @@ async function main() {
   assert(serviceWorkerSource.includes("/assets/rizora_verified_badge.svg"), "RIZORA verified badge is not cached by the PWA shell");
   assert(serviceWorkerSource.includes("/assets/rizora_verified_mark.svg"), "RIZORA verified mark is not cached by the PWA shell");
   assert(serviceWorkerSource.includes("/rizora-v2-voice.js"), "RIZORA voice module is not cached by the PWA shell");
+  assert(serviceWorkerSource.includes("/rizora-v2-music-ui.js"), "RIZORA music UI is not cached by the PWA shell");
+  assert(serviceWorkerSource.includes("/rizora-v2-live.js"), "RIZORA live UI is not cached by the PWA shell");
   assert(serviceWorkerSource.includes("/rizora-v2-ads-ui.js"), "RIZORA Ads UI is not cached by the PWA shell");
   assert(premiumUiSource.includes("premium_plus"), "Premium+ UI wiring is missing");
   assert(premiumUiSource.includes('plan:"premium_plus"'), "Premium+ checkout plan is missing");

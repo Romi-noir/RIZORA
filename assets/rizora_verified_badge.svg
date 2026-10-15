@@ -1,0 +1,7 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">RIZORA Verified</title>
+  <desc id="desc">A purple verified badge with a white check mark.</desc>
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a778ff"/><stop offset="1" stop-color="#6238d7"/></linearGradient></defs>
+  <path fill="url(#g)" d="M128 8l29 18 34-2 14 31 31 14-2 34 18 29-18 29 2 34-31 14-14 31-34-2-29 18-29-18-34 2-14-31-31-14 2-34-18-29 18-29-2-34 31-14 14-31 34 2z"/>
+  <path fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="18" d="M77 130l34 34 68-70"/>
+</svg>

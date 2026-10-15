@@ -60,7 +60,7 @@ function open(){
       '<button class="rz-hub-card" data-hub-action="series"><strong>Series & Episodes</strong><span>Turn posts into connected episodic formats.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="events"><strong>Events & Live</strong><span>Schedule premieres, live sessions and community events.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="media"><strong>Media Library</strong><span>Manage uploaded images, video and audio assets.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="studio"><strong>Creator Studio</strong><span>Draft, schedule and build creator work.</span></button>'+
+      '<button class="rz-hub-card" data-hub-action="studio"><strong>Creator Studio</strong><span>Draft, schedule and build creator work.</span></button><button class="rz-hub-card" data-hub-action="music"><strong>Music Studio</strong><span>Distribute releases and manage your RIZORA catalog.</span></button>'+
     '</div></div>'+
     '<div class="rz-hub-section"><h3>Grow & Discover</h3><div class="rz-hub-grid">'+
       '<button class="rz-hub-card" data-hub-action="global"><strong>Creator Desk</strong><span>Search Insights, Broadcast Channels, custom feeds and creator assistant.</span></button>'+
@@ -83,6 +83,7 @@ function open(){
     b.onclick=function(){
       var a=b.getAttribute("data-hub-action");
       if(a==="media")return mediaLibrary();
+      if(a==="music"&&window.RIZORA_MUSIC){window.RIZORA_MUSIC.open();return;}
       close();
       if(a==="global"&&window.RIZORA_GLOBAL){window.RIZORA_GLOBAL.assistant();return;}
       if(a==="labs"&&window.RIZORA_LABS){window.RIZORA_LABS.deals();return;}
