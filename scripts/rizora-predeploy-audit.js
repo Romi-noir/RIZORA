@@ -25,7 +25,7 @@ const requiredScripts=[
   "rizora-v2-global-ui.js","rizora-v2-media.js","rizora-v2-voice.js",
   "rizora-v2-series-ui.js","rizora-v2-events-ui.js","rizora-v2-business-ui.js",
   "rizora-v2-ads-ui.js","rizora-v2-comments-ui.js","rizora-v2-labs-ui.js",
-  "rizora-v2-hub.js","rizora-v2-music-ui.js","rizora-v2-live.js","rizora-v2-downloads.js"
+  "rizora-v2-hub.js","rizora-v2-music-ui.js","rizora-v2-downloads.js"
 ];
 const requiredStyles=[
   "rizora-v2.css","rizora-v2-enterprise.css","rizora-v2-suite.css","rizora-v2-next.css",

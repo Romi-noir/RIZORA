@@ -245,6 +245,7 @@ function injectPasswordToggles(){
   ["password","confirmPassword"].forEach(function(id){
     var input=document.getElementById(id);
     if(!input || input.parentElement.getAttribute("data-rz-password"))return;
+    if(input.parentElement.querySelector('[data-rz-password-toggle="'+id+'"]'))return;
     var wrap=document.createElement("div");
     wrap.className="rz-password-wrap";
     wrap.setAttribute("data-rz-password","1");

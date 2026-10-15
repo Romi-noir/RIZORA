@@ -340,6 +340,7 @@ async function handleRizoraLive(ctx){
       )
       .map(
         x=>({
+          userId:x.userId,
           username:x.username || "creator",
           title:x.title || "RIZORA Live",
           category:x.category || "general",

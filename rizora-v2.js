@@ -2,7 +2,7 @@
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 window.RIZORA_CURRENT_USER=null;
-var state={user:null,profile:null,view:"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[],stories:[],communities:[],conversations:[],opportunities:[],analytics:null,boosts:[],official:[],admin:null,adminVerification:[],onboarding:[]};
+var state={user:null,profile:null,view:"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[],stories:[],communities:[],conversations:[],opportunities:[],analytics:null,boosts:[],official:[],admin:null,adminVerification:[],onboarding:[],live:[],liveError:""};
 
 function $(id){return document.getElementById(id);}
 
@@ -273,6 +273,16 @@ function creatorCommandCenter(){
       '<article class="rz-command-card wide"><div class="rz-kicker">START HERE</div><h3>'+(next?esc(next.title):'Your Creator OS is ready')+'</h3><p>'+(next?esc(next.description||'Complete this step to build your RIZORA foundation.'): 'Publish something, shape your profile, or open Music Studio when you are ready.')+'</p><div class="rz-command-actions">'+(next?'<button class="rz-btn primary" data-onboarding-follow="'+esc(next.username)+'">Follow + earn</button>':'<button class="rz-btn primary" data-go="profile">Open profile</button>')+'<button class="rz-btn" data-go="discover">Explore RIZORA</button></div></article>'+
     '</section></div>';
 }
+function liveView(){
+  var rows=(state.live||[]).map(function(live){
+    var thumb=live.thumbnail?'<img class="rz-live-thumb" src="'+esc(live.thumbnail)+'" alt="">':'<div class="rz-live-thumb rz-live-thumb-empty">LIVE</div>';
+    return '<article class="rz-card rz-live-card">'+thumb+'<div class="rz-live-card-copy"><div class="rz-live-card-top"><span class="rz-badge ok">LIVE NOW</span><span class="rz-mini">'+Number(live.viewers||0)+' watching</span></div><h3>'+esc(live.title||"RIZORA Live")+'</h3><p class="rz-muted">@'+esc(live.username||"creator")+' · '+esc(live.category||"general")+'</p><button type="button" class="rz-btn primary" data-live-join="'+esc(live.id)+'">Join live</button></div></article>';
+  }).join("");
+  var empty=state.liveError
+    ? '<div class="rz-empty"><strong>Live is taking a moment.</strong><p>'+esc(state.liveError)+'</p><button type="button" class="rz-btn" id="rzLiveRetry">Try again</button></div>'
+    : '<div class="rz-empty"><strong>No one is live right now.</strong><p>Start a room when you are ready, or check back soon for creators going live.</p><div class="rz-actions" style="justify-content:center"><button type="button" class="rz-btn primary" id="rzLiveStart">Start a live room</button><button type="button" class="rz-btn" id="rzLiveRefresh">Refresh</button></div></div>';
+  return card("LIVE","<div class='rz-section-title'><div><h2>Live rooms</h2><p class='rz-muted'>Join the RIZORA community in real time.</p></div><div class='rz-actions'><button type='button' class='rz-btn' id='rzLiveRefreshTop'>Refresh</button><button type='button' class='rz-btn primary' id='rzLiveStartTop'>Start live</button></div></div><div class='rz-live-list'>"+(rows||empty)+"</div>");
+}
 function view(){
   var c=$("content");
   if(state.view==="home")c.innerHTML=creatorCommandCenter();
@@ -288,6 +298,7 @@ function view(){
       (((state.search&&state.search.posts)||[]).length?card("POSTS",((state.search&&state.search.posts)||[]).map(post).join("")):"")+
       (((state.search&&state.search.users)||[]).length||((state.search&&state.search.hashtags)||[]).length||((state.search&&state.search.posts)||[]).length?"":"<div class='rz-empty'>No results yet.</div>")+
     "</div>");
+  if(state.view==="live")c.innerHTML=liveView();
   if(state.view==="notifications")c.innerHTML=card("ALERTS","<h2>Notifications</h2><button id='readAll' class='rz-btn'>Mark read</button><div class='rz-feed'>"+state.notifications.map(function(n){return '<div class="rz-card"><strong>'+esc(n.title)+"</strong><div>"+esc(n.message)+"</div></div>";}).join("")+"</div>");
   if(state.view==="profile"){var u=state.user||{},p=state.profile||{},followers=Number(u.followers||0),following=Number(u.following||0),posts=Number(u.posts||0),likes=Number(u.likes||0),showPremiumSuggestion=true;try{showPremiumSuggestion=sessionStorage.getItem("rz_premium_suggestion_dismissed")!=="1";}catch(_){showPremiumSuggestion=true;}c.innerHTML='<section class="rz-card rz-profile-card"><div class="rz-profile-cover"></div><div class="rz-profile-inner"><div class="rz-profile-top"><div class="rz-avatar-wrap">'+avatar(u).replace('class="rz-avatar"','class="rz-avatar rz-profile-avatar"')+(u.verified?'<img class="rz-avatar-verified" src="/assets/rizora_verified_badge.png" alt="RIZORA Verified">':'')+'</div><div class="rz-profile-actions"><button id="verify" class="rz-btn">'+(u.verified?"Verified":"Get verified")+'</button><button id="editProfile" class="rz-btn">Edit profile</button><button id="profileSettings" class="rz-btn">Settings</button></div></div><div class="rz-profile-name"><h2>'+esc(u.displayName||u.username)+'</h2>'+verified(u)+'</div>'+(u.verified?'<div class="rz-verified-showcase"><img src="/assets/rizora_verified_badge.png" alt="RIZORA Verified · Creator Verified"><div><div class="rz-kicker">RIZORA VERIFIED</div><strong>Creator Verified</strong><div class="rz-mini">Official RIZORA verification badge</div></div></div>':"")+'<div class="rz-mini">@'+esc(u.publicUsername||u.username)+'</div><p class="rz-profile-bio">'+esc(p.bio||"Creator on RIZORA. Build. Post. Grow.")+'</p><div class="rz-profile-stats"><span><strong>'+posts+'</strong> posts</span><span><strong>'+followers+'</strong> followers</span><span><strong>'+following+'</strong> following</span><span><strong>'+likes+'</strong> likes</span></div><div class="rz-profile-tabs"><button class="active">Posts</button><button>Media</button><button>About</button></div></div></section>'+(showPremiumSuggestion?'<section class="rz-card rz-premium-hint" id="rzPremiumVerificationHint"><div class="rz-section-title"><div><div class="rz-kicker">CREATOR UPGRADE</div><h3>Strengthen your creator setup</h3></div><button id="rzDismissPremiumSuggestion" class="rz-btn" type="button" aria-label="Hide Premium suggestion">Hide</button></div><p class="rz-muted">Premium adds advanced creator tools and deeper insights. It may help you present a stronger creator profile, but verification is reviewed separately and Premium does not guarantee verification.</p><button id="rzOpenPremiumFromProfile" class="rz-btn primary">Explore Premium</button></section>':'')+'<section class="rz-card" id="rzProfileEditor" style="display:none"><div class="rz-section-title"><div><div class="rz-kicker">EDIT PROFILE</div><h3>Creator identity</h3></div><button id="closeProfileEditor" class="rz-btn">Close</button></div><form id="profileForm"><input id="pfAvatar" class="rz-input" placeholder="PFP URL" value="'+esc(p.avatarUrl||"")+'"><div class="rz-media-picker"><input id="pfAvatarFile" class="rz-media-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><div id="pfAvatarStatus" class="rz-media-status"></div></div><textarea id="pfBio" class="rz-textarea" placeholder="Bio">'+esc(p.bio||"")+'</textarea><input id="pfCategory" class="rz-input" placeholder="Category" value="'+esc(p.category||"")+'"><button class="rz-btn primary">Save profile</button></form></section>';}
   if(state.view==="safety")c.innerHTML=card("SAFETY","<h2>"+Number(state.user.warningCount||0)+"/3 warnings</h2><p class='rz-muted'>No 18+ / sexually explicit content. Three warnings are enforced on the backend.</p>"+((state.safety&&state.safety.warnings)||[]).map(function(w){return '<div class="rz-card"><strong>Warning '+w.number+"</strong><div>"+esc(w.reason)+"</div></div>";}).join(""));
@@ -571,6 +582,16 @@ function wire(){
   if(state.view==="studio"){$("hooks").onclick=async function(){var d=await api("/api/generate/hooks",{method:"POST",body:"{}"});$("studioOut").textContent=(d.hooks||[]).join("\n");};$("hash").onclick=async function(){var d=await api("/api/generate/hashtags",{method:"POST",body:"{}"});$("studioOut").textContent=(d.hashtags||[]).join(" ");};$("captions").onclick=async function(){var d=await api("/api/generate/captions",{method:"POST",body:"{}"});$("studioOut").textContent=(d.captions||[]).join("\n");};}
   if(state.view==="ai"){document.querySelectorAll("[data-ai-speak]").forEach(function(b){b.onclick=function(){var i=Number(b.getAttribute("data-ai-speak"));var m=state.aiMessages[i];if(!m||m.role!=="ai")return;if(window.RIZORA_AI_SPEAK)window.RIZORA_AI_SPEAK(m.text,b);else toast("AI voice playback is still loading.");};});$("aiForm").onsubmit=async function(e){e.preventDefault();var q=$("aiInput").value.trim();if(!q)return;var history=state.aiMessages.slice(-8);state.aiMessages.push({role:"you",text:q});renderView();try{var d=await api("/api/ai/chat",{method:"POST",body:JSON.stringify({message:q,history:history})});state.aiMessages.push({role:"ai",text:d.reply||"No response."});}catch(err){state.aiMessages.push({role:"ai",text:err.message});}renderView();};if(window.RIZORA_VOICE_WIRE)window.RIZORA_VOICE_WIRE();}
   if(state.view==="discover")$("doSearch").onclick=async function(){state.query=$("q").value;state.search=await api("/api/v2/search?q="+encodeURIComponent(state.query));view();};
+  if(state.view==="live"){
+    var refreshLive=function(){load();};
+    ["rzLiveRefresh","rzLiveRefreshTop","rzLiveRetry"].forEach(function(id){var b=$(id);if(b)b.onclick=refreshLive;});
+    ["rzLiveStart","rzLiveStartTop"].forEach(function(id){var b=$(id);if(b)b.onclick=function(){
+      var title=window.prompt("Live room title","RIZORA Live");
+      if(title===null)return;
+      api("/api/v2/live/start",{method:"POST",body:JSON.stringify({title:title.trim()||"RIZORA Live",category:"general"})}).then(function(){toast("Your live room is open.");load();}).catch(function(e){toast(e.message);});
+    };});
+    document.querySelectorAll("[data-live-join]").forEach(function(b){b.onclick=function(){b.disabled=true;api("/api/v2/live/join",{method:"POST",body:JSON.stringify({liveId:b.getAttribute("data-live-join")})}).then(function(){toast("You joined the live room.");}).catch(function(e){toast(e.message);}).finally(function(){b.disabled=false;});};});
+  }
   if(state.view==="notifications")$("readAll").onclick=function(){api("/api/v2/notifications/read",{method:"POST"}).then(load);};
   if(state.view==="stories")wireStories();
   if(state.view==="communities")wireCommunities();
@@ -595,6 +616,9 @@ async function load(){
   try{if(state.view==="opportunities"){var op=await api("/api/v2/opportunities");state.opportunities=op.opportunities||[];}}catch(e){}
   try{if(state.view==="analytics"){state.analytics=await api("/api/v2/analytics/overview");}}catch(e){}
   try{if(state.view==="boosts"){var bx=await api("/api/boosts");state.boosts=bx.boosts||[];}}catch(e){}
+  if(state.view==="live"){
+    try{var lives=await api("/api/v2/live/discover");state.live=Array.isArray(lives.lives)?lives.lives:[];state.liveError="";}catch(e){state.live=[];state.liveError=e.message||"Unable to load live rooms.";}
+  }
   try{if(state.view==="official"){var of=await api("/api/official/profiles");state.official=of.profiles||[];}}catch(e){}
   try{if(state.view==="admin"&&state.user.role==="super_admin"){state.admin=await api("/api/superadmin/dashboard");}}catch(e){} try{if(state.view==="admin"&&state.user.role==="super_admin"){var vr=await api("/api/superadmin/verification/requests");state.adminVerification=vr.requests||[];}}catch(e){}
   shell();

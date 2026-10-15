@@ -303,10 +303,7 @@ function createDistributionPackage(data,user,db){
   title:
    releaseTitle,
 
-  distributor:
-   isRomi && data.distributorChoice
-    ? data.distributorChoice
-    : "RIZORA",
+   distributor:"RIZORA",
 
   label:
    isRomi && data.labelChoice
