@@ -9,6 +9,7 @@ node_modules/
 *.before-*.html
 *.before-*.json
 *.backup*
+rizora-v2-music.after-*.js
 index.before-*
 index.html.*
 server.before-*
