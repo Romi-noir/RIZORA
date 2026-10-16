@@ -117,6 +117,8 @@ const loginAttempts = new Map();
 const signupAttempts = new Map();
 const aiRateLimits = new Map();
 const musicAudioRateLimits = new Map();
+const musicVoiceRateLimits = new Map();
+let cachedMusicVoiceOptions = {expiresAt:0, voices:[]};
 
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_ATTEMPTS = 10;
@@ -3823,6 +3825,79 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         throw error;
       }
       return {buffer, mimeType: "audio/mpeg", modelId: "music_v2_5"};
+    }, listMusicVoices: async function() {
+      const now = Date.now();
+      if (cachedMusicVoiceOptions.expiresAt > now) return cachedMusicVoiceOptions.voices;
+      const apiKey = String(process.env.ELEVENLABS_API_KEY || "").trim();
+      if (!apiKey) return [];
+      let response;
+      try {
+        response = await fetch("https://api.elevenlabs.io/v2/voices?page_size=60&include_total_count=false", {
+          headers: {"xi-api-key": apiKey},
+          signal: AbortSignal.timeout(20000)
+        });
+      } catch (_) {
+        const error = new Error("The voice service could not be reached. Try again shortly.");
+        error.status = 503;
+        throw error;
+      }
+      if (!response.ok) {
+        const error = new Error(response.status === 401 || response.status === 403 ? "The configured voice provider key was rejected." : "Available voices could not be loaded.");
+        error.status = response.status === 429 ? 429 : 503;
+        throw error;
+      }
+      const data = await response.json().catch(() => ({}));
+      const voices = (Array.isArray(data.voices) ? data.voices : []).slice(0, 60).map((voice) => ({
+        id: String(voice.voice_id || ""),
+        name: String(voice.name || "").slice(0, 80),
+        category: String(voice.category || "").slice(0, 40),
+        description: String(voice.description || "").slice(0, 180)
+      })).filter((voice) => /^[A-Za-z0-9_-]{5,100}$/.test(voice.id) && voice.name);
+      cachedMusicVoiceOptions = {expiresAt:now + 5 * 60 * 1000, voices};
+      return voices;
+    }, generateVoiceAudio: async function(options) {
+      const apiKey = String(process.env.ELEVENLABS_API_KEY || "").trim();
+      if (!apiKey) return null;
+      if (!checkRateLimit(musicVoiceRateLimits, options.userId, 60 * 60 * 1000, 5)) {
+        const error = new Error("Voiceover generation is at its hourly limit. Try again later.");
+        error.status = 429;
+        throw error;
+      }
+      let response;
+      try {
+        const url = "https://api.elevenlabs.io/v1/text-to-speech/" + encodeURIComponent(options.voiceId) + "/stream?output_format=mp3_44100_128";
+        response = await fetch(url, {
+          method: "POST",
+          headers: {"xi-api-key": apiKey, "Content-Type": "application/json"},
+          body: JSON.stringify({
+            text: options.text,
+            model_id: "eleven_multilingual_v2",
+            voice_settings: {stability:0.45, similarity_boost:0.75, style:0.18, use_speaker_boost:true}
+          }),
+          signal: AbortSignal.timeout(90000)
+        });
+      } catch (_) {
+        const error = new Error("The voice service could not be reached. Try again shortly.");
+        error.status = 503;
+        throw error;
+      }
+      if (!response.ok) {
+        const error = new Error(response.status === 422 ? "This voice could not read that text. Shorten the text or choose another voice." : response.status === 429 ? "The voice service is busy. Try again shortly." : response.status === 401 || response.status === 403 ? "The configured voice provider key was rejected." : "The voice service could not create this voiceover.");
+        error.status = response.status === 422 ? 422 : response.status === 429 ? 429 : 503;
+        throw error;
+      }
+      if (!String(response.headers.get("content-type") || "").toLowerCase().startsWith("audio/")) {
+        const error = new Error("The voice service returned an unsupported audio format.");
+        error.status = 502;
+        throw error;
+      }
+      const buffer = Buffer.from(await response.arrayBuffer());
+      if (!buffer.length || buffer.length > 15 * 1024 * 1024) {
+        const error = new Error("The voiceover exceeded RIZORA’s audio file limit.");
+        error.status = 413;
+        throw error;
+      }
+      return {buffer, mimeType:"audio/mpeg", modelId:"eleven_multilingual_v2"};
     }, generateMusicAI: function(options) {
     const apiKey = String(process.env.GROQ_API_KEY || "").trim();
     if (!apiKey) return null;

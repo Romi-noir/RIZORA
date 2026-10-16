@@ -175,8 +175,35 @@ async function experiments(){
  document.getElementById("rzExperimentForm").onsubmit=async function(e){e.preventDefault();var f=e.target;try{await api("/api/experiments",{method:"POST",body:JSON.stringify({name:f.name.value,hookA:f.hookA.value,hookB:f.hookB.value,notes:f.notes.value})});f.reset();toast("Experiment saved.");load();}catch(x){toast(x.message);}};load();
 }
 async function settings(){
- var b=modal("Settings","Restore the original notification and compact-mode preferences.",'<div id="rzSuiteSettings">Loading...</div>');
- try{var d=await api("/api/settings"),s=d.settings||{};document.getElementById("rzSuiteSettings").innerHTML=card("PREFERENCES",'<label class="rz-suite-check"><input id="rzSetNotify" type="checkbox" '+(s.notifications!==false?"checked":"")+'><span>Notifications</span></label><label class="rz-suite-check"><input id="rzSetCompact" type="checkbox" '+(s.compactMode===true?"checked":"")+'><span>Compact mode</span></label>');["rzSetNotify","rzSetCompact"].forEach(function(id){document.getElementById(id).onchange=async function(){try{await api("/api/settings",{method:"POST",body:JSON.stringify({notifications:document.getElementById("rzSetNotify").checked,compactMode:document.getElementById("rzSetCompact").checked})});toast("Settings saved.");}catch(x){toast(x.message);}};});}catch(e){document.getElementById("rzSuiteSettings").textContent=e.message;}
+ modal("Settings & Security","Manage your RIZORA preferences and account access.",'<div id="rzSuiteSettings">Loading settings…</div>');
+ var root=document.getElementById("rzSuiteSettings");
+ try{
+  var d=await api("/api/settings"),s=d.settings||{},basic={notifications:s.notifications!==false,compactMode:s.compactMode===true};
+  root.innerHTML='<div class="rz-suite-grid rz-suite-grid-2">'+
+   card("BASICS",'<label class="rz-suite-check"><input id="rzSetNotify" type="checkbox" '+(basic.notifications?"checked":"")+'><span>Notifications</span></label><p class="rz-muted">Turn RIZORA notifications on or off.</p>')+
+   card("LAYOUT",'<label class="rz-suite-check"><input id="rzSetCompact" type="checkbox" '+(basic.compactMode?"checked":"")+'><span>Compact mode</span></label><p class="rz-muted">Fit more creator activity on screen.</p>')+
+   card("FEED & PRIVACY",'<p class="rz-muted">Choose what reaches you and how your profile appears in discovery.</p><button class="rz-btn primary" id="rzOpenPreferences" type="button">Open preferences</button>')+
+   card("PASSWORD & SIGN-IN",'<p class="rz-muted">Change your password, set up two-factor sign-in, or review active sessions.</p><button class="rz-btn primary" id="rzOpenSecurity" type="button">Open security</button>')+
+   '</div>';
+  function bindBasicSetting(id,key){
+   var input=root.querySelector("#"+id);if(!input)return;
+   input.onchange=async function(){
+    var previous=basic[key];basic[key]=input.checked;input.disabled=true;
+    try{await api("/api/settings",{method:"POST",body:JSON.stringify(basic)});toast("Settings saved.");}
+    catch(x){basic[key]=previous;input.checked=previous;toast(x.message);}
+    finally{input.disabled=false;}
+   };
+  }
+  bindBasicSetting("rzSetNotify","notifications");bindBasicSetting("rzSetCompact","compactMode");
+  async function openControl(name){
+   closeSuiteModal();
+   var control=window.RIZORA_CONTROL_CENTER&&window.RIZORA_CONTROL_CENTER[name];
+   if(typeof control!=="function"){toast("That setting is unavailable right now.");return;}
+   try{await control();}catch(error){toast(error&&error.message?error.message:"Settings could not be opened.");}
+  }
+  root.querySelector("#rzOpenPreferences").onclick=function(){openControl("preferences");};
+  root.querySelector("#rzOpenSecurity").onclick=function(){openControl("security");};
+ }catch(e){root.textContent=e.message;}
 }
 async function portfolio(){
  var b=modal("Pro Creator Tools","Portfolio identity plus creator planning.",card("PORTFOLIO",'<form id="rzPortfolioForm"><input class="rz-input" name="headline" placeholder="Portfolio headline"><textarea class="rz-textarea" name="bio" placeholder="Short creator bio"></textarea><input class="rz-input" name="category" placeholder="Category"><input class="rz-input" name="skills" placeholder="Skills, separated by commas"><input class="rz-input" name="links" placeholder="Public links, separated by commas"><button class="rz-btn primary">Save portfolio</button></form>')+card("CONTENT PLANNER",'<form id="rzPlanForm"><div class="rz-suite-grid rz-suite-grid-2"><input class="rz-input" name="title" placeholder="Planned content title" required><input class="rz-input" name="platform" placeholder="TikTok / Instagram / YouTube"><input class="rz-input" name="scheduledFor" type="datetime-local"><textarea class="rz-textarea" name="notes" placeholder="Notes"></textarea></div><button class="rz-btn primary">Add plan</button></form><div id="rzPlanList">Loading...</div>'));

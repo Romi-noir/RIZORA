@@ -49,7 +49,7 @@ function ensureMusic(db){
 function createCredits(user,body={}){
   return {
 
-    distributor:null,
+    distributor:"RIZORA",
     catalog:"RIZORA",
 
     label:
@@ -241,7 +241,7 @@ function createDistributionPackage(data,user,db){
   existing.artist=releaseArtist;
   existing.genre=musicText(data.genre,existing.genre||"Afrobeats",80);
   existing.mood=musicText(data.mood,existing.mood||"Modern",80);
-  existing.distributor=null;
+  existing.distributor="RIZORA";
   existing.catalog="RIZORA";
   existing.label=isRomi&&data.labelChoice?label:(existing.label||"Royal Saents Records");
   existing.platforms=platforms;
@@ -265,7 +265,7 @@ function createDistributionPackage(data,user,db){
   title:releaseTitle,
   genre:musicText(data.genre,"Afrobeats",80),
   mood:musicText(data.mood,"Modern",80),
-  distributor:null,
+  distributor:"RIZORA",
   catalog:"RIZORA",
   label:label,
   platforms:platforms,
@@ -315,7 +315,7 @@ function upsertDistributionCatalog(db,release){
  catalogEntry.videoUrl=release.videoUrl||null;
  catalogEntry.visualUrl=release.visualUrl||null;
  catalogEntry.visibility=release.visibility||"public";
- catalogEntry.distributor=null;
+ catalogEntry.distributor="RIZORA";
  catalogEntry.catalog="RIZORA";
  catalogEntry.label=release.label||"Royal Saents Records";
  catalogEntry.status="draft";
@@ -449,6 +449,8 @@ const {
  sendError,
  generateMusicAI,
  generateMusicAudio,
+ generateVoiceAudio,
+ listMusicVoices,
  musicAudioConfigured,
  musicAudioRequirements,
  storeGeneratedAudio
@@ -484,7 +486,7 @@ if(method==="GET" && path==="/api/music/public-catalog"){
    videoUrl:c.videoUrl||null,
    visualUrl:c.visualUrl||null,
    platforms:Array.isArray(c.platforms)?c.platforms:[],
-  distributor:null,
+  distributor:"RIZORA",
   catalog:"RIZORA",
    label:c.label||"Royal Saents Records",
   status:c.deliveryState==="delivered"?(c.status||"delivered"):"RIZORA catalog",
@@ -528,6 +530,39 @@ if(method==="GET" && path==="/api/music/audio-status"){
   missingSettings,
   durationOptionsSeconds:[15,30,60]
  });
+}
+
+
+if(method==="GET" && path==="/api/music/voice-options"){
+ if(typeof musicAudioConfigured!=="function"||!musicAudioConfigured())return writeJSON({success:true,configured:false,voices:[]});
+ if(typeof listMusicVoices!=="function")return writeError(503,"Voiceover generation is not available right now.");
+ try{
+  const voices=await listMusicVoices();
+  return writeJSON({success:true,configured:true,voices:Array.isArray(voices)?voices:[]});
+ }catch(error){
+  return writeError(error.status||503,error.message||"Voice options could not be loaded.");
+ }
+}
+
+
+if(method==="POST" && path==="/api/music/generate-voice"){
+ const body=await readBody(req);
+ const text=musicText(body.text,"",2400);
+ const voiceId=musicText(body.voiceId,"",100);
+ if(text.length<8)return writeError(400,"Write at least 8 characters for the voiceover.");
+ if(!/^[A-Za-z0-9_-]{5,100}$/.test(voiceId))return writeError(400,"Choose a voice from the available voice list.");
+ if(typeof musicAudioConfigured!=="function"||!musicAudioConfigured())return writeError(503,"Voiceover generation is not ready. Connect the voice provider and persistent media storage first.");
+ if(typeof generateVoiceAudio!=="function"||typeof storeGeneratedAudio!=="function")return writeError(503,"Voiceover generation is not available right now.");
+ let generated;
+ try{generated=await generateVoiceAudio({userId:user.id,voiceId,text});}
+ catch(error){return writeError(error.status||503,error.message||"Voiceover generation failed. Try again shortly.");}
+ try{
+  const media=storeGeneratedAudio(db,user.id,generated&&generated.buffer,"rizora-voiceover.mp3");
+  const output={id:uid("voice_output"),userId:user.id,mediaId:media.id,audioUrl:media.url,provider:"ElevenLabs",modelId:generated&&generated.modelId||"eleven_multilingual_v2",voiceId,text,status:"ready",createdAt:new Date().toISOString()};
+  db.musicOutputs.push(output);
+  saveDB(db);
+  return writeJSON({success:true,output,media});
+ }catch(error){return writeError(error.status||500,error.status?error.message:"The generated voiceover could not be saved.");}
 }
 
 
@@ -1484,7 +1519,7 @@ if(
    ).map(function(entry){
     const delivered=entry.deliveryState==="delivered";
     return Object.assign({},entry,{
-     distributor:null,
+     distributor:"RIZORA",
      catalog:"RIZORA",
      status:delivered?(entry.status||"delivered"):"draft",
      deliveryState:entry.deliveryState||"not_sent"
@@ -1521,7 +1556,7 @@ if(
  return writeJSON({
   success:true,
   release:Object.assign({},release,{
-   distributor:null,
+   distributor:"RIZORA",
    catalog:"RIZORA",
    status:release.deliveryState==="delivered"?(release.status||"delivered"):"draft",
    deliveryState:release.deliveryState||"not_sent"

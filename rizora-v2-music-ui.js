@@ -17,7 +17,7 @@
     if(window.RIZORA_ENTERPRISE&&typeof window.RIZORA_ENTERPRISE.toast==='function'){window.RIZORA_ENTERPRISE.toast(message);return;}
     var target=document.getElementById('toast');if(!target)return;target.textContent=message;target.classList.add('show');clearTimeout(window.__rzMusicToast);window.__rzMusicToast=setTimeout(function(){target.classList.remove('show');},2600);
   }
-  function releaseLocalBeatSketch(){if(window.__rzMusicSketchUrl){URL.revokeObjectURL(window.__rzMusicSketchUrl);window.__rzMusicSketchUrl='';}}
+  function releaseLocalBeatSketch(){if(window.__rzMusicSketchUrl){URL.revokeObjectURL(window.__rzMusicSketchUrl);window.__rzMusicSketchUrl='';}if(window.__rzMusicWorkshopUrl){URL.revokeObjectURL(window.__rzMusicWorkshopUrl);window.__rzMusicWorkshopUrl='';}}
   function close(){var existing=document.getElementById('rzMusicOverlay');if(existing)existing.remove();releaseLocalBeatSketch();}
   function date(value){if(!value)return 'Date unavailable';try{return new Date(value).toLocaleString();}catch(_){return String(value);}}
   function platforms(items){return (Array.isArray(items)?items:[]).map(function(item){return '<span class="rz-music-pill">'+esc(String(item).replace(/_/g,' '))+'</span>';}).join('');}
@@ -103,12 +103,84 @@
       finally{button.disabled=false;button.textContent='Generate audio';}
     };
   }
+  function installVoiceoverStudio(root){
+    var grid=root&&root.querySelector('.rz-music-grid');
+    if(!grid||grid.querySelector('#rzVoiceoverForm'))return;
+    var studio=document.createElement('section');
+    studio.className='rz-music-card rz-voiceover-studio';
+    studio.innerHTML='<div class="rz-kicker">VOICEOVER STUDIO</div><h3>Put your words in a voice</h3><p class="rz-audio-workshop-intro">Create narration for a song intro, video, ad or creator story. The audio is saved to your RIZORA media library.</p><form id="rzVoiceoverForm" class="rz-voiceover-form"><label>Voice<select id="rzVoiceoverVoice" required><option value="">Loading available voices…</option></select></label><label>Script<textarea id="rzVoiceoverText" class="rz-textarea" maxlength="2400" placeholder="Type the words you want spoken…" required></textarea></label><div class="rz-voiceover-actions"><button class="rz-btn primary" type="submit" id="rzVoiceoverGenerate">Create voiceover</button></div><div id="rzVoiceoverMessage" class="rz-voiceover-message" role="status" aria-live="polite"></div><div id="rzVoiceoverOutput" class="rz-voiceover-output"></div></form>';
+    grid.appendChild(studio);
+    var select=studio.querySelector('#rzVoiceoverVoice'),form=studio.querySelector('#rzVoiceoverForm'),button=studio.querySelector('#rzVoiceoverGenerate'),message=studio.querySelector('#rzVoiceoverMessage'),output=studio.querySelector('#rzVoiceoverOutput');
+    api('/api/music/voice-options').then(function(data){
+      var voices=Array.isArray(data.voices)?data.voices:[];
+      select.innerHTML='';
+      if(!data.configured||!voices.length){select.innerHTML='<option value="">Voice generation is not connected</option>';select.disabled=true;button.disabled=true;message.textContent='Voice generation is not enabled on this RIZORA server yet.';return;}
+      voices.forEach(function(voice){var option=document.createElement('option');option.value=voice.id;option.textContent=voice.name+(voice.category?' · '+voice.category:'');select.appendChild(option);});
+      select.disabled=false;button.disabled=false;message.textContent=voices.length+' available voice'+(voices.length===1?'':'s')+'.';
+    }).catch(function(error){select.innerHTML='<option value="">Voice list unavailable</option>';select.disabled=true;button.disabled=true;message.textContent=error.message||'Available voices could not be loaded.';});
+    form.onsubmit=async function(event){
+      event.preventDefault();var text=studio.querySelector('#rzVoiceoverText').value.trim();
+      if(text.length<8){message.textContent='Add a few more words before generating.';return;}
+      if(!select.value){message.textContent='Choose an available voice first.';return;}
+      button.disabled=true;button.textContent='Creating…';message.textContent='Creating and saving your voiceover…';output.innerHTML='';
+      try{
+        var result=await api('/api/music/generate-voice',{method:'POST',body:JSON.stringify({text:text,voiceId:select.value})}),media=result.media||{};
+        if(!media.url)throw new Error('The voiceover was created but could not be saved.');
+        var url=API+media.url;
+        output.innerHTML='<audio controls preload="metadata" src="'+esc(url)+'"></audio><div class="rz-voiceover-actions"><a class="rz-btn rz-music-download" href="'+esc(url)+'" download="rizora-voiceover.mp3">Download voiceover</a><button type="button" class="rz-btn" id="rzVoiceoverAttach">Use in release draft</button></div>';
+        var attach=output.querySelector('#rzVoiceoverAttach');
+        if(attach)attach.onclick=function(){var field=root.querySelector('#rzMusicAudioUrl'),status=root.querySelector('#rzMusicAudioStatus'),preview=root.querySelector('#rzMusicAudioPreview');if(field)field.value=url;if(status)status.textContent='Generated voiceover attached to this release draft.';if(preview)preview.innerHTML='<audio controls preload="metadata" src="'+esc(url)+'"></audio>';message.textContent='Voiceover attached. Save the release draft to keep it in your catalog.';};
+        if(window.RIZORA_MEDIA_BIND_PLAYBACK)window.RIZORA_MEDIA_BIND_PLAYBACK(output);
+        message.textContent='Voiceover ready and saved to your RIZORA media library.';
+      }catch(error){message.textContent=error.message||'Voiceover generation failed. Try again.';}
+      finally{button.disabled=false;button.textContent='Create voiceover';}
+    };
+  }
+  function installAudioWorkshop(root){
+    var grid=root&&root.querySelector('.rz-music-grid');
+    if(!grid||grid.querySelector('#rzAudioWorkshopFile'))return;
+    var workshop=document.createElement('section');
+    workshop.className='rz-music-card rz-audio-workshop';
+    workshop.innerHTML='<div class="rz-kicker">AUDIO WORKSHOP · ON THIS DEVICE</div><h3>Polish a vocal or master a track</h3><p class="rz-audio-workshop-intro">Upload an audio file to this browser, choose a processing pass, then preview and download a WAV. Your source file stays on your device.</p><label class="rz-audio-workshop-upload"><strong>Choose an audio file</strong><input id="rzAudioWorkshopFile" type="file" accept="audio/*"><span id="rzAudioWorkshopFileName" class="rz-mini">MP3, WAV, M4A, OGG or another format your browser can play · up to 15 MB / 3 minutes</span></label><div class="rz-audio-workshop-actions"><button type="button" class="rz-btn" id="rzAudioVocal">Vocal clarity</button><button type="button" class="rz-btn primary" id="rzAudioMaster">Streaming master</button></div><div id="rzAudioWorkshopMessage" class="rz-audio-workshop-message" role="status" aria-live="polite"></div><div id="rzAudioWorkshopOutput" class="rz-audio-workshop-output"></div>';
+    grid.appendChild(workshop);
+    var file=workshop.querySelector('#rzAudioWorkshopFile'),name=workshop.querySelector('#rzAudioWorkshopFileName'),message=workshop.querySelector('#rzAudioWorkshopMessage'),output=workshop.querySelector('#rzAudioWorkshopOutput'),vocal=workshop.querySelector('#rzAudioVocal'),master=workshop.querySelector('#rzAudioMaster'),selected=null;
+    [vocal,master].forEach(function(button){button.disabled=true;});
+    file.onchange=function(){selected=file.files&&file.files[0]||null;[vocal,master].forEach(function(button){button.disabled=true;});output.innerHTML='';if(window.__rzMusicWorkshopUrl){URL.revokeObjectURL(window.__rzMusicWorkshopUrl);window.__rzMusicWorkshopUrl='';}if(!selected){name.textContent='MP3, WAV, M4A, OGG or another format your browser can play · up to 15 MB / 3 minutes';message.textContent='';return;}name.textContent=selected.name+' · '+(selected.size/1048576).toFixed(1)+' MB';if(selected.size>15*1024*1024){message.textContent='Choose a file under 15 MB so it stays responsive on a phone.';selected=null;return;}[vocal,master].forEach(function(button){button.disabled=false;});message.textContent='Ready to process locally. Keep this page open while the audio renders.';};
+    async function processAudio(mode){
+      if(!selected){message.textContent='Choose an audio file first.';return;}
+      [vocal,master].forEach(function(button){button.disabled=true;});var active=mode==='vocal'?vocal:master,originalLabel=active.textContent;active.textContent='Rendering…';message.textContent=mode==='vocal'?'Applying a clarity filter and light compression…':'Applying a tonal balance and gentle master compression…';output.innerHTML='';
+      var decodeContext=null;
+      try{
+        var Offline=window.OfflineAudioContext||window.webkitOfflineAudioContext,Audio=window.AudioContext||window.webkitAudioContext;
+        if(!Offline||!Audio)throw new Error('This browser does not support local audio processing.');
+        if(selected.size>15*1024*1024)throw new Error('Choose a file under 15 MB.');
+        decodeContext=new Audio();var decoded=await decodeContext.decodeAudioData(await selected.arrayBuffer());
+        if(decoded.duration>180)throw new Error('Choose audio that is 3 minutes or shorter for smooth phone rendering.');
+        var channels=Math.max(1,Math.min(2,decoded.numberOfChannels)),context=new Offline(channels,decoded.length,decoded.sampleRate),source=context.createBufferSource();source.buffer=decoded;
+        var high=context.createBiquadFilter();high.type='highpass';high.frequency.value=mode==='vocal'?82:28;high.Q.value=.7;
+        var tone=context.createBiquadFilter();tone.type=mode==='vocal'?'peaking':'highshelf';tone.frequency.value=mode==='vocal'?2850:10500;tone.Q.value=.85;tone.gain.value=mode==='vocal'?2.2:1.2;
+        var compressor=context.createDynamicsCompressor();compressor.threshold.value=mode==='vocal'?-23:-17;compressor.knee.value=mode==='vocal'?18:14;compressor.ratio.value=mode==='vocal'?3.2:2.2;compressor.attack.value=.004;compressor.release.value=.18;
+        source.connect(high);high.connect(tone);tone.connect(compressor);compressor.connect(context.destination);source.start(0);
+        var rendered=await context.startRendering(),peak=0;
+        for(var channel=0;channel<rendered.numberOfChannels;channel++){var data=rendered.getChannelData(channel);for(var index=0;index<data.length;index++)peak=Math.max(peak,Math.abs(data[index]));}
+        if(peak<.00001)throw new Error('This file is silent or could not be decoded.');
+        var gain=Math.min(2,.891/peak);
+        for(var outputChannel=0;outputChannel<rendered.numberOfChannels;outputChannel++){var samples=rendered.getChannelData(outputChannel);for(var sampleIndex=0;sampleIndex<samples.length;sampleIndex++)samples[sampleIndex]*=gain;}
+        var blob=audioBufferToWav(rendered);if(window.__rzMusicWorkshopUrl)URL.revokeObjectURL(window.__rzMusicWorkshopUrl);var url=URL.createObjectURL(blob);window.__rzMusicWorkshopUrl=url;
+        var filename=(selected.name.replace(/\.[^.]+$/,'').replace(/[^A-Za-z0-9_-]+/g,'-')||'rizora-audio')+(mode==='vocal'?'-vocal-clarity.wav':'-master.wav');
+        output.innerHTML='<audio controls preload="metadata" src="'+esc(url)+'"></audio><a class="rz-btn rz-music-download" href="'+esc(url)+'" download="'+esc(filename)+'">Download processed WAV</a><span class="rz-mini">Rendered locally · 16-bit WAV · peak normalized to −1 dBFS</span>';
+        message.textContent=mode==='vocal'?'Vocal clarity pass is ready. Review the result before using it in a release.':'Streaming master is ready. Review it on headphones and speakers before publishing.';
+      }catch(error){message.textContent=error.message||'Audio could not be processed in this browser.';}
+      finally{if(decodeContext&&decodeContext.close)try{await decodeContext.close();}catch(_){}[vocal,master].forEach(function(button){button.disabled=!selected;});active.textContent=originalLabel;}
+    }
+    vocal.onclick=function(){processAudio('vocal');};master.onclick=function(){processAudio('master');};
+  }
   function cleanMusicDistributionCopy(root){
     var hero=root.querySelector('.rz-music-hero p');
     if(hero)hero.textContent='Create audio, shape a release, and save it to your RIZORA catalog. External store delivery is not connected yet.';
     var visibility=root.querySelector('select[name="visibility"]');if(visibility){if(visibility.options[0]){visibility.options[0].textContent='Public RIZORA catalog';visibility.options[0].defaultSelected=false;}if(visibility.options[1]){visibility.options[1].textContent='Private draft';visibility.options[1].defaultSelected=true;}visibility.value='private';}
     var distributor=root.querySelector('.rz-music-distributor-note');
-    if(distributor){var strong=distributor.querySelector('strong'),span=distributor.querySelector('span');if(strong)strong.textContent='RIZORA catalog';if(span)span.textContent='Saving here creates a draft; this does not send music to external stores.';}
+    if(distributor){var strong=distributor.querySelector('strong'),span=distributor.querySelector('span');if(strong)strong.textContent='Distributor: RIZORA';if(span)span.textContent='RIZORA is the selected distributor. Saving creates a RIZORA release draft; store delivery is not connected yet.';}
     var destinations=root.querySelector('.rz-music-platforms');
     if(destinations){var heading=destinations.previousElementSibling;if(heading)heading.textContent='Delivery targets · plan only';var tiktok=destinations.querySelector('input[value="tiktok_music"]');if(tiktok){tiktok.value='tiktok';var label=tiktok.closest('label');if(label)label.lastChild.textContent=' TikTok / CapCut';}if(!root.querySelector('#rzMusicDeliveryHelp')){var help=document.createElement('div');help.id='rzMusicDeliveryHelp';help.className='rz-music-delivery-note';help.innerHTML='External delivery requires an approved distributor connection. These services open their own setup pages; RIZORA cannot submit your release to them yet.<div class="rz-music-provider-links"><a href="https://artists.spotify.com/en/providers" target="_blank" rel="noopener noreferrer">Spotify provider directory</a><a href="https://www.soundon.global/" target="_blank" rel="noopener noreferrer">TikTok SoundOn</a><a href="https://distrokid.com/" target="_blank" rel="noopener noreferrer">DistroKid</a><a href="https://cdbaby.com/" target="_blank" rel="noopener noreferrer">CD Baby</a><a href="https://revelator.com/product/revelator-api" target="_blank" rel="noopener noreferrer">Revelator API</a></div>';destinations.parentNode.appendChild(help);}}
     var submit=root.querySelector('#rzMusicSubmit');if(submit)submit.textContent='Save release draft';
@@ -116,7 +188,10 @@
   function addMusicFormatSelector(root){
     if(!root)return;
     installMusicAudioStudio(root);
+    installVoiceoverStudio(root);
+    installAudioWorkshop(root);
     cleanMusicDistributionCopy(root);
+    var grid=root.querySelector('.rz-music-grid');if(grid){var firstCard=grid.querySelector(':scope > .rz-music-card:not(.rz-music-ai-card)');var catalogCard=root.querySelector('#rzMusicCatalog')&&root.querySelector('#rzMusicCatalog').closest('.rz-music-card');if(firstCard)firstCard.classList.add('rz-music-release-card');if(catalogCard)catalogCard.classList.add('rz-music-catalog-card');}
     var form=root&&root.querySelector('#rzMusicAiForm'),prompt=form&&form.querySelector('#rzMusicAiPrompt');
     if(!form||!prompt||form.querySelector('#rzMusicAiFormat'))return;
     var musicUser=window.RIZORA_CURRENT_USER||{},ownerLabel=root.querySelector('#rzMusicLabelChoice');

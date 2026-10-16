@@ -75,7 +75,7 @@ function open(){
       '<button class="rz-hub-card" data-hub-action="comments"><strong>Comment Studio</strong><span>Moderate replies, filters and conversation controls.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="safety"><strong>Safety</strong><span>Verification, warnings, reports and account controls.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="portfolio"><strong>Portfolio + Planner</strong><span>Creator identity, portfolio and planning.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="settings"><strong>Settings & Security</strong><span>Preferences, sessions and two-factor protection.</span></button>'+
+      '<button class="rz-hub-card" data-hub-action="settings"><strong>Settings & Security</strong><span>Notifications, feed preferences, password, two-factor and active sessions.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="suite"><strong>Full Creator Suite</strong><span>Open the complete RIZORA control surface.</span></button>'+
     '</div></div>';
   var m=modal("Everything in one place","RIZORA's major creator, growth, monetization and control systems.",body);
