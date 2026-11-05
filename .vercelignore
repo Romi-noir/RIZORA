@@ -27,6 +27,7 @@ v*.js.before-*
 server-backup-*.js
 server.backup*.js
 Dockerfile.vercel
+assets/rizora-cinematic-ad-tiktok.mp4
 reset-admin.js
 rizora-audit.js
 rizora-v2-backend.js

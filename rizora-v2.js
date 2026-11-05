@@ -77,7 +77,33 @@ function textPreview(v){var s=String(v||"").trim().replace(/\s+/g," ");return s.
 function bindPasswordToggles(root){(root||document).querySelectorAll("[data-rz-password-toggle]").forEach(function(b){b.onclick=function(){var id=b.getAttribute("data-rz-password-toggle"),i=document.getElementById(id);if(!i)return;var show=i.type==="password",label=b.getAttribute("data-rz-password-label")||"password";i.type=show?"text":"password";b.textContent=show?"Hide "+label:"Show "+label;b.setAttribute("aria-label",show?"Hide "+label:"Show "+label);};});}
 function getRizoraAuthToken(){try{return String(window.RIZORA_AUTH_TOKEN||localStorage.getItem("rizora_auth_token")||"").trim();}catch(e){return String(window.RIZORA_AUTH_TOKEN||"").trim();}}
 function setRizoraAuthToken(token){var t=String(token||"").trim();window.RIZORA_AUTH_TOKEN=t;try{if(t)localStorage.setItem("rizora_auth_token",t);else localStorage.removeItem("rizora_auth_token");}catch(e){}}
-async function api(path,opt){opt=opt||{};var headers=Object.assign({"Content-Type":"application/json"},opt.headers||{});var token=getRizoraAuthToken();if(token&&!headers.Authorization)headers.Authorization="Bearer "+token;var r=await fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:headers,body:opt.body});var x=await r.text(),d={};try{d=x?JSON.parse(x):{};}catch(e){d={error:x};}if(!r.ok){if(r.status===401&&path!=="/api/auth/login"&&path!=="/api/auth/signup"){try{setRizoraAuthToken("");}catch(_){}}var err=new Error(d.message||d.error||"Request failed.");err.code=d.code||"";throw err;}return d;}
+async function api(path,opt){
+  opt=opt||{};
+  var headers=Object.assign({"Content-Type":"application/json"},opt.headers||{});
+  var token=getRizoraAuthToken();
+  if(token&&!headers.Authorization)headers.Authorization="Bearer "+token;
+  var request=function(h){return fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:h,body:opt.body});};
+  var r=await request(headers);
+  // A stale local bearer token must never override a valid HttpOnly session cookie.
+  // Retry once without it before surfacing an auth error, so opening a feature cannot
+  // log the creator out just because an older token is still in local storage.
+  if(r.status===401&&token&&!opt._withoutBearer){
+    var cookieHeaders=Object.assign({},headers);
+    delete cookieHeaders.Authorization;
+    r=await request(cookieHeaders);
+  }
+  var x=await r.text(),d={};
+  try{d=x?JSON.parse(x):{};}catch(e){d={error:x};}
+  if(!r.ok){
+    // Only the session bootstrap endpoints are allowed to clear local auth state.
+    // Feature and permission errors stay in the current workspace and are shown in
+    // context instead of forcing a full logout.
+    var sessionCheck=path==="/api/auth/me"||path==="/api/v2/me";
+    if(r.status===401&&sessionCheck){try{setRizoraAuthToken("");}catch(_){}}
+    var err=new Error(d.message||d.error||"Request failed.");err.code=d.code||"";throw err;
+  }
+  return d;
+}
 
 window.RIZORA_API_CALL=api;
 window.RIZORA_GET_AUTH_TOKEN=getRizoraAuthToken;
@@ -181,7 +207,7 @@ function googleButton(){
 function shell(){
   var desktopItems=[
     {id:"home",label:"Home",icon:"H",group:"WORKSPACE"},
-    {id:"studio",label:"Studio",icon:"S",group:"WORKSPACE"},
+    {id:"studio",label:"Music",icon:"♫",group:"WORKSPACE"},
     {id:"flow",label:"For You",icon:"F",group:"WORKSPACE"},
     {id:"discover",label:"Explore",icon:"E",group:"WORKSPACE"},
     {id:"live",label:"Live",icon:"LIVE",group:"COMMUNITY"},
@@ -198,7 +224,7 @@ function shell(){
   });
   var mobile=[
     {id:"home",label:"Home",icon:"H"},
-    {id:"studio",label:"Studio",icon:"✦"},
+    {id:"studio",label:"Music",icon:"♫"},
     {id:"flow",label:"Create",icon:"+"},
     {id:"messages",label:"Inbox",icon:"M"},
     {id:"profile",label:"Profile",icon:"P"}
@@ -268,7 +294,7 @@ function creatorCommandCenter(){
   var owner=!!(state.user&&(state.user.ownerAccount===true||state.user.role==='super_admin'));
   var ownerCard=owner?'<article class="rz-command-card rz-command-owner"><div class="rz-command-icon">◆</div><div class="rz-kicker">OWNER WORKSPACE</div><h3>Platform command</h3><p>Premium+ creator tools, moderation, support and live platform controls.</p><div class="rz-command-actions"><button class="rz-btn primary" data-go="admin">Open command center</button></div></article>':'';
   return '<div class="rz-command-center">'+
-    '<section class="rz-command-hero"><div><div class="rz-kicker">RIZORA COMMAND CENTER '+(owner?'<span class="rz-owner-chip">PREMIUM+ · OWNER</span>':'')+'</div><h2>Good to see you, '+esc(firstName)+'.</h2><p>Your creative work, audience, intelligence and growth are ready in one calm workspace.</p><div class="rz-command-actions"><button class="rz-btn primary" data-go="flow">Create a post</button><button class="rz-btn" data-go="ai">Ask RIZORA AI</button><button class="rz-btn" data-open-music="1">Open Music Studio</button></div></div><div class="rz-command-score"><b>'+Number(state.points||0)+'</b><span>creator points</span><div class="rz-command-progress"><i style="width:'+Math.min(100,Math.max(8,Number(state.points||0)%101))+'%"></i></div></div></section>'+ 
+    '<section class="rz-command-hero"><div><div class="rz-kicker">RIZORA COMMAND CENTER '+(owner?'<span class="rz-owner-chip">PREMIUM+ · OWNER</span>':'')+'</div><h2>Good to see you, '+esc(firstName)+'.</h2><p>Make the track, shape the content, release through RIZORA, then grow the audience around your work.</p><div class="rz-command-actions"><button class="rz-btn primary" data-open-music="1">Open Music Studio</button><button class="rz-btn" data-go="ai">Ask RIZORA AI</button><button class="rz-btn" data-go="flow">Create a post</button></div></div><div class="rz-command-score"><b>'+Number(state.points||0)+'</b><span>creator points</span><div class="rz-command-progress"><i style="width:'+Math.min(100,Math.max(8,Number(state.points||0)%101))+'%"></i></div></div></section>'+ 
     '<section class="rz-command-grid">'+
       '<article class="rz-command-card"><div class="rz-command-icon">↗</div><div class="rz-kicker">GROW</div><h3>Build momentum</h3><p>'+Number(state.tasks.length||0)+' growth tasks are ready. Track progress and find your next move in one place.</p><div class="rz-command-actions"><button class="rz-btn" data-go="grow">Open Grow</button></div></article>'+ 
       '<article class="rz-command-card"><div class="rz-command-icon">◎</div><div class="rz-kicker">COMMUNITY</div><h3>Stay close to your people</h3><p>'+feedCount+' posts in your feed, with messages and live rooms close by.</p><div class="rz-command-actions"><button class="rz-btn" data-go="flow">Open Flow</button><button class="rz-btn" data-go="messages">Inbox</button><button class="rz-btn" data-go="live">Live</button></div></article>'+ 
