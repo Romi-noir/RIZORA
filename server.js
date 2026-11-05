@@ -2482,7 +2482,191 @@ function getAdminStats(db) {
     totalTaskCompletions,
     totalReferrals,
 
- Asset
+    emails:{
+      total:
+        (db.emailEvents || []).length,
+
+      sent:
+        (db.emailEvents || []).filter(
+          e => e.status === "sent"
+        ).length,
+
+      failed:
+        (db.emailEvents || []).filter(
+          e => e.status === "failed"
+        ).length,
+
+      queued:
+        (db.emailEvents || []).filter(
+          e => e.status === "queued"
+        ).length
+    }
+  };
+}
+
+
+// ============================================================
+// STATIC FILES
+// ============================================================
+
+const MIME_TYPES = {
+  ".html":
+    "text/html; charset=utf-8",
+
+  ".js":
+    "application/javascript; charset=utf-8",
+
+  ".css":
+    "text/css; charset=utf-8",
+
+  ".json":
+    "application/json; charset=utf-8",
+
+  ".webmanifest":
+    "application/manifest+json",
+
+  ".png":
+    "image/png",
+
+  ".jpg":
+    "image/jpeg",
+
+  ".jpeg":
+    "image/jpeg",
+
+  ".gif":
+    "image/gif",
+
+  ".svg":
+    "image/svg+xml",
+
+  ".ico":
+    "image/x-icon",
+
+  ".webp":
+    "image/webp",
+
+  ".txt":
+    "text/plain; charset=utf-8"
+};
+
+const PUBLIC_ROOT_FILES = new Set([
+  "index.html", "verification.html", "manifest.json", "robots.txt", "sitemap.xml", "service-worker.js", "sw.js", "rizora-cover.png", "rizora-space.png",
+  "rizora-v2.css", "rizora-v2.js", "rizora-v2-ads-ui.js", "rizora-v2-business.css", "rizora-v2-business-ui.js",
+  "rizora-v2-comments.css", "rizora-v2-comments-ui.js", "rizora-v2-downloads.css", "rizora-v2-downloads.js",
+  "rizora-v2-enterprise.css", "rizora-v2-enterprise-ui.js", "rizora-v2-events.css", "rizora-v2-events-ui.js",
+  "rizora-v2-experience.css", "rizora-v2-creator-os.css", "rizora-v2-global.css", "rizora-v2-global-ui.js", "rizora-v2-growth.css",
+  "rizora-v2-growth-ui.js", "rizora-v2-hub.js", "rizora-v2-labs.css", "rizora-v2-labs-ui.js", "rizora-v2-live.js",
+  "rizora-v2-media.css", "rizora-v2-media.js", "rizora-v2-modern.css", "rizora-v2-modern-ui.js",
+  "rizora-v2-music-ui.js", "rizora-v2-next.css", "rizora-v2-next.js", "rizora-v2-series.css",
+  "rizora-v2-series-ui.js", "rizora-v2-suite.css", "rizora-v2-suite.js", "rizora-v2-upgrades.css",
+  "rizora-v2-upgrades-ui.js", "rizora-v2-voice.js"
+]);
+
+function isAllowedStaticPath(relativePath) {
+  const normalized = String(relativePath || "").replace(/\\/g, "/");
+  return PUBLIC_ROOT_FILES.has(normalized) || normalized.startsWith("assets/") || normalized.startsWith("creator/");
+}
+
+function serveStatic(
+  req,
+  res,
+  pathname
+) {
+  let requestedPath = pathname;
+
+  if (requestedPath === "/login" || requestedPath === "/signup" || requestedPath === "/join") requestedPath = "/index.html";
+  if (requestedPath === "/verification" || requestedPath === "/verification/") requestedPath = "/verification.html";
+
+  if (
+    requestedPath === "/" ||
+    requestedPath === ""
+  ) {
+    requestedPath = "/index.html";
+  }
+
+  // Decode URL safely.
+  try {
+    requestedPath = decodeURIComponent(requestedPath);
+  } catch {
+    sendError(res, 400, "Bad request.");
+    return;
+  }
+
+  // Normalize separators and block traversal.
+  requestedPath = requestedPath.replace(/\\/g, "/");
+
+  if (
+    requestedPath.includes("\0") ||
+    requestedPath.includes("..")
+  ) {
+    sendError(res, 403, "Forbidden.");
+    return;
+  }
+
+  const relativePath =
+    requestedPath.replace(/^\/+/, "");
+
+  if (!isAllowedStaticPath(relativePath)) {
+    sendError(res, 404, "File not found.");
+    return;
+  }
+
+  let filePath =
+    path.resolve(
+      ROOT,
+      relativePath
+    );
+
+  const rootPath =
+    path.resolve(ROOT);
+
+  if (
+    filePath !== rootPath &&
+    !filePath.startsWith(rootPath + path.sep)
+  ) {
+    sendError(res, 403, "Forbidden.");
+    return;
+  }
+
+  if (!fs.existsSync(filePath)) {
+    sendError(
+      res,
+      404,
+      "File not found."
+    );
+    return;
+  }
+
+  let stat = fs.statSync(filePath);
+
+  if (stat.isDirectory()) {
+    filePath = path.join(filePath, "index.html");
+    if (!filePath.startsWith(rootPath + path.sep) || !fs.existsSync(filePath)) {
+      sendError(res, 404, "File not found.");
+      return;
+    }
+    stat = fs.statSync(filePath);
+  }
+
+  if (!stat.isFile()) {
+    sendError(res, 404, "File not found.");
+    return;
+  }
+
+  const ext =
+    path.extname(filePath).toLowerCase();
+
+  const isHtml =
+    ext === ".html";
+
+  const isAsset =
+    requestedPath.startsWith("/assets/");
+
+  const cacheControl =
+    isHtml
+      ? "no-cache, no-store, must-revalidate"
+      : isAsset
         ? "public, max-age=31536000, immutable"
         : "public, max-age=3600";
 
@@ -2494,7 +2678,57 @@ function getAdminStats(db) {
         "application/octet-stream",
 
       "Cache-Control":
-        cacheCnnect-src 'self' https://rizora-guse.onrender.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
+        cacheControl,
+
+      "Access-Control-Allow-Origin":
+        "https://rizora.com.ng"
+    }
+  );
+
+  fs.createReadStream(
+    filePath
+  ).on("error", () => {
+    if (!res.headersSent) {
+      sendError(
+        res,
+        500,
+        "Unable to read file."
+      );
+    } else {
+      res.destroy();
+    }
+  }).pipe(res);
+}
+
+// ============================================================
+// REQUEST HANDLER
+// ============================================================
+
+function applySecurityHeaders(res){
+
+  res.setHeader(
+    "X-Content-Type-Options",
+    "nosniff"
+  );
+
+  res.setHeader(
+    "X-Frame-Options",
+    "SAMEORIGIN"
+  );
+
+  res.setHeader(
+    "Referrer-Policy",
+    "strict-origin-when-cross-origin"
+  );
+
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(self), geolocation=()"
+  );
+
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; img-src 'self' data: https:; media-src 'self' https://rizora-guse.onrender.com; connect-src 'self' https://rizora-guse.onrender.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
   );
 
   if(
@@ -2502,7 +2736,33 @@ function getAdminStats(db) {
   ){
     res.setHeader(
       "Strict-Transport-Security",
-      "max-age=    req.url,
+      "max-age=31536000; includeSubDomains"
+    );
+  }
+
+}
+
+async function handleRequest(
+  req,
+  res
+){
+
+  applySecurityHeaders(res);
+    
+    // ============================================================
+/* ============================================================
+     RIZORA_VERIFICATION_V2
+  ============================================================ */
+
+  const rzVerificationDb =
+    loadDB();
+
+  const rzVerificationMethod =
+    req.method;
+
+  const rzVerificationPath =
+    new URL(
+      req.url,
       "http://rizora.local"
     ).pathname;
 
@@ -2516,7 +2776,28 @@ function getAdminStats(db) {
       getCurrentUser(
         rzVerificationDb,
         req
-     status:
+      );
+
+    if (!user) {
+
+      sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+
+      return;
+    }
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+
+        verification: {
+
+          status:
             user.verificationStatus ||
             "unverified",
 
@@ -2526,7 +2807,56 @@ function getAdminStats(db) {
 
           verifiedAt:
             user.verifiedAt ||
-       =
+            null,
+
+          submittedAt:
+            user.verificationSubmittedAt ||
+            null
+        }
+      }
+    );
+
+    return;
+  }
+
+
+  if (
+    rzVerificationMethod === "POST" &&
+    rzVerificationPath === "/api/verification/request"
+  ) {
+
+    const user =
+      getCurrentUser(
+        rzVerificationDb,
+        req
+      );
+
+    if (!user) {
+
+      sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+
+      return;
+    }
+
+    if (
+      user.verified === true ||
+      user.verificationStatus === "verified"
+    ) {
+
+      sendError(
+        res,
+        400,
+        "Your account is already verified."
+      );
+
+      return;
+    }
+
+    rzVerificationDb.verificationRequests ||=
       [];
 
     const alreadyPending =
@@ -2539,7 +2869,42 @@ function getAdminStats(db) {
     if (alreadyPending) {
 
       sendError(
-        re        "verification_" +
+        res,
+        400,
+        "Your verification request is already under review."
+      );
+
+      return;
+    }
+
+    let body = {};
+
+    try {
+
+      body =
+        await readBody(req);
+
+    } catch (error) {
+
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    user.verificationStatus =
+      "pending";
+
+    user.verificationSubmittedAt =
+      new Date().toISOString();
+
+    rzVerificationDb.verificationRequests.push({
+
+      id:
+        "verification_" +
         Date.now().toString(36),
 
       userId:
@@ -2633,24 +2998,7 @@ function getAdminStats(db) {
       200,
       {
         success: true,
-      t.id
-      }
-    );
-
-    saveDB(
-      rzVerificationDb
-    );
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-
-        user:
-          safeUser(
-            target
-          )
+        requests
       }
     );
 
@@ -2658,7 +3006,20 @@ function getAdminStats(db) {
   }
 
 
-   ) {
+  if (
+    rzVerificationMethod === "POST" &&
+    rzVerificationPath === "/api/superadmin/verification/grant"
+  ) {
+
+    const admin =
+      getCurrentUser(
+        rzVerificationDb,
+        req
+      );
+
+    if (
+      !isSuperAdmin(admin)
+    ) {
 
       sendError(
         res,
@@ -2710,7 +3071,231 @@ function getAdminStats(db) {
 
           const byUsername =
             username &&
-     nnot be revoked."
+            String(
+              user.username ||
+              ""
+            )
+            .toLowerCase() ===
+            username;
+
+          return !!(
+            byId ||
+            byUsername
+          );
+        }
+      );
+
+    if (!target) {
+
+      sendError(
+        res,
+        404,
+        "User not found."
+      );
+
+      return;
+    }
+
+    target.verified =
+      true;
+
+    target.verificationStatus =
+      "verified";
+
+    target.verificationType =
+      target.official === true
+        ? "official"
+        : "staff_granted";
+
+    target.verifiedAt =
+      new Date().toISOString();
+
+    rzVerificationDb.verificationRequests ||=
+      [];
+
+    for (
+      const request
+      of rzVerificationDb.verificationRequests
+    ) {
+
+      if (
+        request.userId === target.id &&
+        request.status === "pending"
+      ) {
+
+        request.status =
+          "verified";
+
+        request.reviewedAt =
+          new Date().toISOString();
+
+        request.reviewedBy =
+          admin.id;
+      }
+    }
+
+    rzVerificationDb.notifications ||=
+      [];
+
+    if (
+      target.official !== true
+    ) {
+
+      rzVerificationDb.notifications.push({
+
+        id:
+          "notif_" +
+          Date.now().toString(36),
+
+        userId:
+          target.id,
+
+        fromUserId:
+          admin.id,
+
+        type:
+          "verification",
+
+        text:
+          "Your account is now verified.",
+
+        read:
+          false,
+
+        createdAt:
+          new Date().toISOString()
+      });
+    }
+
+    audit(
+      rzVerificationDb,
+      "verification_granted",
+      admin,
+      {
+        targetUserId:
+          target.id
+      }
+    );
+
+    saveDB(
+      rzVerificationDb
+    );
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+
+        user:
+          safeUser(
+            target
+          )
+      }
+    );
+
+    return;
+  }
+
+
+  if (
+    rzVerificationMethod === "POST" &&
+    rzVerificationPath === "/api/superadmin/verification/revoke"
+  ) {
+
+    const admin =
+      getCurrentUser(
+        rzVerificationDb,
+        req
+      );
+
+    if (
+      !isSuperAdmin(admin)
+    ) {
+
+      sendError(
+        res,
+        403,
+        "Super admin access required."
+      );
+
+      return;
+    }
+
+    let body = {};
+
+    try {
+
+      body =
+        await readBody(req);
+
+    } catch (error) {
+
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    const userId =
+      String(
+        body.userId ||
+        ""
+      ).trim();
+
+    const username =
+      String(
+        body.username ||
+        ""
+      ).trim()
+      .toLowerCase();
+
+    const target =
+      rzVerificationDb.users.find(
+        user => {
+
+          const byId =
+            userId &&
+            user.id === userId;
+
+          const byUsername =
+            username &&
+            String(
+              user.username ||
+              ""
+            )
+            .toLowerCase() ===
+            username;
+
+          return !!(
+            byId ||
+            byUsername
+          );
+        }
+      );
+
+    if (!target) {
+
+      sendError(
+        res,
+        404,
+        "User not found."
+      );
+
+      return;
+    }
+
+    if (
+      target.official === true
+    ) {
+
+      sendError(
+        res,
+        400,
+        "Official RIZORA verification cannot be revoked."
       );
 
       return;
@@ -2729,7 +3314,203 @@ function getAdminStats(db) {
       null;
 
     audit(
-      rztry"
+      rzVerificationDb,
+      "verification_revoked",
+      admin,
+      {
+        targetUserId:
+          target.id
+      }
+    );
+
+    saveDB(
+      rzVerificationDb
+    );
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        verified: false
+      }
+    );
+
+    return;
+  }
+
+
+  const url =
+    new URL(
+      req.url,
+      `http://${req.headers.host || "localhost"}`
+    );
+
+  const pathname =
+    url.pathname;
+
+  const method =
+    String(req.method || "")
+      .toUpperCase();
+
+  // ----------------------------------------------------------
+  // CORS PREFLIGHT
+  // ----------------------------------------------------------
+
+  if (method === "OPTIONS") {
+    res.writeHead(
+      204,
+      {
+        "Access-Control-Allow-Origin":
+          "https://rizora.com.ng",
+
+        "Access-Control-Allow-Headers":
+          "Content-Type, Authorization, X-CSRF-Token",
+
+                "Access-Control-Allow-Credentials":
+          "true",
+
+"Access-Control-Allow-Methods":
+          "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+      }
+    );
+
+    res.end();
+    return;
+  }
+
+  const db = loadDB();
+
+  cleanupSessions(db);
+
+  
+    
+    
+
+    // PAYSTACK PAYMENT SYSTEM
+    // ============================================================
+
+    if (method === "POST" && pathname === "/api/paystack/initialize") {
+
+      const user = getCurrentUser(db, req);
+
+      if (!user) {
+        return sendError(res, 401, "Authentication required.");
+      }
+
+      if (!PAYSTACK_SECRET_KEY) {
+        return sendError(res, 500, "Paystack secret key missing.");
+      }
+
+      const body = await readBody(req);
+
+      const plan = String(body.plan || "").trim();
+
+      if (!RIZORA_PLANS[plan]) {
+        return sendError(res, 400, "Invalid plan.");
+      }
+
+      const selectedPlan = RIZORA_PLANS[plan];
+      const amount = selectedPlan.amount;
+
+      const reference =
+        "RIZORA_" +
+        Date.now() +
+        "_" +
+        crypto.randomBytes(4).toString("hex");
+
+      const controller = new AbortController();
+
+      const timeout = setTimeout(
+        () => controller.abort(),
+        10000
+      );
+
+      const response = await fetch(
+        "https://api.paystack.co/transaction/initialize",
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + PAYSTACK_SECRET_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: user.email,
+            amount: amount * 100,
+            reference,
+            callback_url: APP_URL + "/payment-success",
+            metadata: {
+              userId: user.id,
+              username: user.username,
+              plan
+            }
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.status) {
+        return sendError(res, 400, "Paystack initialization failed.");
+      }
+
+      db.payments.push({
+        id: uid(),
+        userId: user.id,
+        reference,
+        amount,
+        plan,
+        status: "pending",
+        createdAt: new Date().toISOString()
+      });
+
+      saveDB(db);
+
+      return sendJSON(res, 200, {
+        success: true,
+        authorization_url: data.data.authorization_url,
+        reference
+      });
+    }
+
+
+// ============================================================
+// ============================================================
+// ADMIN EMAIL EVENTS / RETRY
+// ============================================================
+
+if(
+  method === "GET" &&
+  pathname === "/api/admin/email/events"
+){
+
+  const admin =
+    getCurrentUser(db,req);
+
+  if(!isAdmin(admin)){
+    return sendError(
+      res,
+      403,
+      "Admin access required."
+    );
+  }
+
+  db.emailEvents ||= [];
+
+  return sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      events:db.emailEvents.slice(0,100)
+    }
+  );
+}
+
+
+if(
+  method === "POST" &&
+  pathname === "/api/admin/email/retry"
 ){
 
   const admin =
@@ -2748,23 +3529,439 @@ function getAdminStats(db) {
   try{
     body = await readBody(req);
   }catch(error){
-    r.plan = payment.plan || "premium";
+    return sendError(
+      res,
+      400,
+      "Invalid request."
+    );
+  }
+
+  const event =
+    (db.emailEvents || []).find(
+      item => item.id === body.id
+    );
+
+  if(!event){
+    return sendError(
+      res,
+      404,
+      "Email event not found."
+    );
+  }
+
+  try{
+
+    const result =
+      await retryRizoraEmailEvent(
+        db,
+        event
+      );
+
+    event.status="sent";
+    event.provider =
+      result.provider || "resend";
+    event.providerId =
+      result.id || "";
+    event.sentAt =
+      new Date().toISOString();
+
+    saveDB(db);
+
+    return sendJSON(
+      res,
+      200,
+      {
+        success:true,
+        event
+      }
+    );
+
+  }catch(error){
+
+    event.status="failed";
+    event.reason =
+      String(
+        error.message ||
+        "Retry failed"
+      ).slice(0,300);
+
+    event.failedAt =
+      new Date().toISOString();
+
+    saveDB(db);
+
+    return sendError(
+      res,
+      500,
+      event.reason
+    );
+  }
+}
+
+// PAYSTACK VERIFY PAYMENT
+// ============================================================
+
+if (
+  method === "GET" &&
+  pathname.startsWith("/api/paystack/verify/")
+) {
+
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    return sendError(res, 401, "Authentication required.");
+  }
+
+  if (!PAYSTACK_SECRET_KEY) {
+    return sendError(res, 500, "Paystack secret key missing.");
+  }
+
+  const reference =
+    String(pathname.split("/").pop() || "").trim();
+
+  if(!reference || reference.length > 120){
+    return sendError(res,400,"Invalid payment reference.");
+  }
+
+  const response = await fetch(
+    "https://api.paystack.co/transaction/verify/" + reference,
+    {
+      headers: {
+        Authorization: "Bearer " + PAYSTACK_SECRET_KEY
+      }
+    }
+  );
+
+  const data = await response.json();
+
+  if (
+    data.status &&
+    data.data &&
+    data.data.status === "success"
+  ) {
+
+    const payment =
+      db.payments.find(
+        p => p.reference === reference
+      );
+
+    if (payment) {
+
+      if (payment.status === "success") {
+        return sendJSON(res, 200, {
+          received: true,
+          duplicate: true
+        });
+      }
+
+      payment.status = "success";
+      payment.paidAt =
+        new Date().toISOString();
+
+      recordPaymentEvent(db,{
+        type:"payment_success",
+        provider:"paystack",
+        reference:payment.reference,
+        userId:payment.userId,
+        plan:payment.plan
+      });
+
+      user.plan = payment.plan || "premium";
+        user.verificationBoost = payment.plan === "premium_plus" ? 20 : 10;
+      user.planExpiry =
+        new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString();
+
+      createRizoraSubscription(db,user,payment);
+    }
+
+    saveDB(db);
+  }
+
+  return sendJSON(res, 200, data);
+}
+// ============================================================
+// PAYSTACK WEBHOOK
+// ============================================================
+
+if (
+  method === "POST" &&
+  pathname === "/api/paystack/webhook"
+) {
+
+  if (!PAYSTACK_SECRET_KEY) {
+    return sendError(res, 500, "Paystack secret key missing.");
+  }
+
+  const rawBody = await readRawBody(req);
+
+  let body = {};
+
+  try {
+    body = JSON.parse(rawBody || "{}");
+  } catch (_) {
+    return sendError(res,400,"Invalid webhook payload.");
+  }
+
+  const signature =
+    req.headers["x-paystack-signature"];
+
+  if (!signature) {
+    return sendError(res, 401, "Missing signature.");
+  }
+
+  const hash =
+    crypto
+      .createHmac("sha512", PAYSTACK_SECRET_KEY)
+      .update(rawBody)
+      .digest("hex");
+
+  if (hash !== signature) {
+    return sendError(res, 401, "Invalid signature.");
+  }
+
+  if (body.event === "charge.success") {
+
+    const reference =
+      body.data.reference;
+
+    const payment =
+      db.payments.find(
+        p => p.reference === reference
+      );
+
+    if (payment) {
+
+      if (payment.status === "success") {
+        return sendJSON(res, 200, {
+          received: true,
+          duplicate: true
+        });
+      }
+
+      payment.status = "success";
+      payment.paidAt =
+        new Date().toISOString();
+
+      recordPaymentEvent(db,{
+        type:"payment_success",
+        provider:"paystack",
+        reference:payment.reference,
+        userId:payment.userId,
+        plan:payment.plan
+      });
+
+      const user =
+        db.users.find(
+          u => u.id === payment.userId
+        );
+
+      if (user) {
+        user.plan = payment.plan || "premium";
         user.verificationBoost = payment.plan === "premium_plus" ? 20 : 10;
         user.planExpiry =
         new Date(
           Date.now() + 30 * 24 * 60 * 60 * 1000
         ).toISOString();
 
-      createRizoraS502;
+      createRizoraSubscription(db,user,payment);
+      }
+
+      saveDB(db);
+    }
+  }
+
+  return sendJSON(res, 200, {
+    received: true
+  });
+}
+
+if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
+    if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+    if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
+    if (await handleRizoraLive({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, hasPremium })) return;
+    if (await handleRizoraMusic({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, storeGeneratedAudio, musicAudioRequirements: function() {
+      const missing = [];
+      if (!String(process.env.ELEVENLABS_API_KEY || "").trim()) missing.push("ELEVENLABS_API_KEY");
+      if (IS_PRODUCTION && !String(process.env.RIZORA_MEDIA_ROOT || "").trim()) missing.push("persistent media storage (RIZORA_MEDIA_ROOT)");
+      return missing;
+    }, musicAudioConfigured: function() {
+      return Boolean(String(process.env.ELEVENLABS_API_KEY || "").trim()) && (!IS_PRODUCTION || Boolean(String(process.env.RIZORA_MEDIA_ROOT || "").trim()));
+    }, generateMusicAudio: async function(options) {
+      const apiKey = String(process.env.ELEVENLABS_API_KEY || "").trim();
+      if (!apiKey) return null;
+      if (!checkRateLimit(musicAudioRateLimits, options.userId, 60 * 60 * 1000, 5)) {
+        const error = new Error("Audio generation is at its hourly limit. Try again later.");
+        error.status = 429;
+        throw error;
+      }
+      let response;
+      try {
+        response = await fetch("https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128", {
+          method: "POST",
+          headers: {"xi-api-key": apiKey, "Content-Type": "application/json"},
+          body: JSON.stringify({
+            prompt: options.prompt,
+            music_length_ms: options.durationMs,
+            model_id: "music_v2_5",
+            force_instrumental: options.forceInstrumental
+          }),
+          signal: AbortSignal.timeout(120000)
+        });
+      } catch (_) {
+        const error = new Error("The music generation service could not be reached. Try again shortly.");
+        error.status = 503;
+        throw error;
+      }
+      if (!response.ok) {
+        const error = response.status === 422
+          ? new Error("This prompt was rejected. Remove artist names, song titles or copyrighted lyrics and try again.")
+          : response.status === 429
+          ? new Error("The music generation service is busy. Try again shortly.")
+          : response.status === 401 || response.status === 403
+            ? new Error("The configured music generation key was rejected.")
+            : new Error("The music generation service could not create this track.");
+        error.status = response.status === 422 ? 422 : response.status === 429 ? 429 : 503;
+        throw error;
+      }
+      if (!String(response.headers.get("content-type") || "").toLowerCase().startsWith("audio/")) {
+        const error = new Error("The generation service returned an unsupported audio format.");
+        error.status = 502;
         throw error;
       }
       const buffer = Buffer.from(await response.arrayBuffer());
       if (!buffer.length || buffer.length > 25 * 1024 * 1024) {
         const error = new Error("The generated audio exceeded RIZORA’s file limit.");
-  st apiKey = String(process.env.GROQ_API_KEY || "").trim();
+        error.status = 413;
+        throw error;
+      }
+      return {buffer, mimeType: "audio/mpeg", modelId: "music_v2_5"};
+    }, listMusicVoices: async function() {
+      const now = Date.now();
+      if (cachedMusicVoiceOptions.expiresAt > now) return cachedMusicVoiceOptions.voices;
+      const apiKey = String(process.env.ELEVENLABS_API_KEY || "").trim();
+      if (!apiKey) return [];
+      let response;
+      try {
+        response = await fetch("https://api.elevenlabs.io/v2/voices?page_size=60&include_total_count=false", {
+          headers: {"xi-api-key": apiKey},
+          signal: AbortSignal.timeout(20000)
+        });
+      } catch (_) {
+        const error = new Error("The voice service could not be reached. Try again shortly.");
+        error.status = 503;
+        throw error;
+      }
+      if (!response.ok) {
+        const error = new Error(response.status === 401 || response.status === 403 ? "The configured voice provider key was rejected." : "Available voices could not be loaded.");
+        error.status = response.status === 429 ? 429 : 503;
+        throw error;
+      }
+      const data = await response.json().catch(() => ({}));
+      const voices = (Array.isArray(data.voices) ? data.voices : []).slice(0, 60).map((voice) => ({
+        id: String(voice.voice_id || ""),
+        name: String(voice.name || "").slice(0, 80),
+        category: String(voice.category || "").slice(0, 40),
+        description: String(voice.description || "").slice(0, 180)
+      })).filter((voice) => /^[A-Za-z0-9_-]{5,100}$/.test(voice.id) && voice.name);
+      cachedMusicVoiceOptions = {expiresAt:now + 5 * 60 * 1000, voices};
+      return voices;
+    }, generateVoiceAudio: async function(options) {
+      const apiKey = String(process.env.ELEVENLABS_API_KEY || "").trim();
+      if (!apiKey) return null;
+      if (!checkRateLimit(musicVoiceRateLimits, options.userId, 60 * 60 * 1000, 5)) {
+        const error = new Error("Voiceover generation is at its hourly limit. Try again later.");
+        error.status = 429;
+        throw error;
+      }
+      let response;
+      try {
+        const url = "https://api.elevenlabs.io/v1/text-to-speech/" + encodeURIComponent(options.voiceId) + "/stream?output_format=mp3_44100_128";
+        response = await fetch(url, {
+          method: "POST",
+          headers: {"xi-api-key": apiKey, "Content-Type": "application/json"},
+          body: JSON.stringify({
+            text: options.text,
+            model_id: "eleven_multilingual_v2",
+            voice_settings: {stability:0.45, similarity_boost:0.75, style:0.18, use_speaker_boost:true}
+          }),
+          signal: AbortSignal.timeout(90000)
+        });
+      } catch (_) {
+        const error = new Error("The voice service could not be reached. Try again shortly.");
+        error.status = 503;
+        throw error;
+      }
+      if (!response.ok) {
+        const error = new Error(response.status === 422 ? "This voice could not read that text. Shorten the text or choose another voice." : response.status === 429 ? "The voice service is busy. Try again shortly." : response.status === 401 || response.status === 403 ? "The configured voice provider key was rejected." : "The voice service could not create this voiceover.");
+        error.status = response.status === 422 ? 422 : response.status === 429 ? 429 : 503;
+        throw error;
+      }
+      if (!String(response.headers.get("content-type") || "").toLowerCase().startsWith("audio/")) {
+        const error = new Error("The voice service returned an unsupported audio format.");
+        error.status = 502;
+        throw error;
+      }
+      const buffer = Buffer.from(await response.arrayBuffer());
+      if (!buffer.length || buffer.length > 15 * 1024 * 1024) {
+        const error = new Error("The voiceover exceeded RIZORA’s audio file limit.");
+        error.status = 413;
+        throw error;
+      }
+      return {buffer, mimeType:"audio/mpeg", modelId:"eleven_multilingual_v2"};
+    }, generateMusicAI: function(options) {
+    const apiKey = String(process.env.GROQ_API_KEY || "").trim();
     if (!apiKey) return null;
     if (!checkRateLimit(aiRateLimits, options.userId, 10 * 60 * 1000, 20)) {
-      const error = new Error("Music AI is busy right now. Try again in a few minutes."ser(db, req);
+      const error = new Error("Music AI is busy right now. Try again in a few minutes.");
+      error.status = 429;
+      throw error;
+    }
+    return rizoraGroqCompletion({
+      apiKey,
+      model: process.env.GROQ_MODEL,
+      messages: options.messages
+    });
+  } })) return;
+    if (await handleRizoraMedia({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
+    if (await handleRizoraMessaging({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
+    if (await handleRizoraLabs({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+    if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+    if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+
+// ----------------------------------------------------------
+
+  // ----------------------------------------------------------
+  // SUBSCRIPTIONS
+  // ----------------------------------------------------------
+
+  if (
+    method === "GET" &&
+    pathname === "/api/subscription"
+  ) {
+
+    const user = getCurrentUser(db, req);
+
+    if(!user){
+      return sendError(res,401,"Authentication required.");
+    }
+
+    return sendJSON(res, 200, {
+      success:true,
+      plan:getUserPlan(user),
+      planExpiry:user.planExpiry || null,
+      subscription:getActiveSubscription(db,user.id)
+    });
+  }
+
+
+  if (
+    method === "GET" &&
+    pathname === "/api/subscription/history"
+  ) {
+
+    const user = getCurrentUser(db, req);
 
     if(!user){
       return sendError(res,401,"Authentication required.");
@@ -2857,7 +4054,110 @@ function getAdminStats(db) {
         clientId:
           GOOGLE_CLIENT_ID
       }
-       "RIZORA Creator",
+    );
+
+    return;
+  }
+  // ----------------------------------------------------------
+  // GOOGLE SIGN IN / SIGN UP
+  // ----------------------------------------------------------
+
+  if (
+    method === "POST" &&
+    pathname === "/api/auth/google"
+  ) {
+    let body;
+
+    try {
+      body =
+        await readBody(req);
+    } catch (error) {
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    if (
+      !GOOGLE_CLIENT_ID ||
+      !googleOAuthClient
+    ) {
+      sendError(
+        res,
+        503,
+        "Google sign-in is not configured yet."
+      );
+
+      return;
+    }
+
+    const credential =
+      String(
+        body.credential ||
+        ""
+      ).trim();
+
+    if (!credential) {
+      sendError(
+        res,
+        400,
+        "Google credential is required."
+      );
+
+      return;
+    }
+
+    let payload;
+
+    try {
+      const ticket =
+        await googleOAuthClient.verifyIdToken({
+          idToken:
+            credential,
+          audience:
+            GOOGLE_CLIENT_ID
+        });
+
+      payload =
+        ticket.getPayload();
+
+    } catch (error) {
+      console.error(
+        "Google token verification failed:",
+        error.message
+      );
+
+      sendError(
+        res,
+        401,
+        "Invalid Google sign-in credential."
+      );
+
+      return;
+    }
+
+    const googleSub =
+      String(
+        payload?.sub ||
+        ""
+      ).trim();
+
+    const googleEmail =
+      normalizeEmail(
+        payload?.email
+      );
+
+    const emailVerified =
+      payload?.email_verified === true;
+
+    const googleName =
+      cleanString(
+        payload?.name ||
+        googleEmail.split("@")[0] ||
+        "RIZORA Creator",
         80
       );
 
@@ -2873,7 +4173,141 @@ function getAdminStats(db) {
       !emailVerified ||
       ![
         "accounts.google.com",
-     
+        "https://accounts.google.com"
+      ].includes(issuer)
+    ) {
+      sendError(
+        res,
+        401,
+        "Google account verification failed."
+      );
+
+      return;
+    }
+
+    if (
+      payload?.exp &&
+      Number(payload.exp) <
+      Math.floor(
+        Date.now() / 1000
+      )
+    ) {
+      sendError(
+        res,
+        401,
+        "Google sign-in credential has expired."
+      );
+
+      return;
+    }
+
+    const existingGoogleUser =
+      db.users.find(
+        (user) =>
+          String(
+            user.googleSub ||
+            ""
+          ) === googleSub
+      );
+
+    let user =
+      existingGoogleUser ||
+      db.users.find(
+        (item) =>
+          normalizeEmail(
+            item.email
+          ) === googleEmail
+      );
+
+    let googleCreated = false;
+    let googleEmailDelivery = {
+      configured: rizoraEmailConfigured(),
+      queued: false,
+      status: "existing_account"
+    };
+
+    if(user){
+
+      if(
+        user.status !==
+        "active"
+      ){
+        sendError(
+          res,
+          403,
+          "This account is not active."
+        );
+
+        return;
+      }
+
+      if(
+        user.googleSub &&
+        user.googleSub !== googleSub
+      ){
+        sendError(
+          res,
+          409,
+          "This email is already linked to another Google account."
+        );
+
+        return;
+      }
+
+      user.googleSub =
+        googleSub;
+
+      user.authProvider =
+        user.passwordHash ? "password+google" : "google";
+
+      user.emailVerified =
+        true;
+
+      if(
+        !user.displayName
+      ){
+        user.displayName =
+          googleName;
+      }
+
+      user.lastLoginAt =
+        new Date().toISOString();
+
+    }else{
+
+      const username =
+        uniqueGoogleUsername(
+          db,
+          googleName,
+          googleEmail
+        );
+
+      user = {
+        id:
+          uid("user_"),
+
+        username,
+
+        displayName:
+          googleName,
+
+        email:
+          googleEmail,
+
+        passwordHash:
+          null,
+
+        authProvider:
+          "google",
+
+        googleSub:
+
+          googleSub,
+
+        emailVerified:
+          true,
+
+        role:
           "user",
 
         status:
@@ -2907,7 +4341,200 @@ function getAdminStats(db) {
       googleCreated = true;
 
       const referral =
-        appllCode ||
+        applyReferral(
+          db,
+          user,
+          cleanString(
+            body.referralCode ||
+            "",
+            100
+          )
+        );
+
+      audit(
+        db,
+        "google_signup",
+        user,
+        {
+          email:
+            googleEmail,
+          referralApplied:
+            Boolean(referral)
+        }
+      );
+
+      googleEmailDelivery = queueRizoraWelcomeEmail(db,user,req);
+
+      db.notifications ||= [];
+      db.notifications.unshift({
+        id:uid("notif_"),
+        userId:user.id,
+        title:"Welcome to RIZORA",
+        message:"Your Google creator account is ready. Explore your profile, missions, AI, messages and growth tools.",
+        type:"system",
+        read:false,
+        createdAt:new Date().toISOString()
+      });
+    }
+
+    if(
+      !existingGoogleUser
+    ){
+      audit(
+        db,
+        "google_login",
+        user,
+        {
+          googleSub:
+            googleSub
+        }
+      );
+    }
+
+    const token =
+      createSession(
+        db,
+        user.id,
+        req
+      );
+
+    user.lastLoginAt =
+      new Date().toISOString();
+
+    saveDB(db);
+
+    setSessionCookie(
+      res,
+      token
+    );
+
+    setCSRFCookie(
+      res
+    );
+
+    sendJSON(
+      res,
+      200,
+      {
+        success:
+          true,
+
+        token,
+
+        user:
+          safeUser(
+            user
+          ),
+        created: googleCreated,
+        emailDelivery: googleEmailDelivery
+      }
+    );
+
+    return;
+  }
+  if (
+    method === "POST" &&
+    pathname === "/api/auth/signup"
+  ) {
+
+    if(
+      !checkAuthRateLimit(
+        db,
+        req,
+        "signup"
+      )
+    ){
+      return sendError(
+        res,
+        429,
+        "Too many signup attempts. Try again later."
+      );
+    }
+    let body;
+
+    try {
+      body =
+        await readBody(req);
+    } catch (error) {
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    const username =
+      normalizeUsername(
+        body.username
+      );
+
+    const email =
+      normalizeEmail(
+        body.email
+      );
+    if (
+      !email ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+      sendError(
+        res,
+        400,
+        "A valid email address is required."
+      );
+
+      return;
+    }
+
+    const password =
+      String(
+        body.password || ""
+      );
+    const confirmPassword =
+      String(
+        body.confirmPassword ||
+        ""
+      );
+
+    if (!confirmPassword) {
+      sendError(
+        res,
+        400,
+        "Please confirm your password."
+      );
+
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      sendError(
+        res,
+        400,
+        "Passwords do not match."
+      );
+
+      return;
+    }
+
+    if (
+      password.length < 8 ||
+      !/[a-z]/.test(password) ||
+      !/[A-Z]/.test(password) ||
+      !/[0-9]/.test(password)
+    ) {
+      sendError(
+        res,
+        400,
+        "Password must be at least 8 characters and include uppercase, lowercase and a number."
+      );
+
+      return;
+    }
+
+    const referralCode =
+      cleanString(
+        body.referralCode ||
         body.referral,
         100
       );
@@ -2922,7 +4549,21 @@ function getAdminStats(db) {
         .replace(/^@+/, "")
         .trim();
 
-    const rat9,
+    const rateKey =
+      req.socket.remoteAddress ||
+      "unknown";
+
+    if (
+      !checkRateLimit(
+        signupAttempts,
+        rateKey,
+        SIGNUP_WINDOW_MS,
+        SIGNUP_MAX_ATTEMPTS
+      )
+    ) {
+      sendError(
+        res,
+        429,
         "Too many signup attempts. Try again later."
       );
 
@@ -2940,7 +4581,19 @@ function getAdminStats(db) {
     }
 
     if (
-      !/^[a-zA-rd.length < 6) {
+      !/^[a-zA-Z0-9_.-]{3,30}$/
+        .test(username)
+    ) {
+      sendError(
+        res,
+        400,
+        "Username must be 3-30 characters and may contain letters, numbers, dots, underscores or hyphens."
+      );
+
+      return;
+    }
+
+    if (password.length < 6) {
       sendError(
         res,
         400,
@@ -2956,7 +4609,22 @@ function getAdminStats(db) {
     ) {
       sendError(
         res,
-        40ists) {
+        400,
+        "Invalid email address."
+      );
+
+      return;
+    }
+
+    const usernameExists =
+      db.users.some(
+        (user) =>
+          normalizeUsername(
+            user.username
+          ) === username
+      );
+
+    if (usernameExists) {
       sendError(
         res,
         409,
@@ -2987,7 +4655,195 @@ function getAdminStats(db) {
     }
 
     const passwordHash =
-      
+      await hashPassword(
+        password
+      );
+
+    const isProtected = isConfiguredSuperAdminUsername(username);
+
+    const user = {
+      id: uid("user_"),
+
+      username,
+
+      displayName:
+        cleanString(
+          body.displayName ||
+          username,
+          80
+        ),
+
+      email,
+
+      socialHandle,
+
+      passwordHash,
+
+      role:
+        isProtected
+          ? "super_admin"
+          : "user",
+
+      status: "active",
+
+      points: 0,
+
+      referralCode:
+        randomReferralCode(
+          username
+        ),
+
+      referredBy: null,
+
+      referralCount: 0,
+
+      createdAt:
+        new Date().toISOString(),
+
+      lastLoginAt: null
+    };
+
+    db.users.push(user);
+
+    const referral =
+      applyReferral(
+        db,
+        user,
+        referralCode
+      );
+
+    const token =
+      createSession(
+        db,
+        user.id,
+        req
+      );
+
+    audit(
+      db,
+      "user_signup",
+      user,
+      {
+        referralApplied:
+          Boolean(referral)
+      }
+    );
+
+    const welcomeEmailDelivery = queueRizoraWelcomeEmail(db,user,req);
+
+    sendEmailVerificationEmail(
+      db,
+      user,
+      req
+    );
+
+    db.notifications ||= [];
+    db.notifications.unshift({
+      id:uid("notif_"),
+      userId:user.id,
+      title:"Welcome to RIZORA",
+      message:"Your creator account is ready. Explore your profile, missions, AI, messages and growth tools.",
+      type:"system",
+      read:false,
+      createdAt:new Date().toISOString()
+    });
+
+    saveDB(db);
+
+    setSessionCookie(
+      res,
+      token
+    );
+
+    setCSRFCookie(
+      res
+    );
+
+    sendJSON(
+      res,
+      201,
+      {
+        success: true,
+        token,
+        user:
+          safeUser(user),
+        emailDelivery: {
+          status: welcomeEmailDelivery.status,
+          queued: welcomeEmailDelivery.queued,
+          configured: welcomeEmailDelivery.configured
+        }
+      }
+    );
+
+    return;
+  }
+
+// ----------------------------------------------------------
+// VERIFY EMAIL
+// ----------------------------------------------------------
+
+if(
+  method === "GET" &&
+  pathname === "/api/auth/verify-email"
+){
+
+  const url =
+    new URL(req.url,"http://localhost");
+
+  const token =
+    String(url.searchParams.get("token") || "").trim();
+
+  if(!token){
+    return sendError(
+      res,
+      400,
+      "Verification token missing."
+    );
+  }
+
+  db.emailVerificationTokens ||= [];
+
+  const tokenHash =
+    crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+  const record =
+    db.emailVerificationTokens.find(
+      item =>
+        item.tokenHash === tokenHash &&
+        new Date(item.expiresAt) > new Date()
+    );
+
+  if(!record){
+    return sendError(
+      res,
+      400,
+      "Invalid or expired verification token."
+    );
+  }
+
+  const user =
+    db.users.find(
+      item => item.id === record.userId
+    );
+
+  if(!user){
+    return sendError(
+      res,
+      404,
+      "User not found."
+    );
+  }
+
+  user.emailVerified = true;
+
+  db.emailVerificationTokens =
+    db.emailVerificationTokens.filter(
+      item => item.id !== record.id
+    );
+
   saveDB(db);
 
   return sendJSON(
@@ -3002,7 +4858,97 @@ function getAdminStats(db) {
 
   // ----------------------------------------------------------
   // LOGIN
-  // -----------------------);
+  // ----------------------------------------------------------
+
+  if (
+    method === "POST" &&
+    pathname === "/api/auth/login"
+  ) {
+
+    if(
+      !checkAuthRateLimit(
+        db,
+        req,
+        "login"
+      )
+    ){
+      return sendError(
+        res,
+        429,
+        "Too many login attempts. Try again later."
+      );
+    }
+
+    let body;
+
+    try {
+      body =
+        await readBody(req);
+    } catch (error) {
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    const identifier =
+      cleanString(
+        body.username ||
+        body.email ||
+        body.identifier,
+        100
+      ).toLowerCase();
+
+    const password =
+      String(
+        body.password || ""
+      );
+
+    const rateKey =
+      `${
+        req.socket.remoteAddress ||
+        "unknown"
+      }:${identifier}`;
+
+    if (
+      !checkRateLimit(
+        loginAttempts,
+        rateKey,
+        LOGIN_WINDOW_MS,
+        LOGIN_MAX_ATTEMPTS
+      )
+    ) {
+      sendError(
+        res,
+        429,
+        "Too many login attempts. Try again later."
+      );
+
+      return;
+    }
+
+    if (
+      !identifier ||
+      !password
+    ) {
+      sendError(
+        res,
+        400,
+        "Username/email and password are required."
+      );
+
+      return;
+    }
+
+    let bootstrapChanged = false;
+
+    if (
+      isConfiguredSuperAdminUsername(identifier)
+    ) {
+      bootstrapChanged = ensureConfiguredSuperAdminAccounts(db);
     }
 
     const user =
@@ -3030,7 +4976,61 @@ function getAdminStats(db) {
       user.lockedUntil &&
       new Date(user.lockedUntil) > new Date()
     ){
-      return sendError(d username/email or password."
+      return sendError(
+        res,
+        423,
+        "Account temporarily locked. Try again later."
+      );
+    }
+
+    let validPassword =
+      await verifyPassword(
+        password,
+        user.passwordHash
+      );
+
+    if (
+      !validPassword &&
+      isConfiguredSuperAdminUsername(user.username)
+    ) {
+      const bootstrapPassword = configuredPasswordForUser(user.username);
+
+      if (
+        bootstrapPassword &&
+        password === bootstrapPassword
+      ) {
+        validPassword = true;
+        user.passwordHash =
+          await hashPassword(
+            bootstrapPassword
+          );
+        user.passwordSetupRequired = false;
+        bootstrapChanged = true;
+      }
+    }
+
+    if (!validPassword) {
+
+      recordFailedLogin(
+        db,
+        user
+      );
+
+      saveDB(db);
+
+      audit(
+        db,
+        "failed_login_attempt",
+        user,
+        {
+          identifier
+        }
+      );
+
+      sendError(
+        res,
+        401,
+        "Invalid username/email or password."
       );
 
       return;
@@ -3066,7 +5066,54 @@ function getAdminStats(db) {
         sendJSON(res, 401, { success:false, code:"TWO_FACTOR_REQUIRED", error:"Two-factor authentication code required." });
         return;
       }
-     );
+      if (!verifyTotpCode(user.twoFactorSecret || "", twoFactorCode)) {
+        sendJSON(res, 401, { success:false, code:"TWO_FACTOR_INVALID", error:"Invalid two-factor authentication code." });
+        return;
+      }
+    }
+
+
+    user.lastLoginAt =
+      new Date().toISOString();
+
+    if (bootstrapChanged) {
+      saveDB(db);
+    }
+
+    const token =
+      createSession(
+        db,
+        user.id,
+        req
+      );
+
+    audit(
+      db,
+      "user_login",
+      user
+    );
+
+    saveDB(db);
+
+    setSessionCookie(
+      res,
+      token
+    );
+
+    setCSRFCookie(
+      res
+    );
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        token,
+        user:
+          safeUser(user)
+      }
+    );
 
     return;
   }
@@ -3110,7 +5157,35 @@ function getAdminStats(db) {
 
 // ----------------------------------------------------------
 // PASSWORD RESET
-// ------- [];
+// ----------------------------------------------------------
+
+if (
+  method === "POST" &&
+  pathname === "/api/auth/forgot-password"
+) {
+
+  let body;
+
+  try {
+    body = await readBody(req);
+  } catch (_) {
+    return sendError(res,400,"Invalid request.");
+  }
+
+  const email =
+    normalizeEmail(body.email || "");
+
+  if (email) {
+
+    const user =
+      db.users.find(
+        item =>
+          normalizeEmail(item.email) === email
+      );
+
+    if (user) {
+
+      db.passwordResetTokens ||= [];
 
       const rawToken =
         crypto.randomBytes(32).toString("hex");
@@ -3122,7 +5197,17 @@ function getAdminStats(db) {
           .digest("hex");
 
       db.passwordResetTokens =
-        dw() + 30 * 60 * 1000
+        db.passwordResetTokens.filter(
+          item => item.userId !== user.id
+        );
+
+      db.passwordResetTokens.push({
+        id: uid("prt_"),
+        userId:user.id,
+        tokenHash,
+        expiresAt:
+          new Date(
+            Date.now() + 30 * 60 * 1000
           ).toISOString(),
         createdAt:
           new Date().toISOString()
@@ -3135,7 +5220,26 @@ function getAdminStats(db) {
 
       saveDB(db);
 
-  l exists, a password reset link has been sent."
+      try {
+        await sendRizoraEmail({
+          to:user.email,
+          subject:"Reset your RIZORA password",
+          text:
+            "Use this link to reset your RIZORA password:\n\n" +
+            resetUrl,
+          html:
+            "<p>Reset your RIZORA password.</p>" +
+            "<p><a href=\"" +
+            resetUrl +
+            "\">Reset Password</a></p>"
+        });
+      } catch (_) {}
+    }
+  }
+
+  return sendJSON(res,200,{
+    success:true,
+    message:"If that email exists, a password reset link has been sent."
   });
 }
 
@@ -3150,7 +5254,21 @@ if (
   try {
     body = await readBody(req);
   } catch (_) {
-    return sendError(res,400,"Invalid r;
+    return sendError(res,400,"Invalid request.");
+  }
+
+  const token =
+    String(body.token || "").trim();
+
+  const password =
+    String(body.password || "");
+
+  if (!token || !password) {
+    return sendError(
+      res,
+      400,
+      "Token and password are required."
+    );
   }
 
   if (
@@ -3177,7 +5295,38 @@ if (
   const reset =
     db.passwordResetTokens.find(
       item =>
-        item.tokenHash ===  db.passwordResetTokens.filter(
+        item.tokenHash === tokenHash &&
+        new Date(item.expiresAt) > new Date()
+    );
+
+  if (!reset) {
+    return sendError(
+      res,
+      400,
+      "Invalid or expired reset token."
+    );
+  }
+
+  const user =
+    db.users.find(
+      item => item.id === reset.userId
+    );
+
+  if (!user) {
+    return sendError(
+      res,
+      404,
+      "User not found."
+    );
+  }
+
+  user.passwordHash =
+    await hashPassword(password);
+
+  user.passwordSetupRequired = false;
+
+  db.passwordResetTokens =
+    db.passwordResetTokens.filter(
       item => item.id !== reset.id
     );
 
@@ -3204,7 +5353,24 @@ if(
     );
 
   if(!user){
-    retuie(res);
+    return sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+  }
+
+  db.sessions =
+    db.sessions.filter(
+      session =>
+        session.userId !== user.id
+    );
+
+  saveDB(db);
+
+  clearSessionCookie(res);
+
+  clearCSRFCookie(res);
 
   return sendJSON(
     res,
@@ -3235,7 +5401,24 @@ if(
     return sendError(
       res,
       401,
-      "Authentication r     .map(
+      "Authentication required."
+    );
+  }
+
+  cleanupSessions(db);
+
+  return sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      sessions:
+        db.sessions
+          .filter(
+            item =>
+              item.userId === user.id
+          )
+          .map(
             item => ({
               id:item.id,
               ip:item.ip || "",
@@ -3263,7 +5446,27 @@ if(
 
   if(!user){
     return sendError(
-      retring(body.sessionId || "").trim();
+      res,
+      401,
+      "Authentication required."
+    );
+  }
+
+  let body;
+
+  try{
+    body =
+      await readBody(req);
+  }catch(_){
+    return sendError(
+      res,
+      400,
+      "Invalid request."
+    );
+  }
+
+  const sessionId =
+    String(body.sessionId || "").trim();
 
   const before =
     db.sessions.length;
@@ -3308,7 +5511,221 @@ if(
   ){
     return sendError(
       res,
-      429edHistory ||= {};
+      429,
+      "Too many password change attempts. Try again later."
+    );
+  }
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if(!user){
+    return sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+  }
+
+  let body;
+
+  try{
+    body =
+      await readBody(req);
+  }catch(_){
+    return sendError(
+      res,
+      400,
+      "Invalid request."
+    );
+  }
+
+  const currentPassword =
+    String(body.currentPassword || "");
+
+  const newPassword =
+    String(body.newPassword || "");
+
+  if(!currentPassword || !newPassword){
+    return sendError(
+      res,
+      400,
+      "Current and new password are required."
+    );
+  }
+
+  const valid =
+    await verifyPassword(
+      currentPassword,
+      user.passwordHash
+    );
+
+  if(!valid){
+    return sendError(
+      res,
+      400,
+      "Current password is incorrect."
+    );
+  }
+
+  if(
+    newPassword.length < 8 ||
+    !/[a-z]/.test(newPassword) ||
+    !/[A-Z]/.test(newPassword) ||
+    !/[0-9]/.test(newPassword)
+  ){
+    return sendError(
+      res,
+      400,
+      "Password must contain uppercase, lowercase and a number."
+    );
+  }
+
+  user.passwordHash =
+    await hashPassword(
+      newPassword
+    );
+
+  db.sessions =
+    db.sessions.filter(
+      session =>
+        session.userId !== user.id
+    );
+
+  const token =
+    createSession(
+      db,
+      user.id,
+      req
+    );
+
+  audit(
+    db,
+    "password_changed",
+    user,
+    {}
+  );
+
+  saveDB(db);
+
+  setSessionCookie(
+    res,
+    token
+  );
+
+  return sendJSON(
+    res,
+    200,
+    {
+      success:true,
+      message:"Password changed successfully."
+    }
+  );
+}
+
+  // ----------------------------------------------------------
+  // AUTH / ME
+  // ----------------------------------------------------------
+
+  if (
+    method === "GET" &&
+    pathname === "/api/auth/me"
+  ) {
+    const user =
+      getCurrentUser(
+        db,
+        req
+      );
+
+    if (!user) {
+      sendError(
+        res,
+        401,
+        "Not authenticated."
+      );
+
+      return;
+    }
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        user:
+          safeUser(user)
+      }
+    );
+
+    return;
+  }
+
+  // ----------------------------------------------------------
+  // POINTS
+  // ----------------------------------------------------------
+
+  if (
+    method === "GET" &&
+    pathname === "/api/points"
+  ) {
+    const user =
+      getCurrentUser(
+        db,
+        req
+      );
+
+    if (!user) {
+      sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+
+      return;
+    }
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        points:
+          Number(
+            user.points || 0
+          )
+      }
+    );
+
+    return;
+  }
+
+  // ----------------------------------------------------------
+  
+// ============================================================
+// RIZORA FEATURE LAYER
+// ============================================================
+
+if (
+  (method === "GET" && pathname === "/api/tasks") ||
+  (method === "POST" && pathname === "/api/tasks/start")
+) {
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    return sendJSON(res, 401, {
+      success: false,
+      error: "Authentication required"
+    });
+  }
+
+  db.tasks ||= [];
+  db.taskCompletions ||= [];
+    db.taskAttempts ||= [];
+  db.taskSeen ||= {};
+  db.rizoraGeneratedHistory ||= {};
   db.rizoraGeneratedHistory[user.id] ||= [];
 
   const cooldown = getCooldown(db, user.id);
@@ -3326,7 +5743,451 @@ if(
     .filter(task => task.active !== false)
     .filter(task => task.type !== "generated")
     .filter(task => !(task.type === "community" && task.creatorId === user.id))
-    .filterk first."
+    .filter(task => task.type !== "social_follow")
+    .filter(task => !completedIds.has(task.id))
+    .map(task => ({
+      ...task,
+      completed: false,
+      locked: cooldown.active
+    }));
+
+  /*
+   * Existing generated tasks belonging to this user.
+   */
+  let generatedTasks = db.tasks
+    .filter(task =>
+      task.active !== false &&
+      task.type === "generated" &&
+      task.createdForUserId === user.id &&
+      !completedIds.has(task.id)
+    )
+    .map(task => ({
+      ...task,
+      completed: false,
+      locked: cooldown.active
+    }));
+
+  /*
+   * GUARANTEED FRESH GENERATION
+   *
+   * If this user has no generated task waiting, create four.
+   * History prevents reuse of the same action/platform pair.
+   */
+  // ----------------------------------------------------------
+  // TASKS — START
+  // ----------------------------------------------------------
+
+  if (
+    method === "POST" &&
+    pathname === "/api/tasks/start"
+  ) {
+    const user =
+      getCurrentUser(
+        db,
+        req
+      );
+
+    if (!user) {
+      sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+
+      return;
+    }
+
+    let body;
+
+    try {
+      body = await readBody(req);
+    } catch (error) {
+      sendError(
+        res,
+        400,
+        error.message
+      );
+
+      return;
+    }
+
+    const taskId =
+      cleanString(
+        body.taskId ||
+        body.id,
+        100
+      );
+
+    if (!taskId) {
+      sendError(
+        res,
+        400,
+        "Task ID is required."
+      );
+
+      return;
+    }
+
+    const startCooldown = getCooldown(db, user.id);
+    if (startCooldown.active) {
+      sendJSON(res, 429, {
+        error: "Your next RIZORA task is still on cooldown.",
+        cooldown: startCooldown,
+        cooldownMinutes: 7
+      });
+      return;
+    }
+
+    const task =
+      db.tasks.find(
+        (item) =>
+          item.id === taskId &&
+          item.active !== false
+      );
+
+    if (!task) {
+      sendError(
+        res,
+        404,
+        "Task not found."
+      );
+
+      return;
+    }
+
+    if (task.type === "social_follow") {
+      sendError(
+        res,
+        409,
+        "Use the Social Tasks mission for this action."
+      );
+      return;
+    }
+
+    if (
+      task.type === "generated" &&
+      task.createdForUserId !== user.id
+    ) {
+      sendError(
+        res,
+        403,
+        "This generated task is not assigned to your account."
+      );
+      return;
+    }
+
+    if (
+      task.type === "community" &&
+      task.creatorId === user.id
+    ) {
+      sendError(
+        res,
+        403,
+        "You cannot claim your own community task."
+      );
+      return;
+    }
+
+    const alreadyCompleted =
+      db.taskCompletions.some(
+        (completion) =>
+          completion.userId === user.id &&
+          completion.taskId === task.id
+      );
+
+    if (alreadyCompleted) {
+      sendError(
+        res,
+        409,
+        "Task already completed."
+      );
+
+      return;
+    }
+
+    db.taskAttempts ||= [];
+
+    const now =
+      new Date().toISOString();
+
+    const existing =
+      db.taskAttempts.find(
+        (item) =>
+          item.userId === user.id &&
+          item.taskId === task.id &&
+          item.status === "started"
+      );
+
+    if (existing) {
+      existing.startedAt =
+        existing.startedAt ||
+        now;
+
+      saveDB(db);
+
+      sendJSON(
+        res,
+        200,
+        {
+          success: true,
+          startedAt: existing.startedAt,
+          taskId: task.id
+        }
+      );
+
+      return;
+    }
+
+    db.taskAttempts.push({
+      id: uid("attempt_"),
+      userId: user.id,
+      taskId: task.id,
+      status: "started",
+      startedAt: now
+    });
+
+    saveDB(db);
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+        startedAt: now,
+        taskId: task.id
+      }
+    );
+
+    return;
+  }
+  if (!cooldown.active && generatedTasks.length === 0) {
+
+    const actionPool = [
+      ["Create a new piece of creator content", "TikTok"],
+      ["Create a new piece of creator content", "Instagram"],
+      ["Create a new piece of creator content", "YouTube"],
+      ["Improve one part of your creator profile", "TikTok"],
+      ["Improve one part of your creator profile", "Instagram"],
+      ["Improve one part of your creator profile", "YouTube"],
+      ["Engage meaningfully with another creator", "TikTok"],
+      ["Engage meaningfully with another creator", "Instagram"],
+      ["Engage meaningfully with another creator", "X"],
+      ["Review one of your recent posts", "TikTok"],
+      ["Review one of your recent posts", "Instagram"],
+      ["Review one of your recent posts", "YouTube"],
+      ["Create a stronger hook for your next post", "TikTok"],
+      ["Create a stronger hook for your next post", "Instagram"],
+      ["Create a stronger hook for your next post", "YouTube"],
+      ["Improve a caption for your next post", "TikTok"],
+      ["Improve a caption for your next post", "Instagram"],
+      ["Plan your next three creator posts", "TikTok"],
+      ["Plan your next three creator posts", "Instagram"],
+      ["Plan your next three creator posts", "YouTube"]
+    ];
+
+    const history = db.rizoraGeneratedHistory[user.id];
+
+    const available = actionPool.filter(item => {
+      const key = `${item[0]}::${item[1]}`;
+      return !history.includes(key);
+    });
+
+    for (let i = available.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [available[i], available[j]] = [available[j], available[i]];
+    }
+
+    const selected = available.slice(0, 4);
+
+    for (const item of selected) {
+      const action = item[0];
+      const platform = item[1];
+      const historyKey = `${action}::${platform}`;
+
+      history.push(historyKey);
+
+      const generated = {
+        id:
+          "generated_" +
+          Date.now() +
+          "_" +
+          Math.random().toString(36).slice(2, 10),
+
+        type: "generated",
+        generated: true,
+        createdForUserId: user.id,
+        creatorId: null,
+        creatorUsername: "RIZORA",
+
+        title: `${action} on ${platform}`,
+
+        description:
+          `${action} on ${platform}. ` +
+          "Keep it authentic, useful and focused on creator growth.",
+
+        platform: platform.toLowerCase(),
+        points: 10,
+        reward: 10,
+        active: true,
+
+        sourceKey: historyKey,
+        generatedAt: Date.now()
+      };
+
+      db.tasks.push(generated);
+
+      generatedTasks.push({
+        ...generated,
+        completed: false,
+        locked: false
+      });
+    }
+
+    saveDB(db);
+  }
+
+  return sendJSON(res, 200, {
+    success: true,
+
+    tasks: [
+      ...normalTasks,
+      ...generatedTasks
+    ],
+
+    cooldown,
+    cooldownMinutes: 7,
+    generatedCount: generatedTasks.length,
+
+    message:
+      generatedTasks.length
+        ? null
+        : "No new tasks right now. Check back after the next rotation."
+  });
+}
+if (
+  method === "POST" &&
+  pathname === "/api/tasks/complete"
+) {
+
+  const user =
+    getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  const authenticated =
+    true;
+
+  let body = {};
+
+  try {
+    body =
+      await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+    return;
+  }
+
+  const taskId =
+    cleanString(
+      body.taskId ||
+      body.id,
+      100
+    );
+
+  const task =
+    db.tasks.find(
+      x =>
+        x.id === taskId &&
+        x.active !== false
+    );
+
+  if (!task) {
+    sendError(
+      res,
+      404,
+      "Task not found."
+    );
+    return;
+  }
+
+  if (task.type === "social_follow") {
+    sendError(
+      res,
+      409,
+      "Use the Social Tasks mission for this action."
+    );
+    return;
+  }
+
+  const cooldown =
+    getCooldown(
+      db,
+      user.id
+    );
+
+  if (cooldown.active) {
+    sendJSON(
+      res,
+      429,
+      {
+        error:
+          "Your next RIZORA task is still on cooldown.",
+        cooldown,
+        cooldownMinutes: 7
+      }
+    );
+    return;
+  }
+
+  const already =
+    db.taskCompletions.some(
+      c =>
+        c.userId === user.id &&
+        c.taskId === task.id
+    );
+
+  if (already) {
+    sendError(
+      res,
+      409,
+      "Task already completed."
+    );
+    return;
+  }
+
+  const reward =
+    task.type === "community"
+      ? 10
+      : Math.max(
+          0,
+          Number(
+            task.points ||
+            task.reward ||
+            0
+          )
+        );
+
+      db.taskAttempts ||= [];
+
+    const attempt = db.taskAttempts.find(
+      (item) =>
+        item.userId === user.id &&
+        item.taskId === task.id &&
+        item.status === "started"
+    );
+
+    if (!attempt) {
+      sendError(
+        res,
+        403,
+        "Start this task first."
       );
 
       return;
@@ -3334,8 +6195,975 @@ if(
 
     const startedAt = typeof attempt.startedAt === "number" ? attempt.startedAt : new Date(attempt.startedAt || 0).getTime();
     const elapsedMs = Date.now() - startedAt;
-    const REQUIRED_TASK_TIME_MS = 2t the request: Creator OS and Command Center, Flow, Explore, Live, Messages, Grow, RIZORA AI, Music Studio and Music AI, Creator Hub, Profile, Analytics, Boosts, Opportunities, Communities, Stories and Creator Suite. " +
-      "RIZORA provides an in-app mlicitly available, say they are not specified. " +
+    const REQUIRED_TASK_TIME_MS = 20 * 1000;
+
+    if (
+      !startedAt ||
+      elapsedMs < REQUIRED_TASK_TIME_MS
+    ) {
+      const remainingSeconds = Math.max(
+        1,
+        Math.ceil(
+          (REQUIRED_TASK_TIME_MS - elapsedMs) / 1000
+        )
+      );
+
+      sendError(
+        res,
+        403,
+        `Please complete the task before claiming the reward. ${remainingSeconds}s remaining.`
+      );
+
+      return;
+    }
+
+    attempt.status = "verified";
+    attempt.verifiedAt =
+      new Date().toISOString();
+const completion = {
+    id:
+      uid("completion_"),
+    userId:
+      user.id,
+    taskId:
+      task.id,
+    points:
+      reward,
+    completedAt:
+      new Date().toISOString()
+  };
+
+  db.taskCompletions.push(
+    completion
+  );
+
+  rizoraMarkTaskSeen(
+    db,
+    user.id,
+    task.id
+  );
+
+  user.points =
+    Number(user.points || 0) +
+    reward;
+
+  addLedger(
+    db,
+    user.id,
+    "task_reward",
+    reward,
+    {
+      taskId:
+        task.id
+    }
+  );
+
+  const nextTaskAt =
+    startCooldown(
+      db,
+      user.id,
+      task.id
+    );
+
+  audit(
+    db,
+    "task_completed",
+    user,
+    {
+      taskId:
+        task.id,
+      points:
+        reward
+    }
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      completion,
+      reward,
+      points:
+        user.points,
+      nextTaskAt,
+      cooldownMinutes: 7,
+      cooldown:
+        getCooldown(
+          db,
+          user.id
+        ),
+      user:
+        safeUser(user)
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   COMMUNITY TASK — CREATE
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/tasks/create"
+) {
+
+  const user =
+    getCurrentUser(
+      db,
+      req
+    );
+
+  if (!user) {
+    sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+    return;
+  }
+
+  let body = {};
+
+  try {
+    body =
+      await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+    return;
+  }
+
+  const title =
+    cleanString(
+      body.title,
+      160
+    );
+
+  const description =
+    cleanString(
+      body.description,
+      1000
+    );
+
+  const url =
+    body.url
+      ? validURL(body.url)
+      : "";
+
+  if (!title || !description) {
+    sendError(
+      res,
+      400,
+      "Task title and description are required."
+    );
+    return;
+  }
+
+  const publishFee = 10;
+
+  if (
+    Number(user.points || 0) <
+    publishFee
+  ) {
+    sendError(
+      res,
+      400,
+      "You need 10 RIZORA points to create a task."
+    );
+    return;
+  }
+
+  db.tasks ||= [];
+
+  const task = {
+    id:
+      uid("community_task_"),
+
+    title,
+
+    description,
+
+    url,
+
+    type:
+      "community",
+
+    platform:
+      cleanString(
+        body.platform,
+        40
+      ).toLowerCase() ||
+      "creator",
+
+    creatorId:
+      user.id,
+
+    creatorUsername:
+      user.username || "",
+
+    points:
+      10,
+
+    reward:
+      10,
+
+    active:
+      true,
+
+    createdAt:
+      new Date().toISOString()
+  };
+
+  user.points =
+    Number(
+      user.points || 0
+    ) -
+    publishFee;
+
+  db.tasks.push(
+    task
+  );
+
+  addLedger(
+    db,
+    user.id,
+    "community_task_publish",
+    -publishFee,
+    {
+      taskId:
+        task.id
+    }
+  );
+
+  audit(
+    db,
+    "community_task_created",
+    user,
+    {
+      taskId:
+        task.id
+    }
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    201,
+    {
+      success: true,
+      task,
+      publishFee,
+      points:
+        user.points,
+      user:
+        safeUser(user)
+    }
+  );
+
+  return;
+}
+
+/* ============================================================
+   BOOSTS — AVAILABLE
+============================================================ */
+
+if (
+  method === "GET" &&
+  pathname === "/api/boosts"
+) {
+
+  const user = getCurrentUser(db, req);
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  const cooldown = getCooldown(db, user.id);
+
+  const boosts =
+    (db.boostTasks || [])
+      .filter(
+        b =>
+          b.status === "active" &&
+          b.ownerId !== user.id &&
+          Number(b.remaining || 0) > 0 &&
+          !(db.boostCompletions || [])
+            .some(
+              c =>
+                c.userId === user.id &&
+                c.boostId === b.id
+            )
+      );
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      boosts,
+      cooldown
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   BOOSTS — CREATE
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/boosts/create"
+) {
+
+  const user =
+    getCurrentUser(db, req);
+
+  if(!user){
+    return sendError(
+      res,
+      401,
+      "Authentication required."
+    );
+  }
+
+  if(!hasPremium(user)){
+    return sendError(
+      res,
+      403,
+      "Premium subscription required to create boosts."
+    );
+  }
+
+  let body = {};
+
+  try {
+    body =
+      await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+    return;
+  }
+
+  const platforms = [
+    "tiktok",
+    "instagram",
+    "x",
+    "youtube",
+    "spotify",
+    "facebook"
+  ];
+
+  const actions = [
+    "follow",
+    "like",
+    "subscribe",
+    "view"
+  ];
+
+  const platform =
+    cleanString(
+      body.platform,
+      30
+    ).toLowerCase();
+
+  const action =
+    cleanString(
+      body.action,
+      30
+    ).toLowerCase();
+
+  const username =
+    cleanString(
+      body.username,
+      100
+    );
+
+  const url =
+    validURL(body.url);
+
+  const reward =
+    Math.floor(
+      Number(body.reward)
+    );
+
+  const quantity =
+    Math.floor(
+      Number(
+        body.maxCompletions
+      )
+    );
+
+  if (!platforms.includes(platform)) {
+    sendError(
+      res,
+      400,
+      "Invalid platform."
+    );
+    return;
+  }
+
+  if (!actions.includes(action)) {
+    sendError(
+      res,
+      400,
+      "Invalid action."
+    );
+    return;
+  }
+
+  if (!username || !url) {
+    sendError(
+      res,
+      400,
+      "Username and valid URL are required."
+    );
+    return;
+  }
+
+  if (
+    !Number.isFinite(reward) ||
+    reward < 1 ||
+    reward > 10000
+  ) {
+    sendError(
+      res,
+      400,
+      "Reward must be between 1 and 10000."
+    );
+    return;
+  }
+
+  if (
+    !Number.isFinite(quantity) ||
+    quantity < 1 ||
+    quantity > 10000
+  ) {
+    sendError(
+      res,
+      400,
+      "Completion count must be between 1 and 10000."
+    );
+    return;
+  }
+
+  const budget =
+    reward * quantity;
+
+  if (
+    Number(user.points || 0) <
+    budget
+  ) {
+    sendError(
+      res,
+      400,
+      "Not enough RIZORA points."
+    );
+    return;
+  }
+
+  user.points =
+    Number(user.points || 0) -
+    budget;
+
+  db.boostTasks ||= [];
+
+  const boost = {
+    id:
+      uid("boost_"),
+    ownerId:
+      user.id,
+    ownerUsername:
+      user.username,
+    platform,
+    action,
+    username,
+    url,
+    reward,
+    maxCompletions:
+      quantity,
+    completedCount:
+      0,
+    remaining:
+      quantity,
+    totalBudget:
+      budget,
+    status:
+      "active",
+    createdAt:
+      new Date().toISOString()
+  };
+
+  db.boostTasks.push(
+    boost
+  );
+
+  addLedger(
+    db,
+    user.id,
+    "boost_fund",
+    -budget,
+    {
+      boostId:
+        boost.id
+    }
+  );
+
+  audit(
+    db,
+    "boost_created",
+    user,
+    {
+      boostId:
+        boost.id,
+      budget
+    }
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    201,
+    {
+      success: true,
+      boost,
+      totalBudget:
+        budget,
+      user:
+        safeUser(user)
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   BOOSTS — COMPLETE
+============================================================ */
+
+if (
+  method === "POST" &&
+  pathname === "/api/boosts/complete"
+) {
+
+  const user =
+    getCurrentUser(db, req);
+
+  const authenticated =
+    !!user;
+
+  let body = {};
+
+  try {
+    body =
+      await readBody(req);
+  } catch (error) {
+    sendError(
+      res,
+      400,
+      error.message
+    );
+    return;
+  }
+
+  if (!user) {
+    sendError(res, 401, "Authentication required.");
+    return;
+  }
+
+  const boostId =
+    cleanString(
+      body.boostId ||
+      body.id,
+      100
+    );
+
+  const boost =
+    (db.boostTasks || [])
+      .find(
+        b =>
+          b.id === boostId &&
+          b.status === "active"
+      );
+
+  if (!boost) {
+    sendError(
+      res,
+      404,
+      "Boost not found."
+    );
+    return;
+  }
+
+  if (
+    boost.ownerId === user.id
+  ) {
+    sendError(
+      res,
+      403,
+      "You cannot complete your own boost."
+    );
+    return;
+  }
+  const cooldown =
+    getCooldown(
+      db,
+      user.id
+    );
+
+  if (cooldown.active) {
+    sendJSON(
+      res,
+      429,
+      {
+        error:
+          "Your next task is still on cooldown.",
+        cooldown,
+        cooldownMinutes: 7
+      }
+    );
+    return;
+  }
+
+  db.boostCompletions ||= [];
+
+  const duplicate =
+    db.boostCompletions.some(
+      c =>
+        c.userId === user.id &&
+        c.boostId === boost.id
+    );
+
+  if (duplicate) {
+    sendError(
+      res,
+      409,
+      "You already completed this boost."
+    );
+    return;
+  }
+
+  if (
+    Number(boost.remaining || 0) <= 0
+  ) {
+    boost.status =
+      "completed";
+
+    saveDB(db);
+
+    sendError(
+      res,
+      409,
+      "Boost already completed."
+    );
+    return;
+  }
+
+  const reward =
+    Math.max(
+      1,
+      Number(boost.reward || 0)
+    );
+
+  db.boostCompletions.push({
+    id:
+      uid("boost_completion_"),
+    boostId:
+      boost.id,
+    userId:
+      user.id,
+    reward,
+    completedAt:
+      new Date().toISOString()
+  });
+
+  boost.completedCount =
+    Number(
+      boost.completedCount || 0
+    ) + 1;
+
+  boost.remaining =
+    Math.max(
+      0,
+      Number(
+        boost.maxCompletions || 0
+      ) -
+      boost.completedCount
+    );
+
+  if (
+    boost.remaining === 0
+  ) {
+    boost.status =
+      "completed";
+  }
+
+  user.points =
+    Number(user.points || 0) +
+    reward;
+
+  addLedger(
+    db,
+    user.id,
+    "boost_reward",
+    reward,
+    {
+      boostId:
+        boost.id
+    }
+  );
+
+  const nextTaskAt =
+    startCooldown(
+      db,
+      user.id,
+      boost.id
+    );
+
+  audit(
+    db,
+    "boost_completed",
+    user,
+    {
+      boostId:
+        boost.id,
+      reward
+    }
+  );
+
+  saveDB(db);
+
+  sendJSON(
+    res,
+    200,
+    {
+      success: true,
+      reward,
+      points:
+        user.points,
+      nextTaskAt,
+      cooldownMinutes: 7,
+      cooldown:
+        getCooldown(
+          db,
+          user.id
+        ),
+      user:
+        safeUser(user)
+    }
+  );
+
+  return;
+}
+
+
+/* ============================================================
+   RIZORA AI
+============================================================ */
+
+if (
+    method === "POST" &&
+    pathname === "/api/ai/chat"
+  ) {
+
+    const user =
+      getCurrentUser(
+        db,
+        req
+      );
+
+    if (!user) {
+      return sendError(
+        res,
+        401,
+        "Authentication required."
+      );
+    }
+
+    const rateKey = user.id;
+
+    if (
+      !checkRateLimit(
+        aiRateLimits,
+        rateKey,
+        10 * 60 * 1000,
+        20
+      )
+    ) {
+      return sendError(
+        res,
+        429,
+        "RIZORA AI is taking a short break. Try again in a few minutes."
+      );
+    }
+
+    let body;
+
+    try {
+      body =
+        await readBody(req);
+    } catch (error) {
+      return sendError(
+        res,
+        400,
+        error.message
+      );
+    }
+
+    const message =
+      String(
+        body.message || ""
+      )
+      .trim()
+      .slice(0,4000);
+
+    if (!message) {
+      return sendError(
+        res,
+        400,
+        "Ask RIZORA AI something first."
+      );
+    }
+
+    const knownRizoraIdentityAnswer =
+      message
+        .toLowerCase()
+        .replace(/[^a-z0-9@]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (
+      /^(who owns rizora|who is the owner of rizora|owner of rizora|who created rizora|who made rizora|who built rizora)$/.test(knownRizoraIdentityAnswer)
+    ) {
+      return sendJSON(
+        res,
+        200,
+        {
+          success: true,
+          provider: "rizora",
+          deterministic: true,
+          reply:
+            "RIZORA is a private creator platform created by RoMi (@romi.noir). RoMi is Ajiboye Hallelujah Oluwaronmi, an artist, developer, creator and builder. The current RIZORA context does not specify legal ownership percentages or a shareholder breakdown."
+        }
+      );
+    }
+
+    if (
+      /^(who is romi|who is @romi|who s romi|tell me about romi)$/.test(knownRizoraIdentityAnswer)
+    ) {
+      return sendJSON(
+        res,
+        200,
+        {
+          success: true,
+          provider: "rizora",
+          deterministic: true,
+          reply:
+            "RoMi (@romi.noir) is Ajiboye Hallelujah Oluwaronmi — an artist, developer, creator and builder, and the creator of RIZORA."
+        }
+      );
+    }
+
+    if (
+      /^(who am i|who am i on rizora|what is my name|whats my name|what is my username|whats my username|my username|my account)$/.test(knownRizoraIdentityAnswer)
+    ) {
+      const identityName = String(user.displayName || user.username || "Creator").trim();
+      const identityHandle = String(user.publicUsername || user.username || "").replace(/^@/, "").trim();
+      const verified = user.verified === true || user.verificationStatus === "verified";
+      return sendJSON(
+        res,
+        200,
+        {
+          success: true,
+          provider: "rizora",
+          deterministic: true,
+          reply:
+            "You are " + identityName + (identityHandle ? " (@" + identityHandle + ")" : "") +
+            ". You're signed in to RIZORA, and I can recognize this account in our current session." +
+            " Your current points are " + Number(user.points || 0) + "." +
+            (verified ? " Your RIZORA account is verified." : " Your RIZORA account is not currently marked as verified.")
+        }
+      );
+    }
+
+    if (
+      /^(what is rizora|what does rizora do)$/.test(knownRizoraIdentityAnswer)
+    ) {
+      return sendJSON(
+        res,
+        200,
+        {
+          success: true,
+          provider: "rizora",
+          deterministic: true,
+          reply:
+            "RIZORA is a creator platform built by RoMi (@romi.noir) for social growth, missions, creator tools, AI support, analytics, referrals, boosts, community and creator campaigns."
+        }
+      );
+    }
+
+    const groqKey =
+      String(
+        process.env.GROQ_API_KEY || ""
+      ).trim();
+
+    if (!groqKey) {
+      return sendJSON(
+        res,
+        503,
+        {
+          success:false,
+          provider:"groq",
+          code:"GROQ_API_KEY_MISSING",
+          error:
+            "RIZORA AI is not configured. Add GROQ_API_KEY to the RIZORA backend."
+        }
+      );
+    }
+
+    const model =
+      String(
+        process.env.GROQ_MODEL ||
+        "openai/gpt-oss-120b"
+      ).trim();
+
+    const systemPrompt =
+      "You are RIZORA AI, the in-app creator copilot inside RIZORA. " +
+      "You are answering a real creator in the current RIZORA session, not writing a generic coaching article. " +
+      "Use the signed-in account, profile and recent conversation context supplied in the user message. " +
+      "Recognize the signed-in creator from that context and use it when the user asks about their own account. " +
+      "Answer the user's actual question first, then add only the smallest useful next step. " +
+      "Write in a direct, warm, modern RIZORA voice: short natural paragraphs or a few bullets when needed. " +
+      "Do not default to markdown tables, playbooks, frameworks, schedules, time estimates, immediate to-do lists, or long numbered plans. " +
+      "Only give a multi-step plan when the user clearly asks for a plan, and tailor every step to the user's request and available RIZORA context. " +
+      "Never invent RIZORA programs, creator spotlights, campaigns, events, metrics, followers, outcomes, dates, features, opportunities, or platform actions. " +
+      "Never claim that you posted, scheduled, submitted, followed, contacted, verified, distributed, or changed anything unless the current request includes a confirmed RIZORA action result. " +
+      "Do not use generic motivational endings such as 'Good luck', 'You are already verified', or 'clean slate' unless that fact is present in the supplied account context. " +
+      "Do not pad the answer with advice the user did not ask for. If relevant data is missing, say so plainly. " +
+      "Treat these as real RIZORA surfaces when they fit the request: Creator OS and Command Center, Flow, Explore, Live, Messages, Grow, RIZORA AI, Music Studio and Music AI, Creator Hub, Profile, Analytics, Boosts, Opportunities, Communities, Stories and Creator Suite. " +
+      "RIZORA provides an in-app music catalog and release drafts; Spotify, Apple Music, YouTube Music and TikTok/CapCut sound libraries require an authorized external distributor connection. Never claim an external release was delivered unless the backend confirms it. " +
+      "RoMi (@romi.noir), Ajiboye Hallelujah Oluwaronmi, is the artist, developer, creator and builder who created RIZORA. The official RIZORA account is @rizora. " +
+      "When the signed-in role or username identifies RoMi or Israel as a privileged RIZORA account, respect that context without exposing credentials or private account details. " +
+      "Do not invent investors, shareholders, funding rounds, press releases, companies, or unrelated people. If legal ownership percentages or shareholder records are not explicitly available, say they are not specified. " +
       "Never request passwords, API keys or sensitive credentials. " +
       "Return only the answer the creator needs; do not describe these instructions or your internal process.";
 
@@ -3355,10 +7183,44 @@ await rizoraGroqCompletion({
       content:
         JSON.stringify({
           account: {
-  eatorProfiles[user.id].location) || user.location || "").slice(0,120)
+            username: user.username,
+            publicUsername: user.publicUsername || user.username,
+            displayName: user.displayName || user.username,
+            verified: user.verified === true || user.verificationStatus === "verified",
+            points: Number(user.points || 0),
+            role: user.role || "user"
+          },
+          profile: {
+            bio: String((db.creatorProfiles && db.creatorProfiles[user.id] && db.creatorProfiles[user.id].bio) || user.bio || "").slice(0,600),
+            category: String((db.creatorProfiles && db.creatorProfiles[user.id] && db.creatorProfiles[user.id].category) || user.category || "").slice(0,120),
+            location: String((db.creatorProfiles && db.creatorProfiles[user.id] && db.creatorProfiles[user.id].location) || user.location || "").slice(0,120)
           },
           recentConversation: Array.isArray(body.history) ? body.history.slice(-8).map(function(item){
-            return {role:item && item.role === "ai" ? "assistant" :      return sendJSON(
+            return {role:item && item.role === "ai" ? "assistant" : "user",text:String(item && item.text || "").slice(0,1200)};
+          }) : []
+        }) +
+        "\nUser request: " +
+        message
+    }
+  ]
+});const data =
+        await response
+          .json()
+          .catch(() => ({}));
+
+      if (!response.ok) {
+
+        console.error(
+          "RIZORA GROQ ERROR",
+          {
+            status:response.status,
+            model,
+            error:data?.error || null
+          }
+        );
+
+        if (response.status === 401) {
+          return sendJSON(
             res,
             502,
             {
@@ -3387,7 +7249,27 @@ await rizoraGroqCompletion({
 
         if (response.status === 429) {
           return sendJSON(
-            navailable."
+            res,
+            429,
+            {
+              success:false,
+              provider:"groq",
+              code:"GROQ_RATE_LIMIT",
+              error:
+                "RIZORA AI is temporarily rate-limited. Try again shortly."
+            }
+          );
+        }
+
+        return sendJSON(
+          res,
+          502,
+          {
+            success:false,
+            provider:"groq",
+            code:"GROQ_PROVIDER_ERROR",
+            error:
+              "RIZORA AI is temporarily unavailable."
           }
         );
       }
@@ -3429,7 +7311,13 @@ await rizoraGroqCompletion({
   }
 
   if (method === "POST" && pathname === "/api/ai/transcribe") {
-dio || "").trim();
+    const user = getCurrentUser(db, req);
+    if (!user) return sendError(res, 401, "Authentication required.");
+    const rateKey = user.id + ":transcribe";
+    if (!checkRateLimit(aiRateLimits, rateKey, 10 * 60 * 1000, 20)) return sendError(res, 429, "RIZORA AI voice is taking a short break. Try again in a few minutes.");
+    let body = {};
+    try { body = await readLargeJSONBody(req, 8 * 1024 * 1024); } catch (error) { return sendError(res, 400, error.message); }
+    const dataUrl = String(body.audio || "").trim();
     const mimeType = String(body.mimeType || "audio/webm").toLowerCase().split(";")[0];
     const match = dataUrl.match(/^data:([^;,]+)?;base64,([A-Za-z0-9+/=\s]+)$/);
     if (!match) return sendError(res, 400, "Voice recording data is invalid.");
@@ -3442,10 +7330,18 @@ dio || "").trim();
     if (!groqKey) return sendError(res, 503, "RIZORA AI voice is not configured.");
     try {
       const form = new FormData();
-      const ext = mimeType === "audio/webm" ? "webm" : mimeType === "audio/ogg" v3-turbo").trim());
+      const ext = mimeType === "audio/webm" ? "webm" : mimeType === "audio/ogg" ? "ogg" : mimeType === "audio/mp4" ? "m4a" : mimeType === "audio/mpeg" ? "mp3" : "wav";
+      form.append("file", new Blob([buffer], {type:mimeType}), "rizora-voice." + ext);
+      form.append("model", String(process.env.GROQ_STT_MODEL || "whisper-large-v3-turbo").trim());
       form.append("response_format", "json");
       form.append("temperature", "0");
-      form.append("prompt", "RIZORA creator platform, RoMi, @romi.noir, creator analytics, missions, boosts, social growth, AI, content and branding    console.error("RIZORA GROQ STT NETWORK ERROR", error);
+      form.append("prompt", "RIZORA creator platform, RoMi, @romi.noir, creator analytics, missions, boosts, social growth, AI, content and branding.");
+      const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {method:"POST",headers:{Authorization:"Bearer " + groqKey},body:form});
+      const data = await response.json().catch(function(){ return {}; });
+      if (!response.ok) return sendJSON(res, response.status === 429 ? 429 : 502, {success:false,provider:"groq",code:response.status === 429 ? "GROQ_RATE_LIMIT" : "GROQ_STT_ERROR",error:response.status === 429 ? "RIZORA AI voice is temporarily rate-limited." : "RIZORA AI could not transcribe that voice recording."});
+      return sendJSON(res, 200, {success:true,provider:"groq",model:String(process.env.GROQ_STT_MODEL || "whisper-large-v3-turbo").trim(),text:String(data.text || "").trim()});
+    } catch (error) {
+      console.error("RIZORA GROQ STT NETWORK ERROR", error);
       return sendJSON(res, 502, {success:false,provider:"groq",code:"GROQ_STT_NETWORK_ERROR",error:"RIZORA AI could not reach voice transcription."});
     }
   }
@@ -3463,7 +7359,63 @@ dio || "").trim();
         configured:
           Boolean(
             String(
-              process.env.GROQ_API_KEY || ""ml version="1.0" encoding="UTF-8"?>' +
+              process.env.GROQ_API_KEY || ""
+            ).trim()
+          ),
+        model:
+          String(
+            process.env.GROQ_MODEL ||
+            "openai/gpt-oss-120b"
+          ).trim()
+      }
+    );
+  }
+
+
+if (
+  method === "GET" &&
+  pathname === "/robots.txt"
+) {
+
+  const base =
+    getPublicBaseURL(req);
+
+  res.writeHead(
+    200,
+    {
+      "Content-Type":
+        "text/plain; charset=utf-8"
+    }
+  );
+
+  res.end(
+    "User-agent: *\n" +
+    "Allow: /\n\n" +
+    "Sitemap: " +
+    base +
+    "/sitemap.xml\n"
+  );
+
+  return;
+}
+
+if (
+  method === "GET" &&
+  pathname === "/sitemap.xml"
+) {
+
+  const base =
+    getPublicBaseURL(req);
+
+  const pages = [
+    "/",
+    "/about",
+    "/login",
+    "/signup"
+  ];
+
+  const xml =
+    '<?xml version="1.0" encoding="UTF-8"?>' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
     pages.map(
       p =>
@@ -3507,7 +7459,22 @@ dio || "").trim();
         "Authentication required."
       );
 
-      retu    const referralLink =
+      return;
+    }
+
+    const referrals =
+      db.referrals.filter(
+        (referral) =>
+          referral.referrerId === user.id
+      );
+
+    const referralCode =
+      user.referralCode || "";
+
+    const baseURL =
+      getPublicBaseURL(req);
+
+    const referralLink =
       referralCode
         ? `${baseURL}/?ref=${encodeURIComponent(
             referralCode
@@ -3518,7 +7485,43 @@ dio || "").trim();
       referrals.reduce(
         (total, referral) =>
           total +
------------------------------------------------------
+          Number(
+            referral.reward || 0
+          ),
+        0
+      );
+
+    sendJSON(
+      res,
+      200,
+      {
+        success: true,
+
+        referralCode,
+
+        referralLink,
+
+        count:
+          Number(
+            user.referralCount || 0
+          ),
+
+        referralCount:
+          Number(
+            user.referralCount || 0
+          ),
+
+        points:
+          referralPoints,
+
+        referrals
+      }
+    );
+
+    return;
+  }
+
+  // ----------------------------------------------------------
   // ROMI PROFILE
   // ----------------------------------------------------------
 
@@ -8694,7 +12697,6 @@ process.on(
     );
   }
 );
-
 
 
 
