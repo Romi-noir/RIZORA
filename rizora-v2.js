@@ -75,14 +75,14 @@ window.RIZORA_POPUP=popup;
 window.RIZORA_TOAST=toast;
 function textPreview(v){var s=String(v||"").trim().replace(/\s+/g," ");return s.slice(0,70)||"Untitled draft";}
 function bindPasswordToggles(root){(root||document).querySelectorAll("[data-rz-password-toggle]").forEach(function(b){b.onclick=function(){var id=b.getAttribute("data-rz-password-toggle"),i=document.getElementById(id);if(!i)return;var show=i.type==="password",label=b.getAttribute("data-rz-password-label")||"password";i.type=show?"text":"password";b.textContent=show?"Hide "+label:"Show "+label;b.setAttribute("aria-label",show?"Hide "+label:"Show "+label);};});}
-function getRizoraAuthToken(){try{return String(window.RIZORA_AUTH_TOKEN||localStorage.getItem("rizora_auth_token")||"").trim();}catch(e){return String(window.RIZORA_AUTH_TOKEN||"").trim();}}
-function setRizoraAuthToken(token){var t=String(token||"").trim();window.RIZORA_AUTH_TOKEN=t;try{if(t)localStorage.setItem("rizora_auth_token",t);else localStorage.removeItem("rizora_auth_token");}catch(e){}}
+function getRizoraAuthToken(){return String(window.RIZORA_AUTH_TOKEN||"").trim();}
+function setRizoraAuthToken(token){var t=String(token||"").trim();window.RIZORA_AUTH_TOKEN=t;try{localStorage.removeItem("rizora_auth_token");}catch(e){}}
 async function api(path,opt){
   opt=opt||{};
-  var headers=Object.assign({"Content-Type":"application/json"},opt.headers||{});
+  var headers=Object.assign({"Accept":"application/json","Content-Type":"application/json"},opt.headers||{});
   var token=getRizoraAuthToken();
   if(token&&!headers.Authorization)headers.Authorization="Bearer "+token;
-  var request=function(h){return fetch(API+path,{credentials:"include",method:opt.method||"GET",headers:h,body:opt.body});};
+  var request=function(h){var controller=typeof AbortController!=="undefined"?new AbortController():null;var timer=controller?setTimeout(function(){controller.abort();},25000):null;return fetch(API+path,{credentials:"include",mode:"cors",method:opt.method||"GET",headers:h,body:opt.body,signal:opt.signal||controller&&controller.signal}).finally(function(){if(timer)clearTimeout(timer);});};
   var r=await request(headers);
   // A stale local bearer token must never override a valid HttpOnly session cookie.
   // Retry once without it before surfacing an auth error, so opening a feature cannot
@@ -100,7 +100,7 @@ async function api(path,opt){
     // context instead of forcing a full logout.
     var sessionCheck=path==="/api/auth/me"||path==="/api/v2/me";
     if(r.status===401&&sessionCheck){try{setRizoraAuthToken("");}catch(_){}}
-    var err=new Error(d.message||d.error||"Request failed.");err.code=d.code||"";throw err;
+    var err=new Error(d.message||d.error||"Request failed.");err.code=d.code||"";err.status=r.status;throw err;
   }
   return d;
 }
@@ -173,13 +173,17 @@ function auth(){
   googleButton();
 }
 function googleButton(){
+  var mount=$("googleButton");
+  if(!mount)return;
+  mount.innerHTML='<div class="rz-google-status" role="status">Checking Google sign-in…</div>';
+  var loadGoogleScript=function(){return new Promise(function(resolve,reject){if(window.google&&google.accounts&&google.accounts.id){resolve();return;}var script=document.querySelector('script[src^="https://accounts.google.com/gsi/client"]');if(!script){script=document.createElement("script");script.src="https://accounts.google.com/gsi/client";script.async=true;script.defer=true;document.head.appendChild(script);}var done=false,finish=function(error){if(done)return;done=true;error?reject(error):resolve();};script.addEventListener("load",function(){finish();},{once:true});script.addEventListener("error",function(){finish(new Error("Google sign-in could not load."));},{once:true});setTimeout(function(){finish(new Error("Google sign-in timed out."));},10000);});};
   api("/api/auth/google/config").then(function(c){
-    if(!c.enabled||!c.clientId)return;
-    var n=0,tm=setInterval(function(){
-      n++;
-      if(window.google&&google.accounts&&google.accounts.id){
-        clearInterval(tm);
-        google.accounts.id.initialize({client_id:c.clientId,callback:function(r){
+    if(!c.enabled||!c.clientId){mount.innerHTML='<div class="rz-google-status">Google sign-in is not configured on RIZORA yet. Use your password login.</div>';return null;}
+    return loadGoogleScript().then(function(){
+      if(!(window.google&&google.accounts&&google.accounts.id))throw new Error("Google sign-in is unavailable in this browser.");
+      mount.innerHTML="";
+      google.accounts.id.initialize({client_id:c.clientId,callback:function(r){
+          if(!r||!r.credential){$("authError").textContent="Google did not return a sign-in credential. Try again.";return;}
           api("/api/auth/google",{method:"POST",body:JSON.stringify({credential:r.credential})}).then(function(d){
             if(d.token)setRizoraAuthToken(d.token);
             state.user=d.user;
@@ -196,13 +200,11 @@ function googleButton(){
                 toast("Welcome back to RIZORA.");
               }
             });
-          }).catch(function(e){$("authError").textContent=e.message;});
+          }).catch(function(e){$("authError").textContent=e.message||"Google sign-in failed. Try your password instead.";});
         }});
-        google.accounts.id.renderButton($("googleButton"),{theme:"outline",size:"large",width:380,text:"continue_with",shape:"rectangular"});
-      }
-      if(n>80)clearInterval(tm);
-    },100);
-  }).catch(function(){});
+        google.accounts.id.renderButton(mount,{theme:"outline",size:"large",width:320,text:"continue_with",shape:"rectangular"});
+    });
+  }).catch(function(e){mount.innerHTML='<div class="rz-google-status">Google sign-in is temporarily unavailable. Use your password login.</div>';});
 }
 function shell(){
   var desktopItems=[
@@ -657,7 +659,7 @@ function wire(){
 }
 function renderView(){view();wire();}
 async function load(){
-  try{if(!state.user){var me=await api("/api/auth/me");state.user=me.user;}var x=await api("/api/v2/me");state.user=x.user;state.profile=x.profile;window.RIZORA_CURRENT_USER=state.user;state.points=Number(x.user.points||0);}catch(e){state.user=null;window.RIZORA_CURRENT_USER=null;auth();return false;}
+  try{if(!state.user){var me=await api("/api/auth/me");state.user=me.user;}var x=await api("/api/v2/me");state.user=x.user;state.profile=x.profile;window.RIZORA_CURRENT_USER=state.user;state.points=Number(x.user.points||0);}catch(e){if(e&&e.status===401){state.user=null;window.RIZORA_CURRENT_USER=null;auth();}else{toast("RIZORA is reconnecting. Your session is still protected.");}return false;}
   try{if(state.view==="home"){var ob=await api("/api/v2/onboarding");state.onboarding=Array.isArray(ob.tasks)?ob.tasks:[];}}catch(e){state.onboarding=[];}
   try{if(state.view==="home"||state.view==="flow"){var f=await api("/api/v2/feed?tab="+state.feedTab);state.feed=f.posts||[];}}catch(e){}
   try{if(state.view==="grow"){var a=await api("/api/tasks");var s=await api("/api/social/tasks");state.tasks=a.tasks||[];state.socialTasks=s.tasks||[];}}catch(e){}

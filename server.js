@@ -67,6 +67,7 @@ function validatePaystackPayment(data,payment){
 const GOOGLE_CLIENT_ID =
   String(
     process.env.GOOGLE_CLIENT_ID ||
+    process.env.GOOGLE_WEB_CLIENT_ID ||
     ""
   ).trim();
 
@@ -543,7 +544,7 @@ function json(res, statusCode, data, extraHeaders = {}) {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-CSRF-Token",
     "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Credentials": "true",
     "X-Content-Type-Options": "nosniff",
@@ -3352,160 +3353,7 @@ async function handleRequest(
         "Access-Control-Allow-Origin":
           "https://rizora.com.ng",
 
-        "Access-Control-Allow-Headers":
-          "Content-Type, Authorization",
-
-                "Access-Control-Allow-Credentials":
-          "true",
-
-"Access-Control-Allow-Methods":
-          "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-      }
-    );
-
-    res.end();
-    return;
-  }
-
-  const db = loadDB();
-
-  cleanupSessions(db);
-
-  
-    
-    
-
-    // PAYSTACK PAYMENT SYSTEM
-    // ============================================================
-
-    if (method === "POST" && pathname === "/api/paystack/initialize") {
-
-      const user = getCurrentUser(db, req);
-
-      if (!user) {
-        return sendError(res, 401, "Authentication required.");
-      }
-
-      if (!PAYSTACK_SECRET_KEY) {
-        return sendError(res, 500, "Paystack secret key missing.");
-      }
-
-      const body = await readBody(req);
-
-      const plan = String(body.plan || "").trim();
-
-      if (!RIZORA_PLANS[plan]) {
-        return sendError(res, 400, "Invalid plan.");
-      }
-
-      const selectedPlan = RIZORA_PLANS[plan];
-      const amount = selectedPlan.amount;
-
-      const reference =
-        "RIZORA_" +
-        Date.now() +
-        "_" +
-        crypto.randomBytes(4).toString("hex");
-
-      const controller = new AbortController();
-
-      const timeout = setTimeout(
-        () => controller.abort(),
-        10000
-      );
-
-      const response = await fetch(
-        "https://api.paystack.co/transaction/initialize",
-        {
-          method: "POST",
-          headers: {
-            Authorization: "Bearer " + PAYSTACK_SECRET_KEY,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            email: user.email,
-            amount: amount * 100,
-            reference,
-            callback_url: APP_URL + "/payment-success",
-            metadata: {
-              userId: user.id,
-              username: user.username,
-              plan
-            }
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!data.status) {
-        return sendError(res, 400, "Paystack initialization failed.");
-      }
-
-      db.payments.push({
-        id: uid(),
-        userId: user.id,
-        reference,
-        amount,
-        plan,
-        status: "pending",
-        createdAt: new Date().toISOString()
-      });
-
-      saveDB(db);
-
-      return sendJSON(res, 200, {
-        success: true,
-        authorization_url: data.data.authorization_url,
-        reference
-      });
-    }
-
-
-// ============================================================
-// ============================================================
-// ADMIN EMAIL EVENTS / RETRY
-// ============================================================
-
-if(
-  method === "GET" &&
-  pathname === "/api/admin/email/events"
-){
-
-  const admin =
-    getCurrentUser(db,req);
-
-  if(!isAdmin(admin)){
-    return sendError(
-      res,
-      403,
-      "Admin access required."
-    );
-  }
-
-  db.emailEvents ||= [];
-
-  return sendJSON(
-    res,
-    200,
-    {
-      success:true,
-      events:db.emailEvents.slice(0,100)
-    }
-  );
-}
-
-
-if(
-  method === "POST" &&
-  pathname === "/api/admin/email/retry"
-){
-
-  const admin =
-    getCurrentUser(db,req);
-
-  if(!isAdmin(admin)){
-    return sendError(
+        "Ac   return sendError(
       res,
       403,
       "Admin access required."
@@ -3524,70 +3372,7 @@ if(
     );
   }
 
-  const event =
-    (db.emailEvents || []).find(
-      item => item.id === body.id
-    );
-
-  if(!event){
-    return sendError(
-      res,
-      404,
-      "Email event not found."
-    );
-  }
-
-  try{
-
-    const result =
-      await retryRizoraEmailEvent(
-        db,
-        event
-      );
-
-    event.status="sent";
-    event.provider =
-      result.provider || "resend";
-    event.providerId =
-      result.id || "";
-    event.sentAt =
-      new Date().toISOString();
-
-    saveDB(db);
-
-    return sendJSON(
-      res,
-      200,
-      {
-        success:true,
-        event
-      }
-    );
-
-  }catch(error){
-
-    event.status="failed";
-    event.reason =
-      String(
-        error.message ||
-        "Retry failed"
-      ).slice(0,300);
-
-    event.failedAt =
-      new Date().toISOString();
-
-    saveDB(db);
-
-    return sendError(
-      res,
-      500,
-      event.reason
-    );
-  }
-}
-
-// PAYSTACK VERIFY PAYMENT
-// ============================================================
+ ==============
 
 if (
   method === "GET" &&
@@ -3608,46 +3393,7 @@ if (
     String(pathname.split("/").pop() || "").trim();
 
   if(!reference || reference.length > 120){
-    return sendError(res,400,"Invalid payment reference.");
-  }
-
-  const response = await fetch(
-    "https://api.paystack.co/transaction/verify/" + reference,
-    {
-      headers: {
-        Authorization: "Bearer " + PAYSTACK_SECRET_KEY
-      }
-    }
-  );
-
-  const data = await response.json();
-
-  if (
-    data.status &&
-    data.data &&
-    data.data.status === "success"
-  ) {
-
-    const payment =
-      db.payments.find(
-        p => p.reference === reference
-      );
-
-    if (payment) {
-
-      if (payment.status === "success") {
-        return sendJSON(res, 200, {
-          received: true,
-          duplicate: true
-        });
-      }
-
-      payment.status = "success";
-      payment.paidAt =
-        new Date().toISOString();
-
-      recordPaymentEvent(db,{
-        type:"payment_success",
+    return sendError(res,400,"Invalid payment reference.");t_success",
         provider:"paystack",
         reference:payment.reference,
         userId:payment.userId,
@@ -3702,41 +3448,7 @@ if (
   const hash =
     crypto
       .createHmac("sha512", PAYSTACK_SECRET_KEY)
-      .update(rawBody)
-      .digest("hex");
-
-  if (hash !== signature) {
-    return sendError(res, 401, "Invalid signature.");
-  }
-
-  if (body.event === "charge.success") {
-
-    const reference =
-      body.data.reference;
-
-    const payment =
-      db.payments.find(
-        p => p.reference === reference
-      );
-
-    if (payment) {
-
-      if (payment.status === "success") {
-        return sendJSON(res, 200, {
-          received: true,
-          duplicate: true
-        });
-      }
-
-      payment.status = "success";
-      payment.paidAt =
-        new Date().toISOString();
-
-      recordPaymentEvent(db,{
-        type:"payment_success",
-        provider:"paystack",
-        reference:payment.reference,
-        userId:payment.userId,
+    ,
         plan:payment.plan
       });
 
@@ -3760,56 +3472,20 @@ if (
     }
   }
 
-  return sendJSON(res, 200, {
-    received: true
-  });
-}
-
-if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
-    if (await handleRizoraGlobal({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
+  return stUser, sendJSON, sendError, cleanString, uid })) return;
     if (await handleRizoraEnterprise({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, sendJSON, sendError, cleanString, uid, audit })) return;
-    if (await handleRizoraLive({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, hasPremium })) return;
-    if (await handleRizoraMusic({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, storeGeneratedAudio, musicAudioRequirements: function() {
-      const missing = [];
-      if (!String(process.env.ELEVENLABS_API_KEY || "").trim()) missing.push("ELEVENLABS_API_KEY");
+    if (await handleRizoraLive({ req, res, db, sa!String(process.env.ELEVENLABS_API_KEY || "").trim()) missing.push("ELEVENLABS_API_KEY");
       if (IS_PRODUCTION && !String(process.env.RIZORA_MEDIA_ROOT || "").trim()) missing.push("persistent media storage (RIZORA_MEDIA_ROOT)");
       return missing;
-    }, musicAudioConfigured: function() {
-      return Boolean(String(process.env.ELEVENLABS_API_KEY || "").trim()) && (!IS_PRODUCTION || Boolean(String(process.env.RIZORA_MEDIA_ROOT || "").trim()));
-    }, generateMusicAudio: async function(options) {
       const apiKey = String(process.env.ELEVENLABS_API_KEY || "").trim();
       if (!apiKey) return null;
       if (!checkRateLimit(musicAudioRateLimits, options.userId, 60 * 60 * 1000, 5)) {
-        const error = new Error("Audio generation is at its hourly limit. Try again later.");
-        error.status = 429;
-        throw error;
-      }
-      let response;
-      try {
-        response = await fetch("https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128", {
-          method: "POST",
-          headers: {"xi-api-key": apiKey, "Content-Type": "application/json"},
+        const error = new Error("Audio generation is at its           headers: {"xi-api-key": apiKey, "Content-Type": "application/json"},
           body: JSON.stringify({
             prompt: options.prompt,
             music_length_ms: options.durationMs,
             model_id: "music_v2_5",
-            force_instrumental: options.forceInstrumental
-          }),
-          signal: AbortSignal.timeout(120000)
-        });
-      } catch (_) {
-        const error = new Error("The music generation service could not be reached. Try again shortly.");
-        error.status = 503;
-        throw error;
-      }
-      if (!response.ok) {
-        const error = response.status === 422
-          ? new Error("This prompt was rejected. Remove artist names, song titles or copyrighted lyrics and try again.")
-          : response.status === 429
-          ? new Error("The music generation service is busy. Try again shortly.")
-          : response.status === 401 || response.status === 403
-            ? new Error("The configured music generation key was rejected.")
-            : new Error("The music generation service could not create this track.");
+            force_      : new Error("The music generation service could not create this track.");
         error.status = response.status === 422 ? 422 : response.status === 429 ? 429 : 503;
         throw error;
       }
@@ -3818,30 +3494,13 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         error.status = 502;
         throw error;
       }
-      const buffer = Buffer.from(await response.arrayBuffer());
-      if (!buffer.length || buffer.length > 25 * 1024 * 1024) {
-        const error = new Error("The generated audio exceeded RIZORA’s file limit.");
-        error.status = 413;
-        throw error;
-      }
-      return {buffer, mimeType: "audio/mpeg", modelId: "music_v2_5"};
-    }, listMusicVoices: async function() {
-      const now = Date.now();
-      if (cachedMusicVoiceOptions.expiresAt > now) return cachedMusicVoiceOptions.voices;
-      const apiKey = String(process.env.ELEVENLABS_API_KEY || "").trim();
+      const buffer = Buffer.from(await response.LABS_API_KEY || "").trim();
       if (!apiKey) return [];
       let response;
       try {
         response = await fetch("https://api.elevenlabs.io/v2/voices?page_size=60&include_total_count=false", {
           headers: {"xi-api-key": apiKey},
-          signal: AbortSignal.timeout(20000)
-        });
-      } catch (_) {
-        const error = new Error("The voice service could not be reached. Try again shortly.");
-        error.status = 503;
-        throw error;
-      }
-      if (!response.ok) {
+      
         const error = new Error(response.status === 401 || response.status === 403 ? "The configured voice provider key was rejected." : "Available voices could not be loaded.");
         error.status = response.status === 429 ? 429 : 503;
         throw error;
@@ -3853,18 +3512,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         category: String(voice.category || "").slice(0, 40),
         description: String(voice.description || "").slice(0, 180)
       })).filter((voice) => /^[A-Za-z0-9_-]{5,100}$/.test(voice.id) && voice.name);
-      cachedMusicVoiceOptions = {expiresAt:now + 5 * 60 * 1000, voices};
-      return voices;
-    }, generateVoiceAudio: async function(options) {
-      const apiKey = String(process.env.ELEVENLABS_API_KEY || "").trim();
-      if (!apiKey) return null;
-      if (!checkRateLimit(musicVoiceRateLimits, options.userId, 60 * 60 * 1000, 5)) {
-        const error = new Error("Voiceover generation is at its hourly limit. Try again later.");
-        error.status = 429;
-        throw error;
-      }
-      let response;
-      try {
+      cachedMusicVoicy {
         const url = "https://api.elevenlabs.io/v1/text-to-speech/" + encodeURIComponent(options.voiceId) + "/stream?output_format=mp3_44100_128";
         response = await fetch(url, {
           method: "POST",
@@ -3882,43 +3530,20 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         throw error;
       }
       if (!response.ok) {
-        const error = new Error(response.status === 422 ? "This voice could not read that text. Shorten the text or choose another voice." : response.status === 429 ? "The voice service is busy. Try again shortly." : response.status === 401 || response.status === 403 ? "The configured voice provider key was rejected." : "The voice service could not create this voiceover.");
-        error.status = response.status === 422 ? 422 : response.status === 429 ? 429 : 503;
-        throw error;
-      }
-      if (!String(response.headers.get("content-type") || "").toLowerCase().startsWith("audio/")) {
-        const error = new Error("The voice service returned an unsupported audio format.");
-        error.status = 502;
-        throw error;
+        const error = new Error(response.status === 422 ? "This voice could not read that text. Shorten the text or choose another voice." : response.status === 429 ? "The voice service is busy. Try again shortly." : response.serror;
       }
       const buffer = Buffer.from(await response.arrayBuffer());
       if (!buffer.length || buffer.length > 15 * 1024 * 1024) {
         const error = new Error("The voiceover exceeded RIZORA’s audio file limit.");
-        error.status = 413;
-        throw error;
-      }
-      return {buffer, mimeType:"audio/mpeg", modelId:"eleven_multilingual_v2"};
-    }, generateMusicAI: function(options) {
-    const apiKey = String(process.env.GROQ_API_KEY || "").trim();
-    if (!apiKey) return null;
+        error.status =ull;
     if (!checkRateLimit(aiRateLimits, options.userId, 10 * 60 * 1000, 20)) {
       const error = new Error("Music AI is busy right now. Try again in a few minutes.");
       error.status = 429;
       throw error;
     }
-    return rizoraGroqCompletion({
-      apiKey,
-      model: process.env.GROQ_MODEL,
-      messages: options.messages
-    });
-  } })) return;
-    if (await handleRizoraMedia({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
-    if (await handleRizoraMessaging({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
+    return rizoraGroqCompleaging({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError })) return;
     if (await handleRizoraLabs({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
-    if (await handleRizoraSeries({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
-    if (await handleRizoraEvents({ req, res, db, saveDB, getCurrentUser, sendJSON, sendError, cleanString, uid })) return;
-
-// ----------------------------------------------------------
+    if (await handleRizoraSeries({ req, res, db, saveDB
 
   // ----------------------------------------------------------
   // SUBSCRIPTIONS
@@ -3939,20 +3564,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
       success:true,
       plan:getUserPlan(user),
       planExpiry:user.planExpiry || null,
-      subscription:getActiveSubscription(db,user.id)
-    });
-  }
-
-
-  if (
-    method === "GET" &&
-    pathname === "/api/subscription/history"
-  ) {
-
-    const user = getCurrentUser(db, req);
-
-    if(!user){
-      return sendError(res,401,"Authentication required.");
+      subscriptiored.");
     }
 
     return sendJSON(res, 200, {
@@ -3967,20 +3579,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     pathname === "/api/subscription/cancel"
   ) {
 
-    const user = getCurrentUser(db, req);
-
-    if(!user){
-      return sendError(res,401,"Authentication required.");
-    }
-
-    const subscription =
-      cancelRizoraSubscription(
-        db,
-        user.id
-      );
-
-    if(!subscription){
-      return sendError(
+    const user = grror(
         res,
         404,
         "No active subscription found."
@@ -4010,43 +3609,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         service: "RIZORA",
         version: "8.1.0",
         status: "online",
-        time:
-          new Date().toISOString()
-      }
-    );
-
-    return;
-  }
-
-  // ----------------------------------------------------------
-  // SIGNUP
-  // ----------------------------------------------------------
-
-  // ----------------------------------------------------------
-  // GOOGLE AUTH CONFIG
-  // ----------------------------------------------------------
-
-  if (
-    method === "GET" &&
-    pathname === "/api/auth/google/config"
-  ) {
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        enabled:
-          Boolean(
-            GOOGLE_CLIENT_ID
-          ),
-        clientId:
-          GOOGLE_CLIENT_ID
-      }
-    );
-
-    return;
-  }
-  // ----------------------------------------------------------
+       --
   // GOOGLE SIGN IN / SIGN UP
   // ----------------------------------------------------------
 
@@ -4076,23 +3639,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
       sendError(
         res,
         503,
-        "Google sign-in is not configured yet."
-      );
-
-      return;
-    }
-
-    const credential =
-      String(
-        body.credential ||
-        ""
-      ).trim();
-
-    if (!credential) {
-      sendError(
-        res,
-        400,
-        "Google credential is required."
+        "Googcredential is required."
       );
 
       return;
@@ -4195,62 +3742,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
           String(
             user.googleSub ||
             ""
-          ) === googleSub
-      );
-
-    let user =
-      existingGoogleUser ||
-      db.users.find(
-        (item) =>
-          normalizeEmail(
-            item.email
-          ) === googleEmail
-      );
-
-    let googleCreated = false;
-    let googleEmailDelivery = {
-      configured: rizoraEmailConfigured(),
-      queued: false,
-      status: "existing_account"
-    };
-
-    if(user){
-
-      if(
-        user.status !==
-        "active"
-      ){
-        sendError(
-          res,
-          403,
-          "This account is not active."
-        );
-
-        return;
-      }
-
-      if(
-        user.googleSub &&
-        user.googleSub !== googleSub
-      ){
-        sendError(
-          res,
-          409,
-          "This email is already linked to another Google account."
-        );
-
-        return;
-      }
-
-      if(
-        !user.googleSub &&
-        user.authProvider !==
-        "google"
-      ){
-        sendError(
-          res,
-          409,
-          "An RIZORA password account already uses this email. Sign in with your password first before linking Google."
+   already linked to another Google account."
         );
 
         return;
@@ -4260,7 +3752,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         googleSub;
 
       user.authProvider =
-        "google";
+        user.passwordHash ? "password+google" : "google";
 
       user.emailVerified =
         true;
@@ -4279,44 +3771,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
 
       const username =
         uniqueGoogleUsername(
-          db,
-          googleName,
-          googleEmail
-        );
-
-      user = {
-        id:
-          uid("user_"),
-
-        username,
-
-        displayName:
-          googleName,
-
-        email:
-          googleEmail,
-
-        passwordHash:
-          null,
-
-        authProvider:
-          "google",
-
-        googleSub:
-
-          googleSub,
-
-        emailVerified:
-          true,
-
-        role:
-          "user",
-
-        status:
-          "active",
-
-        points:
-          0,
+         0,
 
         referralCode:
           randomReferralCode(
@@ -4332,36 +3787,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         createdAt:
           new Date().toISOString(),
 
-        lastLoginAt:
-          new Date().toISOString()
-      };
-
-      db.users.push(
-        user
-      );
-
-      googleCreated = true;
-
-      const referral =
-        applyReferral(
-          db,
-          user,
-          cleanString(
-            body.referralCode ||
-            "",
-            100
-          )
-        );
-
-      audit(
-        db,
-        "google_signup",
-        user,
-        {
-          email:
-            googleEmail,
-          referralApplied:
-            Boolean(referral)
+        lastLol)
         }
       );
 
@@ -4372,54 +3798,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         id:uid("notif_"),
         userId:user.id,
         title:"Welcome to RIZORA",
-        message:"Your Google creator account is ready. Explore your profile, missions, AI, messages and growth tools.",
-        type:"system",
-        read:false,
-        createdAt:new Date().toISOString()
-      });
-    }
-
-    if(
-      !existingGoogleUser
-    ){
-      audit(
-        db,
-        "google_login",
-        user,
-        {
-          googleSub:
-            googleSub
-        }
-      );
-    }
-
-    const token =
-      createSession(
-        db,
-        user.id,
-        req
-      );
-
-    user.lastLoginAt =
-      new Date().toISOString();
-
-    saveDB(db);
-
-    setSessionCookie(
-      res,
-      token
-    );
-
-    setCSRFCookie(
-      res
-    );
-
-    sendJSON(
-      res,
-      200,
-      {
-        success:
-          true,
+         true,
 
         token,
 
@@ -4483,23 +3862,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
       sendError(
         res,
         400,
-        "A valid email address is required."
-      );
-
-      return;
-    }
-
-    const password =
-      String(
-        body.password || ""
-      );
-    const confirmPassword =
-      String(
-        body.confirmPassword ||
-        ""
-      );
-
-    if (!confirmPassword) {
+        "A valid email word) {
       sendError(
         res,
         400,
@@ -4542,34 +3905,6 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
       );
 
     const socialHandle =
-      cleanString(
-        body.socialHandle ||
-        body.handle ||
-        "",
-        100
-      )
-        .replace(/^@+/, "")
-        .trim();
-
-    const rateKey =
-      req.socket.remoteAddress ||
-      "unknown";
-
-    if (
-      !checkRateLimit(
-        signupAttempts,
-        rateKey,
-        SIGNUP_WINDOW_MS,
-        SIGNUP_MAX_ATTEMPTS
-      )
-    ) {
-      sendError(
-        res,
-        429,
-        "Too many signup attempts. Try again later."
-      );
-
-      return;
     }
 
     if (!username) {
@@ -4588,18 +3923,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     ) {
       sendError(
         res,
-        400,
-        "Username must be 3-30 characters and may contain letters, numbers, dots, underscores or hyphens."
-      );
-
-      return;
-    }
-
-    if (password.length < 6) {
-      sendError(
-        res,
-        400,
-        "Password must be at least 6 characters."
+ t be at least 6 characters."
       );
 
       return;
@@ -4646,38 +3970,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         );
 
       if (emailExists) {
-        sendError(
-          res,
-          409,
-          "Email is already registered."
-        );
-
-        return;
-      }
-    }
-
-    const passwordHash =
-      await hashPassword(
-        password
-      );
-
-    const isProtected = isConfiguredSuperAdminUsername(username);
-
-    const user = {
-      id: uid("user_"),
-
-      username,
-
-      displayName:
-        cleanString(
-          body.displayName ||
-          username,
-          80
-        ),
-
-      email,
-
-      socialHandle,
+    e,
 
       passwordHash,
 
@@ -4712,26 +4005,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         db,
         user,
         referralCode
-      );
-
-    const token =
-      createSession(
-        db,
-        user.id,
-        req
-      );
-
-    audit(
-      db,
-      "user_signup",
-      user,
-      {
-        referralApplied:
-          Boolean(referral)
-      }
-    );
-
-    const welcomeEmailDelivery = queueRizoraWelcomeEmail(db,user,req);
+  t welcomeEmailDelivery = queueRizoraWelcomeEmail(db,user,req);
 
     sendEmailVerificationEmail(
       db,
@@ -4751,49 +4025,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     });
 
     saveDB(db);
-
-    setSessionCookie(
-      res,
-      token
-    );
-
-    setCSRFCookie(
-      res
-    );
-
-    sendJSON(
-      res,
-      201,
-      {
-        success: true,
-        token,
-        user:
-          safeUser(user),
-        emailDelivery: {
-          status: welcomeEmailDelivery.status,
-          queued: welcomeEmailDelivery.queued,
-          configured: welcomeEmailDelivery.configured
-        }
-      }
-    );
-
-    return;
-  }
-
-// ----------------------------------------------------------
-// VERIFY EMAIL
-// ----------------------------------------------------------
-
-if(
-  method === "GET" &&
-  pathname === "/api/auth/verify-email"
-){
-
-  const url =
-    new URL(req.url,"http://localhost");
-
-  const token =
-    String(url.searchParams.get("token") || "").trim();
+searchParams.get("token") || "").trim();
 
   if(!token){
     return sendError(
@@ -4807,19 +4039,7 @@ if(
 
   const tokenHash =
     crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
-
-  const record =
-    db.emailVerificationTokens.find(
-      item =>
-        item.tokenHash === tokenHash &&
-        new Date(item.expiresAt) > new Date()
-    );
-
-  if(!record){
-    return sendError(
+      .createHash("sha256(
       res,
       400,
       "Invalid or expired verification token."
@@ -4835,36 +4055,7 @@ if(
     return sendError(
       res,
       404,
-      "User not found."
-    );
-  }
-
-  user.emailVerified = true;
-
-  db.emailVerificationTokens =
-    db.emailVerificationTokens.filter(
-      item => item.id !== record.id
-    );
-
-  saveDB(db);
-
-  return sendJSON(
-    res,
-    200,
-    {
-      success:true,
-      message:"Email verified successfully."
-    }
-  );
-}
-
-  // ----------------------------------------------------------
-  // LOGIN
-  // ----------------------------------------------------------
-
-  if (
-    method === "POST" &&
-    pathname === "/api/auth/login"
+      "User not fo === "/api/auth/login"
   ) {
 
     if(
@@ -4881,24 +4072,7 @@ if(
       );
     }
 
-    let body;
-
-    try {
-      body =
-        await readBody(req);
-    } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
-      return;
-    }
-
-    const identifier =
-      cleanString(
-        body.username ||
+.username ||
         body.email ||
         body.identifier,
         100
@@ -4926,24 +4100,7 @@ if(
       sendError(
         res,
         429,
-        "Too many login attempts. Try again later."
-      );
-
-      return;
-    }
-
-    if (
-      !identifier ||
-      !password
-    ) {
-      sendError(
-        res,
-        400,
-        "Username/email and password are required."
-      );
-
-      return;
-    }
+        "Too many login
 
     let bootstrapChanged = false;
 
@@ -4956,32 +4113,7 @@ if(
     const user =
       db.users.find(
         (item) =>
-          normalizeUsername(
-            item.username
-          ) === identifier ||
-          normalizeEmail(
-            item.email
-          ) === identifier
-      );
-
-    if (!user) {
-      sendError(
-        res,
-        401,
-        "Invalid username/email or password."
-      );
-
-      return;
-    }
-
-    if(
-      user.lockedUntil &&
-      new Date(user.lockedUntil) > new Date()
-    ){
-      return sendError(
-        res,
-        423,
-        "Account temporarily locked. Try again later."
+          nor
       );
     }
 
@@ -5021,24 +4153,7 @@ if(
       saveDB(db);
 
       audit(
-        db,
-        "failed_login_attempt",
-        user,
-        {
-          identifier
-        }
-      );
-
-      sendError(
-        res,
-        401,
-        "Invalid username/email or password."
-      );
-
-      return;
-    }
-
-    clearFailedLogin(user);
+       gin(user);
 
     if(
       user.email &&
@@ -5052,19 +4167,7 @@ if(
     }
 
     if (
-      user.status !== "active"
-    ) {
-      sendError(
-        res,
-        403,
-        "This account is not active."
-      );
-
-      return;
-    }
-    if (user.twoFactorEnabled === true) {
-      const twoFactorCode = cleanString(body.twoFactorCode || "", 20);
-      if (!twoFactorCode) {
+      user.status !== "active"woFactorCode) {
         sendJSON(res, 401, { success:false, code:"TWO_FACTOR_REQUIRED", error:"Two-factor authentication code required." });
         return;
       }
@@ -5080,29 +4183,7 @@ if(
 
     if (bootstrapChanged) {
       saveDB(db);
-    }
-
-    const token =
-      createSession(
-        db,
-        user.id,
-        req
-      );
-
-    audit(
-      db,
-      "user_login",
-      user
-    );
-
-    saveDB(db);
-
-    setSessionCookie(
-      res,
-      token
-    );
-
-    setCSRFCookie(
+  RFCookie(
       res
     );
 
@@ -5192,251 +4273,7 @@ if (
       const rawToken =
         crypto.randomBytes(32).toString("hex");
 
-      const tokenHash =
-        crypto
-          .createHash("sha256")
-          .update(rawToken)
-          .digest("hex");
-
-      db.passwordResetTokens =
-        db.passwordResetTokens.filter(
-          item => item.userId !== user.id
-        );
-
-      db.passwordResetTokens.push({
-        id: uid("prt_"),
-        userId:user.id,
-        tokenHash,
-        expiresAt:
-          new Date(
-            Date.now() + 30 * 60 * 1000
-          ).toISOString(),
-        createdAt:
-          new Date().toISOString()
-      });
-
-      const resetUrl =
-        getPublicBaseURL(req) +
-        "/reset-password?token=" +
-        rawToken;
-
-      saveDB(db);
-
-      try {
-        await sendRizoraEmail({
-          to:user.email,
-          subject:"Reset your RIZORA password",
-          text:
-            "Use this link to reset your RIZORA password:\n\n" +
-            resetUrl,
-          html:
-            "<p>Reset your RIZORA password.</p>" +
-            "<p><a href=\"" +
-            resetUrl +
-            "\">Reset Password</a></p>"
-        });
-      } catch (_) {}
-    }
-  }
-
-  return sendJSON(res,200,{
-    success:true,
-    message:"If that email exists, a password reset link has been sent."
-  });
-}
-
-
-if (
-  method === "POST" &&
-  pathname === "/api/auth/reset-password"
-) {
-
-  let body;
-
-  try {
-    body = await readBody(req);
-  } catch (_) {
-    return sendError(res,400,"Invalid request.");
-  }
-
-  const token =
-    String(body.token || "").trim();
-
-  const password =
-    String(body.password || "");
-
-  if (!token || !password) {
-    return sendError(
-      res,
-      400,
-      "Token and password are required."
-    );
-  }
-
-  if (
-    password.length < 8 ||
-    !/[a-z]/.test(password) ||
-    !/[A-Z]/.test(password) ||
-    !/[0-9]/.test(password)
-  ) {
-    return sendError(
-      res,
-      400,
-      "Password must contain uppercase, lowercase and a number."
-    );
-  }
-
-  db.passwordResetTokens ||= [];
-
-  const tokenHash =
-    crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
-
-  const reset =
-    db.passwordResetTokens.find(
-      item =>
-        item.tokenHash === tokenHash &&
-        new Date(item.expiresAt) > new Date()
-    );
-
-  if (!reset) {
-    return sendError(
-      res,
-      400,
-      "Invalid or expired reset token."
-    );
-  }
-
-  const user =
-    db.users.find(
-      item => item.id === reset.userId
-    );
-
-  if (!user) {
-    return sendError(
-      res,
-      404,
-      "User not found."
-    );
-  }
-
-  user.passwordHash =
-    await hashPassword(password);
-
-  user.passwordSetupRequired = false;
-
-  db.passwordResetTokens =
-    db.passwordResetTokens.filter(
-      item => item.id !== reset.id
-    );
-
-  saveDB(db);
-
-  return sendJSON(res,200,{
-    success:true,
-    message:"Password reset successful."
-  });
-}
-// ----------------------------------------------------------
-// LOGOUT ALL DEVICES
-// ----------------------------------------------------------
-
-if(
-  method === "POST" &&
-  pathname === "/api/auth/logout-all"
-){
-
-  const user =
-    getCurrentUser(
-      db,
-      req
-    );
-
-  if(!user){
-    return sendError(
-      res,
-      401,
-      "Authentication required."
-    );
-  }
-
-  db.sessions =
-    db.sessions.filter(
-      session =>
-        session.userId !== user.id
-    );
-
-  saveDB(db);
-
-  clearSessionCookie(res);
-
-  clearCSRFCookie(res);
-
-  return sendJSON(
-    res,
-    200,
-    {
-      success:true,
-      message:"All sessions revoked."
-    }
-  );
-}
-
-// ----------------------------------------------------------
-// SESSION MANAGEMENT
-// ----------------------------------------------------------
-
-if(
-  method === "GET" &&
-  pathname === "/api/auth/sessions"
-){
-
-  const user =
-    getCurrentUser(
-      db,
-      req
-    );
-
-  if(!user){
-    return sendError(
-      res,
-      401,
-      "Authentication required."
-    );
-  }
-
-  cleanupSessions(db);
-
-  return sendJSON(
-    res,
-    200,
-    {
-      success:true,
-      sessions:
-        db.sessions
-          .filter(
-            item =>
-              item.userId === user.id
-          )
-          .map(
-            item => ({
-              id:item.id,
-              ip:item.ip || "",
-              userAgent:item.userAgent || "",
-              createdAt:item.createdAt,
-              lastActiveAt:item.lastActiveAt,
-              expiresAt:item.expiresAt
-            })
-          )
-    }
-  );
-}
-
-
-if(
-  method === "POST" &&
+  ST" &&
   pathname === "/api/auth/revoke-session"
 ){
 
@@ -5456,24 +4293,7 @@ if(
 
   let body;
 
-  try{
-    body =
-      await readBody(req);
-  }catch(_){
-    return sendError(
-      res,
-      400,
-      "Invalid request."
-    );
-  }
-
-  const sessionId =
-    String(body.sessionId || "").trim();
-
-  const before =
-    db.sessions.length;
-
-  db.sessions =
+  try db.sessions =
     db.sessions.filter(
       item =>
         !(
@@ -5489,56 +4309,7 @@ if(
     200,
     {
       success:true,
-      revoked:
-        before !== db.sessions.length
-    }
-  );
-}
-
-// ----------------------------------------------------------
-// CHANGE PASSWORD
-// ----------------------------------------------------------
-
-if(
-  method === "POST" &&
-  pathname === "/api/auth/change-password"
-){
-
-  if(
-    !checkAuthRateLimit(
-      db,
-      req,
-      "change_password"
-    )
-  ){
-    return sendError(
-      res,
-      429,
-      "Too many password change attempts. Try again later."
-    );
-  }
-
-  const user =
-    getCurrentUser(
-      db,
-      req
-    );
-
-  if(!user){
-    return sendError(
-      res,
-      401,
-      "Authentication required."
-    );
-  }
-
-  let body;
-
-  try{
-    body =
-      await readBody(req);
-  }catch(_){
-    return sendError(
+      revokturn sendError(
       res,
       400,
       "Invalid request."
@@ -5594,43 +4365,7 @@ if(
   db.sessions =
     db.sessions.filter(
       session =>
-        session.userId !== user.id
-    );
-
-  const token =
-    createSession(
-      db,
-      user.id,
-      req
-    );
-
-  audit(
-    db,
-    "password_changed",
-    user,
-    {}
-  );
-
-  saveDB(db);
-
-  setSessionCookie(
-    res,
-    token
-  );
-
-  return sendJSON(
-    res,
-    200,
-    {
-      success:true,
-      message:"Password changed successfully."
-    }
-  );
-}
-
-  // ----------------------------------------------------------
-  // AUTH / ME
-  // ----------------------------------------------------------
+        session.userId !== u-------
 
   if (
     method === "GET" &&
@@ -5666,150 +4401,14 @@ if(
   }
 
   // ----------------------------------------------------------
-  // POINTS
-  // ----------------------------------------------------------
-
-  if (
-    method === "GET" &&
-    pathname === "/api/points"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!user) {
-      sendError(
-        res,
-        401,
-        "Authentication required."
-      );
-
-      return;
-    }
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        points:
-          Number(
-            user.points || 0
-          )
-      }
-    );
-
-    return;
-  }
-
-  // ----------------------------------------------------------
-  
-// ============================================================
-// RIZORA FEATURE LAYER
-// ============================================================
-
-if (
-  (method === "GET" && pathname === "/api/tasks") ||
-  (method === "POST" && pathname === "/api/tasks/start")
-) {
-  const user = getCurrentUser(db, req);
-
-  if (!user) {
-    return sendJSON(res, 401, {
-      success: false,
-      error: "Authentication required"
-    });
-  }
-
-  db.tasks ||= [];
-  db.taskCompletions ||= [];
-    db.taskAttempts ||= [];
-  db.taskSeen ||= {};
-  db.rizoraGeneratedHistory ||= {};
-  db.rizoraGeneratedHistory[user.id] ||= [];
-
-  const cooldown = getCooldown(db, user.id);
-
-  const completedIds = new Set(
-    db.taskCompletions
-      .filter(x => x.userId === user.id)
-      .map(x => x.taskId)
-  );
-
-  /*
-   * Official + community tasks.
-   */
-  const normalTasks = db.tasks
-    .filter(task => task.active !== false)
-    .filter(task => task.type !== "generated")
-    .filter(task => !(task.type === "community" && task.creatorId === user.id))
-    .filter(task => task.type !== "social_follow")
-    .filter(task => !completedIds.has(task.id))
-    .map(task => ({
-      ...task,
-      completed: false,
-      locked: cooldown.active
-    }));
-
-  /*
-   * Existing generated tasks belonging to this user.
-   */
-  let generatedTasks = db.tasks
-    .filter(task =>
-      task.active !== false &&
-      task.type === "generated" &&
-      task.createdForUserId === user.id &&
-      !completedIds.has(task.id)
-    )
-    .map(task => ({
-      ...task,
-      completed: false,
-      locked: cooldown.active
-    }));
-
-  /*
-   * GUARANTEED FRESH GENERATION
+  FRESH GENERATION
    *
    * If this user has no generated task waiting, create four.
    * History prevents reuse of the same action/platform pair.
    */
   // ----------------------------------------------------------
   // TASKS — START
-  // ----------------------------------------------------------
-
-  if (
-    method === "POST" &&
-    pathname === "/api/tasks/start"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!user) {
-      sendError(
-        res,
-        401,
-        "Authentication required."
-      );
-
-      return;
-    }
-
-    let body;
-
-    try {
-      body = await readBody(req);
-    } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
+  // ---------
       return;
     }
 
@@ -5827,32 +4426,7 @@ if (
         "Task ID is required."
       );
 
-      return;
-    }
-
-    const startCooldown = getCooldown(db, user.id);
-    if (startCooldown.active) {
-      sendJSON(res, 429, {
-        error: "Your next RIZORA task is still on cooldown.",
-        cooldown: startCooldown,
-        cooldownMinutes: 7
-      });
-      return;
-    }
-
-    const task =
-      db.tasks.find(
-        (item) =>
-          item.id === taskId &&
-          item.active !== false
-      );
-
-    if (!task) {
-      sendError(
-        res,
-        404,
-        "Task not found."
-      );
+      return;      );
 
       return;
     }
@@ -5893,64 +4467,7 @@ if (
     const alreadyCompleted =
       db.taskCompletions.some(
         (completion) =>
-          completion.userId === user.id &&
-          completion.taskId === task.id
-      );
-
-    if (alreadyCompleted) {
-      sendError(
-        res,
-        409,
-        "Task already completed."
-      );
-
-      return;
-    }
-
-    db.taskAttempts ||= [];
-
-    const now =
-      new Date().toISOString();
-
-    const existing =
-      db.taskAttempts.find(
-        (item) =>
-          item.userId === user.id &&
-          item.taskId === task.id &&
-          item.status === "started"
-      );
-
-    if (existing) {
-      existing.startedAt =
-        existing.startedAt ||
-        now;
-
-      saveDB(db);
-
-      sendJSON(
-        res,
-        200,
-        {
-          success: true,
-          startedAt: existing.startedAt,
-          taskId: task.id
-        }
-      );
-
-      return;
-    }
-
-    db.taskAttempts.push({
-      id: uid("attempt_"),
-      userId: user.id,
-      taskId: task.id,
-      status: "started",
-      startedAt: now
-    });
-
-    saveDB(db);
-
-    sendJSON(
+    ON(
       res,
       200,
       {
@@ -5973,11 +4490,7 @@ if (
       ["Improve one part of your creator profile", "YouTube"],
       ["Engage meaningfully with another creator", "TikTok"],
       ["Engage meaningfully with another creator", "Instagram"],
-      ["Engage meaningfully with another creator", "X"],
-      ["Review one of your recent posts", "TikTok"],
-      ["Review one of your recent posts", "Instagram"],
-      ["Review one of your recent posts", "YouTube"],
-      ["Create a stronger hook for your next post", "TikTok"],
+      ["Engage meaningfully"],
       ["Create a stronger hook for your next post", "Instagram"],
       ["Create a stronger hook for your next post", "YouTube"],
       ["Improve a caption for your next post", "TikTok"],
@@ -6025,49 +4538,7 @@ if (
 
         description:
           `${action} on ${platform}. ` +
-          "Keep it authentic, useful and focused on creator growth.",
-
-        platform: platform.toLowerCase(),
-        points: 10,
-        reward: 10,
-        active: true,
-
-        sourceKey: historyKey,
-        generatedAt: Date.now()
-      };
-
-      db.tasks.push(generated);
-
-      generatedTasks.push({
-        ...generated,
-        completed: false,
-        locked: false
-      });
-    }
-
-    saveDB(db);
-  }
-
-  return sendJSON(res, 200, {
-    success: true,
-
-    tasks: [
-      ...normalTasks,
-      ...generatedTasks
-    ],
-
-    cooldown,
-    cooldownMinutes: 7,
-    generatedCount: generatedTasks.length,
-
-    message:
-      generatedTasks.length
-        ? null
-        : "No new tasks right now. Check back after the next rotation."
-  });
-}
-if (
-  method === "POST" &&
+          "Keep it authentic, useful and foc "POST" &&
   pathname === "/api/tasks/complete"
 ) {
 
@@ -6120,132 +4591,6 @@ if (
   }
 
   if (task.type === "social_follow") {
-    sendError(
-      res,
-      409,
-      "Use the Social Tasks mission for this action."
-    );
-    return;
-  }
-
-  const cooldown =
-    getCooldown(
-      db,
-      user.id
-    );
-
-  if (cooldown.active) {
-    sendJSON(
-      res,
-      429,
-      {
-        error:
-          "Your next RIZORA task is still on cooldown.",
-        cooldown,
-        cooldownMinutes: 7
-      }
-    );
-    return;
-  }
-
-  const already =
-    db.taskCompletions.some(
-      c =>
-        c.userId === user.id &&
-        c.taskId === task.id
-    );
-
-  if (already) {
-    sendError(
-      res,
-      409,
-      "Task already completed."
-    );
-    return;
-  }
-
-  const reward =
-    task.type === "community"
-      ? 10
-      : Math.max(
-          0,
-          Number(
-            task.points ||
-            task.reward ||
-            0
-          )
-        );
-
-      db.taskAttempts ||= [];
-
-    const attempt = db.taskAttempts.find(
-      (item) =>
-        item.userId === user.id &&
-        item.taskId === task.id &&
-        item.status === "started"
-    );
-
-    if (!attempt) {
-      sendError(
-        res,
-        403,
-        "Start this task first."
-      );
-
-      return;
-    }
-
-    const startedAt = typeof attempt.startedAt === "number" ? attempt.startedAt : new Date(attempt.startedAt || 0).getTime();
-    const elapsedMs = Date.now() - startedAt;
-    const REQUIRED_TASK_TIME_MS = 20 * 1000;
-
-    if (
-      !startedAt ||
-      elapsedMs < REQUIRED_TASK_TIME_MS
-    ) {
-      const remainingSeconds = Math.max(
-        1,
-        Math.ceil(
-          (REQUIRED_TASK_TIME_MS - elapsedMs) / 1000
-        )
-      );
-
-      sendError(
-        res,
-        403,
-        `Please complete the task before claiming the reward. ${remainingSeconds}s remaining.`
-      );
-
-      return;
-    }
-
-    attempt.status = "verified";
-    attempt.verifiedAt =
-      new Date().toISOString();
-const completion = {
-    id:
-      uid("completion_"),
-    userId:
-      user.id,
-    taskId:
-      task.id,
-    points:
-      reward,
-    completedAt:
-      new Date().toISOString()
-  };
-
-  db.taskCompletions.push(
-    completion
-  );
-
-  rizoraMarkTaskSeen(
-    db,
-    user.id,
-    task.id
-  );
-
-  user.points =
     Number(user.points || 0) +
     reward;
 
@@ -6357,41 +4702,7 @@ if (
     );
 
   const url =
-    body.url
-      ? validURL(body.url)
-      : "";
-
-  if (!title || !description) {
-    sendError(
-      res,
-      400,
-      "Task title and description are required."
-    );
-    return;
-  }
-
-  const publishFee = 10;
-
-  if (
-    Number(user.points || 0) <
-    publishFee
-  ) {
-    sendError(
-      res,
-      400,
-      "You need 10 RIZORA points to create a task."
-    );
-    return;
-  }
-
-  db.tasks ||= [];
-
-  const task = {
-    id:
-      uid("community_task_"),
-
-    title,
-
+   
     description,
 
     url,
@@ -6432,84 +4743,7 @@ if (
     publishFee;
 
   db.tasks.push(
-    task
-  );
-
-  addLedger(
-    db,
-    user.id,
-    "community_task_publish",
-    -publishFee,
-    {
-      taskId:
-        task.id
-    }
-  );
-
-  audit(
-    db,
-    "community_task_created",
-    user,
-    {
-      taskId:
-        task.id
-    }
-  );
-
-  saveDB(db);
-
-  sendJSON(
-    res,
-    201,
-    {
-      success: true,
-      task,
-      publishFee,
-      points:
-        user.points,
-      user:
-        safeUser(user)
-    }
-  );
-
-  return;
-}
-
-/* ============================================================
-   BOOSTS — AVAILABLE
-============================================================ */
-
-if (
-  method === "GET" &&
-  pathname === "/api/boosts"
-) {
-
-  const user = getCurrentUser(db, req);
-
-  if (!user) {
-    sendError(res, 401, "Authentication required.");
-    return;
-  }
-
-  const cooldown = getCooldown(db, user.id);
-
-  const boosts =
-    (db.boostTasks || [])
-      .filter(
-        b =>
-          b.status === "active" &&
-          b.ownerId !== user.id &&
-          Number(b.remaining || 0) > 0 &&
-          !(db.boostCompletions || [])
-            .some(
-              c =>
-                c.userId === user.id &&
-                c.boostId === b.id
-            )
-      );
-
-  sendJSON(
-    res,
+    tas
     200,
     {
       success: true,
@@ -6526,61 +4760,7 @@ if (
    BOOSTS — CREATE
 ============================================================ */
 
-if (
-  method === "POST" &&
-  pathname === "/api/boosts/create"
-) {
-
-  const user =
-    getCurrentUser(db, req);
-
-  if(!user){
-    return sendError(
-      res,
-      401,
-      "Authentication required."
-    );
-  }
-
-  if(!hasPremium(user)){
-    return sendError(
-      res,
-      403,
-      "Premium subscription required to create boosts."
-    );
-  }
-
-  let body = {};
-
-  try {
-    body =
-      await readBody(req);
-  } catch (error) {
-    sendError(
-      res,
-      400,
-      error.message
-    );
-    return;
-  }
-
-  const platforms = [
-    "tiktok",
-    "instagram",
-    "x",
-    "youtube",
-    "spotify",
-    "facebook"
-  ];
-
-  const actions = [
-    "follow",
-    "like",
-    "subscribe",
-    "view"
-  ];
-
-  const platform =
+onst platform =
     cleanString(
       body.platform,
       30
@@ -6596,93 +4776,7 @@ if (
     cleanString(
       body.username,
       100
-    );
-
-  const url =
-    validURL(body.url);
-
-  const reward =
-    Math.floor(
-      Number(body.reward)
-    );
-
-  const quantity =
-    Math.floor(
-      Number(
-        body.maxCompletions
-      )
-    );
-
-  if (!platforms.includes(platform)) {
-    sendError(
-      res,
-      400,
-      "Invalid platform."
-    );
-    return;
-  }
-
-  if (!actions.includes(action)) {
-    sendError(
-      res,
-      400,
-      "Invalid action."
-    );
-    return;
-  }
-
-  if (!username || !url) {
-    sendError(
-      res,
-      400,
-      "Username and valid URL are required."
-    );
-    return;
-  }
-
-  if (
-    !Number.isFinite(reward) ||
-    reward < 1 ||
-    reward > 10000
-  ) {
-    sendError(
-      res,
-      400,
-      "Reward must be between 1 and 10000."
-    );
-    return;
-  }
-
-  if (
-    !Number.isFinite(quantity) ||
-    quantity < 1 ||
-    quantity > 10000
-  ) {
-    sendError(
-      res,
-      400,
-      "Completion count must be between 1 and 10000."
-    );
-    return;
-  }
-
-  const budget =
-    reward * quantity;
-
-  if (
-    Number(user.points || 0) <
-    budget
-  ) {
-    sendError(
-      res,
-      400,
-      "Not enough RIZORA points."
-    );
-    return;
-  }
-
-  user.points =
-    Number(user.points || 0) -
+    .points || 0) -
     budget;
 
   db.boostTasks ||= [];
@@ -6699,47 +4793,7 @@ if (
     username,
     url,
     reward,
-    maxCompletions:
-      quantity,
-    completedCount:
-      0,
-    remaining:
-      quantity,
-    totalBudget:
-      budget,
-    status:
-      "active",
-    createdAt:
-      new Date().toISOString()
-  };
-
-  db.boostTasks.push(
-    boost
-  );
-
-  addLedger(
-    db,
-    user.id,
-    "boost_fund",
-    -budget,
-    {
-      boostId:
-        boost.id
-    }
-  );
-
-  audit(
-    db,
-    "boost_created",
-    user,
-    {
-      boostId:
-        boost.id,
-      budget
-    }
-  );
-
-  saveDB(db);
+    maxCodb);
 
   sendJSON(
     res,
@@ -6759,55 +4813,7 @@ if (
 
 
 /* ============================================================
-   BOOSTS — COMPLETE
-============================================================ */
-
-if (
-  method === "POST" &&
-  pathname === "/api/boosts/complete"
-) {
-
-  const user =
-    getCurrentUser(db, req);
-
-  const authenticated =
-    !!user;
-
-  let body = {};
-
-  try {
-    body =
-      await readBody(req);
-  } catch (error) {
-    sendError(
-      res,
-      400,
-      error.message
-    );
-    return;
-  }
-
-  if (!user) {
-    sendError(res, 401, "Authentication required.");
-    return;
-  }
-
-  const boostId =
-    cleanString(
-      body.boostId ||
-      body.id,
-      100
-    );
-
-  const boost =
-    (db.boostTasks || [])
-      .find(
-        b =>
-          b.id === boostId &&
-          b.status === "active"
-      );
-
-  if (!boost) {
+ if (!boost) {
     sendError(
       res,
       404,
@@ -6824,58 +4830,7 @@ if (
       403,
       "You cannot complete your own boost."
     );
-    return;
-  }
-  const cooldown =
-    getCooldown(
-      db,
-      user.id
-    );
-
-  if (cooldown.active) {
-    sendJSON(
-      res,
-      429,
-      {
-        error:
-          "Your next task is still on cooldown.",
-        cooldown,
-        cooldownMinutes: 7
-      }
-    );
-    return;
-  }
-
-  db.boostCompletions ||= [];
-
-  const duplicate =
-    db.boostCompletions.some(
-      c =>
-        c.userId === user.id &&
-        c.boostId === boost.id
-    );
-
-  if (duplicate) {
-    sendError(
-      res,
-      409,
-      "You already completed this boost."
-    );
-    return;
-  }
-
-  if (
-    Number(boost.remaining || 0) <= 0
-  ) {
-    boost.status =
-      "completed";
-
-    saveDB(db);
-
-    sendError(
-      res,
-      409,
-      "Boost already completed."
+    ret      "Boost already completed."
     );
     return;
   }
@@ -6891,23 +4846,7 @@ if (
       uid("boost_completion_"),
     boostId:
       boost.id,
-    userId:
-      user.id,
-    reward,
-    completedAt:
-      new Date().toISOString()
-  });
-
-  boost.completedCount =
-    Number(
-      boost.completedCount || 0
-    ) + 1;
-
-  boost.remaining =
-    Math.max(
-      0,
-      Number(
-        boost.maxCompletions || 0
+    u.maxCompletions || 0
       ) -
       boost.completedCount
     );
@@ -6925,28 +4864,7 @@ if (
 
   addLedger(
     db,
-    user.id,
-    "boost_reward",
-    reward,
-    {
-      boostId:
-        boost.id
-    }
-  );
-
-  const nextTaskAt =
-    startCooldown(
-      db,
-      user.id,
-      boost.id
-    );
-
-  audit(
-    db,
-    "boost_completed",
-    user,
-    {
-      boostId:
+    user. boostId:
         boost.id,
       reward
     }
@@ -6965,69 +4883,7 @@ if (
       nextTaskAt,
       cooldownMinutes: 7,
       cooldown:
-        getCooldown(
-          db,
-          user.id
-        ),
-      user:
-        safeUser(user)
-    }
-  );
-
-  return;
-}
-
-
-/* ============================================================
-   RIZORA AI
-============================================================ */
-
-if (
-    method === "POST" &&
-    pathname === "/api/ai/chat"
-  ) {
-
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!user) {
-      return sendError(
-        res,
-        401,
-        "Authentication required."
-      );
-    }
-
-    const rateKey = user.id;
-
-    if (
-      !checkRateLimit(
-        aiRateLimits,
-        rateKey,
-        10 * 60 * 1000,
-        20
-      )
-    ) {
-      return sendError(
-        res,
-        429,
-        "RIZORA AI is taking a short break. Try again in a few minutes."
-      );
-    }
-
-    let body;
-
-    try {
-      body =
-        await readBody(req);
-    } catch (error) {
-      return sendError(
-        res,
-        400,
-        error.message
+   error.message
       );
     }
 
@@ -7088,19 +4944,7 @@ if (
     if (
       /^(who am i|who am i on rizora|what is my name|whats my name|what is my username|whats my username|my username|my account)$/.test(knownRizoraIdentityAnswer)
     ) {
-      const identityName = String(user.displayName || user.username || "Creator").trim();
-      const identityHandle = String(user.publicUsername || user.username || "").replace(/^@/, "").trim();
-      const verified = user.verified === true || user.verificationStatus === "verified";
-      return sendJSON(
-        res,
-        200,
-        {
-          success: true,
-          provider: "rizora",
-          deterministic: true,
-          reply:
-            "You are " + identityName + (identityHandle ? " (@" + identityHandle + ")" : "") +
-            ". You're signed in to RIZORA, and I can recognize this account in our current session." +
+      const identityName = String(user.displayName || user.user signed in to RIZORA, and I can recognize this account in our current session." +
             " Your current points are " + Number(user.points || 0) + "." +
             (verified ? " Your RIZORA account is verified." : " Your RIZORA account is not currently marked as verified.")
         }
@@ -7145,28 +4989,17 @@ if (
     const model =
       String(
         process.env.GROQ_MODEL ||
-        "openai/gpt-oss-120b"
-      ).trim();
-
-    const systemPrompt =
-      "You are RIZORA AI, the in-app creator copilot inside RIZORA. " +
-      "You are answering a real creator in the current RIZORA session, not writing a generic coaching article. " +
+    " +
       "Use the signed-in account, profile and recent conversation context supplied in the user message. " +
       "Recognize the signed-in creator from that context and use it when the user asks about their own account. " +
-      "Answer the user's actual question first, then add only the smallest useful next step. " +
-      "Write in a direct, warm, modern RIZORA voice: short natural paragraphs or a few bullets when needed. " +
-      "Do not default to markdown tables, playbooks, frameworks, schedules, time estimates, immediate to-do lists, or long numbered plans. " +
+      "Answer the user's ules, time estimates, immediate to-do lists, or long numbered plans. " +
       "Only give a multi-step plan when the user clearly asks for a plan, and tailor every step to the user's request and available RIZORA context. " +
       "Never invent RIZORA programs, creator spotlights, campaigns, events, metrics, followers, outcomes, dates, features, opportunities, or platform actions. " +
-      "Never claim that you posted, scheduled, submitted, followed, contacted, verified, distributed, or changed anything unless the current request includes a confirmed RIZORA action result. " +
-      "Do not use generic motivational endings such as 'Good luck', 'You are already verified', or 'clean slate' unless that fact is present in the supplied account context. " +
-      "Do not pad the answer with advice the user did not ask for. If relevant data is missing, say so plainly. " +
+      "Never claim that you posted, scheduled, submitted, followed, contacted, verified, distributed, or changed anything     "Do not pad the answer with advice the user did not ask for. If relevant data is missing, say so plainly. " +
       "Treat these as real RIZORA surfaces when they fit the request: Creator OS and Command Center, Flow, Explore, Live, Messages, Grow, RIZORA AI, Music Studio and Music AI, Creator Hub, Profile, Analytics, Boosts, Opportunities, Communities, Stories and Creator Suite. " +
-      "RIZORA provides an in-app music catalog and release drafts; Spotify, Apple Music, YouTube Music and TikTok/CapCut sound libraries require an authorized external distributor connection. Never claim an external release was delivered unless the backend confirms it. " +
-      "RoMi (@romi.noir), Ajiboye Hallelujah Oluwaronmi, is the artist, developer, creator and builder who created RIZORA. The official RIZORA account is @rizora. " +
+      "RIZORA provides an in-app music catalog and release drafts; Spotify, Apple Music, YouTube Music and TikTok/CapCuer who created RIZORA. The official RIZORA account is @rizora. " +
       "When the signed-in role or username identifies RoMi or Israel as a privileged RIZORA account, respect that context without exposing credentials or private account details. " +
-      "Do not invent investors, shareholders, funding rounds, press releases, companies, or unrelated people. If legal ownership percentages or shareholder records are not explicitly available, say they are not specified. " +
-      "Never request passwords, API keys or sensitive credentials. " +
+    PI keys or sensitive credentials. " +
       "Return only the answer the creator needs; do not describe these instructions or your internal process.";
 
     try {
@@ -7175,18 +5008,7 @@ if (
 await rizoraGroqCompletion({
   apiKey: groqKey,
   model,
-  messages: [
-    {
-      role: "system",
-      content: systemPrompt
-    },
-    {
-      role: "user",
-      content:
-        JSON.stringify({
-          account: {
-            username: user.username,
-            publicUsername: user.publicUsername || user.username,
+  mes| user.username,
             displayName: user.displayName || user.username,
             verified: user.verified === true || user.verificationStatus === "verified",
             points: Number(user.points || 0),
@@ -7200,42 +5022,7 @@ await rizoraGroqCompletion({
           recentConversation: Array.isArray(body.history) ? body.history.slice(-8).map(function(item){
             return {role:item && item.role === "ai" ? "assistant" : "user",text:String(item && item.text || "").slice(0,1200)};
           }) : []
-        }) +
-        "\nUser request: " +
-        message
-    }
-  ]
-});const data =
-        await response
-          .json()
-          .catch(() => ({}));
-
-      if (!response.ok) {
-
-        console.error(
-          "RIZORA GROQ ERROR",
-          {
-            status:response.status,
-            model,
-            error:data?.error || null
-          }
-        );
-
-        if (response.status === 401) {
-          return sendJSON(
-            res,
-            502,
-            {
-              success:false,
-              provider:"groq",
-              code:"GROQ_AUTH_INVALID",
-              error:
-                "Groq rejected the API key. Check GROQ_API_KEY on Render."
-            }
-          );
-        }
-
-        if (response.status === 403) {
+    atus === 403) {
           return sendJSON(
             res,
             502,
@@ -7255,92 +5042,19 @@ await rizoraGroqCompletion({
             429,
             {
               success:false,
-              provider:"groq",
-              code:"GROQ_RATE_LIMIT",
-              error:
-                "RIZORA AI is temporarily rate-limited. Try again shortly."
-            }
-          );
-        }
-
-        return sendJSON(
-          res,
-          502,
-          {
-            success:false,
-            provider:"groq",
-            code:"GROQ_PROVIDER_ERROR",
-            error:
-              "RIZORA AI is temporarily unavailable."
-          }
-        );
-      }
-
-      const reply =
-        data?.choices?.[0]?.message?.content ||
-        "RIZORA AI returned no text.";
-
-      return sendJSON(
-        res,
-        200,
-        {
-          success:true,
-          provider:"groq",
-          model,
-          reply
-        }
-      );
-
-    } catch (error) {
-
-      console.error(
-        "RIZORA GROQ NETWORK ERROR",
-        error
-      );
-
-      return sendJSON(
-        res,
-        502,
-        {
-          success:false,
-          provider:"groq",
-          code:"GROQ_NETWORK_ERROR",
-          error:
-            "RIZORA AI could not reach Groq."
-        }
-      );
-    }
-  }
-
-  if (method === "POST" && pathname === "/api/ai/transcribe") {
-    const user = getCurrentUser(db, req);
-    if (!user) return sendError(res, 401, "Authentication required.");
-    const rateKey = user.id + ":transcribe";
-    if (!checkRateLimit(aiRateLimits, rateKey, 10 * 60 * 1000, 20)) return sendError(res, 429, "RIZORA AI voice is taking a short break. Try again in a few minutes.");
-    let body = {};
-    try { body = await readLargeJSONBody(req, 8 * 1024 * 1024); } catch (error) { return sendError(res, 400, error.message); }
-    const dataUrl = String(body.audio || "").trim();
-    const mimeType = String(body.mimeType || "audio/webm").toLowerCase().split(";")[0];
+              prrCase().split(";")[0];
     const match = dataUrl.match(/^data:([^;,]+)?;base64,([A-Za-z0-9+/=\s]+)$/);
     if (!match) return sendError(res, 400, "Voice recording data is invalid.");
-    const buffer = Buffer.from(match[2].replace(/\s+/g, ""), "base64");
-    if (!buffer.length) return sendError(res, 400, "Voice recording is empty.");
-    if (buffer.length > 6 * 1024 * 1024) return sendError(res, 413, "Voice recording is too large.");
-    const allowedAudio = new Set(["audio/webm","audio/ogg","audio/wav","audio/mp4","audio/mpeg"]);
+    const buffer = Buffer.from(match[2].replace(/\s+/g, ""), "base64")v","audio/mp4","audio/mpeg"]);
     if (!allowedAudio.has(mimeType)) return sendError(res, 415, "This voice recording format is not supported.");
     const groqKey = String(process.env.GROQ_API_KEY || "").trim();
-    if (!groqKey) return sendError(res, 503, "RIZORA AI voice is not configured.");
-    try {
-      const form = new FormData();
-      const ext = mimeType === "audio/webm" ? "webm" : mimeType === "audio/ogg" ? "ogg" : mimeType === "audio/mp4" ? "m4a" : mimeType === "audio/mpeg" ? "mp3" : "wav";
+    if (!groqKey) return sendError(res, 5";
       form.append("file", new Blob([buffer], {type:mimeType}), "rizora-voice." + ext);
       form.append("model", String(process.env.GROQ_STT_MODEL || "whisper-large-v3-turbo").trim());
       form.append("response_format", "json");
       form.append("temperature", "0");
       form.append("prompt", "RIZORA creator platform, RoMi, @romi.noir, creator analytics, missions, boosts, social growth, AI, content and branding.");
-      const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {method:"POST",headers:{Authorization:"Bearer " + groqKey},body:form});
-      const data = await response.json().catch(function(){ return {}; });
-      if (!response.ok) return sendJSON(res, response.status === 429 ? 429 : 502, {success:false,provider:"groq",code:response.status === 429 ? "GROQ_RATE_LIMIT" : "GROQ_STT_ERROR",error:response.status === 429 ? "RIZORA AI voice is temporarily rate-limited." : "RIZORA AI could not transcribe that voice recording."});
+      const response = await fetch("https://api.groq.com/openai/v1/audio/transcprovider:"groq",code:response.status === 429 ? "GROQ_RATE_LIMIT" : "GROQ_STT_ERROR",error:response.status === 429 ? "RIZORA AI voice is temporarily rate-limited." : "RIZORA AI could not transcribe that voice recording."});
       return sendJSON(res, 200, {success:true,provider:"groq",model:String(process.env.GROQ_STT_MODEL || "whisper-large-v3-turbo").trim(),text:String(data.text || "").trim()});
     } catch (error) {
       console.error("RIZORA GROQ STT NETWORK ERROR", error);
@@ -7418,55 +5132,7 @@ if (
 
   const xml =
     '<?xml version="1.0" encoding="UTF-8"?>' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
-    pages.map(
-      p =>
-        "<url><loc>" +
-        base +
-        p +
-        "</loc></url>"
-    ).join("") +
-    "</urlset>";
-
-  res.writeHead(
-    200,
-    {
-      "Content-Type":
-        "application/xml; charset=utf-8"
-    }
-  );
-
-  res.end(xml);
-
-  return;
-}
-
-// REFERRALS — ME
-  // ----------------------------------------------------------
-
-  if (
-    method === "GET" &&
-    pathname === "/api/referrals/me"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!user) {
-      sendError(
-        res,
-        401,
-        "Authentication required."
-      );
-
-      return;
-    }
-
-    const referrals =
-      db.referrals.filter(
-        (referral) =>
+    '<urlset xmlns="http://www.sitemaps.org/s>
           referral.referrerId === user.id
       );
 
@@ -7478,20 +5144,7 @@ if (
 
     const referralLink =
       referralCode
-        ? `${baseURL}/?ref=${encodeURIComponent(
-            referralCode
-          )}`
-        : "";
-
-    const referralPoints =
-      referrals.reduce(
-        (total, referral) =>
-          total +
-          Number(
-            referral.reward || 0
-          ),
-        0
-      );
+        ? `${baseURL}/?ref=${encodeURIC;
 
     sendJSON(
       res,
@@ -7509,23 +5162,7 @@ if (
           ),
 
         referralCount:
-          Number(
-            user.referralCount || 0
-          ),
-
-        points:
-          referralPoints,
-
-        referrals
-      }
-    );
-
-    return;
-  }
-
-  // ----------------------------------------------------------
-  // ROMI PROFILE
-  // ----------------------------------------------------------
+          Numbe----------------------------------------------------
 
   if (
     method === "GET" &&
@@ -7538,19 +5175,7 @@ if (
         success: true,
         profile: {
           username: "romi",
-          displayName: "Romi",
-          platform: "RIZORA",
-          creator: true,
-          tiktok:
-            "https://www.tiktok.com/@romi.noir"
-        }
-      }
-    );
-
-    return;
-  }
-
-  // ----------------------------------------------------------
+ -------------
   // CREATOR TOOLS
   // Supports GET and POST
   // ----------------------------------------------------------
@@ -7617,26 +5242,7 @@ if (
       return;
     }
 
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        hashtags:
-          randomItems(
-            HASHTAGS,
-            8
-          )
-      }
-    );
-
-    return;
-  }
-
-  if (
-    (
-      method === "GET" ||
-      method === "POST"
+    sendJSON(
     ) &&
     pathname === "/api/generate/captions"
   ) {
@@ -7672,39 +5278,7 @@ if (
     return;
   }
 
-  // ----------------------------------------------------------
-  // ADMIN — STATS
-  // ----------------------------------------------------------
-
-  if (
-    method === "GET" &&
-    pathname === "/api/admin/stats"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!requireAdmin(
-      res,
-      user
-    )) {
-      return;
-    }
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        stats:
-          getAdminStats(db)
-      }
-    );
-
-    return;
-  }
+  // -------------------------
 
   // ----------------------------------------------------------
   // ADMIN — USERS
@@ -7747,57 +5321,7 @@ if (
   // ----------------------------------------------------------
 
   if (
-    method === "GET" &&
-    pathname === "/api/admin/referrals"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!requireAdmin(
-      res,
-      user
-    )) {
-      return;
-    }
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        referrals:
-          db.referrals
-      }
-    );
-
-    return;
-  }
-
-  // ----------------------------------------------------------
-  // ADMIN — AUDIT
-  // ----------------------------------------------------------
-
-  if (
-    method === "GET" &&
-    pathname === "/api/admin/audit"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!requireAdmin(
-      res,
-      user
-    )) {
-      return;
-    }
-
-    sendJSON(
+    method === "GET" &&(
       res,
       200,
       {
@@ -7859,45 +5383,7 @@ if (
       );
 
     if (!requireSuperAdmin(
-      res,
-      user
-    )) {
-      return;
-    }
-
-    let body;
-
-    try {
-      body =
-        await readBody(req);
-    } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
-      return;
-    }
-
-    const userId =
-      cleanString(
-        body.userId,
-        100
-      );
-
-    const role =
-      cleanString(
-        body.role,
-        50
-      );
-
-    if (
-      ![
-        "user",
-        "admin",
-        "super_admin"
-      ].includes(role)
+.includes(role)
     ) {
       sendError(
         res,
@@ -7915,39 +5401,7 @@ if (
       );
 
     if (!target) {
-      sendError(
-        res,
-        404,
-        "User not found."
-      );
-
-      return;
-    }
-
-    if (
-      isConfiguredSuperAdminUsername(target.username) &&
-      role !== "super_admin"
-    ) {
-      sendError(
-        res,
-        403,
-        "Protected super admin cannot be demoted."
-      );
-
-      return;
-    }
-
-    target.role = role;
-
-    audit(
-      db,
-      "role_changed",
-      user,
-      {
-        targetUserId:
-          target.id,
-
-        targetUsername:
+me:
           target.username,
 
         role
@@ -7969,35 +5423,7 @@ if (
     return;
   }
 
-  // ----------------------------------------------------------
-  // ADMIN — CHANGE STATUS
-  // ----------------------------------------------------------
-
-  if (
-    method === "POST" &&
-    pathname === "/api/admin/users/status"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
-      return;
-    }
-
-    let body;
-
-    try {
-      body =
-        await readBody(req);
-    } catch (error) {
-      sendError(
-        res,
+  // ----------     res,
         400,
         error.message
       );
@@ -8016,58 +5442,7 @@ if (
         body.status,
         50
       );
-
-    if (
-      ![
-        "active",
-        "blocked"
-      ].includes(status)
-    ) {
-      sendError(
-        res,
-        400,
-        "Invalid status."
-      );
-
-      return;
-    }
-
-    const target =
-      db.users.find(
-        (item) =>
-          item.id === userId
-      );
-
-    if (!target) {
-      sendError(
-        res,
-        404,
-        "User not found."
-      );
-
-      return;
-    }
-
-    if (
-      isConfiguredSuperAdminUsername(target.username) &&
-      status !== "active"
-    ) {
-      sendError(
-        res,
-        403,
-        "Protected super admin cannot be blocked."
-      );
-
-      return;
-    }
-
-    target.status =
-      status;
-
-    audit(
-      db,
-      "user_status_changed",
-      user,
+  user,
       {
         targetUserId:
           target.id,
@@ -8154,106 +5529,7 @@ if (
       return;
     }
 
-    const target =
-      db.users.find(
-        (item) =>
-          item.id === userId
-      );
-
-    if (!target) {
-      sendError(
-        res,
-        404,
-        "User not found."
-      );
-
-      return;
-    }
-
-    target.points =
-      Math.max(
-        0,
-        Number(
-          target.points || 0
-        ) + amount
-      );
-
-    audit(
-      db,
-      "points_changed",
-      user,
-      {
-        targetUserId:
-          target.id,
-
-        targetUsername:
-          target.username,
-
-        amount
-      }
-    );
-
-    saveDB(db);
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        user:
-          safeUser(target)
-      }
-    );
-
-    return;
-  }
-
-  // ----------------------------------------------------------
-  // SUPER ADMIN — DASHBOARD
-  // ----------------------------------------------------------
-
-  if (
-    method === "GET" &&
-    pathname === "/api/superadmin/dashboard"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
-      return;
-    }
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        stats:
-          getAdminStats(db),
-
-        users:
-          db.users.map(
-            safeUser
-          ),
-
-        tasks:
-          db.tasks,
-
-        referrals:
-          db.referrals,
-
-        audit:
-          db.auditLogs.slice(
-            0,
-            200
-          )
-      }
+   }
     );
 
     return;
@@ -8265,73 +5541,7 @@ if (
 
   if (
     method === "GET" &&
-    pathname === "/api/superadmin/users"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
-      return;
-    }
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        users:
-          db.users.map(
-            safeUser
-          )
-      }
-    );
-
-    return;
-  }
-
-  // ----------------------------------------------------------
-  // SUPER ADMIN — AUDIT
-  // ----------------------------------------------------------
-
-  if (
-    method === "GET" &&
-    pathname === "/api/superadmin/audit"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
-      return;
-    }
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        logs:
-          db.auditLogs
-      }
-    );
-
-    return;
-  }
-
-  // ----------------------------------------------------------
-  // SUPER ADMIN — REFERRALS
-  // ----------------------------------------------------------
+    pathname === "/api/superadm// ----------------------------------------------------------
 
   if (
     method === "GET" &&
@@ -8363,74 +5573,7 @@ if (
     return;
   }
 
-  // ----------------------------------------------------------
-  // SUPER ADMIN — ROLE
-  // ----------------------------------------------------------
-
-  if (
-    method === "POST" &&
-    pathname === "/api/superadmin/users/role"
-  ) {
-    const user =
-      getCurrentUser(
-        db,
-        req
-      );
-
-    if (!requireSuperAdmin(
-      res,
-      user
-    )) {
-      return;
-    }
-
-    let body;
-
-    try {
-      body =
-        await readBody(req);
-    } catch (error) {
-      sendError(
-        res,
-        400,
-        error.message
-      );
-
-      return;
-    }
-
-    const userId =
-      cleanString(
-        body.userId,
-        100
-      );
-
-    const role =
-      cleanString(
-        body.role,
-        50
-      );
-
-    if (
-      ![
-        "user",
-        "admin",
-        "super_admin"
-      ].includes(role)
-    ) {
-      sendError(
-        res,
-        400,
-        "Invalid role."
-      );
-
-      return;
-    }
-
-    const target =
-      db.users.find(
-        (item) =>
-          item.id === userId
+  // -----------------------------------     item.id === userId
       );
 
     if (!target) {
@@ -8445,47 +5588,7 @@ if (
 
     if (
       isConfiguredSuperAdminUsername(target.username) &&
-      role !== "super_admin"
-    ) {
-      sendError(
-        res,
-        403,
-        "Protected super admin cannot be demoted."
-      );
-
-      return;
-    }
-
-    target.role = role;
-
-    audit(
-      db,
-      "superadmin_role_changed",
-      user,
-      {
-        targetUserId:
-          target.id,
-
-        role
-      }
-    );
-
-    saveDB(db);
-
-    sendJSON(
-      res,
-      200,
-      {
-        success: true,
-        user:
-          safeUser(target)
-      }
-    );
-
-    return;
-  }
-
-  // ----------------------------------------------------------
+      role !== "super_// ----------------------------------------------------------
   // SUPER ADMIN — STATUS
   // ----------------------------------------------------------
 
@@ -11903,7 +9006,7 @@ async function requestHandler(
 
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
+    "Content-Type, Authorization, X-CSRF-Token"
   );
 
   res.setHeader(
@@ -12699,6 +9802,7 @@ process.on(
     );
   }
 );
+
 
 
 

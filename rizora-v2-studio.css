@@ -49,6 +49,7 @@
 .rz-studio-next{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:20px 22px;border:1px solid var(--rz-studio-border);border-radius:20px;background:rgba(15,13,21,.84)}
 .rz-studio-next-actions{justify-content:flex-end;margin:0}
 .rz-studio-templates{display:grid;gap:16px;padding:22px;border:1px solid rgba(194,151,255,.15);border-radius:22px;background:radial-gradient(circle at 100% 0,rgba(93,204,255,.08),transparent 34%),linear-gradient(145deg,rgba(20,17,31,.98),rgba(10,9,15,.98))}
+.rz-google-status{margin:10px 0;padding:11px 13px;border:1px solid rgba(194,151,255,.16);border-radius:12px;background:rgba(148,102,255,.06);color:#aaa3b8;font-size:12px;line-height:1.5;text-align:center}
 .rz-studio-templates-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
 .rz-studio-templates-head h3{margin:7px 0 5px;font-size:clamp(1.2rem,2.6vw,1.65rem);letter-spacing:-.03em}
 .rz-studio-templates-head p{margin:0;color:var(--rz-studio-muted);font-size:13px;line-height:1.6}
