@@ -48,6 +48,21 @@
 .rz-studio-result-empty{color:#858092}
 .rz-studio-next{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:20px 22px;border:1px solid var(--rz-studio-border);border-radius:20px;background:rgba(15,13,21,.84)}
 .rz-studio-next-actions{justify-content:flex-end;margin:0}
+.rz-studio-templates{display:grid;gap:16px;padding:22px;border:1px solid rgba(194,151,255,.15);border-radius:22px;background:radial-gradient(circle at 100% 0,rgba(93,204,255,.08),transparent 34%),linear-gradient(145deg,rgba(20,17,31,.98),rgba(10,9,15,.98))}
+.rz-studio-templates-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.rz-studio-templates-head h3{margin:7px 0 5px;font-size:clamp(1.2rem,2.6vw,1.65rem);letter-spacing:-.03em}
+.rz-studio-templates-head p{margin:0;color:var(--rz-studio-muted);font-size:13px;line-height:1.6}
+.rz-studio-template-note{flex:0 0 auto;padding:8px 11px;border:1px solid rgba(95,221,255,.2);border-radius:999px;background:rgba(53,191,255,.06);color:#a8eaff;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.rz-template-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.rz-template-card{display:flex;flex-direction:column;min-width:0;padding:0;overflow:hidden;text-align:left;border:1px solid rgba(223,206,255,.13);border-radius:18px;background:rgba(7,6,12,.76);color:var(--rz-studio-text);cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.rz-template-card:hover,.rz-template-card:focus-visible{transform:translateY(-3px);border-color:rgba(181,145,255,.6);box-shadow:0 12px 36px rgba(104,66,196,.2);outline:none}
+.rz-template-card:focus-visible{box-shadow:0 0 0 3px rgba(169,132,255,.45),0 12px 36px rgba(104,66,196,.2)}
+.rz-template-card>img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#0d0a15}
+.rz-template-card-copy{display:flex;flex:1;flex-direction:column;gap:5px;padding:14px}
+.rz-template-card-copy h4{margin:2px 0 0;font-size:17px;letter-spacing:-.025em}
+.rz-template-card-copy p{margin:0;color:#aaa5b6;font-size:12px;line-height:1.55}
+.rz-template-cta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:12px;color:#d3baff;font-size:12px;font-weight:800}
+.rz-template-cta b{font-size:17px;line-height:1}
 .rz-audio-workshop,.rz-voiceover-studio{grid-column:1/-1}
 #rzMusicOverlay .rz-music-grid{grid-template-areas:"ai release" "voice voice" "workshop workshop" "catalog catalog"}
 #rzMusicOverlay .rz-music-release-card{grid-area:release}
@@ -97,6 +112,13 @@
   .rz-studio-tool,.rz-studio-tool:first-child{grid-column:auto;min-height:unset;padding:17px;border-radius:18px}
   .rz-studio-tool-mark{width:38px;height:38px;margin-bottom:14px}
   .rz-studio-tool .rz-btn{margin-top:16px}
+  .rz-studio-templates{gap:13px;padding:16px;border-radius:18px}
+  .rz-studio-templates-head{align-items:flex-start;flex-direction:column;gap:10px}
+  .rz-studio-template-note{font-size:9px}
+  .rz-template-grid{grid-template-columns:1fr;gap:10px}
+  .rz-template-card{border-radius:16px}
+  .rz-template-card>img{aspect-ratio:16/8}
+  .rz-template-card-copy{padding:13px}
   .rz-studio-idea{gap:15px;padding:17px;border-radius:18px}
   .rz-studio-idea textarea{min-height:118px}
   .rz-studio-idea-actions{align-items:stretch}
@@ -117,3 +139,4 @@
   .rz-audio-workshop-actions button{width:100%}
 }
 @media(prefers-reduced-motion:reduce){.rz-studio-tool,.rz-studio-hero{scroll-behavior:auto}}
+
