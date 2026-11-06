@@ -1,47 +1,17 @@
 {
   "rewrites": [
-    {
-      "source": "/join",
-      "destination": "/"
-    },
-    {
-      "source": "/signup",
-      "destination": "/"
-    },
-    {
-      "source": "/login",
-      "destination": "/"
-    },
-    {
-      "source": "/studio",
-      "destination": "/"
-    },
-    {
-      "source": "/studio/",
-      "destination": "/"
-    },
-    {
-      "source": "/verification",
-      "destination": "/verification.html"
-    },
-    {
-      "source": "/verification/",
-      "destination": "/verification.html"
-    }
+    {"source": "/join", "destination": "/"},
+    {"source": "/signup", "destination": "/"},
+    {"source": "/login", "destination": "/"},
+    {"source": "/studio", "destination": "/"},
+    {"source": "/studio/", "destination": "/"},
+    {"source": "/verification", "destination": "/verification.html"},
+    {"source": "/verification/", "destination": "/verification.html"}
   ],
   "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "microphone=(self)"
-        }
-      ]
-    }
+    {"source": "/(.*)", "headers": [
+      {"key": "Cache-Control", "value": "no-store, no-cache, must-revalidate"},
+      {"key": "Permissions-Policy", "value": "microphone=(self)"}
+    ]}
   ]
 }
