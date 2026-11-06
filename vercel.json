@@ -13,6 +13,14 @@
       "destination": "/"
     },
     {
+      "source": "/studio",
+      "destination": "/"
+    },
+    {
+      "source": "/studio/",
+      "destination": "/"
+    },
+    {
       "source": "/verification",
       "destination": "/verification.html"
     },
