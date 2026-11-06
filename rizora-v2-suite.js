@@ -274,7 +274,7 @@ function injectSuite(){
   // RIZORA stays focused on Music, AI, Chat and Profile. Advanced tools are intentionally not injected into the primary shell.
   injectLogout();
 }
-function boot(){injectSuite();}
+function boot(){injectSuite();var mo=new MutationObserver(function(){injectSuite();});mo.observe(document.body,{childList:true,subtree:true});}
 window.RIZORA_SUITE={install:install,open:suiteMenu};
 setTimeout(boot,90);
 })();
