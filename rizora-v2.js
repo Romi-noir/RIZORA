@@ -208,18 +208,12 @@ function googleButton(){
 }
 function shell(){
   var desktopItems=[
-    {id:"home",label:"Home",icon:"H",group:"WORKSPACE"},
-    {id:"studio",label:"Music",icon:"♫",group:"WORKSPACE"},
-    {id:"flow",label:"For You",icon:"F",group:"WORKSPACE"},
-    {id:"discover",label:"Explore",icon:"E",group:"WORKSPACE"},
-    {id:"live",label:"Live",icon:"LIVE",group:"COMMUNITY"},
-    {id:"notifications",label:"Notifications",icon:"N",group:"COMMUNITY"},
-    {id:"messages",label:"Messages",icon:"M",group:"COMMUNITY"},
-    {id:"grow",label:"Grow",icon:"G",group:"CREATOR TOOLS"},
-    {id:"ai",label:"RIZORA AI",icon:"AI",group:"CREATOR TOOLS"},
+    {id:"home",label:"Home",icon:"H",group:"CORE"},
+    {id:"studio",label:"Music Studio",icon:"♫",group:"CORE"},
+    {id:"ai",label:"RIZORA AI",icon:"AI",group:"CORE"},
+    {id:"messages",label:"Chat",icon:"M",group:"CORE"},
     {id:"profile",label:"Profile",icon:"P",group:"ACCOUNT"}
-  ];
-  var side="",activeGroup="";
+  ];  var side="",activeGroup="";
   desktopItems.forEach(function(item){
     if(item.group!==activeGroup){activeGroup=item.group;side+='<div class="rz-xnav-heading">'+activeGroup+'</div>';}
     side+='<button class="rz-xnav-item '+(state.view===item.id?"active":"")+'" data-nav="'+item.id+'"><span class="rz-xnav-icon" aria-hidden="true">'+item.icon+'</span><span>'+item.label+'</span></button>';
@@ -227,14 +221,14 @@ function shell(){
   var mobile=[
     {id:"home",label:"Home",icon:"H"},
     {id:"studio",label:"Music",icon:"♫"},
-    {id:"flow",label:"Create",icon:"+"},
-    {id:"messages",label:"Inbox",icon:"M"},
+    {id:"ai",label:"AI",icon:"AI"},
+    {id:"messages",label:"Chat",icon:"M"},
     {id:"profile",label:"Profile",icon:"P"}
   ];
   document.body.innerHTML=
     '<div class="rz-top"><div class="rz-shell rz-top-inner">'+
       '<button class="rz-btn rz-brand rz-top-brand" id="brand"><img src="/rizora-cover.png" alt="RIZORA"><span>RIZORA</span><small>CREATOR OS</small></button>'+
-      '<div class="rz-top-search"><input id="rzGlobalSearch" class="rz-input" placeholder="Search creators, posts, hashtags" aria-label="Search RIZORA"><button id="rzGlobalSearchBtn" class="rz-btn">Search</button></div>'+
+      '<div class="rz-top-search"><input id="rzGlobalSearch" class="rz-input" placeholder="Search music, creators, or chats" aria-label="Search RIZORA"><button id="rzGlobalSearchBtn" class="rz-btn">Search</button></div>'+
       '<div class="rz-actions"><button class="rz-btn rz-top-ai" id="rzTopAi">AI</button><button class="rz-btn" id="refresh">Refresh</button><button class="rz-top-avatar" id="rzTopProfile">'+avatar(state.user)+'</button></div>'+
     '</div></div>'+
     '<main class="rz-shell rz-social-main">'+
@@ -242,13 +236,12 @@ function shell(){
         '<div class="rz-xnav">'+side+'</div>'+
         '<button class="rz-btn primary rz-create-post" id="rzCreatePost">Create</button>'+
         '<div class="rz-x-profile-mini"><button class="rz-x-profile-button" id="rzMiniProfile">'+avatar(state.user)+'<span><strong>'+esc((state.user&&state.user.displayName)||"Creator")+'</strong><small>@'+esc((state.user&&(state.user.publicUsername||state.user.username))||"creator")+'</small></span><b>...</b></button></div>'+
-        '<button class="rz-btn" id="rzDesktopSuite" style="width:100%">Creator Suite</button>'+
       '</aside>'+
       '<section class="rz-content rz-social-content" id="content"></section>'+
       '<aside class="rz-right-rail">'+
         '<div class="rz-card rz-search-card"><div class="rz-kicker">RIZORA SEARCH</div><h3>Find creators</h3><p class="rz-muted">Discover profiles, posts and hashtags.</p><button class="rz-btn primary" id="rzRailExplore">Explore RIZORA</button></div>'+
         '<div class="rz-card rz-account-card"><div class="rz-kicker">YOUR ACCOUNT</div><div class="rz-right-account">'+avatar(state.user)+'<div><strong>'+esc((state.user&&state.user.displayName)||"Creator")+'</strong><div class="rz-mini">@'+esc((state.user&&(state.user.publicUsername||state.user.username))||"creator")+'</div></div></div><div class="rz-right-stats"><span><b>'+Number(state.points||0)+'</b><small>points</small></span><span><b>'+Number((state.user&&state.user.followers)||0)+'</b><small>followers</small></span><span><b>'+Number((state.user&&state.user.posts)||0)+'</b><small>posts</small></span></div><div class="rz-actions"><button class="rz-btn" id="rzRailProfile">Profile</button><button class="rz-btn" id="rzRailSettings">Settings</button></div></div>'+
-        '<div class="rz-card rz-right-growth"><div class="rz-kicker">BUILD MOMENTUM</div><h3>Grow your presence</h3><p class="rz-muted">Use missions, Boosts, AI and analytics to move your creator account.</p><div class="rz-actions"><button class="rz-btn" id="rzRailGrow">Grow</button><button class="rz-btn" id="rzRailAi">Ask AI</button></div></div>'+
+        '<div class="rz-card rz-right-growth"><div class="rz-kicker">MAKE & THINK</div><h3>Your next sound</h3><p class="rz-muted">Open Music Studio to build a track, or ask RIZORA AI to shape the idea.</p><div class="rz-actions"><button class="rz-btn primary" id="rzRailMusic">Music</button><button class="rz-btn" id="rzRailAi">Ask AI</button></div></div>'+
         '<div class="rz-mini rz-right-footer">RIZORA · CREATE. GROW. EARN.</div>'+
       '</aside>'+
     '</main>'+
@@ -263,8 +256,8 @@ function shell(){
   $("rzMiniProfile").onclick=function(){state.view="profile";shell();load();};
   $("rzRailProfile").onclick=function(){state.view="profile";shell();load();};
   $("rzRailExplore").onclick=function(){state.view="discover";shell();load();};
-  $("rzRailGrow").onclick=function(){state.view="grow";shell();load();};
   $("rzRailAi").onclick=function(){state.view="ai";shell();load();};
+  $("rzRailMusic").onclick=function(){if(window.RIZORA_MUSIC&&window.RIZORA_MUSIC.open)window.RIZORA_MUSIC.open();else toast("Music Studio is loading.");};
   $("rzRailSettings").onclick=function(){if(window.RIZORA_CONTROL_CENTER&&window.RIZORA_CONTROL_CENTER.preferences){window.RIZORA_CONTROL_CENTER.preferences();}else{toast("Profile settings are loading.");}};
   var searchInput=$("rzGlobalSearch"),searchBtn=$("rzGlobalSearchBtn");
   function runGlobalSearch(){
@@ -283,7 +276,6 @@ function shell(){
   }
   if(searchBtn)searchBtn.onclick=runGlobalSearch;
   if(searchInput)searchInput.onkeydown=function(e){if(e.key==="Enter")runGlobalSearch();};
-  var ds=$("rzDesktopSuite");if(ds)ds.onclick=function(){if(window.RIZORA_SUITE&&window.RIZORA_SUITE.open)window.RIZORA_SUITE.open();};
   view();
 }
 function card(title,body){return '<section class="rz-card"><div class="rz-kicker">'+title+'</div>'+body+'</section>';}
@@ -311,15 +303,10 @@ function creatorStudioView(){
       '<article class="rz-studio-tool"><div class="rz-studio-tool-mark">✳</div><div class="rz-kicker">IDEAS & CONTENT</div><h3>Get from blank page to first draft</h3><p>Bring your idea to RIZORA AI for hooks, concepts, captions, scripts or a plan for what to make next.</p><button class="rz-btn" data-go="ai">Open AI workspace <span aria-hidden="true">→</span></button></article>'+
       '<article class="rz-studio-tool"><div class="rz-studio-tool-mark">◉</div><div class="rz-kicker">VOICE & PERFORMANCE</div><h3>Speak it, then shape it</h3><p>Use voice input with RIZORA AI, hear responses aloud, or create a downloadable voiceover in Music Studio.</p><button class="rz-btn" data-go="ai">Start with your voice <span aria-hidden="true">→</span></button></article>'+
     '</section>'+
-    '<section class="rz-studio-templates" aria-labelledby="rzStudioTemplatesTitle"><div class="rz-studio-templates-head"><div><div class="rz-kicker">RIZORA IN ONE PLACE</div><h3 id="rzStudioTemplatesTitle">Choose your next move</h3><p>These quick launches turn the RIZORA visual system into useful, tappable workspaces.</p></div><span class="rz-studio-template-note">Music · AI · Distribution · Chat</span></div><div class="rz-template-grid">'+
-      '<article class="rz-template-card" data-open-music="1" tabindex="0" role="button" aria-label="Open Music Studio"><img src="/assets/rizora-studio-template.jpg" alt="RIZORA studio: record, mix and master" loading="lazy"><div class="rz-template-card-copy"><div class="rz-kicker">STUDIO</div><h4>Make the track</h4><p>Record, mix, master and build a release-ready idea.</p><span class="rz-template-cta">Open Music Studio <b aria-hidden="true">→</b></span></div></article>'+
-      '<article class="rz-template-card" data-go="ai" tabindex="0" role="button" aria-label="Open RIZORA AI"><img src="/assets/rizora-ai-coproducer-template.jpg" alt="RIZORA AI co-producer generating beats, lyrics and melodies" loading="lazy"><div class="rz-template-card-copy"><div class="rz-kicker">AI CO-PRODUCER</div><h4>Turn a thought into sound</h4><p>Ask for beats, lyrics, melodies, concepts or content direction.</p><span class="rz-template-cta">Open AI workspace <b aria-hidden="true">→</b></span></div></article>'+
-      '<article class="rz-template-card" data-go="ai" tabindex="0" role="button" aria-label="Open RIZORA AI tools"><img src="/assets/rizora-ai-template.jpg" alt="RIZORA AI visual system" loading="lazy"><div class="rz-template-card-copy"><div class="rz-kicker">RIZORA AI</div><h4>Direct the whole idea</h4><p>Use one calm workspace for creative direction, content and next steps.</p><span class="rz-template-cta">Ask RIZORA AI <b aria-hidden="true">→</b></span></div></article>'+
-      '<article class="rz-template-card" data-open-music="1" tabindex="0" role="button" aria-label="Open RIZORA Distribution"><img src="/assets/rizora-distribution-template.jpg" alt="RIZORA distribution dashboard with worldwide reach and analytics" loading="lazy"><div class="rz-template-card-copy"><div class="rz-kicker">DISTRIBUTION</div><h4>Release through RIZORA</h4><p>Prepare a release, choose platforms and keep the performance view close.</p><span class="rz-template-cta">Open release tools <b aria-hidden="true">→</b></span></div></article>'+
-      '<article class="rz-template-card" data-go="messages" tabindex="0" role="button" aria-label="Open creator chat"><img src="/assets/rizora-creator-hub-template.jpg" alt="RIZORA creator hub with profiles, collaborations and projects" loading="lazy"><div class="rz-template-card-copy"><div class="rz-kicker">CREATOR HUB</div><h4>Find your people</h4><p>Message collaborators, share projects and keep your creative circle moving.</p><span class="rz-template-cta">Open chat <b aria-hidden="true">→</b></span></div></article>'+
-      '<article class="rz-template-card" data-open-music="1" tabindex="0" role="button" aria-label="Open music tools"><img src="/assets/rizora-features-template.jpg" alt="RIZORA creator platform features including voice enhancement and AI mastering" loading="lazy"><div class="rz-template-card-copy"><div class="rz-kicker">CREATOR OS</div><h4>Polish the details</h4><p>Explore voice enhancement, pitch correction, AI mastering and the music library.</p><span class="rz-template-cta">Explore tools <b aria-hidden="true">→</b></span></div></article>'+
-      '<article class="rz-template-card" data-go="profile" tabindex="0" role="button" aria-label="Open creator profile"><img src="/assets/rizora-profile-mobile-template.jpg" alt="Mobile creator profile layout reference" loading="lazy"><div class="rz-template-card-copy"><div class="rz-kicker">PROFILE</div><h4>Show the work</h4><p>Keep your artist identity, releases and community presence ready for mobile.</p><span class="rz-template-cta">Open profile <b aria-hidden="true">→</b></span></div></article>'+
-      '<article class="rz-template-card" data-go="profile" tabindex="0" role="button" aria-label="Open public profile preview"><img src="/assets/rizora-tiktok-profile-template.png" alt="RIZORA public profile reference" loading="lazy"><div class="rz-template-card-copy"><div class="rz-kicker">PUBLIC PROFILE</div><h4>Share your presence</h4><p>Keep a clear public home for your music, links and creator identity.</p><span class="rz-template-cta">View profile <b aria-hidden="true">→</b></span></div></article>'+
+    '<section class="rz-studio-templates rz-core-launches" aria-labelledby="rzStudioTemplatesTitle"><div class="rz-studio-templates-head"><div><div class="rz-kicker">RIZORA CORE</div><h3 id="rzStudioTemplatesTitle">Make, think, connect</h3><p>Three focused spaces keep RIZORA fast on your phone and clear on desktop.</p></div><span class="rz-studio-template-note">Music · AI · Chat</span></div><div class="rz-template-grid rz-core-template-grid">'+
+      '<article class="rz-template-card" data-open-music="1" tabindex="0" role="button" aria-label="Open Music Studio"><div class="rz-core-template-icon">♫</div><div class="rz-template-card-copy"><div class="rz-kicker">MUSIC STUDIO</div><h4>Build the track</h4><p>Generate a beat sketch, shape the arrangement, enhance vocals, and save a release draft.</p><span class="rz-template-cta">Open Music Studio <b aria-hidden="true">→</b></span></div></article>'+
+      '<article class="rz-template-card" data-go="ai" tabindex="0" role="button" aria-label="Open RIZORA AI"><div class="rz-core-template-icon">✦</div><div class="rz-template-card-copy"><div class="rz-kicker">RIZORA AI</div><h4>Turn the idea into a plan</h4><p>Ask for hooks, lyrics direction, content ideas, or the next move for your release.</p><span class="rz-template-cta">Open RIZORA AI <b aria-hidden="true">→</b></span></div></article>'+
+      '<article class="rz-template-card" data-go="messages" tabindex="0" role="button" aria-label="Open creator chat"><div class="rz-core-template-icon">M</div><div class="rz-template-card-copy"><div class="rz-kicker">CREATOR CHAT</div><h4>Keep your people close</h4><p>Message collaborators and keep conversations around the work in one calm inbox.</p><span class="rz-template-cta">Open Chat <b aria-hidden="true">→</b></span></div></article>'+
     '</div></section>'+
     '<section class="rz-studio-idea"><div><div class="rz-kicker">YOUR IDEA, WITH RIZORA AI</div><h3>What are you trying to make?</h3><p>Share the rough version. RIZORA will help you find a clear next step.</p><label class="rz-studio-sr" for="rzStudioIdeaInput">Describe your idea</label><textarea id="rzStudioIdeaInput" class="rz-textarea" maxlength="1200" placeholder="A song, a video, a brand idea, a message you want to get right…"></textarea><div class="rz-studio-idea-actions"><select id="rzStudioIdeaType" class="rz-input" aria-label="Choose what RIZORA should help with"><option value="creative direction">Creative direction</option><option value="song concept and lyrics direction">Song concept</option><option value="short-form video script">Short video script</option><option value="social caption">Social caption</option><option value="creator growth plan">Growth plan</option></select><button id="rzStudioIdeaSubmit" class="rz-btn primary" type="button">Shape this idea</button></div><div id="rzStudioIdeaStatus" class="rz-mini" role="status" aria-live="polite"></div></div><div class="rz-studio-idea-result"><div class="rz-kicker">YOUR DRAFT</div><div id="rzStudioIdeaResult" class="rz-studio-result-empty">Your response will appear here. You can edit and make it your own.</div></div></section>'+
     '<section class="rz-studio-next"><div><div class="rz-kicker">KEEP MOVING</div><h3>Make it, share it, grow it.</h3><p>Publish your work, find your people, and keep track of your momentum.</p></div><div class="rz-studio-next-actions"><button class="rz-btn" data-go="flow">Create a post</button><button class="rz-btn" data-go="discover">Explore creators</button><button class="rz-btn" data-go="grow">Open Grow</button></div></section>'+

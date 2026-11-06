@@ -1,4 +1,4 @@
-﻿(function(){
+(function(){
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -271,21 +271,10 @@ function injectMobileMenu(){
   top.insertBefore(b,top.firstChild);
 }
 function injectSuite(){
- injectLogout();injectMobileMenu();
- if(!document.querySelector(".rz-sidebar"))return;
- if(!document.getElementById("rzSuiteTools")){
-   var aside=document.querySelector(".rz-sidebar");if(!aside)return;
-   var box=document.createElement("div");box.id="rzSuiteTools";box.className="rz-suite-tools";
-   box.innerHTML='<div class="rz-enterprise-heading">CREATOR SUITE</div><button class="rz-btn" id="rzSuiteOpen">Open full Creator Suite</button><button class="rz-btn" data-suite-go="premium">Premium</button><button class="rz-btn" data-suite-go="leaderboard">Leaderboard</button><button class="rz-btn" data-suite-go="referrals">Referrals</button>';
-   aside.appendChild(box);document.getElementById("rzSuiteOpen").onclick=suiteMenu;bindSuiteButtons(box);
- }
- var actions=document.querySelector(".rz-top-inner .rz-actions");
- if(actions&&!document.getElementById("rzSuiteTopButton")){
-   var b=document.createElement("button");b.id="rzSuiteTopButton";b.className="rz-btn";b.textContent="Suite";b.onclick=suiteMenu;actions.insertBefore(b,actions.firstChild);
- }
- if(!window.__rzSuitePromptListener){window.__rzSuitePromptListener=true;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.RIZORA_SUITE_PROMPT=e;});}
+  // RIZORA stays focused on Music, AI, Chat and Profile. Advanced tools are intentionally not injected into the primary shell.
+  injectLogout();
 }
-function boot(){injectSuite();var mo=new MutationObserver(function(){injectSuite();});mo.observe(document.body,{childList:true,subtree:true});}
+function boot(){injectSuite();}
 window.RIZORA_SUITE={install:install,open:suiteMenu};
 setTimeout(boot,90);
 })();

@@ -1,4 +1,4 @@
-﻿(function(){
+(function(){
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
 
@@ -53,68 +53,19 @@ async function mediaLibrary(){
   m.querySelector("#rzHubMediaRefresh").onclick=load;load();
 }
 function open(){
-  var body=
-    '<div class="rz-hub-section"><h3>Create</h3><div class="rz-hub-grid">'+
-      '<button class="rz-hub-card" data-hub-action="flow"><strong>Flow</strong><span>Publish posts, polls, collaborations and media.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="ai"><strong>RIZORA AI</strong><span>Ideas, strategy, hooks and creator intelligence.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="series"><strong>Series & Episodes</strong><span>Turn posts into connected episodic formats.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="events"><strong>Events & Live</strong><span>Schedule premieres, live sessions and community events.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="media"><strong>Media Library</strong><span>Manage uploaded images, video and audio assets.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="studio"><strong>Creator Studio</strong><span>Draft, schedule and build creator work.</span></button><button class="rz-hub-card" data-hub-action="music"><strong>Music Studio</strong><span>Create music, organize release drafts and manage your RIZORA catalog.</span></button>'+
-    '</div></div>'+
-    '<div class="rz-hub-section"><h3>Grow & Discover</h3><div class="rz-hub-grid">'+
-      '<button class="rz-hub-card" data-hub-action="global"><strong>Creator Desk</strong><span>Search Insights, Broadcast Channels, custom feeds and creator assistant.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="labs"><strong>Creator Lab</strong><span>Custom feeds, A/B experiments and collaboration Deal Room.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="boosts"><strong>Boost Network</strong><span>Funded discovery and creator growth campaigns.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="business"><strong>Earn & Memberships</strong><span>Tips, products, memberships and creator earnings.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="analytics"><strong>Analytics</strong><span>Audience, content and growth performance.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="opportunities"><strong>Opportunities</strong><span>Creator briefs, applications and collaboration opportunities.</span></button>'+
-    '</div></div>'+
-    '<div class="rz-hub-section"><h3>Creator Control</h3><div class="rz-hub-grid">'+
-      '<button class="rz-hub-card" data-hub-action="premium"><strong>Premium</strong><span>Premium entitlement, billing and advanced creator tools.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="comments"><strong>Comment Studio</strong><span>Moderate replies, filters and conversation controls.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="safety"><strong>Safety</strong><span>Verification, warnings, reports and account controls.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="portfolio"><strong>Portfolio + Planner</strong><span>Creator identity, portfolio and planning.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="settings"><strong>Settings & Security</strong><span>Notifications, feed preferences, password, two-factor and active sessions.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="suite"><strong>Full Creator Suite</strong><span>Open the complete RIZORA control surface.</span></button>'+
-    '</div></div>';
-  var m=modal("Everything in one place","RIZORA's major creator, growth, monetization and control systems.",body);
-  m.querySelectorAll("[data-hub-action]").forEach(function(b){
-    b.onclick=function(){
-      var a=b.getAttribute("data-hub-action");
-      if(a==="media")return mediaLibrary();
-      if(a==="music"&&window.RIZORA_MUSIC){window.RIZORA_MUSIC.open();return;}
-      close();
-      if(a==="global"&&window.RIZORA_GLOBAL){window.RIZORA_GLOBAL.assistant();return;}
-      if(a==="labs"&&window.RIZORA_LABS){window.RIZORA_LABS.deals();return;}
-      if(a==="business"&&window.RIZORA_BUSINESS){window.RIZORA_BUSINESS.earnings();return;}
-      if(a==="comments"&&window.RIZORA_COMMENTS){window.RIZORA_COMMENTS.open();return;}
-      if(a==="events"&&window.RIZORA_EVENTS){window.RIZORA_EVENTS.open();return;}
-      if(a==="series"&&window.RIZORA_SERIES){window.RIZORA_SERIES.open();return;}
-      if(a==="premium")return suiteGo("premium");
-      if(a==="portfolio")return suiteGo("portfolio");
-      if(a==="settings")return suiteGo("settings");
-      if(a==="analytics")return suiteGo("analytics");
-      var nav=document.querySelector('[data-nav="'+a+'"]');
-      if(nav){nav.click();return;}
-      if(a==="suite")return window.RIZORA_SUITE&&window.RIZORA_SUITE.open?window.RIZORA_SUITE.open():void 0;
-    };
-  });
+  var body='<div class="rz-hub-section"><h3>RIZORA CORE</h3><div class="rz-hub-grid">'+
+    '<button class="rz-hub-card" data-hub-action="music"><strong>Music Studio</strong><span>Generate, shape, preview and save your next release.</span></button>'+
+    '<button class="rz-hub-card" data-hub-action="ai"><strong>RIZORA AI</strong><span>Turn ideas into hooks, lyrics direction, content and plans.</span></button>'+
+    '<button class="rz-hub-card" data-hub-action="messages"><strong>Creator Chat</strong><span>Message collaborators and keep the work moving.</span></button>'+
+    '<button class="rz-hub-card" data-hub-action="profile"><strong>Profile</strong><span>Keep your artist identity and releases ready to share.</span></button>'+
+  '</div></div>';
+  var m=modal("RIZORA Core","Music, intelligence and people in one focused workspace.",body);
+  m.querySelectorAll("[data-hub-action]").forEach(function(b){b.onclick=function(){var a=b.getAttribute("data-hub-action");close();if(a==="music"&&window.RIZORA_MUSIC){window.RIZORA_MUSIC.open();return;}var nav=document.querySelector('[data-nav="'+a+'"]');if(nav)nav.click();};});
 }
 function inject(){
-  style();
-  var aside=document.querySelector(".rz-sidebar");
-  if(aside&&!document.getElementById("rzCreatorHubTool")){
-    var box=document.createElement("div");box.id="rzCreatorHubTool";box.className="rz-hub-tools";
-    box.innerHTML='<div class="rz-enterprise-heading">CREATOR HUB</div><button class="rz-btn" id="rzOpenCreatorHub">Open Creator Hub</button>';
-    aside.appendChild(box);box.querySelector("#rzOpenCreatorHub").onclick=open;
-  }
-  var actions=document.querySelector(".rz-top-inner .rz-actions");
-  if(actions&&!document.getElementById("rzCreatorHubTop")){
-    var b=document.createElement("button");b.id="rzCreatorHubTop";b.className="rz-btn";b.textContent="Hub";b.onclick=open;actions.insertBefore(b,actions.firstChild);
-  }
+  // The old Creator Hub tray is intentionally removed from the shell.
 }
-function boot(){setTimeout(inject,350);setInterval(inject,2000);}
+function boot(){}
 window.RIZORA_HUB={open:open,mediaLibrary:mediaLibrary};
 boot();
 })();
