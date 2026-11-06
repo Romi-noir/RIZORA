@@ -1,4 +1,4 @@
-﻿const { handleRizoraMedia } = require("./rizora-v2-media-backend");
+const { handleRizoraMedia } = require("./rizora-v2-media-backend");
 const { handleRizoraBusiness } = require("./rizora-v2-business");
 const { handleRizoraGrowth } = require("./rizora-v2-growth");
 const { handleRizoraPlatform } = require("./rizora-v2-platform");
@@ -130,6 +130,10 @@ async function handleRizoraV2(ctx){
     if(!mm.allowed){ctx.sendJSON(res,422,Object.assign({success:false,code:"CONTENT_POLICY_VIOLATION"},mm));return true;}
     var hs=tags(text),ms=mentions(text),post={id:ctx.uid("post_"),userId:user.id,text:text,mediaUrl:media,aiAssisted:pb.aiAssisted===true,hashtags:hs,mentions:ms,createdAt:new Date().toISOString()};
     db.rzV2.posts.push(post);hs.forEach(function(tag){db.rzV2.hashtags[tag]=Number(db.rzV2.hashtags[tag]||0)+1;});
+    // Keep followers informed when a creator publishes. Cap the fan-out so a
+    // large account cannot make a publish request slow or flood the database.
+    var followers=(db.rzV2.follows||[]).filter(function(f){return f.followingId===user.id&&f.followerId!==user.id;}).slice(-100);
+    followers.forEach(function(f){notify(db,f.followerId,"New post from @"+user.username,"@"+user.username+" just published on RIZORA.","publish");});
     ms.forEach(function(handle){var target=db.users.find(function(u){return String(u.username||"").toLowerCase()===handle||String(u.publicUsername||"").toLowerCase()===handle;});if(target&&target.id!==user.id)notify(db,target.id,"You were mentioned","@"+user.username+" mentioned you.","mention");});
     ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,post:decorate(db,post)});return true;
   }
@@ -185,6 +189,7 @@ async function handleRizoraV2(ctx){
     if(existing){collection.splice(collection.indexOf(existing),1);ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,active:false});return true;}
     collection.push({id:ctx.uid(action+"_"),userId:user.id,postId:postId,createdAt:new Date().toISOString()});
     if(action==="like"&&postTarget.userId!==user.id)notify(db,postTarget.userId,"New like","@"+user.username+" liked your post.","like");
+    if(action==="repost"&&postTarget.userId!==user.id)notify(db,postTarget.userId,"Your post was remixed","@"+user.username+" remixed your RIZORA post.","remix");
     ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,active:true});return true;
   }
 
@@ -263,4 +268,5 @@ async function handleRizoraV2(ctx){
   return false;
 }
 module.exports={handleRizoraV2};
+
 

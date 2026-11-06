@@ -1485,6 +1485,9 @@ if(
  );
 
  upsertDistributionCatalog(db,release);
+ db.notifications=db.notifications||[];
+ const followers=(db.rzV2&&db.rzV2.follows||[]).filter(function(f){return f.followingId===user.id&&f.followerId!==user.id;}).slice(-100);
+ followers.forEach(function(f){db.notifications.push({id:uid("notif"),userId:f.followerId,title:"New release from @"+(user.username||"creator"),message:(release.title||"A new release")+" is now in the RIZORA catalog.",type:"publish",read:false,createdAt:new Date().toISOString()});});
  saveDB(db);
 
 
@@ -1574,6 +1577,7 @@ return false;
 module.exports={
   handleRizoraMusic
 };
+
 
 
 

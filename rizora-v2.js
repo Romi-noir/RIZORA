@@ -24,7 +24,7 @@ function loadRizoraLivePresence(){
 }
 
 loadRizoraLivePresence();
-setInterval(loadRizoraLivePresence,15000);
+setInterval(loadRizoraLivePresence,30000);
 
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function avatar(u){
@@ -37,7 +37,7 @@ function avatar(u){
     ? "<img class=\"rz-avatar\" src=\""+esc(u.avatarUrl)+"\">"
     : "<div class=\"rz-avatar\">"+esc((u&&(u.displayName||u.username)||"R").slice(0,2).toUpperCase())+"</div>";
 
-  return "<span class=\"rz-avatar-wrap\">"+image+live+"</span>";
+  return "<span class=\"rz-avatar-wrap"+(live?" rz-avatar-live":"")+"\" data-rz-avatar-user=\""+esc(u&&u.id||"")+"\">"+image+live+"</span>";
 }
 function renderMedia(url){
   var raw=String(url||"").trim(); if(!raw)return "";
@@ -346,7 +346,7 @@ function view(){
 
   if(state.view==="discover")c.innerHTML=card("DISCOVER","<h2>Search</h2><div class='rz-actions'><input id='q' class='rz-input' value='"+esc(state.query)+"' placeholder='creator, post or #hashtag'><button id='doSearch' class='rz-btn primary'>Search</button></div>"+
     "<div class='rz-feed'>"+
-      (((state.search&&state.search.users)||[]).length?card("CREATORS",((state.search&&state.search.users)||[]).map(function(u){return '<div class="rz-card">'+avatar(u)+" <strong>"+esc(u.displayName)+"</strong> @"+esc(u.publicUsername||u.username)+" "+verified(u)+"</div>";}).join("")):"")+
+      (((state.search&&state.search.users)||[]).length?card("CREATORS",((state.search&&state.search.users)||[]).map(function(u){return '<button type="button" class="rz-card rz-discover-profile" data-profile-user="'+esc(u.username||u.publicUsername||"")+'">'+avatar(u)+" <strong>"+esc(u.displayName)+"</strong> @"+esc(u.publicUsername||u.username)+" "+verified(u)+"<span class='rz-mini'>View profile →</span></button>";}).join("")):"")+
       (((state.search&&state.search.hashtags)||[]).length?card("HASHTAGS",((state.search&&state.search.hashtags)||[]).map(function(h){return '<div class="rz-card"><strong>#'+esc(h.tag)+'</strong><div class="rz-mini">'+Number(h.count||0)+' post(s)</div></div>';}).join("")):"")+
       (((state.search&&state.search.posts)||[]).length?card("POSTS",((state.search&&state.search.posts)||[]).map(post).join("")):"")+
       (((state.search&&state.search.users)||[]).length||((state.search&&state.search.hashtags)||[]).length||((state.search&&state.search.posts)||[]).length?"":"<div class='rz-empty'>No results yet.</div>")+
