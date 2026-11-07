@@ -11834,6 +11834,11 @@ if (
         username:creator.username,
         publicUsername:creator.publicUsername,
         displayName:creator.displayName,
+        avatarUrl:creator.avatarUrl||profile.avatarUrl||"",
+        posts:Number(creator.posts||0),
+        followers:Number(creator.followers||0),
+        following:Number(creator.following||0),
+        likes:Number(creator.likes||0),
         verified:
           creator.verified === true ||
           creator.verificationStatus === "verified",
@@ -12697,6 +12702,7 @@ process.on(
     );
   }
 );
+
 
 
 

@@ -1,4 +1,4 @@
-﻿(function(){
+(function(){
 "use strict";
 
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
@@ -137,14 +137,16 @@ async function showCreatorLookup(){
   };
 }
 function renderProfile(d){
-  var p=d.creator||{};
+  var creator=d.creator||{},profile=creator.profile||{};
+  var p=Object.assign({},creator,profile);
   var result=document.getElementById("rzProfileResult");
   if(!result)return;
 
   result.innerHTML=
   '<section class="rz-card">'+
+  '<div class="rz-actions" style="justify-content:flex-start;margin-bottom:12px"><button class="rz-btn" id="rzProfileBack" type="button">← Back to search</button></div>'+
   '<div class="rz-profile">'+
-  '<img class="rz-avatar" src="'+esc(p.avatarUrl||"")+'">'+
+  (p.avatarUrl?'<img class="rz-avatar" src="'+esc(p.avatarUrl)+'" alt="">':'<div class="rz-avatar">'+esc((p.displayName||p.username||"R").slice(0,2).toUpperCase())+'</div>')+
   '<div>'+
   '<h2>'+esc(p.displayName||p.username||"Creator")+
   (p.verified?' <span class="rz-badge ok">✓ Verified</span>':"")+
@@ -176,6 +178,8 @@ function renderProfile(d){
       }
     };
   }
+  var back=document.getElementById("rzProfileBack");
+  if(back)back.onclick=function(){result.innerHTML="";var input=document.getElementById("rzProfileKey");if(input){input.focus();input.select();}};
 }function showReport(){
   renderInto(header("SAFETY","Report content or an account","Use reports for spam, impersonation, abuse or policy violations.")+
   '<section class="rz-card"><form id="rzReportForm"><div class="rz-enterprise-grid"><div class="rz-field"><label class="rz-label">Target type</label><select id="rzReportType" class="rz-input"><option value="post">Post</option><option value="user">User</option><option value="community">Community</option><option value="message">Message</option></select></div><div class="rz-field"><label class="rz-label">Target ID</label><input id="rzReportTarget" class="rz-input" required placeholder="Paste the content/user ID"></div></div><div class="rz-field"><label class="rz-label">Reason</label><select id="rzReportReason" class="rz-input"><option>spam</option><option>harassment</option><option>impersonation</option><option>adult_or_explicit</option><option>fraud</option><option>other</option></select></div><div class="rz-field"><label class="rz-label">Details</label><textarea id="rzReportDetails" class="rz-textarea" maxlength="1500"></textarea></div><button class="rz-btn primary">Submit report</button><div id="rzReportError" class="rz-error"></div></form></section>');
@@ -287,6 +291,7 @@ function boot(){
 }
 setTimeout(boot,60);
 })();
+
 
 
 
