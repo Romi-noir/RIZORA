@@ -7,6 +7,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { InferenceClient } = require("@huggingface/inference");
 require("dotenv").config();
 const { Pool } = require("pg");
 const { OAuth2Client } =
@@ -7326,6 +7327,78 @@ await rizoraGroqCompletion({
     }
   }
 
+  if (method === "POST" && (pathname === "/api/ai/image" || pathname === "/api/ai/video")) {
+    const user = getCurrentUser(db, req);
+    if (!user) return sendError(res, 401, "Authentication required.");
+    const kind = pathname.endsWith("/image") ? "image" : "video";
+    const token = String(process.env.RIZORA_HF_TOKEN || process.env.HF_TOKEN || "").trim();
+    if (!token) return sendError(res, 503, "RIZORA AI media needs RIZORA_HF_TOKEN configured on the server with Inference Providers enabled.");
+    const rateKey = user.id + ":media:" + kind;
+    if (!checkRateLimit(aiRateLimits, rateKey, 60 * 60 * 1000, kind === "image" ? 6 : 2)) return sendError(res, 429, "RIZORA AI media is at its hourly limit. Try again later.");
+    let body = {};
+    try { body = await readLargeJSONBody(req, 32 * 1024); } catch (error) { return sendError(res, 400, error.message); }
+    const prompt = String(body.prompt || "").trim().replace(/\s+/g, " ").slice(0, 1000);
+    if (prompt.length < 4) return sendError(res, 400, "Describe the image or video first.");
+    try {
+      const client = new InferenceClient(token);
+      let generated;
+      let contentType;
+      if (kind === "image") {
+        generated = await client.textToImage({provider:"fal-ai",model:String(process.env.RIZORA_IMAGE_MODEL || "black-forest-labs/FLUX.1-schnell").trim(),inputs:prompt,parameters:{num_inference_steps:4,width:1024,height:1024}}, {outputType:"blob"});
+        contentType = generated && generated.type && generated.type.startsWith("image/") ? generated.type : "image/png";
+      } else {
+        generated = await client.textToVideo({provider:"fal-ai",model:String(process.env.RIZORA_VIDEO_MODEL || "Wan-AI/Wan2.2-TI2V-5B").trim(),inputs:prompt,parameters:{num_frames:49,guidance_scale:4.5,num_inference_steps:20}});
+        contentType = generated && generated.type && generated.type.startsWith("video/") ? generated.type : "video/mp4";
+      }
+      if (!generated || typeof generated.arrayBuffer !== "function") return sendError(res, 502, "RIZORA AI received an unsupported media result.");
+      const output = Buffer.from(await generated.arrayBuffer());
+      const maxBytes = kind === "image" ? 16 * 1024 * 1024 : 80 * 1024 * 1024;
+      if (!output.length || output.length > maxBytes) return sendError(res, 413, "The generated media exceeded RIZORA's file limit.");
+      setRizoraCorsHeaders(req, res);
+      res.writeHead(200, {"Content-Type":contentType,"Content-Length":output.length,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});
+      return res.end(output);
+    } catch (error) {
+      console.error("RIZORA AI MEDIA GENERATION ERROR", {kind:kind,status:error && error.status || 0});
+      const statusCode = error && error.status === 429 ? 429 : error && (error.status === 401 || error.status === 403) ? 503 : 502;
+      return sendError(res, statusCode, statusCode === 429 ? "The AI media provider is busy. Try again shortly." : statusCode === 503 ? "The server's AI media provider key was rejected or lacks provider access." : "RIZORA AI could not generate that media. Try another prompt shortly.");
+    }
+  }
+
+  if (method === "POST" && pathname === "/api/ai/enhance") {
+    const user = getCurrentUser(db, req);
+    if (!user) return sendError(res, 401, "Authentication required.");
+    const rateKey = user.id + ":voice-isolation";
+    if (!checkRateLimit(aiRateLimits, rateKey, 60 * 60 * 1000, 4)) return sendError(res, 429, "AI voice isolation is at its hourly limit. Try again later.");
+    const apiKey = String(process.env.ELEVENLABS_API_KEY || "").trim();
+    if (!apiKey) return sendError(res, 503, "AI voice isolation is not configured on the server yet.");
+    let body = {};
+    try { body = await readLargeJSONBody(req, 9 * 1024 * 1024); } catch (error) { return sendError(res, 400, error.message); }
+    const dataUrl = String(body.audio || "").trim();
+    const match = dataUrl.match(/^data:([^;,]+)(?:;[^,]*)?;base64,([A-Za-z0-9+/=\s]+)$/i);
+    if (!match) return sendError(res, 400, "Choose a valid voice recording first.");
+    const mimeType = String(match[1] || body.mimeType || "audio/webm").toLowerCase().split(";")[0];
+    const allowedAudio = new Set(["audio/webm","audio/ogg","audio/wav","audio/mp4","audio/mpeg"]);
+    if (!allowedAudio.has(mimeType)) return sendError(res, 415, "This voice recording format is not supported.");
+    const input = Buffer.from(match[2].replace(/\s+/g, ""), "base64");
+    if (!input.length) return sendError(res, 400, "The voice recording is empty.");
+    if (input.length > 6 * 1024 * 1024) return sendError(res, 413, "Keep the voice take below 6 MB for AI isolation.");
+    try {
+      const form = new FormData();
+      const ext = mimeType === "audio/webm" ? "webm" : mimeType === "audio/ogg" ? "ogg" : mimeType === "audio/mp4" ? "m4a" : mimeType === "audio/mpeg" ? "mp3" : "wav";
+      form.append("audio", new Blob([input], {type:mimeType}), "rizora-vocal." + ext);
+      const result = await fetch("https://api.elevenlabs.io/v1/audio-isolation", {method:"POST",headers:{"xi-api-key":apiKey},body:form,signal:AbortSignal.timeout(120000)});
+      if (!result.ok) return sendError(res, result.status === 429 ? 429 : result.status === 422 ? 422 : 502, result.status === 429 ? "The audio isolation service is busy. Try again shortly." : result.status === 422 ? "This recording could not be isolated. Try a clearer vocal take." : "AI voice isolation could not process this recording.");
+      const output = Buffer.from(await result.arrayBuffer());
+      if (!output.length || output.length > 20 * 1024 * 1024) return sendError(res, 502, "AI voice isolation returned an invalid audio file.");
+      setRizoraCorsHeaders(req, res);
+      res.writeHead(200, {"Content-Type":String(result.headers.get("content-type") || "audio/mpeg").split(";")[0],"Content-Length":output.length,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});
+      return res.end(output);
+    } catch (error) {
+      console.error("RIZORA AI VOICE ISOLATION ERROR", {status:error && error.status || 0});
+      return sendError(res, 502, "RIZORA AI could not reach voice isolation.");
+    }
+  }
+
   if (method === "POST" && pathname === "/api/ai/transcribe") {
     const user = getCurrentUser(db, req);
     if (!user) return sendError(res, 401, "Authentication required.");
@@ -7335,7 +7408,7 @@ await rizoraGroqCompletion({
     try { body = await readLargeJSONBody(req, 8 * 1024 * 1024); } catch (error) { return sendError(res, 400, error.message); }
     const dataUrl = String(body.audio || "").trim();
     const mimeType = String(body.mimeType || "audio/webm").toLowerCase().split(";")[0];
-    const match = dataUrl.match(/^data:([^;,]+)?;base64,([A-Za-z0-9+/=\s]+)$/);
+    const match = dataUrl.match(/^data:([^;,]+)(?:;[^,]*)?;base64,([A-Za-z0-9+/=\s]+)$/i);
     if (!match) return sendError(res, 400, "Voice recording data is invalid.");
     const buffer = Buffer.from(match[2].replace(/\s+/g, ""), "base64");
     if (!buffer.length) return sendError(res, 400, "Voice recording is empty.");
@@ -7378,6 +7451,9 @@ await rizoraGroqCompletion({
               process.env.GROQ_API_KEY || ""
             ).trim()
           ),
+        imageConfigured:Boolean(String(process.env.RIZORA_HF_TOKEN||process.env.HF_TOKEN||"").trim()),
+        videoConfigured:Boolean(String(process.env.RIZORA_HF_TOKEN||process.env.HF_TOKEN||"").trim()),
+        voiceIsolationConfigured:Boolean(String(process.env.ELEVENLABS_API_KEY||"").trim()),
         model:
           String(
             process.env.GROQ_MODEL ||

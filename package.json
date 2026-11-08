@@ -9,6 +9,7 @@
     "build": "node -e \"console.log('RIZORA static frontend: no compilation step required')\""
   },
   "dependencies": {
+    "@huggingface/inference": "4.13.32",
     "dotenv": "^16.6.1",
     "google-auth-library": "^11.1.0",
     "pg": "8.23.0"

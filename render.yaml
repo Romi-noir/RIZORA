@@ -27,3 +27,7 @@ services:
           property: connectionString
       - key: RIZORA_MEDIA_ROOT
         value: /var/data/rizora
+      - key: RIZORA_HF_TOKEN
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false

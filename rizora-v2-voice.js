@@ -64,6 +64,7 @@
 
   async function start(form,button,kind){
     if(active){stopActive();return;}
+    if(!window.isSecureContext){setState(form,"Microphone access requires opening RIZORA in its secure website tab.",true);return;}
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
       setState(form,"Microphone recording is not supported in this browser.",true);
       return;
@@ -84,7 +85,8 @@
         audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
       });
     }catch(e){
-      setState(form,"Microphone permission is required for voice notes.",true);
+      var reason=e&&e.name==="NotAllowedError"?"Allow microphone access for RIZORA in your browser settings, then try again.":e&&e.name==="NotFoundError"?"No microphone was found. Connect one or choose an audio file.":e&&e.name==="NotReadableError"?"Your microphone is busy in another app. Close that app and try again.":"RIZORA could not open the microphone. Check browser permission and try again.";
+      setState(form,reason,true);
       return;
     }
 
@@ -118,7 +120,7 @@
       button.disabled=true;
       button.setAttribute("aria-pressed","false");
       var blob=new Blob(chunks,{type:chosen});
-      if(!blob.size){setState(form,"No audio was captured.",true);return;}
+      if(!blob.size){setState(form,"No audio was captured. Check your microphone and try again.",true);resetButton(button,kind);return;}
 
       try{
         setState(form,"Processing voice...",false);

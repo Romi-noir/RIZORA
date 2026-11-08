@@ -77,10 +77,19 @@ function tags(text) {
   return Object.keys(found).slice(0, 20);
 }
 
+function mediaRecordForUrl(db,value,ownerId){
+  var raw=String(value||""),id="";
+  try{var parsed=new URL(raw,"https://rizora.local"),match=parsed.pathname.match(/^\/api\/v2\/media\/([^/.]+)(?:\.[a-z0-9]+)?$/i);if(match)id=decodeURIComponent(match[1]);}catch(_){}
+  return ((db.rzV2&&db.rzV2.media)||[]).find(function(item){return (id?item.id===id:item.url===raw)&&(!ownerId||item.ownerId===ownerId);})||null;
+}
+function mediaMessageType(media){var mime=String(media&&media.mimeType||"").toLowerCase();return mime.indexOf("image/")===0?"image":mime.indexOf("video/")===0?"video":mime.indexOf("audio/")===0?"audio":media?"file":"text";}
+
 function makePost(db, ctx, user, data) {
   var text = clean(ctx, data.text || data.caption, 4000);
   var mediaUrl = clean(ctx, data.mediaUrl, 1200);
+  var attachedMedia=mediaRecordForUrl(db,mediaUrl,user.id);
   if (!text && !mediaUrl && !data.poll) throw new Error("Add text or media before publishing.");
+  if (/\/api\/v2\/media\//i.test(mediaUrl) && !attachedMedia) throw new Error("This uploaded media does not belong to your account. Upload it again before publishing.");
   if (blocked([text, mediaUrl])) throw new Error("Adult or sexually explicit content is not allowed on RIZORA.");
   var hashtags = tags(text);
   var post = {
@@ -88,6 +97,9 @@ function makePost(db, ctx, user, data) {
     userId: user.id,
     text: text,
     mediaUrl: mediaUrl,
+    mediaId: attachedMedia && attachedMedia.id || "",
+    mimeType: attachedMedia && attachedMedia.mimeType || "",
+    messageType: mediaMessageType(attachedMedia),
     aiAssisted: data.aiAssisted === true,
     hashtags: hashtags,
     mentions: [],
@@ -113,6 +125,7 @@ function postMetrics(db, post) {
 function decoratePost(db, post) {
   var author = (db.users || []).find(function(x) { return x.id === post.userId; });
   if (!author) return null;
+  var attached=mediaRecordForUrl(db,post.mediaUrl,post.userId);
   var collaborators = (post.collaboratorIds || []).map(function(id) {
     return (db.users || []).find(function(x) { return x.id === id; });
   }).filter(Boolean).map(function(user) { return publicUser(db, user); });
@@ -125,7 +138,7 @@ function decoratePost(db, post) {
     })
   } : null;
   return {
-    id:post.id,userId:post.userId,text:post.text,mediaUrl:post.mediaUrl,aiAssisted:post.aiAssisted===true,
+    id:post.id,userId:post.userId,text:post.text,mediaUrl:post.mediaUrl,mediaId:post.mediaId||attached&&attached.id||"",mimeType:post.mimeType||attached&&attached.mimeType||"",messageType:post.messageType||mediaMessageType(attached),aiAssisted:post.aiAssisted===true,
     hashtags:post.hashtags||[],mentions:post.mentions||[],createdAt:post.createdAt,
     author:publicUser(db,author),collaborators:collaborators,poll:poll,metrics:postMetrics(db,post)
   };

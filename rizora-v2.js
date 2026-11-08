@@ -1,8 +1,10 @@
 (function(){
 "use strict";
 var API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
+function normalizeMediaUrl(value){var raw=String(value||"").trim();try{var parsed=new URL(raw,API);if(parsed.hostname==="rizora-guse.onrender.com"&&!/^(localhost|127\.0\.0\.1)$/i.test(location.hostname)&&/^\/api\/v2\/media\//i.test(parsed.pathname))return location.origin+parsed.pathname+parsed.search;}catch(_){}return raw;}
 window.RIZORA_CURRENT_USER=null;
-var state={user:null,profile:null,view:(location.pathname==="/studio"||location.pathname==="/studio/")?"studio":"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[],aiBusy:false,aiRequestId:0,stories:[],communities:[],conversations:[],opportunities:[],analytics:null,boosts:[],official:[],admin:null,adminVerification:[],onboarding:[],live:[],liveError:""};
+var state={user:null,profile:null,view:(/^\/studio(?:\/|$)/.test(location.pathname))?"studio":"home",authMode:"login",feedTab:"for-you",feed:[],tasks:[],socialTasks:[],notifications:[],verification:null,safety:null,points:0,query:"",search:null,aiMessages:[],aiBusy:false,aiRequestId:0,stories:[],communities:[],conversations:[],opportunities:[],analytics:null,boosts:[],official:[],admin:null,adminVerification:[],onboarding:[],live:[],liveError:""};
+window.state=state;
 
 function $(id){return document.getElementById(id);}
 
@@ -33,14 +35,12 @@ function avatar(u){
     live="<span class=\"rz-live-badge\">LIVE</span>";
   }
 
-  var image=u&&u.avatarUrl
-    ? "<img class=\"rz-avatar\" src=\""+esc(u.avatarUrl)+"\">"
-    : "<div class=\"rz-avatar\">"+esc((u&&(u.displayName||u.username)||"R").slice(0,2).toUpperCase())+"</div>";
+  var image="<img class=\"rz-avatar\" src=\""+esc(normalizeMediaUrl(u&&u.avatarUrl||"/assets/rizora-default-avatar.jpg"))+"\" alt=\""+esc((u&&(u.displayName||u.username)||"Creator")+" profile")+"\" loading=\"lazy\">";
 
   return "<span class=\"rz-avatar-wrap"+(live?" rz-avatar-live":"")+"\" data-rz-avatar-user=\""+esc(u&&u.id||"")+"\">"+image+live+"</span>";
 }
 function renderMedia(url){
-  var raw=String(url||"").trim(); if(!raw)return "";
+  var raw=normalizeMediaUrl(url); if(!raw)return "";
   var safe=esc(raw), clean=raw.split("?")[0].toLowerCase();
   if(/\.(jpg|jpeg|png|webp|gif)$/.test(clean)) return '<div class="rz-post-media"><img src="'+safe+'" alt="Creator media" loading="lazy"></div>';
   if(/\.(mp4|webm)$/.test(clean)) return '<div class="rz-post-media"><video controls preload="metadata" src="'+safe+'"></video></div>';
@@ -307,8 +307,18 @@ function creatorCommandCenter(){
     '<section class="rz-command-grid">'+
       '<article class="rz-command-card"><div class="rz-command-icon">↗</div><div class="rz-kicker">GROW</div><h3>Build momentum</h3><p>'+Number(state.tasks.length||0)+' growth tasks are ready. Track progress and find your next move in one place.</p><div class="rz-command-actions"><button class="rz-btn" data-go="grow">Open Grow</button></div></article>'+
       '<article class="rz-command-card"><div class="rz-command-icon">◎</div><div class="rz-kicker">COMMUNITY</div><h3>Stay close to your people</h3><p>'+feedCount+' posts in your feed, with messages and live rooms close by.</p><div class="rz-command-actions"><button class="rz-btn" data-go="flow">Open Flow</button><button class="rz-btn" data-go="messages">Inbox</button><button class="rz-btn" data-go="live">Live</button></div></article>'+
-      '<article class="rz-command-card wide"><div class="rz-kicker">START HERE</div><h3>'+(next?esc(next.title):'Your Creator OS is ready')+'</h3><p>'+(next?esc(next.description||'Complete this step to build your RIZORA foundation.'): 'Publish something, shape your profile, or open Music Studio when you are ready.')+'</p><div class="rz-command-actions">'+(next?'<button class="rz-btn primary" data-onboarding-follow="'+esc(next.username)+'">Follow + earn</button>':'<button class="rz-btn primary" data-go="profile">Open profile</button>')+'<button class="rz-btn" data-go="discover">Explore RIZORA</button></div></article>'+ownerCard+
-    '</section></div>';
+       '<article class="rz-command-card wide"><div class="rz-kicker">START HERE</div><h3>'+(next?esc(next.title):'Your Creator OS is ready')+'</h3><p>'+(next?esc(next.description||'Complete this step to build your RIZORA foundation.'): 'Publish something, shape your profile, or open Music Studio when you are ready.')+'</p><div class="rz-command-actions">'+(next?'<button class="rz-btn primary" data-onboarding-follow="'+esc(next.username)+'">Follow + earn</button>':'<button class="rz-btn primary" data-go="profile">Open profile</button>')+'<button class="rz-btn" data-go="discover">Explore RIZORA</button></div></article>'+ownerCard+
+     '</section>'+featureShowcase()+'</div>';
+}
+function featureShowcase(){
+  var items=[
+    ["✦","RIZORA AI","Your creative co-pilot","Turn a prompt or voice note into ideas, visuals and video drafts.","ai","Open AI"],
+    ["♫","MUSIC STUDIO","Make the sound yours","Create beats, record vocals, shape a mix and prepare a release.","beats","Open Studio","studio"],
+    ["◎","CREATOR SOCIAL","Find your people","Post, follow, message and build a public creator profile.","discover","Explore creators"],
+    ["↗","GROW","Move your work forward","See growth tools, analytics and opportunities in one workspace.","grow","Open Grow"],
+    ["▣","MESSAGES","Stay in the conversation","Share media and keep creator collaborations moving.","messages","Open messages"]
+  ];
+  return '<section class="rz-feature-showcase" aria-labelledby="rzFeatureShowcaseTitle"><div class="rz-feature-showcase-head"><div><div class="rz-kicker">RIZORA IN ONE PLACE</div><h3 id="rzFeatureShowcaseTitle">Explore what you can make here.</h3><p>Swipe sideways through the rooms, then scroll down the page for your next move.</p></div><div class="rz-feature-showcase-controls"><button type="button" data-feature-slide="previous" aria-label="Previous feature">←</button><button type="button" data-feature-slide="next" aria-label="Next feature">→</button></div></div><div class="rz-feature-showcase-rail" tabindex="0" aria-label="RIZORA feature slides">'+items.map(function(item){var open=item[6]?'<button type="button" class="rz-btn primary" data-open-music="1" data-studio-feature="'+item[6]+'">'+item[5]+' →</button>':'<button type="button" class="rz-btn primary" data-go="'+item[4]+'">'+item[5]+' →</button>';return '<article class="rz-feature-showcase-slide"><span class="rz-feature-showcase-icon" aria-hidden="true">'+item[0]+'</span><div class="rz-kicker">'+item[1]+'</div><h4>'+item[2]+'</h4><p>'+item[3]+'</p><div>'+open+'</div></article>';}).join('')+'</div></section>';
 }
 function creatorStudioView(){
   if(window.RIZORA_STUDIO_PAGE&&typeof window.RIZORA_STUDIO_PAGE.html==="function")return window.RIZORA_STUDIO_PAGE.html();
@@ -376,7 +386,7 @@ function view(){
 
   if(state.view==="discover")c.innerHTML=card("DISCOVER","<h2>Search</h2><div class='rz-actions'><input id='q' class='rz-input' value='"+esc(state.query)+"' placeholder='creator, post or #hashtag'><button id='doSearch' class='rz-btn primary'>Search</button></div>"+
     "<div class='rz-feed'>"+
-      (((state.search&&state.search.users)||[]).length?card("CREATORS",((state.search&&state.search.users)||[]).map(function(u){return '<button type="button" class="rz-card rz-discover-profile" data-profile-user="'+esc(u.username||u.publicUsername||"")+'">'+avatar(u)+'<span class="rz-discover-identity"><strong>'+esc(u.displayName||u.username||"Creator")+'</strong><small>@'+esc(u.publicUsername||u.username||"")+'</small></span>'+verified(u)+'<span class="rz-discover-stats"><span>'+Number(u.posts||0)+' posts</span><span>'+Number(u.followers||0)+' followers</span><span>'+Number(u.following||0)+' following</span><span>'+Number(u.likes||0)+' likes</span></span><span class="rz-mini">View profile →</span></button>';}).join("")):"")+
+      (((state.search&&state.search.users)||[]).length?card("CREATORS",((state.search&&state.search.users)||[]).map(function(u){var handle=u.username||u.publicUsername||"",own=state.user&&state.user.id===u.id;return '<article class="rz-card rz-discover-profile">'+avatar(u)+'<button type="button" class="rz-discover-profile-open" data-profile-user="'+esc(handle)+'"><span class="rz-discover-identity"><strong>'+esc(u.displayName||u.username||"Creator")+'</strong><small>@'+esc(u.publicUsername||u.username||"")+'</small></span>'+verified(u)+'<span class="rz-discover-stats"><span>'+Number(u.posts||0)+' posts</span><span>'+Number(u.followers||0)+' followers</span><span>'+Number(u.following||0)+' following</span><span>'+Number(u.likes||0)+' likes</span></span><span class="rz-mini">View profile →</span></button>'+(own?'':'<button type="button" class="rz-btn '+(u.viewerFollowing?'':'primary')+' rz-discover-follow" data-profile-follow="'+esc(handle)+'" aria-pressed="'+(u.viewerFollowing?'true':'false')+'">'+(u.viewerFollowing?'Following':'Follow')+'</button>')+'</article>';}).join("")):"")+
       (((state.search&&state.search.hashtags)||[]).length?card("HASHTAGS",((state.search&&state.search.hashtags)||[]).map(function(h){return '<div class="rz-card"><strong>#'+esc(h.tag)+'</strong><div class="rz-mini">'+Number(h.count||0)+' post(s)</div></div>';}).join("")):"")+
       (((state.search&&state.search.posts)||[]).length?card("POSTS",((state.search&&state.search.posts)||[]).map(post).join("")):"")+
       (((state.search&&state.search.users)||[]).length||((state.search&&state.search.hashtags)||[]).length||((state.search&&state.search.posts)||[]).length?"":"<div class='rz-empty'>No results yet.</div>")+
@@ -607,7 +617,8 @@ function socialTask(t){
 function wire(){
   document.querySelectorAll("[data-onboarding-follow]").forEach(function(b){b.onclick=function(){var username=b.getAttribute("data-onboarding-follow");api("/api/v2/onboarding/follow",{method:"POST",body:JSON.stringify({username:username})}).then(function(d){toast("Followed @"+d.username+" · +"+d.awarded+" pts");load();}).catch(function(e){toast(e.message);});};});
   document.querySelectorAll("[data-go]").forEach(function(b){b.onclick=function(){state.view=b.getAttribute("data-go");shell();load();};});
-  document.querySelectorAll("[data-open-music]").forEach(function(b){b.onclick=function(){if(window.RIZORA_STUDIO_PAGE&&window.RIZORA_STUDIO_PAGE.open){window.RIZORA_STUDIO_PAGE.open();return;}if(window.RIZORA_MUSIC&&window.RIZORA_MUSIC.open){window.RIZORA_MUSIC.open();}else{toast("Music Studio is loading.");}};});
+  document.querySelectorAll("[data-open-music]").forEach(function(b){b.onclick=function(){if(window.RIZORA_STUDIO_PAGE&&window.RIZORA_STUDIO_PAGE.open){window.RIZORA_STUDIO_PAGE.open(b.getAttribute("data-studio-feature")||"beats");return;}if(window.RIZORA_MUSIC&&window.RIZORA_MUSIC.open){window.RIZORA_MUSIC.open();}else{toast("Music Studio is loading.");}};});
+  document.querySelectorAll("[data-feature-slide]").forEach(function(button){button.onclick=function(){var rail=document.querySelector(".rz-feature-showcase-rail");if(!rail)return;var direction=button.getAttribute("data-feature-slide")==="next"?1:-1;rail.scrollBy({left:direction*Math.max(rail.clientWidth*.82,260),behavior:"smooth"});};});
   document.querySelectorAll(".rz-template-card").forEach(function(card){card.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();card.click();}});});
   if(state.view==="studio"&&window.RIZORA_STUDIO_PAGE&&typeof window.RIZORA_STUDIO_PAGE.wire==="function")window.RIZORA_STUDIO_PAGE.wire($("content"));
   if(state.view==="flow"){

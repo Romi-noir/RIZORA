@@ -42,7 +42,12 @@ function publicProfile(db,user){
   var isVerified=user.verified===true||user.verificationStatus==="verified";
   return Object.assign({id:user.id,username:user.username,publicUsername:user.publicUsername||user.username,displayName:user.displayName||user.username,bio:p.bio||"",avatarUrl:p.avatarUrl||user.avatarUrl||"",category:p.category||"",location:p.location||"",links:p.links||[],verified:isVerified,verifiedBadgeUrl:isVerified?"/assets/rizora_verified_badge.png":"",verificationStatus:user.verificationStatus||"not_submitted",official:user.official===true,points:Number(user.points||0)},profileStats(db,user.id));
 }
-var EXPLICIT=[/\bporn(?:ography)?\b/i,/\bxxx\b/i,/\bnudes?\b/i,/\bsex\s*tape\b/i,/\bsex(?:ual)?\s*(?:work|service|services)\b/i,/\berotic\b/i,/\bnsfw\b/i,/\bonlyfans\b/i,/\bpornhub\b/i,/\bxvideos?\b/i,/\bxnxx\b/i,/\bescort\b/i];
+function mediaRecordForUrl(db,value,ownerId){
+  var raw=String(value||""),id="";
+  try{var parsed=new URL(raw,"https://rizora.local"),match=parsed.pathname.match(/^\/api\/v2\/media\/([^/.]+)(?:\.[a-z0-9]+)?$/i);if(match)id=decodeURIComponent(match[1]);}catch(_){}
+  return (db.rzV2.media||[]).find(function(item){return (id?item.id===id:item.url===raw)&&(!ownerId||item.ownerId===ownerId);})||null;
+}
+function mediaMessageType(media){var mime=String(media&&media.mimeType||"").toLowerCase();return mime.indexOf("image/")===0?"image":mime.indexOf("video/")===0?"video":mime.indexOf("audio/")===0?"audio":media?"file":"text";}var EXPLICIT=[/\bporn(?:ography)?\b/i,/\bxxx\b/i,/\bnudes?\b/i,/\bsex\s*tape\b/i,/\bsex(?:ual)?\s*(?:work|service|services)\b/i,/\berotic\b/i,/\bnsfw\b/i,/\bonlyfans\b/i,/\bpornhub\b/i,/\bxvideos?\b/i,/\bxnxx\b/i,/\bescort\b/i];
 function warningState(db,id){db.rzV2.policy.warnings[id]=db.rzV2.policy.warnings[id]||{count:0,history:[]};return db.rzV2.policy.warnings[id];}
 function isExempt(db,id){return !!db.rzV2.policy.exemptions[id];}
 function notify(db,id,title,message,type){db.notifications.push({id:"n_"+Date.now().toString(36),userId:id,title:title,message:message,type:type||"social",read:false,createdAt:new Date().toISOString()});}
@@ -65,6 +70,7 @@ function mentions(text){var out={};String(text||"").split(/\s+/).forEach(functio
 function decorate(db,post){
   var author=db.users.find(function(u){return u.id===post.userId;});
   if(!author)return null;
+  var attached=mediaRecordForUrl(db,post.mediaUrl,post.userId);
   var collaborators=(post.collaboratorIds||[]).map(function(id){
     return db.users.find(function(u){return u.id===id;});
   }).filter(Boolean).map(function(u){return publicProfile(db,u);});
@@ -81,6 +87,9 @@ function decorate(db,post){
     userId:post.userId,
     text:post.text,
     mediaUrl:post.mediaUrl,
+    mediaId:post.mediaId||attached&&attached.id||"",
+    mimeType:post.mimeType||attached&&attached.mimeType||"",
+    messageType:post.messageType||mediaMessageType(attached),
     aiAssisted:post.aiAssisted===true,
     hashtags:post.hashtags||[],
     mentions:post.mentions||[],
@@ -137,7 +146,9 @@ async function handleRizoraV2(ctx){
     if(!text&&!media){ctx.sendError(res,400,"Add text or media before publishing.");return true;}
     var mm=moderate(db,user,ctx,[text,media],null);
     if(!mm.allowed){ctx.sendJSON(res,422,Object.assign({success:false,code:"CONTENT_POLICY_VIOLATION"},mm));return true;}
-    var hs=tags(text),ms=mentions(text),post={id:ctx.uid("post_"),userId:user.id,text:text,mediaUrl:media,aiAssisted:pb.aiAssisted===true,hashtags:hs,mentions:ms,createdAt:new Date().toISOString()};
+    var attachedMedia=mediaRecordForUrl(db,media,user.id),internalMedia=/\/api\/v2\/media\//i.test(media);
+    if(internalMedia&&!attachedMedia){ctx.sendError(res,403,"This uploaded media does not belong to your account. Upload it again before publishing.");return true;}
+    var hs=tags(text),ms=mentions(text),post={id:ctx.uid("post_"),userId:user.id,text:text,mediaUrl:media,mediaId:attachedMedia&&attachedMedia.id||"",mimeType:attachedMedia&&attachedMedia.mimeType||"",messageType:mediaMessageType(attachedMedia),aiAssisted:pb.aiAssisted===true,hashtags:hs,mentions:ms,createdAt:new Date().toISOString()};
     db.rzV2.posts.push(post);hs.forEach(function(tag){db.rzV2.hashtags[tag]=Number(db.rzV2.hashtags[tag]||0)+1;});
     // Keep followers informed when a creator publishes. Cap the fan-out so a
     // large account cannot make a publish request slow or flood the database.
@@ -231,7 +242,7 @@ async function handleRizoraV2(ctx){
       return String(u.username||"").toLowerCase().includes(q)||
         String(u.publicUsername||"").toLowerCase().includes(q)||
         String(u.displayName||"").toLowerCase().includes(q);
-    }).slice(0,20).map(function(u){return publicProfile(db,u);});
+    }).slice(0,20).map(function(u){var profile=publicProfile(db,u);profile.viewerFollowing=!!(user&&db.rzV2.follows.some(function(row){return row.followerId===user.id&&row.followingId===u.id;}));return profile;});
     var found=db.rzV2.posts.filter(function(p){return String(p.text||"").toLowerCase().includes(q)||(p.hashtags||[]).some(function(t){return t.includes(q);});}).slice(-30).reverse().map(function(p){return decorate(db,p);}).filter(Boolean);
     var hashtags=Object.entries(db.rzV2.hashtags).filter(function(x){return x[0].includes(q);}).slice(0,20).map(function(x){return {tag:x[0],count:x[1]};});
     ctx.sendJSON(res,200,{success:true,users:users,posts:found,hashtags:hashtags});return true;

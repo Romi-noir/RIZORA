@@ -94,40 +94,70 @@ function mediaIsAccessible(db, user, record){
   if(!user||!record)return false;
   if(record.ownerId===user.id)return true;
   const url=String(record.url||"");
+  const mediaKey=function(value){
+    try{
+      const parsed=new URL(String(value||""),"https://rizora.local");
+      const match=parsed.pathname.match(/^\/api\/v2\/media\/([^/.]+)(?:\.[a-z0-9]+)?$/i);
+      return match?decodeURIComponent(match[1]):"";
+    }catch(_){return "";}
+  };
+  const sameMedia=function(value){return String(value||"")===url||mediaKey(value)===record.id;};
   const users=db.users||[];
   const activeUserId=function(id){const u=users.find(function(x){return x.id===id;});return !!u&&u.status==="active";};
   const messages=db.rzV2.messages||[];
-  if(messages.some(function(m){return m.mediaUrl===url&&(m.fromUserId===user.id||m.toUserId===user.id);}))return true;
+  if(messages.some(function(m){return sameMedia(m.mediaUrl)&&(m.fromUserId===user.id||m.toUserId===user.id);}))return true;
   const posts=db.rzV2.posts||[];
-  if(posts.some(function(p){return p.mediaUrl===url&&activeUserId(p.userId);}))return true;
+  if(posts.some(function(p){return sameMedia(p.mediaUrl)&&p.userId===record.ownerId&&p.deleted!==true&&(p.userId===user.id||p.visibility!=="private"&&activeUserId(p.userId));}))return true;
   const stories=db.rzV2.stories||[];
-  if(stories.some(function(s){return s.mediaUrl===url&&activeUserId(s.userId)&&(!s.expiresAt||new Date(s.expiresAt).getTime()>Date.now());}))return true;
+  if(stories.some(function(s){return sameMedia(s.mediaUrl)&&s.userId===record.ownerId&&activeUserId(s.userId)&&(!s.expiresAt||new Date(s.expiresAt).getTime()>Date.now());}))return true;
   const comments=db.rzV2.comments||[];
   if(comments.some(function(comment){
-    if(comment.mediaUrl!==url||comment.hidden===true)return false;
+    if(!sameMedia(comment.mediaUrl)||comment.hidden===true)return false;
     const post=posts.find(function(p){return p.id===comment.postId;});
-    return !!post&&activeUserId(post.userId);
+    return !!post&&comment.userId===record.ownerId&&post.deleted!==true&&(post.userId===user.id||post.visibility!=="private"&&activeUserId(post.userId));
   }))return true;
   if(users.some(function(target){
     const profile=(db.creatorProfiles&&db.creatorProfiles[target.id])||{};
-    return activeUserId(target.id)&&(profile.avatarUrl===url||target.avatarUrl===url);
+    return target.id===record.ownerId&&activeUserId(target.id)&&(sameMedia(profile.avatarUrl)||sameMedia(target.avatarUrl));
   }))return true;
   const musicCatalog=db.musicCatalog||[];
   if(musicCatalog.some(function(item){
     if(item.visibility==="private")return false;
-    return [item.artwork,item.audioUrl,item.videoUrl,item.visualUrl].filter(Boolean).includes(url);
+    return [item.artwork,item.audioUrl,item.videoUrl,item.visualUrl].filter(Boolean).some(sameMedia);
   }))return true;
   const series=(db.rzV2&&db.rzV2.series)||[];
-  if(series.some(function(item){return item.coverUrl===url&&activeUserId(item.creatorId);}))return true;
+  if(series.some(function(item){return sameMedia(item.coverUrl)&&activeUserId(item.creatorId);}))return true;
   return false;
 }
 
 function mediaIsPublic(db, record){
   if(!record)return false;
   const url=String(record.url||"");
+  const mediaKey=function(value){
+    try{
+      const parsed=new URL(String(value||""),"https://rizora.local");
+      const match=parsed.pathname.match(/^\/api\/v2\/media\/([^/.]+)(?:\.[a-z0-9]+)?$/i);
+      return match?decodeURIComponent(match[1]):"";
+    }catch(_){return "";}
+  };
+  const sameMedia=function(value){return String(value||"")===url||mediaKey(value)===record.id;};
   return (db.musicCatalog||[]).some(function(item){
     if(item.visibility === "private")return false;
-    return [item.artwork,item.audioUrl,item.videoUrl,item.visualUrl].filter(Boolean).includes(url);
+    return [item.artwork,item.audioUrl,item.videoUrl,item.visualUrl].filter(Boolean).some(sameMedia);
+  }) || (db.rzV2.posts||[]).some(function(post){
+    const author=(db.users||[]).find(function(u){return u.id===post.userId;});
+    return sameMedia(post.mediaUrl)&&post.userId===record.ownerId&&post.visibility!=="private"&&post.deleted!==true&&author&&author.status==="active";
+  }) || (db.users||[]).some(function(user){
+    const profile=(db.creatorProfiles&&db.creatorProfiles[user.id])||{};
+    return user.id===record.ownerId&&user.status==="active"&&(sameMedia(profile.avatarUrl)||sameMedia(user.avatarUrl));
+  }) || (db.rzV2.stories||[]).some(function(story){
+    const author=(db.users||[]).find(function(u){return u.id===story.userId;});
+    return sameMedia(story.mediaUrl)&&story.userId===record.ownerId&&author&&author.status==="active"&&(!story.expiresAt||new Date(story.expiresAt).getTime()>Date.now());
+  }) || (db.rzV2.comments||[]).some(function(comment){
+    if(!sameMedia(comment.mediaUrl)||comment.hidden===true)return false;
+    const post=(db.rzV2.posts||[]).find(function(item){return item.id===comment.postId;});
+    const author=post&&(db.users||[]).find(function(u){return u.id===post.userId;});
+    return !!post&&comment.userId===record.ownerId&&post.visibility!=="private"&&post.deleted!==true&&author&&author.status==="active";
   });
 }
 
@@ -423,7 +453,8 @@ async function handleRizoraMedia(ctx){
     if(!mediaIsAccessible(db,user,record)){ sendError(res,403,"You do not have access to this media."); return true; }
 
     const origin=String(req.headers.origin||"");
-    const allowedOrigin=origin==="https://rizora.com.ng"||origin==="https://www.rizora.com.ng"||origin==="http://localhost:3000"||origin==="http://127.0.0.1:3000";
+    const allowedOrigins=new Set(["https://rizora.com.ng","https://www.rizora.com.ng","https://rizora.vercel.app","https://rizora-frontend-clean-drhvxsswx-royal-saents.vercel.app","http://localhost:3000","http://127.0.0.1:3000",...String(process.env.RIZORA_CORS_ORIGINS||"").split(",").map(function(value){return value.trim();}).filter(Boolean)]);
+    const allowedOrigin=allowedOrigins.has(origin);
     const headers={
       "Content-Type":record.mimeType,
       "Content-Length":String(record.bytes),

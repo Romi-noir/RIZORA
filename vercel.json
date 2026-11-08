@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://rizora-guse.onrender.com/api/:path*"
+    },
+    {
       "source": "/join",
       "destination": "/"
     },
@@ -26,6 +30,10 @@
     },
     {
       "source": "/studio/",
+      "destination": "/"
+    },
+    {
+      "source": "/studio/:feature",
       "destination": "/"
     }
   ],
