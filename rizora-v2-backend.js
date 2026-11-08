@@ -28,10 +28,19 @@ function profileFor(db,user){
   db.creatorProfiles[user.id]=db.creatorProfiles[user.id]||{userId:user.id,bio:"",avatarUrl:"",category:"",location:"",links:[]};
   return db.creatorProfiles[user.id];
 }
+function profileStats(db,userId){
+  var rz=db.rzV2||{},posts=(rz.posts||[]).filter(function(post){return post.userId===userId&&post.visibility!=="private"&&post.deleted!==true;}),postIds=new Set(posts.map(function(post){return post.id;})),follows=rz.follows||[];
+  return {
+    posts:posts.length,
+    followers:follows.filter(function(row){return row.followingId===userId;}).length,
+    following:follows.filter(function(row){return row.followerId===userId;}).length,
+    likes:(rz.likes||[]).filter(function(row){return postIds.has(row.postId);}).length
+  };
+}
 function publicProfile(db,user){
   var p=profileFor(db,user);
   var isVerified=user.verified===true||user.verificationStatus==="verified";
-   return {id:user.id,username:user.username,publicUsername:user.publicUsername||user.username,displayName:user.displayName||user.username,bio:p.bio||"",avatarUrl:p.avatarUrl||user.avatarUrl||"",category:p.category||"",location:p.location||"",links:p.links||[],verified:isVerified,verifiedBadgeUrl:isVerified?"/assets/rizora_verified_badge.png":"",verificationStatus:user.verificationStatus||"not_submitted",official:user.official===true,points:Number(user.points||0)};
+  return Object.assign({id:user.id,username:user.username,publicUsername:user.publicUsername||user.username,displayName:user.displayName||user.username,bio:p.bio||"",avatarUrl:p.avatarUrl||user.avatarUrl||"",category:p.category||"",location:p.location||"",links:p.links||[],verified:isVerified,verifiedBadgeUrl:isVerified?"/assets/rizora_verified_badge.png":"",verificationStatus:user.verificationStatus||"not_submitted",official:user.official===true,points:Number(user.points||0)},profileStats(db,user.id));
 }
 var EXPLICIT=[/\bporn(?:ography)?\b/i,/\bxxx\b/i,/\bnudes?\b/i,/\bsex\s*tape\b/i,/\bsex(?:ual)?\s*(?:work|service|services)\b/i,/\berotic\b/i,/\bnsfw\b/i,/\bonlyfans\b/i,/\bpornhub\b/i,/\bxvideos?\b/i,/\bxnxx\b/i,/\bescort\b/i];
 function warningState(db,id){db.rzV2.policy.warnings[id]=db.rzV2.policy.warnings[id]||{count:0,history:[]};return db.rzV2.policy.warnings[id];}
@@ -202,6 +211,17 @@ async function handleRizoraV2(ctx){
     var ef=db.rzV2.follows.find(function(x){return x.followerId===user.id&&x.followingId===target.id;});
     if(ef){db.rzV2.follows.splice(db.rzV2.follows.indexOf(ef),1);ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,following:false});return true;}
     db.rzV2.follows.push({id:ctx.uid("follow_"),followerId:user.id,followingId:target.id,createdAt:new Date().toISOString()});notify(db,target.id,"New follower","@"+user.username+" followed you.","follow");ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,following:true});return true;
+  }
+
+  var publicProfileRoute=path.match(/^\/api\/v2\/profiles\/([^/]+)$/);
+  if(method==="GET"&&publicProfileRoute){
+    var handle=decodeURIComponent(publicProfileRoute[1]).replace(/^@/,"").toLowerCase();
+    var target=db.users.find(function(candidate){return String(candidate.username||"").toLowerCase()===handle||String(candidate.publicUsername||"").toLowerCase()===handle;});
+    if(!target){ctx.sendError(res,404,"Creator not found.");return true;}
+    var profile=publicProfile(db,target),posts=db.rzV2.posts.filter(function(post){return post.userId===target.id&&post.visibility!=="private"&&post.deleted!==true;}).slice().sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt);}).slice(0,60).map(function(post){return decorate(db,post);}).filter(Boolean);
+    var releases=(db.musicCatalog||[]).filter(function(item){return item.userId===target.id&&item.visibility!=="private";}).slice().sort(function(a,b){return new Date(b.updatedAt||b.createdAt)-new Date(a.updatedAt||a.createdAt);}).slice(0,40).map(function(item){return {id:item.id,title:item.title||"Untitled release",artist:item.artist||profile.displayName,artwork:item.artwork||"",audioUrl:item.audioUrl||"",videoUrl:item.videoUrl||item.visualUrl||"",genre:item.genre||"",mood:item.mood||"",status:item.status||"RIZORA catalog",createdAt:item.createdAt||item.updatedAt||""};});
+    var viewerFollowing=!!(user&&db.rzV2.follows.some(function(row){return row.followerId===user.id&&row.followingId===target.id;}));
+    ctx.sendJSON(res,200,{success:true,profile:profile,posts:posts,releases:releases,viewerFollowing:viewerFollowing});return true;
   }
 
   if(method==="GET"&&path==="/api/v2/search"){

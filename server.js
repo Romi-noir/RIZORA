@@ -35,6 +35,34 @@ const NODE_ENV =
 
 const IS_PRODUCTION = NODE_ENV === "production";
 
+const RIZORA_CORS_ORIGINS = new Set([
+  "https://rizora.com.ng",
+  "https://www.rizora.com.ng",
+  "https://rizora.vercel.app",
+  "https://rizora-frontend-clean-drhvxsswx-royal-saents.vercel.app",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  ...String(process.env.RIZORA_CORS_ORIGINS || "")
+    .split(",")
+    .map(origin => origin.trim())
+    .filter(Boolean)
+]);
+
+function setRizoraCorsHeaders(req, res) {
+  const origin = String(req.headers.origin || "");
+  if (origin && RIZORA_CORS_ORIGINS.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-CSRF-Token");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.setHeader("Vary", "Origin");
+}
+
 
 const PAYSTACK_SECRET_KEY =
   String(process.env.PAYSTACK_SECRET_KEY || "").trim();
@@ -558,6 +586,7 @@ function json(res, statusCode, data, extraHeaders = {}) {
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-CSRF-Token",
     "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Credentials": "true",
+    "Vary": "Origin",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "geolocation=(), camera=(), microphone=(self)",
@@ -3358,23 +3387,8 @@ async function handleRequest(
   // ----------------------------------------------------------
 
   if (method === "OPTIONS") {
-    res.writeHead(
-      204,
-      {
-        "Access-Control-Allow-Origin":
-          "https://rizora.com.ng",
-
-        "Access-Control-Allow-Headers":
-          "Content-Type, Authorization, X-CSRF-Token",
-
-                "Access-Control-Allow-Credentials":
-          "true",
-
-"Access-Control-Allow-Methods":
-          "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-      }
-    );
-
+    setRizoraCorsHeaders(req, res);
+    res.statusCode = 204;
     res.end();
     return;
   }
@@ -7157,6 +7171,8 @@ if (
       "Only give a multi-step plan when the user clearly asks for a plan, and tailor every step to the user's request and available RIZORA context. " +
       "Never invent RIZORA programs, creator spotlights, campaigns, events, metrics, followers, outcomes, dates, features, opportunities, or platform actions. " +
       "Never claim that you posted, scheduled, submitted, followed, contacted, verified, distributed, or changed anything unless the current request includes a confirmed RIZORA action result. " +
+      "A text chat response does not create an image, audio track, cover file, video, or release. Never say that a visual or music file was generated, saved, or placed in Studio unless a tool or API result confirms that exact file action. Clearly distinguish creative direction or a written prompt from an actual generated media file. " +
+      "When asked to make cover art or a visualizer, explain which RIZORA tool can do it and describe its real capabilities accurately; do not promise photorealistic image generation from the local visualizer tool. " +
       "Do not use generic motivational endings such as 'Good luck', 'You are already verified', or 'clean slate' unless that fact is present in the supplied account context. " +
       "Do not pad the answer with advice the user did not ask for. If relevant data is missing, say so plainly. " +
       "Treat these as real RIZORA surfaces when they fit the request: Creator OS and Command Center, Flow, Explore, Live, Messages, Grow, RIZORA AI, Music Studio and Music AI, Creator Hub, Profile, Analytics, Boosts, Opportunities, Communities, Stories and Creator Suite. " +
@@ -11876,48 +11892,7 @@ async function requestHandler(
   // RIZORA CORS COMPATIBILITY
   // ============================================================
 
-  const RIZORA_ALLOWED_ORIGINS = new Set([
-    "https://rizora.com.ng",
-    "https://www.rizora.com.ng",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5500",
-    "http://127.0.0.1:5500"
-  ]);
-
-  const rizoraOrigin = req.headers.origin;
-
-  if (
-    rizoraOrigin &&
-    RIZORA_ALLOWED_ORIGINS.has(rizoraOrigin)
-  ) {
-    res.setHeader(
-      "Access-Control-Allow-Origin",
-      rizoraOrigin
-    );
-
-    res.setHeader(
-      "Access-Control-Allow-Credentials",
-      "true"
-    );
-  }
-
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-CSRF-Token"
-  );
-
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-  );
-
-  res.setHeader(
-    "Vary",
-    "Origin"
-  );
+  setRizoraCorsHeaders(req, res);
 
   if (req.method === "OPTIONS") {
     res.statusCode = 204;
