@@ -174,6 +174,9 @@
     if(root.querySelectorAll)root.querySelectorAll(selector).forEach(enhanceUploadField);
   }
 
+  async function audioToWav(blob){if(!blob||!/^audio\//i.test(blob.type||""))throw new Error("Choose an audio recording first.");if(/^audio\/(x-)?wav$/i.test(blob.type))return blob;var AudioContextClass=window.AudioContext||window.webkitAudioContext;if(!AudioContextClass)throw new Error("This browser cannot convert audio to WAV.");var context=new AudioContextClass();try{var decoded=await context.decodeAudioData(await blob.arrayBuffer());if(decoded.duration>600)throw new Error("Voice WAV files must be 10 minutes or shorter.");var rate=16000,frames=Math.max(1,Math.ceil(decoded.duration*rate)),channels=[];for(var c=0;c<decoded.numberOfChannels;c++)channels.push(decoded.getChannelData(c));var buffer=new ArrayBuffer(44+frames*2),view=new DataView(buffer);function write(offset,value){for(var i=0;i<value.length;i++)view.setUint8(offset+i,value.charCodeAt(i));}write(0,"RIFF");view.setUint32(4,36+frames*2,true);write(8,"WAVE");write(12,"fmt ");view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,rate,true);view.setUint32(28,rate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);write(36,"data");view.setUint32(40,frames*2,true);var samples=new Int16Array(buffer,44,frames);for(var n=0;n<frames;n++){var pos=n*decoded.sampleRate/rate,left=Math.floor(pos),mix=0;for(var ch=0;ch<channels.length;ch++){var data=channels[ch],a=data[left]||0,b=data[Math.min(left+1,data.length-1)]||0;mix+=(a+(b-a)*(pos-left))/channels.length;}var sample=Math.max(-1,Math.min(1,mix));samples[n]=sample<0?sample*32768:sample*32767;}return new Blob([buffer],{type:"audio/wav"});}finally{if(context.close)context.close().catch(function(){});}}
+
+  window.RIZORA_AUDIO_TO_WAV=audioToWav;
   window.RIZORA_MEDIA_OBJECT_URL=objectUrl;
   window.RIZORA_MEDIA_BIND_PLAYBACK=bindPlayback;
   bindPlayback(document);

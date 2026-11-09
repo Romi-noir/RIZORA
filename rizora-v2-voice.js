@@ -140,8 +140,9 @@
         }
 
         if(!window.RIZORA_UPLOAD_FILE)throw new Error("Voice media uploader is still loading. Try again.");
-        var ext=chosen.indexOf("ogg")>=0?"ogg":chosen.indexOf("mp4")>=0?"m4a":"webm";
-        var file=new File([blob],"rizora-voice-"+Date.now()+"."+ext,{type:chosen.split(";")[0]});
+        if(!window.RIZORA_AUDIO_TO_WAV)throw new Error("WAV converter is still loading. Try again.");
+        var wav=await window.RIZORA_AUDIO_TO_WAV(blob);
+        var file=new File([wav],"rizora-voice-"+Date.now()+".wav",{type:"audio/wav"});
         var media=await window.RIZORA_UPLOAD_FILE(file,null);
         if(!media||!media.id)throw new Error("Voice upload did not return a media ID.");
 
