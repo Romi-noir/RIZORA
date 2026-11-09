@@ -19,6 +19,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: GROQ_API_KEY
+        sync: false
       - key: RIZORA_PUBLIC_URL
         value: https://rizora.com.ng
       - key: DATABASE_URL
