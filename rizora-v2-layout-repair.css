@@ -70,4 +70,78 @@ body:has(.rz-auth){height:100dvh;min-height:0;overflow:hidden}
   .rz-field{margin:9px 0}
   .rz-divider{margin:12px 0}
 }
-
+/* Phone home: compact hero, swipeable work cards, and a stable header. */
+@media(max-width:900px){
+  .rz-command-center{gap:14px;padding-bottom:4px}
+  .rz-command-hero{display:grid;grid-template-columns:minmax(0,1fr) 82px;align-items:center;gap:10px;padding:16px;border-radius:20px}
+  .rz-command-hero>div:first-child{min-width:0}
+  .rz-command-hero .rz-kicker{font-size:9px;letter-spacing:.13em;line-height:1.4}
+  .rz-command-hero h2{margin:6px 0;font-size:clamp(21px,6vw,28px);line-height:1.05;letter-spacing:-.045em}
+  .rz-command-hero p{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin:0;color:#bbb3c7;font-size:11px;line-height:1.45}
+  .rz-command-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}
+  .rz-command-hero .rz-command-actions [data-go="flow"]{display:none}
+  .rz-command-hero .rz-command-actions .rz-btn{display:flex;min-width:0;min-height:39px;align-items:center;justify-content:center;padding:8px 7px;font-size:10px;line-height:1.15;white-space:normal;text-align:center}
+  .rz-command-score{display:grid;grid-template-columns:1fr;align-content:center;justify-items:start;gap:1px;width:82px;min-width:0;margin:0;padding:10px;border-radius:15px}
+  .rz-command-score b{grid-row:auto;font-size:24px;line-height:1.05}
+  .rz-command-score span{font-size:9px;line-height:1.2}
+  .rz-command-progress{grid-column:auto;width:100%;height:4px;margin-top:7px}
+  .rz-command-grid{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:1px 2px 8px;scroll-snap-type:x mandatory;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .rz-command-grid::-webkit-scrollbar,.rz-feature-showcase-rail::-webkit-scrollbar{display:none}
+  .rz-command-card,.rz-command-card.wide{display:flex;flex:0 0 min(82vw,318px);flex-direction:column;grid-column:auto;min-height:190px;padding:15px;border-radius:18px;scroll-snap-align:start}
+  .rz-command-card h3{margin:7px 0 5px;font-size:16px;line-height:1.2}
+  .rz-command-card p{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;margin:0 0 5px;font-size:11px;line-height:1.45}
+  .rz-command-card .rz-command-icon{width:34px!important;height:34px!important;border-radius:11px!important;font-size:14px}
+  .rz-command-card .rz-command-actions{display:flex;gap:6px;margin-top:auto;padding-top:9px}
+  .rz-command-card .rz-command-actions .rz-btn{flex:1 1 auto;min-height:36px;padding:7px 9px;font-size:10px}
+  .rz-feature-showcase{margin-top:0;padding:15px;border-radius:19px}
+  .rz-feature-showcase-head{align-items:center;gap:8px;margin-bottom:10px}
+  .rz-feature-showcase-head .rz-kicker{font-size:9px}
+  .rz-feature-showcase-head h3{margin:4px 0 0;font-size:18px;line-height:1.16;letter-spacing:-.035em}
+  .rz-feature-showcase-head p{display:none}
+  .rz-feature-showcase-controls{flex:none}
+  .rz-feature-showcase-controls button{width:33px;height:33px;font-size:16px}
+  .rz-feature-showcase-rail{gap:9px;padding:1px 1px 8px;scrollbar-width:none}
+  .rz-feature-showcase-slide{flex-basis:min(76vw,286px);min-height:182px;gap:7px;padding:14px;border-radius:17px}
+  .rz-feature-showcase-icon{width:34px;height:34px;border-radius:11px;font-size:18px}
+  .rz-feature-showcase-slide .rz-kicker{font-size:9px}
+  .rz-feature-showcase-slide h4{font-size:17px;line-height:1.15}
+  .rz-feature-showcase-slide p{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:11px;line-height:1.4}
+  .rz-feature-showcase-slide .rz-btn{min-height:35px;padding:7px 11px;font-size:10px}
+  .rz-mobile-nav{gap:3px}
+  .rz-mobile-nav button{flex:1 1 56px;min-width:56px;max-width:82px;min-height:50px;padding:5px 3px}
+  .rz-mobile-nav button small{font-size:9px;line-height:1.1;white-space:normal;text-align:center}
+}
+@media(max-width:640px){
+  :root{--rz-app-top:98px}
+  .rz-top-inner{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;min-height:0;padding:7px 10px 8px}
+  .rz-top-search,.rz-top-inner>.rz-top-search{grid-column:1/-1;grid-row:2;width:100%;margin:0}
+  .rz-top-search .rz-input,.rz-top-search .rz-btn{height:38px;min-height:38px}
+  .rz-social-main{height:calc(100dvh - var(--rz-app-top));padding-top:7px}
+  .rz-content,.rz-social-content{padding-top:8px}
+  .rz-command-center{gap:12px}
+  .rz-command-hero{grid-template-columns:minmax(0,1fr) 74px;gap:7px;padding:14px}
+  .rz-command-score{width:74px;padding:8px}
+  .rz-command-card,.rz-command-card.wide{flex-basis:min(82vw,296px);min-height:178px}
+  .rz-feature-showcase{padding:13px}
+  .rz-feature-showcase-slide{flex-basis:min(78vw,270px);min-height:174px}
+}
+@media(max-width:900px) and (orientation:landscape) and (max-height:600px){
+  :root{--rz-app-top:52px}
+  .rz-top-inner{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:1fr;min-height:52px;padding:3px 10px}
+  .rz-top-search,.rz-top-inner>.rz-top-search{display:none!important}
+  .rz-social-main{height:calc(100dvh - 52px);padding-top:4px}
+  .rz-command-center{grid-template-columns:minmax(0,1fr);gap:8px}
+  .rz-command-hero{grid-template-columns:minmax(0,1fr) 78px;padding:11px 14px}
+  .rz-command-hero h2{font-size:22px}
+  .rz-command-hero p{-webkit-line-clamp:1}
+  .rz-command-hero .rz-command-actions{display:flex;margin-top:7px}
+  .rz-command-hero .rz-command-actions .rz-btn{min-height:33px}
+  .rz-command-grid{gap:8px;padding-bottom:5px}
+  .rz-command-card,.rz-command-card.wide{flex-basis:240px;min-height:145px;padding:12px}
+  .rz-feature-showcase{padding:11px}
+  .rz-feature-showcase-head{margin-bottom:6px}
+  .rz-feature-showcase-head h3{font-size:16px}
+  .rz-feature-showcase-slide{flex-basis:220px;min-height:145px;padding:11px}
+  .rz-mobile-nav{left:7px;right:auto;top:59px;bottom:7px;width:66px;max-width:66px;flex:0 0 auto;flex-direction:column;overflow-y:auto;overflow-x:hidden}
+  .rz-mobile-nav button{flex:0 0 auto;width:54px;min-width:54px;max-width:54px;min-height:49px}
+}
