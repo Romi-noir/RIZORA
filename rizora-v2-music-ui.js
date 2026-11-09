@@ -89,7 +89,7 @@
       var durationMs=Number(studio.querySelector('#rzMusicAudioLength').value),format=root.querySelector('#rzMusicAiFormat'),genre=root.querySelector('#rzMusicAiGenre'),mood=root.querySelector('#rzMusicAiMood');
       releaseLocalBeatSketch();localAudioUrl='';button.disabled=true;button.textContent='Generating…';message.textContent='Composing your original audio. This can take a little while.';player.innerHTML='';
       try{
-        var result=await api('/api/music/generate-audio',{method:'POST',body:JSON.stringify({prompt:prompt,genre:genre?genre.value:'Afrobeats',mood:mood?mood.value:'Modern',format:format?format.value:'Full track',durationMs:durationMs,forceInstrumental:studio.querySelector('#rzMusicAudioInstrumental').checked})});
+        var result=await api('/api/music/generate-audio',{method:'POST',timeoutMs:119000,body:JSON.stringify({prompt:prompt,genre:genre?genre.value:'Afrobeats',mood:mood?mood.value:'Modern',format:format?format.value:'Full track',durationMs:durationMs,forceInstrumental:studio.querySelector('#rzMusicAudioInstrumental').checked})});
         var media=result.media||{},url=API+(media.url||'');
         if(!media.url)throw new Error('The generated audio was not saved. Try again.');
         var audioField=root.querySelector('#rzMusicAudioUrl'),audioStatus=root.querySelector('#rzMusicAudioStatus'),audioPreview=root.querySelector('#rzMusicAudioPreview');
@@ -124,7 +124,7 @@
       if(!select.value){message.textContent='Choose an available voice first.';return;}
       button.disabled=true;button.textContent='Creating…';message.textContent='Creating and saving your voiceover…';output.innerHTML='';
       try{
-        var result=await api('/api/music/generate-voice',{method:'POST',body:JSON.stringify({text:text,voiceId:select.value})}),media=result.media||{};
+        var result=await api('/api/music/generate-voice',{method:'POST',timeoutMs:100000,body:JSON.stringify({text:text,voiceId:select.value})}),media=result.media||{};
         if(!media.url)throw new Error('The voiceover was created but could not be saved.');
         var url=API+media.url;
         output.innerHTML='<audio controls preload="metadata" src="'+esc(url)+'"></audio><div class="rz-voiceover-actions"><a class="rz-btn rz-music-download" href="'+esc(url)+'" download="rizora-voiceover.mp3">Download voiceover</a><button type="button" class="rz-btn" id="rzVoiceoverAttach">Use in release draft</button></div>';
