@@ -41,14 +41,15 @@
     library:[['STUDIO LIBRARY','Keep your saved work together.','Return to local drafts, saved beats and studio material from one room.'],['PICK UP WHERE YOU LEFT OFF','Your ideas stay close.','Browse your saved Studio work and continue shaping a track.'],['A HOME FOR YOUR DRAFTS','Make space for work in progress.','Keep the pieces you create in Music Studio easy to find.']]
   };
   var promoTimer=null,promoFeature='',promoIndex=0;
+  function setPromoText(promo,selector,value){var node=promo.querySelector(selector);if(node&&node.textContent!==value)node.textContent=value;}
   function paintFeaturePromo(root,id){
     var promo=root&&root.querySelector?root.querySelector('#rzsFeaturePromo'):null;if(!promo)return;
     var slides=promoCopy[id]||promoCopy.player,slide=slides[promoIndex%slides.length],feature=features.find(function(item){return item[0]===id;});
-    promo.querySelector('[data-rzs-promo-icon]').textContent=feature?feature[2]:'♫';
-    promo.querySelector('[data-rzs-promo-kicker]').textContent=slide[0];
-    promo.querySelector('[data-rzs-promo-title]').textContent=slide[1];
-    promo.querySelector('[data-rzs-promo-copy]').textContent=slide[2];
-    promo.querySelector('[data-rzs-promo-count]').textContent=(promoIndex+1)+' / '+slides.length;
+    setPromoText(promo,'[data-rzs-promo-icon]',feature?feature[2]:'♫');
+    setPromoText(promo,'[data-rzs-promo-kicker]',slide[0]);
+    setPromoText(promo,'[data-rzs-promo-title]',slide[1]);
+    setPromoText(promo,'[data-rzs-promo-copy]',slide[2]);
+    setPromoText(promo,'[data-rzs-promo-count]',(promoIndex+1)+' / '+slides.length);
     promo.querySelectorAll('[data-rzs-promo-dot]').forEach(function(dot,index){dot.classList.toggle('active',index===promoIndex);dot.setAttribute('aria-current',index===promoIndex?'true':'false');});
   }
   function setFeaturePromo(root,id){
@@ -92,7 +93,7 @@
     var deck=pageRoot.querySelector('.rzs-reference-deck');if(deck&&showcase&&deck.parentNode!==showcase)showcase.appendChild(deck);
     var toolbox=pageRoot.querySelector('#rzsToolbox');if(toolbox){var statusNode=toolbox.querySelector('#rzsToolStatus');if(statusNode&&voice)voice.insertBefore(statusNode,voice.firstChild);[['#rzsCapture',voice],['#rzsProcess',voice],['#rzsStems',voice],['#rzsMerge',voice],['#rzsLibrary',library],['#rzsPublish',publish]].forEach(function(entry){var node=toolbox.querySelector(entry[0]);if(node&&entry[1]&&node.parentNode!==entry[1])entry[1].appendChild(node);});var strip=toolbox.querySelector('.rzs-mobile-tool-strip'),bottom=toolbox.querySelector('.rzs-mobile-bottom');if(strip)strip.remove();if(bottom)bottom.remove();toolbox.remove();}
     [[voice,'#rzs-feature-empty-voice'],[library,'#rzs-feature-empty-library'],[publish,'#rzs-feature-empty-publish']].forEach(function(entry){if(entry[0]){var placeholder=entry[0].querySelector('.rzs-feature-empty');if(placeholder)placeholder.remove();}});
-    var active=pageRoot.querySelector('[data-rzs-feature].active');showFeature(pageRoot,routeFeature()||active&&active.getAttribute('data-rzs-feature')||'beats');
+    var active=pageRoot.querySelector('[data-rzs-feature].active');showFeature(pageRoot,routeFeature()||active&&active.getAttribute('data-rzs-feature')||'player');
   }
   function wireStudioFeatures(root){var pageRoot=root&&root.querySelector?root.querySelector('.rzs-page'):null;if(!pageRoot)return;organizeFeaturePages(root);if(window.RIZORA_PLAYER&&window.RIZORA_PLAYER.wire)window.RIZORA_PLAYER.wire(root);if(!pageRoot.__rzStudioFeaturesWired){pageRoot.__rzStudioFeaturesWired=true;pageRoot.addEventListener('click',function(event){var promoStep=event.target.closest('[data-rzs-promo-step]');if(promoStep){stepFeaturePromo(root,Number(promoStep.getAttribute('data-rzs-promo-step'))||1);return;}var promoDot=event.target.closest('[data-rzs-promo-dot]');if(promoDot){var activePromo=pageRoot.querySelector('[data-rzs-feature].active'),promoId=activePromo&&activePromo.getAttribute('data-rzs-feature');if(promoId){promoFeature=promoId;promoIndex=Number(promoDot.getAttribute('data-rzs-promo-dot'))||0;paintFeaturePromo(pageRoot,promoId);}return;}var tab=event.target.closest('[data-rzs-feature]');if(tab){var feature=tab.getAttribute('data-rzs-feature'),next=feature==='player'?'/studio':'/studio/'+feature;if(location.pathname!==next)history.pushState({rizoraStudio:true,feature:feature},'',next);showFeature(root,feature);return;}if(event.target.closest('[data-rzs-open-releases]')||event.target.closest('[data-rzs-open-music-catalog]')){if(window.RIZORA_MUSIC&&window.RIZORA_MUSIC.open)window.RIZORA_MUSIC.open();else status(pageRoot,'Music catalog is loading.','error');return;}if(event.target.closest('[data-rzs-open-deals]')){if(window.RIZORA_LABS&&window.RIZORA_LABS.deals)window.RIZORA_LABS.deals();else status(pageRoot,'Deal Room is loading.','error');return;}if(event.target.closest('[data-rzs-open-hub]')){if(window.RIZORA_HUB&&window.RIZORA_HUB.open)window.RIZORA_HUB.open();else status(pageRoot,'Creator Hub is loading.','error');}});}
     if(!window.__rzStudioRouteListener){window.__rzStudioRouteListener=true;window.addEventListener('popstate',function(){if(/^\/studio(?:\/|$)/.test(location.pathname)){if(window.state&&window.state.view!=='studio'&&window.RIZORA_GOTO)window.RIZORA_GOTO('studio');window.setTimeout(function(){showFeature(null,routeFeature());},100);}else if(window.state&&window.state.view==='studio'&&window.RIZORA_GOTO){window.RIZORA_GOTO('home');}});}
