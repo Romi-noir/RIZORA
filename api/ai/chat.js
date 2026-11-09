@@ -34,7 +34,8 @@ module.exports = async function handler(req, res) {
         body:
           typeof req.body === "string"
             ? req.body
-            : JSON.stringify(req.body || {})
+            : JSON.stringify(req.body || {}),
+        signal: AbortSignal.timeout(45000)
       }
     );
 
