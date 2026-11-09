@@ -54,10 +54,15 @@ const core=read("rizora-v2.js");
 const voice=read("rizora-v2-voice.js");
 const media=read("rizora-v2-media.js");
 const server=read("server.js");
+const musicUi=read("rizora-v2-music-ui.js");
+const studioPage=read("rizora-v2-studio-page.js");
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
 
 assert(!/remita/i.test(source),"Deferred Remita UI must not expose unfinished frontend routes.");
+assert(core.includes("var timeoutMs=Number(opt.timeoutMs)") && core.includes("Math.min(timeoutMs,119000)"),"API timeout overrides must be bounded below Vercel rewrite timeout limits.");
+assert(musicUi.includes("timeoutMs:119000") && musicUi.includes("timeoutMs:100000"),"Music and voiceover generation timeouts are missing.");
+assert(studioPage.includes("timeoutMs:119000"),"AI beat generation timeout is missing.");
 
 assert(/id=[\'"]aiInput[\'"]/.test(core) && /id=[\'"]aiForm[\'"]/.test(core),"AI composer wiring is missing.");
 assert(/data-ai-speak=[\'"]/.test(core),"AI voice playback controls are missing.");
