@@ -9,3 +9,22 @@
 @media(max-width:900px){.rzp-shell{height:auto;min-height:0;overflow:visible}.rzp-layout{grid-template-columns:minmax(0,1fr);overflow:visible}.rzp-library,.rzp-queue{border:0;border-bottom:1px solid var(--rzp-line);overflow:visible;padding:12px 14px}.rzp-library{display:flex;align-items:center;gap:6px;overflow-x:auto}.rzp-library>.rzp-side-title{display:none}.rzp-library-item{flex:0 0 auto;width:auto;margin:0;padding:6px}.rzp-library-item>span:first-child{width:30px;height:30px}.rzp-library-item span:nth-child(2){display:none}.rzp-import{flex:0 0 auto;margin:0;padding:6px 10px;white-space:nowrap}.rzp-import input{max-width:120px}.rzp-center{overflow:visible;padding:12px}.rzp-queue{display:grid;grid-template-columns:minmax(0,1fr);}.rzp-dock{position:sticky;bottom:66px;z-index:8;grid-template-columns:minmax(0,1fr) minmax(150px,1fr);gap:8px;padding:8px 10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(11,9,15,.97);backdrop-filter:blur(16px)}.rzp-volume{display:none}.rzp-dock-track{grid-column:1}.rzp-transport{grid-column:2}.rzp-transport-buttons{gap:5px}.rzp-transport-buttons button{width:26px}.rzp-transport-buttons button.rzp-play{width:31px;height:31px}.rzp-progress-row{grid-template-columns:25px minmax(0,1fr) 25px}.rzp-top{padding:13px}.rzp-playlist-hero{min-height:116px;padding:13px}.rzp-playlist-art{width:70px;height:70px}.rzp-playlist-hero h4{font-size:21px}}
 @media(max-width:520px){.rzp-search{max-width:52%;}.rzp-top h3{font-size:17px}.rzp-dock{bottom:65px;grid-template-columns:minmax(0,1fr) auto}.rzp-track-row{grid-template-columns:minmax(0,1fr) 30px 28px}.rzp-track-length{display:none}.rz-feature-showcase-head{align-items:flex-start}.rz-feature-showcase-head h3{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.rz-feature-showcase-rail{scroll-behavior:auto}}
+
+.rz-profile-workflow{padding:0;overflow:hidden;border-color:rgba(177,144,255,.2);background:linear-gradient(145deg,rgba(18,15,24,.98),rgba(10,9,13,.98))}
+.rz-profile-workflow>summary{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:64px;padding:17px 19px;list-style:none;color:#f2eaff;font-size:15px;font-weight:850;cursor:pointer}
+.rz-profile-workflow>summary::-webkit-details-marker{display:none}
+.rz-profile-workflow>summary:focus-visible{outline:2px solid #b990ff;outline-offset:-3px;border-radius:15px}
+.rz-profile-workflow-toggle{display:grid;place-items:center;width:25px;height:25px;border:1px solid rgba(184,146,255,.35);border-radius:50%;color:#c29cff;font-size:18px;line-height:1;transition:transform .18s ease}
+.rz-profile-workflow[open] .rz-profile-workflow-toggle{transform:rotate(45deg)}
+.rz-workflow-groups{display:grid;gap:17px;padding:0 16px 18px}
+.rz-workflow-group h3{margin:0 0 8px;padding-left:2px;color:#a79fb2;font-size:10px;font-weight:900;letter-spacing:.16em}
+.rz-workflow-tools{display:grid;gap:7px}
+.rz-workflow-tool{display:flex;align-items:center;gap:10px;min-width:0;min-height:53px;padding:10px 13px;border:1px solid rgba(255,255,255,.1);border-radius:15px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018));color:#f7f3fc;text-align:left;font-size:14px;font-weight:780;cursor:pointer;transition:border-color .16s ease,background .16s ease,transform .16s ease}
+.rz-workflow-tool:hover{transform:translateY(-1px);border-color:rgba(185,145,255,.38);background:rgba(154,114,255,.09)}
+.rz-workflow-tool:focus-visible{outline:2px solid #b990ff;outline-offset:2px}
+.rz-workflow-tool-icon{display:grid;place-items:center;width:31px;height:31px;flex:none;border:1px solid rgba(177,144,255,.2);border-radius:10px;background:rgba(154,114,255,.08);color:#c39dff;font-size:16px}
+.rz-workflow-tool-arrow{margin-left:auto;color:#a892c9;font-size:15px}
+@media(min-width:760px){.rz-workflow-tools{grid-template-columns:repeat(2,minmax(0,1fr))}.rz-workflow-group:first-child .rz-workflow-tools,.rz-workflow-group:nth-child(3) .rz-workflow-tools,.rz-workflow-group:last-child .rz-workflow-tools{grid-template-columns:1fr}}
+@media(max-width:520px){.rz-profile-workflow>summary{min-height:58px;padding:15px 16px}.rz-workflow-groups{gap:15px;padding:0 12px 14px}.rz-workflow-tool{min-height:49px;border-radius:13px;font-size:13px}}
+#rzSeriesTool,#rzBusinessTools,#rzEventTool{display:none!important}
+#rzLabsTools [data-labs-open="feeds"]{display:none!important}
