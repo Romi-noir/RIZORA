@@ -9,25 +9,28 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const auth = req.headers.authorization || "";
+    // Use the same cookie/bearer session authentication as direct API requests.
+    // The Render backend remains responsible for validating the session.
+    const requestHeaders = req.headers || {};
+    const headers = {
+      "Content-Type": requestHeaders["content-type"] || "application/json"
+    };
 
-    if (!auth) {
-      res.statusCode = 401;
-      return res.end(JSON.stringify({
-        success: false,
-        error: "Authentication required."
-      }));
+    if (requestHeaders.authorization) {
+      headers.Authorization = requestHeaders.authorization;
+    }
+    if (requestHeaders.cookie) {
+      headers.Cookie = requestHeaders.cookie;
+    }
+    if (requestHeaders["x-csrf-token"]) {
+      headers["X-CSRF-Token"] = requestHeaders["x-csrf-token"];
     }
 
     const response = await fetch(
       "https://rizora-guse.onrender.com/api/ai/chat",
       {
         method: "POST",
-        headers: {
-          "Content-Type":
-            req.headers["content-type"] || "application/json",
-          "Authorization": auth
-        },
+        headers,
         body:
           typeof req.body === "string"
             ? req.body
