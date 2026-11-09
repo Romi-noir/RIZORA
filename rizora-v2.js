@@ -82,7 +82,10 @@ async function api(path,opt){
   var headers=Object.assign({"Accept":"application/json","Content-Type":"application/json"},opt.headers||{});
   var token=getRizoraAuthToken();
   if(token&&!headers.Authorization)headers.Authorization="Bearer "+token;
-  var request=function(h){var controller=typeof AbortController!=="undefined"?new AbortController():null;var timer=controller?setTimeout(function(){controller.abort();},25000):null;return fetch(API+path,{credentials:"include",mode:"cors",method:opt.method||"GET",headers:h,body:opt.body,signal:opt.signal||controller&&controller.signal}).finally(function(){if(timer)clearTimeout(timer);});};
+  var timeoutMs=Number(opt.timeoutMs);
+  if(!Number.isFinite(timeoutMs)||timeoutMs<=0)timeoutMs=25000;
+  timeoutMs=Math.min(timeoutMs,119000);
+  var request=function(h){var controller=typeof AbortController!=="undefined"?new AbortController():null;var timer=controller?setTimeout(function(){controller.abort();},timeoutMs):null;return fetch(API+path,{credentials:"include",mode:"cors",method:opt.method||"GET",headers:h,body:opt.body,signal:opt.signal||controller&&controller.signal}).finally(function(){if(timer)clearTimeout(timer);});};
   var r;
   try{r=await request(headers);}catch(fetchError){
     var networkMessage=fetchError&&fetchError.name==="AbortError"
