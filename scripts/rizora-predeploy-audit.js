@@ -62,6 +62,10 @@ const sw=read("service-worker.js");
 assert(!/remita/i.test(source),"Deferred Remita UI must not expose unfinished frontend routes.");
 assert(core.includes("var timeoutMs=Number(opt.timeoutMs)") && core.includes("Math.min(timeoutMs,119000)"),"API timeout overrides must be bounded below Vercel rewrite timeout limits.");
 assert(musicUi.includes("timeoutMs:119000") && musicUi.includes("timeoutMs:100000"),"Music and voiceover generation timeouts are missing.");
+assert(server.includes("AbortSignal.timeout(20000)") && server.includes("AbortSignal.timeout(45000)"),"Groq chat and transcription provider timeouts are missing.");
+assert((core.match(/timeoutMs:50000/g)||[]).length>=2,"AI chat client timeout is missing.");
+assert(voice.includes("timeoutMs:60000"),"AI voice transcription client timeout is missing.");
+assert(musicUi.includes("timeoutMs:50000"),"Music AI client timeout is missing.");
 assert(studioPage.includes("timeoutMs:119000"),"AI beat generation timeout is missing.");
 
 assert(/id=[\'"]aiInput[\'"]/.test(core) && /id=[\'"]aiForm[\'"]/.test(core),"AI composer wiring is missing.");
