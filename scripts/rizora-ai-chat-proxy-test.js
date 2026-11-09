@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const handler = require("../api/ai/chat");
+const vercel = require("../vercel.json");
 
 async function dispatch(request, upstream) {
   let forwarded = null;
@@ -51,6 +52,8 @@ async function main() {
 
   assert.equal(cookieRequest.forwarded.url, "https://rizora-guse.onrender.com/api/ai/chat");
   assert.equal(cookieRequest.forwarded.options.headers.Cookie, cookie);
+  assert.equal(typeof cookieRequest.forwarded.options.signal?.aborted, "boolean");
+  assert.equal(vercel.functions?.["api/ai/chat.js"]?.maxDuration, 60);
   assert.equal(cookieRequest.forwarded.options.headers.Authorization, undefined);
   assert.equal(cookieRequest.forwarded.options.headers["X-CSRF-Token"], "test-csrf");
   assert.equal(cookieRequest.response.statusCode, 200);
