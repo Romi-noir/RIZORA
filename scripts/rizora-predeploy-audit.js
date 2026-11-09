@@ -54,10 +54,18 @@ const core=read("rizora-v2.js");
 const voice=read("rizora-v2-voice.js");
 const media=read("rizora-v2-media.js");
 const server=read("server.js");
+const renderConfig=read("render.yaml");
+const envExample=read(".env.example");
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
 
 assert(!/remita/i.test(source),"Deferred Remita UI must not expose unfinished frontend routes.");
+for (const key of ["GROQ_API_KEY","RIZORA_HF_TOKEN","ELEVENLABS_API_KEY"]) {
+  assert(new RegExp("- key: " + key + "\\s+sync: false").test(renderConfig),key+" must be declared as a private Render environment variable.");
+  assert(envExample.includes(key+"="),key+" is missing from .env.example.");
+}
+assert(envExample.includes("RIZORA_IMAGE_MODEL=black-forest-labs/FLUX.1-schnell"),"Image model default is missing from .env.example.");
+assert(envExample.includes("RIZORA_VIDEO_MODEL=Wan-AI/Wan2.2-TI2V-5B"),"Video model default is missing from .env.example.");
 
 assert(/id=[\'"]aiInput[\'"]/.test(core) && /id=[\'"]aiForm[\'"]/.test(core),"AI composer wiring is missing.");
 assert(/data-ai-speak=[\'"]/.test(core),"AI voice playback controls are missing.");
