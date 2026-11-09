@@ -56,6 +56,8 @@ const media=read("rizora-v2-media.js");
 const server=read("server.js");
 const renderConfig=read("render.yaml");
 const envExample=read(".env.example");
+const musicUi=read("rizora-v2-music-ui.js");
+const studioPage=read("rizora-v2-studio-page.js");
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
 
@@ -66,6 +68,13 @@ for (const key of ["GROQ_API_KEY","RIZORA_HF_TOKEN","ELEVENLABS_API_KEY"]) {
 }
 assert(envExample.includes("RIZORA_IMAGE_MODEL=black-forest-labs/FLUX.1-schnell"),"Image model default is missing from .env.example.");
 assert(envExample.includes("RIZORA_VIDEO_MODEL=Wan-AI/Wan2.2-TI2V-5B"),"Video model default is missing from .env.example.");
+assert(core.includes("var timeoutMs=Number(opt.timeoutMs)") && core.includes("Math.min(timeoutMs,119000)"),"API timeout overrides must be bounded below Vercel rewrite timeout limits.");
+assert(musicUi.includes("timeoutMs:119000") && musicUi.includes("timeoutMs:100000"),"Music and voiceover generation timeouts are missing.");
+assert(server.includes("AbortSignal.timeout(20000)") && server.includes("AbortSignal.timeout(45000)"),"Groq chat and transcription provider timeouts are missing.");
+assert((core.match(/timeoutMs:50000/g)||[]).length>=2,"AI chat client timeout is missing.");
+assert(voice.includes("timeoutMs:60000"),"AI voice transcription client timeout is missing.");
+assert(musicUi.includes("timeoutMs:50000"),"Music AI client timeout is missing.");
+assert(studioPage.includes("timeoutMs:119000"),"AI beat generation timeout is missing.");
 
 assert(/id=[\'"]aiInput[\'"]/.test(core) && /id=[\'"]aiForm[\'"]/.test(core),"AI composer wiring is missing.");
 assert(/data-ai-speak=[\'"]/.test(core),"AI voice playback controls are missing.");
