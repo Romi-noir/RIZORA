@@ -127,7 +127,7 @@
         if(kind==="ai"){
           if(blob.size>MAX_AI_AUDIO_BYTES)throw new Error("That recording is too large for RIZORA AI. Keep voice notes under 90 seconds.");
           var audio=await dataURL(blob);
-          var d=await api("/api/ai/transcribe",{method:"POST",body:JSON.stringify({audio:audio,mimeType:chosen})});
+          var d=await api("/api/ai/transcribe",{method:"POST",timeoutMs:60000,body:JSON.stringify({audio:audio,mimeType:chosen})});
           var text=String(d.text||"").trim();
           if(!text)throw new Error("I could not hear clear speech in that recording.");
           var input=form.querySelector("#aiInput");

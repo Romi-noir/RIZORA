@@ -54,6 +54,7 @@ async function main() {
     "rizora-v2-labs-ui.js",
     "rizora-v2-hub.js",
     "rizora-v2-music-ui.js",
+    "rizora-v2-studio-page.js",
     "rizora-v2-live.js",
     "rizora-v2-downloads.js"
   ];

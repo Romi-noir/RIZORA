@@ -7426,7 +7426,7 @@ await rizoraGroqCompletion({
       form.append("response_format", "json");
       form.append("temperature", "0");
       form.append("prompt", "RIZORA creator platform, RoMi, @romi.noir, creator analytics, missions, boosts, social growth, AI, content and branding.");
-      const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {method:"POST",headers:{Authorization:"Bearer " + groqKey},body:form});
+      const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {method:"POST",headers:{Authorization:"Bearer " + groqKey},body:form,signal:AbortSignal.timeout(45000)});
       const data = await response.json().catch(function(){ return {}; });
       if (!response.ok) return sendJSON(res, response.status === 429 ? 429 : 502, {success:false,provider:"groq",code:response.status === 429 ? "GROQ_RATE_LIMIT" : "GROQ_STT_ERROR",error:response.status === 429 ? "RIZORA AI voice is temporarily rate-limited." : "RIZORA AI could not transcribe that voice recording."});
       return sendJSON(res, 200, {success:true,provider:"groq",model:String(process.env.GROQ_STT_MODEL || "whisper-large-v3-turbo").trim(),text:String(data.text || "").trim()});
@@ -12201,6 +12201,7 @@ async function rizoraGroqCompletion(options) {
           Authorization:
             `Bearer ${apiKey}`
         },
+        signal: AbortSignal.timeout(20000),
         body: JSON.stringify({
           model: modelName,
           messages,
