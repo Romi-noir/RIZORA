@@ -7358,7 +7358,8 @@ await rizoraGroqCompletion({
       res.writeHead(200, {"Content-Type":contentType,"Content-Length":output.length,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});
       return res.end(output);
     } catch (error) {
-      const rawMessage = String(error && error.message || "Unknown provider error").replace(/hf_[A-Za-z0-9]{20,}/g, "[REDACTED_TOKEN]").slice(0, 500);\n      console.error("RIZORA AI MEDIA GENERATION ERROR", {kind:kind,status:error && error.status || error && error.response && error.response.status || 0,code:error && error.code || null,name:error && error.name || "Error",message:rawMessage,model:kind === "image" ? String(process.env.RIZORA_IMAGE_MODEL || "black-forest-labs/FLUX.1-schnell").trim() : String(process.env.RIZORA_VIDEO_MODEL || "Wan-AI/Wan2.2-TI2V-5B").trim(),provider:kind === "image" ? "auto" : "fal-ai"});
+      const rawMessage = String(error && error.message || "Unknown provider error").replace(/hf_[A-Za-z0-9]{20,}/g, "[REDACTED_TOKEN]").slice(0, 500);
+      console.error("RIZORA AI MEDIA GENERATION ERROR", {kind:kind,status:error && error.status || error && error.response && error.response.status || 0,code:error && error.code || null,name:error && error.name || "Error",message:rawMessage,model:kind === "image" ? String(process.env.RIZORA_IMAGE_MODEL || "black-forest-labs/FLUX.1-schnell").trim() : String(process.env.RIZORA_VIDEO_MODEL || "Wan-AI/Wan2.2-TI2V-5B").trim(),provider:kind === "image" ? "auto" : "fal-ai"});
       const statusCode = error && error.status === 429 ? 429 : error && (error.status === 401 || error.status === 403) ? 503 : 502;
       return sendError(res, statusCode, statusCode === 429 ? "The AI media provider is busy. Try again shortly." : statusCode === 503 ? "The server's AI media provider key was rejected or lacks provider access." : "RIZORA AI could not generate that media. Try another prompt shortly.");
     }
