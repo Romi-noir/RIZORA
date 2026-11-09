@@ -52,12 +52,14 @@ for(const x of [...refs].filter(x=>x.startsWith("RIZORA_")&&!ignore.has(x))) {
 
 const core=read("rizora-v2.js");
 const voice=read("rizora-v2-voice.js");
+const communityFixes=read("rizora-v2-community-fixes.js");
 const media=read("rizora-v2-media.js");
 const server=read("server.js");
 const renderConfig=read("render.yaml");
 const envExample=read(".env.example");
 const musicUi=read("rizora-v2-music-ui.js");
 const studioPage=read("rizora-v2-studio-page.js");
+
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
 
@@ -75,6 +77,9 @@ assert((core.match(/timeoutMs:50000/g)||[]).length>=2,"AI chat client timeout is
 assert(voice.includes("timeoutMs:60000"),"AI voice transcription client timeout is missing.");
 assert(musicUi.includes("timeoutMs:50000"),"Music AI client timeout is missing.");
 assert(studioPage.includes("timeoutMs:119000"),"AI beat generation timeout is missing.");
+assert(communityFixes.includes('var timeoutMs=path==="/api/ai/video"?115000:100000;'),"AI image/video client deadlines are missing.");
+assert(studioPage.includes("var timeoutMs=100000"),"Studio cover-art generation deadline is missing.");
+assert(server.includes('const mediaTimeoutMs = kind === "video" ? 110000 : 90000;') && server.includes("const mediaSignal = AbortSignal.timeout(mediaTimeoutMs)"),"Hugging Face media provider deadlines are missing.");
 
 assert(/id=[\'"]aiInput[\'"]/.test(core) && /id=[\'"]aiForm[\'"]/.test(core),"AI composer wiring is missing.");
 assert(/data-ai-speak=[\'"]/.test(core),"AI voice playback controls are missing.");

@@ -6,7 +6,31 @@
 
   function esc(value){return String(value==null?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
   function call(path,opt){return window.RIZORA_API_CALL?window.RIZORA_API_CALL(path,opt):fetch(API+path,Object.assign({credentials:"include",headers:{"Content-Type":"application/json","Accept":"application/json"}},opt||{})).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.message||d.error||"Request failed.");return d;});});}
-  async function mediaRequest(path,payload){var headers={"Content-Type":"application/json","Accept":"image/*,video/*,application/json"};if(window.RIZORA_AUTH_HEADERS)headers=window.RIZORA_AUTH_HEADERS(headers);var response=await fetch(API+path,{method:"POST",credentials:"include",headers:headers,body:JSON.stringify(payload)});if(!response.ok){var error={};try{error=await response.json();}catch(_){}throw new Error(error.error||error.message||(response.status===503?"Media generation is not configured yet.":"Media generation failed."));}var blob=await response.blob();if(!blob.size)throw new Error("The media provider returned an empty file.");return blob;}
+  async function mediaRequest(path,payload){
+    var headers={"Content-Type":"application/json","Accept":"image/*,video/*,application/json"};
+    if(window.RIZORA_AUTH_HEADERS)headers=window.RIZORA_AUTH_HEADERS(headers);
+    var timeoutMs=path==="/api/ai/video"?115000:100000;
+    var isVideo=path==="/api/ai/video";
+    var controller=typeof AbortController!=="undefined"?new AbortController():null;
+    var timer=controller?setTimeout(function(){controller.abort();},timeoutMs):null;
+    var options={method:"POST",credentials:"include",headers:headers,body:JSON.stringify(payload)};
+    if(controller)options.signal=controller.signal;
+    try{
+      var response=await fetch(API+path,options);
+      if(!response.ok){
+        var error={};try{error=await response.json();}catch(_){}
+        throw new Error(error.error||error.message||(response.status===503?"Media generation is not configured yet.":"Media generation failed."));
+      }
+      var blob=await response.blob();
+      if(!blob.size)throw new Error("The media provider returned an empty file.");
+      return blob;
+    }catch(error){
+      if(error&&error.name==="AbortError")throw new Error(isVideo?"AI video generation timed out. Try a shorter prompt or retry.":"AI image generation timed out. Try again.");
+      throw error;
+    }finally{
+      if(timer)clearTimeout(timer);
+    }
+  }
   function current(){return window.state&&window.state.user||window.RIZORA_CURRENT_USER||null;}
   function currentView(){var content=document.getElementById("content");return content&&content.getAttribute("data-rizora-view")||"";}
   function hash(text){var n=0;String(text||"").split("").forEach(function(ch){n=((n<<5)-n)+ch.charCodeAt(0);n|=0;});return Math.abs(n);}
