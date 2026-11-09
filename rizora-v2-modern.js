@@ -46,7 +46,7 @@ function currentToken(req) {
 function prefs(db,userId) {
   db.rzV2.preferences[userId] ||= {
     notifications: {
-      all: true, likes: true, comments: true, follows: true, mentions: true,
+      all: true, likes: true, comments: true, follows: true, mentions: true, activity: true,
       messages: true, collaboration: true, support: true, verification: true, moderation: true
     },
     discoverable: true,
@@ -55,7 +55,7 @@ function prefs(db,userId) {
   };
   const p=db.rzV2.preferences[userId];
   p.notifications ||= {};
-  for (const k of ["all","likes","comments","follows","mentions","messages","collaboration","support","verification","moderation"]) {
+  for (const k of ["all","likes","comments","follows","mentions","activity","messages","collaboration","support","verification","moderation"]) {
     if(typeof p.notifications[k]!=="boolean") p.notifications[k]=true;
   }
   if(typeof p.discoverable!=="boolean") p.discoverable=true;

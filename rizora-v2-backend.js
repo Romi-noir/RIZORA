@@ -25,7 +25,7 @@ function ensure(db){
   db.notifications=db.notifications||[];
 }
 function profileFor(db,user){
-  db.creatorProfiles[user.id]=db.creatorProfiles[user.id]||{userId:user.id,bio:"",avatarUrl:"",category:"",location:"",links:[]};
+  db.creatorProfiles[user.id]=db.creatorProfiles[user.id]||{userId:user.id,bio:"",avatarUrl:"",bannerUrl:"",category:"",location:"",links:[]};
   return db.creatorProfiles[user.id];
 }
 function profileStats(db,userId){
@@ -40,7 +40,7 @@ function profileStats(db,userId){
 function publicProfile(db,user){
   var p=profileFor(db,user);
   var isVerified=user.verified===true||user.verificationStatus==="verified";
-  return Object.assign({id:user.id,username:user.username,publicUsername:user.publicUsername||user.username,displayName:user.displayName||user.username,bio:p.bio||"",avatarUrl:p.avatarUrl||user.avatarUrl||"",category:p.category||"",location:p.location||"",links:p.links||[],verified:isVerified,verifiedBadgeUrl:isVerified?"/assets/rizora_verified_badge.png":"",verificationStatus:user.verificationStatus||"not_submitted",official:user.official===true,points:Number(user.points||0)},profileStats(db,user.id));
+  return Object.assign({id:user.id,username:user.username,publicUsername:user.publicUsername||user.username,displayName:user.displayName||user.username,bio:p.bio||"",avatarUrl:p.avatarUrl||user.avatarUrl||"",bannerUrl:p.bannerUrl||"",category:p.category||"",location:p.location||"",links:p.links||[],verified:isVerified,verifiedBadgeUrl:isVerified?"/assets/rizora_verified_badge.png":"",verificationStatus:user.verificationStatus||"not_submitted",official:user.official===true,points:Number(user.points||0)},profileStats(db,user.id));
 }
 function mediaRecordForUrl(db,value,ownerId){
   var raw=String(value||""),id="";
@@ -126,7 +126,7 @@ async function handleRizoraV2(ctx){
     if(!active(user)){ctx.sendError(res,403,"Your account cannot edit creator content right now.");return true;}
     var b=await body(req),p=profileFor(db,user),m=moderate(db,user,ctx,[b.bio,b.category,b.location],"profile:"+user.id);
     if(!m.allowed){ctx.sendJSON(res,422,Object.assign({success:false,code:"CONTENT_POLICY_VIOLATION"},m));return true;}
-    p.bio=ctx.cleanString(b.bio,600);p.category=ctx.cleanString(b.category,80);p.location=ctx.cleanString(b.location,80);p.avatarUrl=ctx.cleanString(b.avatarUrl,1200);p.links=Array.isArray(b.links)?b.links.slice(0,8):p.links;user.avatarUrl=p.avatarUrl;user.bio=p.bio;delete p.bannerUrl;delete user.bannerUrl;ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,profile:publicProfile(db,user)});return true;
+    p.bio=ctx.cleanString(b.bio,600);p.category=ctx.cleanString(b.category,80);p.location=ctx.cleanString(b.location,80);p.avatarUrl=ctx.cleanString(b.avatarUrl,1200);if(Object.prototype.hasOwnProperty.call(b,"bannerUrl"))p.bannerUrl=ctx.cleanString(b.bannerUrl,1200);p.links=Array.isArray(b.links)?b.links.slice(0,8):p.links;user.avatarUrl=p.avatarUrl;user.bannerUrl=p.bannerUrl||"";user.bio=p.bio;notify(db,user.id,"Profile updated","Your profile changes are saved.","activity");ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,profile:publicProfile(db,user)});return true;
   }
 
   if(method==="GET"&&path==="/api/v2/feed"){
@@ -154,7 +154,7 @@ async function handleRizoraV2(ctx){
     // large account cannot make a publish request slow or flood the database.
     var followers=(db.rzV2.follows||[]).filter(function(f){return f.followingId===user.id&&f.followerId!==user.id;}).slice(-100);
     followers.forEach(function(f){notify(db,f.followerId,"New post from @"+user.username,"@"+user.username+" just published on RIZORA.","publish");});
-    ms.forEach(function(handle){var target=db.users.find(function(u){return String(u.username||"").toLowerCase()===handle||String(u.publicUsername||"").toLowerCase()===handle;});if(target&&target.id!==user.id)notify(db,target.id,"You were mentioned","@"+user.username+" mentioned you.","mention");});
+    ms.forEach(function(handle){var target=db.users.find(function(u){return String(u.username||"").toLowerCase()===handle||String(u.publicUsername||"").toLowerCase()===handle;});if(target&&target.id!==user.id)notify(db,target.id,"You were mentioned","@"+user.username+" mentioned you.","mention");});notify(db,user.id,"Post published","Your post is now live on RIZORA.","activity");
     ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,post:decorate(db,post)});return true;
   }
 
@@ -201,7 +201,7 @@ async function handleRizoraV2(ctx){
       if(!cm.allowed){ctx.sendJSON(res,422,Object.assign({success:false,code:"CONTENT_POLICY_VIOLATION"},cm));return true;}
       var held=false,holdReason="";
       if(postTarget.userId!==user.id&&ct){var creatorControls=controlsFor(db,postTarget.userId);var heldCheck=commentBlockedByControl(creatorControls,ct);held=heldCheck.blocked;holdReason=heldCheck.reason;}
-      db.rzV2.comments.push({id:ctx.uid("comment_"),postId:postId,userId:user.id,text:ct,mediaUrl:voiceMedia?voiceMedia.url:"",mimeType:voiceMedia?voiceMedia.mimeType:"",messageType:voiceMedia?"voice":"text",parentId:parentId,hidden:held,moderationReason:holdReason,createdAt:new Date().toISOString()});
+      db.rzV2.comments.push({id:ctx.uid("comment_"),postId:postId,userId:user.id,text:ct,mediaUrl:voiceMedia?voiceMedia.url:"",mimeType:voiceMedia?voiceMedia.mimeType:"",messageType:voiceMedia?"voice":"text",parentId:parentId,hidden:held,moderationReason:holdReason,createdAt:new Date().toISOString()});notify(db,user.id,parentId?"Reply posted":"Comment posted",parentId?"Your reply was added on RIZORA.":"Your comment was added on RIZORA.","activity");
       if(postTarget.userId!==user.id)notify(db,postTarget.userId,held?"Comment held for review":(parentId?"New reply":"New comment"),"@"+user.username+(held?" left a comment that matched your creator filters and was held for review.":(parentId?" replied to a comment on your post.":" commented on your post.")),"comment");
       ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,hidden:held});return true;
     }
@@ -210,6 +210,7 @@ async function handleRizoraV2(ctx){
     collection.push({id:ctx.uid(action+"_"),userId:user.id,postId:postId,createdAt:new Date().toISOString()});
     if(action==="like"&&postTarget.userId!==user.id)notify(db,postTarget.userId,"New like","@"+user.username+" liked your post.","like");
     if(action==="repost"&&postTarget.userId!==user.id)notify(db,postTarget.userId,"Your post was remixed","@"+user.username+" remixed your RIZORA post.","remix");
+    notify(db,user.id,action==="like"?"Like added":action==="save"?"Post saved":"Post shared",action==="like"?"Your like was added to a RIZORA post.":action==="save"?"A post was added to your saved list.":"You remixed a RIZORA post.","activity");
     ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,active:true});return true;
   }
 
@@ -221,7 +222,7 @@ async function handleRizoraV2(ctx){
     if(target.id===user.id){ctx.sendError(res,400,"You cannot follow yourself.");return true;}
     var ef=db.rzV2.follows.find(function(x){return x.followerId===user.id&&x.followingId===target.id;});
     if(ef){db.rzV2.follows.splice(db.rzV2.follows.indexOf(ef),1);ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,following:false});return true;}
-    db.rzV2.follows.push({id:ctx.uid("follow_"),followerId:user.id,followingId:target.id,createdAt:new Date().toISOString()});notify(db,target.id,"New follower","@"+user.username+" followed you.","follow");ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,following:true});return true;
+    db.rzV2.follows.push({id:ctx.uid("follow_"),followerId:user.id,followingId:target.id,createdAt:new Date().toISOString()});notify(db,target.id,"New follower","@"+user.username+" followed you.","follow");notify(db,user.id,"Following @"+(target.publicUsername||target.username),"You are now following this creator on RIZORA.","activity");ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,following:true});return true;
   }
 
   var publicProfileRoute=path.match(/^\/api\/v2\/profiles\/([^/]+)$/);
