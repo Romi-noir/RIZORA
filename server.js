@@ -2772,94 +2772,6 @@ function applySecurityHeaders(res){
 
 }
 
-
-const spotifySearchRateBuckets = new Map();
-let spotifyClientToken = "";
-let spotifyClientTokenExpiresAt = 0;
-let spotifyClientTokenRequest = null;
-
-function fetchSpotifyWithTimeout(resource, options, timeoutMs) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(resource, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
-}
-async function getSpotifyClientToken() {
-  if (spotifyClientToken && spotifyClientTokenExpiresAt > Date.now() + 60000) return spotifyClientToken;
-  if (spotifyClientTokenRequest) return spotifyClientTokenRequest;
-  const pending = (async () => {
-    const clientId = String(process.env.SPOTIFY_CLIENT_ID || "").trim();
-    const clientSecret = String(process.env.SPOTIFY_CLIENT_SECRET || "").trim();
-    if (!clientId || !clientSecret) { const error = new Error("Spotify credentials are not configured."); error.code = "SPOTIFY_NOT_CONFIGURED"; throw error; }
-    const response = await fetchSpotifyWithTimeout("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: { Authorization: "Basic " + Buffer.from(clientId + ":" + clientSecret).toString("base64"), "Content-Type": "application/x-www-form-urlencoded" },
-      body: "grant_type=client_credentials"
-    }, 9000);
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok || !payload.access_token) throw new Error("Spotify token request failed.");
-    spotifyClientToken = String(payload.access_token);
-    const expiresIn = Math.max(30, Number(payload.expires_in) || 3600);
-    spotifyClientTokenExpiresAt = Date.now() + Math.max(30, expiresIn - 60) * 1000;
-    return spotifyClientToken;
-  })();
-  spotifyClientTokenRequest = pending;
-  try { return await pending; } finally { if (spotifyClientTokenRequest === pending) spotifyClientTokenRequest = null; }
-}
-function consumeSpotifySearchLimit(userId) {
-  const now = Date.now(), key = String(userId || "authenticated");
-  let bucket = spotifySearchRateBuckets.get(key);
-  if (!bucket || bucket.resetAt <= now) bucket = { count: 0, resetAt: now + 60000 };
-  bucket.count += 1;
-  spotifySearchRateBuckets.set(key, bucket);
-  if (spotifySearchRateBuckets.size > 5000) {
-    for (const [entryKey, entry] of spotifySearchRateBuckets) {
-      if (entry.resetAt <= now) spotifySearchRateBuckets.delete(entryKey);
-      if (spotifySearchRateBuckets.size <= 5000) break;
-    }
-  }
-  return { allowed: bucket.count <= 30, retryAfter: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)) };
-}
-async function handleSpotifySearch(req, res, db, url) {
-  const user = getCurrentUser(db, req);
-  if (!user) return sendError(res, 401, "Authentication required.");
-  const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
-  if (query.length < 2 || query.length > 120) return sendError(res, 400, "Enter a song or artist between 2 and 120 characters.");
-  const limit = consumeSpotifySearchLimit(user.id || user.username);
-  if (!limit.allowed) { res.setHeader("Retry-After", String(limit.retryAfter)); return sendError(res, 429, "Spotify search is temporarily rate limited. Try again shortly."); }
-  if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) return sendError(res, 503, "Spotify search is not configured on the server yet.");
-  try {
-    const token = await getSpotifyClientToken();
-    const marketSetting = String(process.env.SPOTIFY_MARKET || "NG").trim().toUpperCase();
-    const market = /^[A-Z]{2}$/.test(marketSetting) ? marketSetting : "NG";
-    const searchUrl = new URL("https://api.spotify.com/v1/search");
-    searchUrl.searchParams.set("q", query); searchUrl.searchParams.set("type", "track");
-    searchUrl.searchParams.set("limit", "10"); searchUrl.searchParams.set("market", market);
-    const response = await fetchSpotifyWithTimeout(searchUrl, { headers: { Authorization: "Bearer " + token } }, 9000);
-    if (response.status === 429) {
-      const retryAfter = Number(response.headers.get("retry-after"));
-      if (Number.isInteger(retryAfter) && retryAfter > 0 && retryAfter <= 3600) res.setHeader("Retry-After", String(retryAfter));
-      return sendError(res, 429, "Spotify search is busy. Wait a moment and try again.");
-    }
-    if (!response.ok) return sendError(res, 502, "Spotify search is temporarily unavailable. Try again.");
-    const payload = await response.json().catch(() => ({}));
-    const items = payload && payload.tracks && Array.isArray(payload.tracks.items) ? payload.tracks.items : [];
-    const tracks = items.filter(track => track && /^[A-Za-z0-9]+$/.test(String(track.id || "")) && track.name).map(track => {
-      const durationMs = Math.max(0, Number(track.duration_ms) || 0);
-      const duration = Math.floor(durationMs / 60000) + ":" + String(Math.floor(durationMs / 1000) % 60).padStart(2, "0");
-      const images = track.album && Array.isArray(track.album.images) ? track.album.images : [];
-      const artwork = images.find(image => image && typeof image.url === "string") || {};
-      const artists = Array.isArray(track.artists) ? track.artists.map(artist => artist && artist.name).filter(Boolean).join(", ") : "";
-      return { id: String(track.id), title: String(track.name), artist: artists || "Unknown artist", album: String(track.album && track.album.name || ""), artwork: String(artwork.url || ""), duration, spotifyUrl: "https://open.spotify.com/track/" + encodeURIComponent(String(track.id)) };
-    });
-    res.setHeader("Cache-Control", "no-store");
-    return sendJSON(res, 200, { success: true, tracks });
-  } catch (error) {
-    if (error && error.code === "SPOTIFY_NOT_CONFIGURED") return sendError(res, 503, "Spotify search is not configured on the server yet.");
-    const status = error && error.name === "AbortError" ? 504 : 502;
-    return sendError(res, status, status === 504 ? "Spotify search took too long. Try again." : "Spotify search is temporarily unavailable. Try again.");
-  }
-}
-
 async function handleRequest(
   req,
   res
@@ -3485,10 +3397,6 @@ async function handleRequest(
   const db = loadDB();
 
   cleanupSessions(db);
-
-  if (method === "GET" && pathname === "/api/spotify/search") {
-    return handleSpotifySearch(req, res, db, url);
-  }
 
   
     
