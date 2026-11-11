@@ -385,3 +385,47 @@ html[data-rizora-theme="light"] body .rzp-download{background:#edf9f7;color:#216
   .rzp-track-row .rzp-heart{grid-column:2}
   .rzp-track-row .rzp-queue-add{grid-column:3}
 }
+
+/* Music Studio docks beside Production Desk and reserves its workspace. */
+:root{--rz-music-drawer-width:clamp(360px,28vw,430px);--rz-music-sheet-height:clamp(172px,27dvh,240px)}
+body.rz-music-open #rzMusicOverlay.rz-music-overlay{position:fixed!important;inset:var(--rz-app-top) 0 0 auto!important;z-index:110!important;display:block!important;width:var(--rz-music-drawer-width)!important;height:auto!important;padding:12px!important;overflow:hidden!important;background:transparent!important;backdrop-filter:none!important;pointer-events:none!important}
+body.rz-music-open #rzMusicOverlay .rz-music-panel{width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;margin:0!important;overflow:auto!important;pointer-events:auto!important;border-radius:18px!important;scrollbar-gutter:stable}
+body.rz-music-open #rzMusicOverlay .rz-music-hero{position:sticky;top:0;z-index:1}
+body.rz-music-open #rzMusicOverlay .rz-music-grid{max-width:none;margin:0;padding:12px;grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"ai" "release" "catalog";gap:11px}
+body.rz-music-open #rzMusicOverlay .rz-music-ai-card{grid-area:ai}
+body.rz-music-open #rzMusicOverlay .rz-music-grid>.rz-music-card:first-child{grid-area:release}
+body.rz-music-open #rzMusicOverlay .rz-music-grid>.rz-music-card:last-child{grid-area:catalog}
+body.rz-music-open #rzMusicOverlay .rz-music-catalog{max-height:260px}
+body.rz-music-open .rz-social-main{box-sizing:border-box!important;width:100%!important;padding-right:calc(var(--rz-music-drawer-width) + 12px)!important}
+body.rz-music-open .rzs-page{min-height:0!important}
+@media(min-width:901px) and (max-width:1359px){
+  body.rz-music-open #rzMusicOverlay.rz-music-overlay{inset:auto 10px 12px 10px!important;width:auto!important;height:var(--rz-music-sheet-height)!important;padding:8px!important}
+  body.rz-music-open .rz-social-main{height:calc(100dvh - var(--rz-app-top) - var(--rz-music-sheet-height) - 12px)!important;margin-top:var(--rz-app-top)!important;padding-right:0!important}
+  body.rz-music-open .rzs-page{height:100%!important}
+}
+@media(max-width:900px){
+  :root{--rz-music-sheet-height:clamp(206px,30dvh,264px)}
+  body.rz-music-open #rzMusicOverlay.rz-music-overlay{inset:auto 8px calc(92px + env(safe-area-inset-bottom)) 8px!important;width:auto!important;height:var(--rz-music-sheet-height)!important;padding:7px!important}
+  body.rz-music-open .rz-social-main{height:calc(100dvh - var(--rz-app-top) - var(--rz-music-sheet-height) - 100px - env(safe-area-inset-bottom))!important;margin-top:0!important;padding-right:0!important}
+  body.rz-music-open .rz-content,body.rz-music-open .rz-social-content{padding-bottom:0!important}
+  body.rz-music-open .rzs-page{height:100%!important}
+  body.rz-music-open #rzMusicOverlay .rz-music-hero{padding:6px 10px!important}
+  body.rz-music-open #rzMusicOverlay .rz-music-hero .rz-kicker{display:none!important}
+  body.rz-music-open #rzMusicOverlay .rz-music-hero h2{margin:2px 0!important;font-size:18px!important}
+  body.rz-music-open #rzMusicOverlay .rz-music-hero p{display:none!important}
+  body.rz-music-open #rzMusicOverlay .rz-music-head{align-items:center!important;gap:8px!important}
+  body.rz-music-open #rzMusicOverlay .rz-music-head .rz-btn{min-height:30px!important;padding:5px 9px!important}
+  body.rz-music-open #rzMusicOverlay .rz-now-playing{display:grid!important;grid-template-columns:32px minmax(0,1fr) 32px!important;align-items:center!important;gap:6px!important;min-height:46px!important;margin:0!important;padding:6px 8px!important}
+  body.rz-music-open #rzMusicOverlay .rz-now-playing-art{width:32px;height:32px}
+  body.rz-music-open #rzMusicOverlay .rz-now-playing-audio,body.rz-music-open #rzMusicOverlay .rz-now-playing audio{display:none!important}
+  body.rz-music-open #rzMusicOverlay .rz-now-playing-copy strong,body.rz-music-open #rzMusicOverlay .rz-now-playing-copy>span{font-size:10px}
+  body.rz-music-open #rzMusicOverlay .rz-now-playing-track{display:none!important}
+  body.rz-music-open #rzMusicOverlay .rz-now-playing-play{width:30px;height:30px}
+  body.rz-music-open #rzMusicOverlay .rz-music-card{padding:12px!important}
+}
+@media(max-width:900px) and (orientation:landscape) and (max-height:600px){
+  :root{--rz-music-drawer-width:clamp(280px,35vw,340px)}
+  body.rz-music-open #rzMusicOverlay.rz-music-overlay{inset:var(--rz-app-top) 0 0 auto!important;width:var(--rz-music-drawer-width)!important;height:auto!important;padding:7px!important}
+  body.rz-music-open .rz-social-main{width:calc(100% - 82px)!important;height:calc(100dvh - var(--rz-app-top))!important;margin:0 0 0 82px!important;padding-right:calc(var(--rz-music-drawer-width) + 12px)!important}
+}
+@media(prefers-reduced-motion:no-preference){body.rz-music-open #rzMusicOverlay .rz-music-panel{animation:rzMusicDockIn .2s ease-out both}@keyframes rzMusicDockIn{from{opacity:.78;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}}
