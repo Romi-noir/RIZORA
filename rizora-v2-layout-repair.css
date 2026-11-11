@@ -377,3 +377,11 @@ html[data-rizora-theme="light"] body .rzp-download{background:#edf9f7;color:#216
   .rzp-track-row .rzp-download{max-width:100%;min-width:0}
 }
 @media(min-width:768px){.rzp-track-row{grid-template-columns:minmax(0,1fr) auto auto auto}}
+
+@media(max-width:767px){
+  .rzp-track-row{grid-template-columns:minmax(0,1fr) auto auto;min-width:0}
+  .rzp-track-main{grid-column:1/-1}
+  .rzp-track-row .rzp-download,.rzp-track-row .rzp-guest-download{grid-column:1;justify-self:start}
+  .rzp-track-row .rzp-heart{grid-column:2}
+  .rzp-track-row .rzp-queue-add{grid-column:3}
+}
