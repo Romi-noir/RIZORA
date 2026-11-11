@@ -20,6 +20,7 @@ function modal(title,sub,body){
 }
 
 function stat(v,k){return '<div class="rz-suite-stat"><strong>'+esc(v)+'</strong><span>'+esc(k)+'</span></div>';}
+function premiumPrice(amount,fallback){var value=Number(amount);if(!Number.isFinite(value)||value<=0)value=fallback;return "NGN "+value.toLocaleString("en-NG");}
 
 async function premium(){
  var premiumBody =
@@ -105,8 +106,8 @@ async function premium(){
      bill=card(
        p.active?"YOUR PREMIUM TIERS":"CHOOSE YOUR TIER",
        '<div class="rz-suite-grid rz-suite-grid-2">'+
-         '<div class="rz-suite-card"><div class="rz-kicker">'+premiumLabel+'</div><h3>NGN4,000</h3><p class="rz-muted">Advanced creator intelligence, analytics and Pro tools.</p>'+premiumAction+(!premiumReady&&!p.active?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
-         '<div class="rz-suite-card"><div class="rz-kicker">'+plusLabel+'</div><h3>NGN13,000</h3><p class="rz-muted">Everything in Premium, with the expanded premium tier for your creator workflow.</p>'+plusAction+(!plusReady&&!isPlus?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
+         '<div class="rz-suite-card"><div class="rz-kicker">'+premiumLabel+'</div><h3>'+premiumPrice(p.plans&&p.plans.premium&&p.plans.premium.priceNaira,4000)+'</h3><p class="rz-muted">Advanced creator intelligence, analytics and Pro tools.</p>'+premiumAction+(!premiumReady&&!p.active?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
+         '<div class="rz-suite-card"><div class="rz-kicker">'+plusLabel+'</div><h3>'+premiumPrice(p.plans&&p.plans.premium_plus&&p.plans.premium_plus.priceNaira,14000)+'</h3><p class="rz-muted">Everything in Premium, with the expanded premium tier for your creator workflow.</p>'+plusAction+(!plusReady&&!isPlus?'<small class="rz-mini">Billing setup pending</small>':"")+'</div>'+
        '</div>'+
        '<p class="rz-mini">Secure checkout is handled by Paystack. Premium and Premium+ remain visible after subscription so the upgrade path is never removed.</p>'+
        billingStatus
@@ -232,7 +233,7 @@ function moreTools(){
 }
 function suiteMenu(){
  var b=modal("RIZORA Suite","Core actions first. Everything else stays one layer deeper.",'<div class="rz-suite-grid rz-suite-grid-3">'+[
-  ["Premium","premium","Premium NGN4,000 - Premium+ NGN13,000"],["Verification","verification","Build trust around your creator identity."],["Official","official","RIZORA and RoMi official verified identities."],["Analytics","analytics","Track posts, followers, reach and performance."],["Creator Intelligence","intelligence","AI strategy, ideas and post analysis."],["Grow","grow","Missions, social tasks and growth loops."],["Boosts","boosts","Creator Boost Network and promotion."],["Messages","messages","Private creator conversations."],["Discover","discover","Find creators, posts and trends."],["Meet RoMi","romi","The creator behind RIZORA."],["More tools","more","Secondary tools and settings."]
+  ["Premium","premium","Premium NGN4,000 - Premium+ NGN14,000"],["Verification","verification","Build trust around your creator identity."],["Official","official","RIZORA and RoMi official verified identities."],["Analytics","analytics","Track posts, followers, reach and performance."],["Creator Intelligence","intelligence","AI strategy, ideas and post analysis."],["Grow","grow","Missions, social tasks and growth loops."],["Boosts","boosts","Creator Boost Network and promotion."],["Messages","messages","Private creator conversations."],["Discover","discover","Find creators, posts and trends."],["Meet RoMi","romi","The creator behind RIZORA."],["More tools","more","Secondary tools and settings."]
  ].map(function(x){return '<button class="rz-suite-launch" data-suite-go="'+x[1]+'"><strong>'+esc(x[0])+'</strong><span>'+esc(x[2])+'</span></button>';}).join("")+'</div>');
  bindSuiteButtons(b);
 }

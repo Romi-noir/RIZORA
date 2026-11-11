@@ -11,6 +11,7 @@ function toast(s){var t=document.getElementById("toast");if(!t)return;t.textCont
 function backHome(){var b=document.querySelector('[data-nav="home"]');if(b)b.click();else activeEnterpriseView=null;}
 function renderInto(html){var c=document.getElementById("content");if(!c)return;activeEnterpriseView=html;c.innerHTML=html;bindView();}
 function btn(label,action,cls){return '<button class="rz-btn '+(cls||"")+'" data-rzx-action="'+esc(action)+'">'+esc(label)+'</button>';}
+function premiumPrice(amount,fallback){var value=Number(amount);if(!Number.isFinite(value)||value<=0)value=fallback;return "NGN "+value.toLocaleString("en-NG");}
 function header(kicker,title,sub){return '<section class="rz-card rz-enterprise-card"><div class="rz-kicker">'+esc(kicker)+'</div><div class="rz-section-title"><div><h2>'+esc(title)+'</h2><p class="rz-muted">'+esc(sub||"")+'</p></div>'+btn("Back","back")+'</div></section>';}
 
 
@@ -27,8 +28,8 @@ async function showPremium(){
    var copy=active?("Current tier: "+(plan==="premium_plus"?"Premium+":"Premium")+". Status: "+(d.status||"active")+(d.nextPaymentDate?" - next payment "+new Date(d.nextPaymentDate).toLocaleDateString():"")):"Choose Premium or Premium+ to unlock advanced creator capabilities.";
    var action=active
      ? (d.canCancel?btn("Turn off auto-renewal","premium-cancel"):'<span class="rz-badge">'+esc(d.status||"active")+'</span>')
-     : '<span class="rz-badge">Ready to upgrade</span>';
-   el.innerHTML='<div class="rz-section-title"><div><h3>'+title+'</h3><p class="rz-muted">'+esc(copy)+'</p></div>'+action+'</div><div class="rz-mini">'+(d.configured?"Paystack Premium plan configured.":"Paystack Premium plan not configured yet.")+'</div>';
+     : '<span class="rz-badge">'+(d.configured?"Ready to upgrade":"Billing setup required")+'</span>';
+   el.innerHTML='<div class="rz-section-title"><div><h3>'+title+'</h3><p class="rz-muted">'+esc(copy)+'</p></div>'+action+'</div><div class="rz-mini">'+(d.configured?"Paystack Premium plan configured.":"Premium checkout is not available yet; billing setup is pending.")+'</div>';
    var tiers=document.getElementById("rzPremiumTiers");
    if(tiers){
      var premiumReady=!!(d.plans&&d.plans.premium&&d.plans.premium.configured);
@@ -36,8 +37,8 @@ async function showPremium(){
      var premiumCurrent=active&&plan==="premium";
      var plusCurrent=active&&plan==="premium_plus";
      tiers.innerHTML=
-       '<div class="rz-card"><div class="rz-kicker">'+(premiumCurrent?"CURRENT PLAN":"PREMIUM")+'</div><h3>NGN4,000</h3><p class="rz-muted">Advanced creator intelligence, analytics and Pro tools.</p>'+(premiumCurrent?'<span class="rz-badge">Active</span>':'<button class="rz-btn primary" data-rzx-action="premium-subscribe" '+((premiumReady&&!active)?"":"disabled")+'>Get Premium</button>')+(!premiumReady&&!premiumCurrent?'<div class="rz-mini">Billing setup pending.</div>':"")+'</div>'+
-       '<div class="rz-card"><div class="rz-kicker">'+(plusCurrent?"CURRENT PLAN":"PREMIUM+")+'</div><h3>NGN13,000</h3><p class="rz-muted">Everything in Premium, with the expanded premium tier for your creator workflow.</p>'+(plusCurrent?'<span class="rz-badge">Active</span>':'<button class="rz-btn primary" data-rzx-action="premium-plus-subscribe" '+(plusReady?"":"disabled")+'>Get Premium+</button>')+(!plusReady&&!plusCurrent?'<div class="rz-mini">Billing setup pending.</div>':"")+'</div>';
+       '<div class="rz-card"><div class="rz-kicker">'+(premiumCurrent?"CURRENT PLAN":"PREMIUM")+'</div><h3>'+premiumPrice(d.plans&&d.plans.premium&&d.plans.premium.priceNaira,4000)+'</h3><p class="rz-muted">Advanced creator intelligence, analytics and Pro tools.</p>'+(premiumCurrent?'<span class="rz-badge">Active</span>':'<button class="rz-btn primary" data-rzx-action="premium-subscribe" '+((premiumReady&&!active)?"":"disabled")+'>Get Premium</button>')+(!premiumReady&&!premiumCurrent?'<div class="rz-mini">Billing setup pending.</div>':"")+'</div>'+
+       '<div class="rz-card"><div class="rz-kicker">'+(plusCurrent?"CURRENT PLAN":"PREMIUM+")+'</div><h3>'+premiumPrice(d.plans&&d.plans.premium_plus&&d.plans.premium_plus.priceNaira,14000)+'</h3><p class="rz-muted">Everything in Premium, with the expanded premium tier for your creator workflow.</p>'+(plusCurrent?'<span class="rz-badge">Active</span>':'<button class="rz-btn primary" data-rzx-action="premium-plus-subscribe" '+(plusReady?"":"disabled")+'>Get Premium+</button>')+(!plusReady&&!plusCurrent?'<div class="rz-mini">Billing setup pending.</div>':"")+'</div>';
      var sub=tiers.querySelector('[data-rzx-action="premium-subscribe"]');
      if(sub)sub.onclick=async function(){try{var x=await api("/api/v2/premium/subscribe",{method:"POST",body:JSON.stringify({plan:"premium"})});if(x.authorizationUrl)location.href=x.authorizationUrl;}catch(e){toast(e.message);}};
      var plus=tiers.querySelector('[data-rzx-action="premium-plus-subscribe"]');
