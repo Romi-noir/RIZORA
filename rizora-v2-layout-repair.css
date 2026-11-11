@@ -366,3 +366,14 @@ html[data-rizora-theme="light"] body .rz-public-music-dialog .rzp-queue{backgrou
   .rzda-editor-panel,.rzda-track-panel,.rzda-arrangement-pane{min-width:0;max-width:100%}
   .rzda-mixer-channels{min-width:0;max-width:100%}
 }
+
+.rzp-download{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:7px 10px;border:1px solid rgba(92,226,207,.28);border-radius:10px;background:rgba(92,226,207,.09);color:#9bf2e6;font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap}
+.rzp-download:hover,.rzp-download:focus-visible{background:rgba(92,226,207,.17);outline:2px solid rgba(92,226,207,.25)}
+html[data-rizora-theme="light"] body .rzp-download{background:#edf9f7;color:#216d65;border-color:#c9ebe5}
+@media(max-width:767px){
+  #rzPublicMusic .rzp-track-row .rzp-download{grid-column:1}
+  #rzPublicMusic .rzp-track-row .rzp-heart{grid-column:2}
+  #rzPublicMusic .rzp-track-row .rzp-queue-add{grid-column:3}
+  .rzp-track-row .rzp-download{max-width:100%;min-width:0}
+}
+@media(min-width:768px){.rzp-track-row{grid-template-columns:minmax(0,1fr) auto auto auto}}
