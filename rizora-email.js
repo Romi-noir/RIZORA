@@ -119,18 +119,18 @@ async function sendRizoraWelcomeEmail(options){
   ].filter(Boolean).join("\n");
 
   const bodyHtml=
-    '<div style="margin:0;background:#07050d;color:#f8f6ff;font-family:Arial,Helvetica,sans-serif;padding:32px 16px">'+
+    '<div style="margin:0;background:#090909;color:#f7f7f5;font-family:Arial,Helvetica,sans-serif;padding:32px 16px">'+
       '<div style="max-width:620px;margin:0 auto;background:#100b1d;border:1px solid #33215a;border-radius:22px;padding:30px">'+
-        '<div style="font-size:12px;letter-spacing:4px;color:#bba8ff;font-weight:800">RIZORA</div>'+
+        '<div style="font-size:12px;letter-spacing:4px;color:#e2c982;font-weight:800">RIZORA</div>'+
         '<h1 style="margin:12px 0 8px;font-size:34px">Welcome, '+safeName+'.</h1>'+
-        '<p style="color:#b8aec9;line-height:1.7">Your RIZORA creator account is ready. Your creator tools, missions, AI, community and growth systems are waiting for you.</p>'+
+        '<p style="color:#aaa9a4;line-height:1.7">Your RIZORA creator account is ready. Your creator tools, missions, AI, community and growth systems are waiting for you.</p>'+
         '<div style="margin:22px 0;padding:18px;border-radius:16px;background:#090611;border:1px solid #2a1a49">'+
-          '<div style="color:#8e80a7;font-size:12px;text-transform:uppercase;letter-spacing:2px">Your account</div>'+
+          '<div style="color:#aaa9a4;font-size:12px;text-transform:uppercase;letter-spacing:2px">Your account</div>'+
           '<div style="margin-top:8px;font-weight:800">@'+safeUsername+'</div>'+
-          (referralCode?'<div style="margin-top:10px;color:#b8aec9">Referral code: <b style="color:#fff">'+safeReferral+'</b></div>':"")+
+          (referralCode?'<div style="margin-top:10px;color:#aaa9a4">Referral code: <b style="color:#fff">'+safeReferral+'</b></div>':"")+
         '</div>'+
         '<a href="'+html(publicUrl)+'" style="display:inline-block;padding:13px 19px;background:#7b4dff;color:#fff;text-decoration:none;border-radius:12px;font-weight:800">Open RIZORA</a>'+
-        '<p style="margin-top:28px;color:#8e80a7;font-size:12px">CREATE. GROW. EARN.</p>'+
+        '<p style="margin-top:28px;color:#aaa9a4;font-size:12px">CREATE. GROW. EARN.</p>'+
       '</div>'+
     '</div>';
 

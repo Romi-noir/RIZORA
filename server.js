@@ -24,6 +24,18 @@ const { handleRizoraLive } = require("./rizora-v2-live");
 const { handleRizoraMusic } = require("./rizora-v2-music");
 const { handleRizoraMedia, storeGeneratedAudio } = require("./rizora-v2-media-backend");
 const { handleRizoraMessaging } = require("./rizora-v2-messaging");
+const { buildCreatorSitemap, creatorPublicSlug, renderCreatorProfilePage } = require("./rizora-seo");
+const {
+  integrationStatus,
+  sendAuthOtp,
+  verifyAuthOtp,
+  verifyTurnstile,
+  updateSupabasePassword,
+  signInWithPassword,
+  signInWithIdToken,
+  createLegacySupabaseUser,
+  requestPasswordRecovery
+} = require("./rizora-integrations");
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -706,6 +718,8 @@ function safeUser(user) {
     username: user.username,
     displayName: user.displayName || user.username,
     email: user.email || "",
+    phoneVerified: user.phoneVerified === true,
+    authProvider: user.authProvider || "legacy",
     role: user.role || "user",
     status: user.status || "active",
     plan: isOwnerAccount(user) ? "premium_plus" : String(user.plan || "free").toLowerCase(),
@@ -731,6 +745,9 @@ function safeUser(user) {
     verificationType:
       user.verificationType || null,
 
+    verificationBadgeType:
+      user.verificationBadgeType || null,
+
     official:
       user.official === true,
 
@@ -740,6 +757,114 @@ function safeUser(user) {
     twoFactorEnabled:
       user.twoFactorEnabled === true
   };
+}
+
+function syncSupabaseIdentity(db, providerUser, body, intent) {
+  const providerId = String(providerUser && providerUser.id || "").trim();
+  if (!providerId) {
+    const error = new Error("Supabase did not return a verified account.");
+    error.status = 502;
+    throw error;
+  }
+  const metadata = providerUser.user_metadata || providerUser.raw_user_meta_data || {};
+  const email = normalizeEmail(providerUser.email || body.email || "");
+  const phone = String(providerUser.phone || body.phone || "").trim();
+  const verifiedEmail = Boolean(providerUser.email_confirmed_at || providerUser.confirmed_at || providerUser.email_verified === true);
+  const verifiedPhone = Boolean(providerUser.phone_confirmed_at || providerUser.confirmed_at || providerUser.phone_verified === true);
+  let user = (db.users || []).find(item => item.supabaseId === providerId);
+  if (!user) {
+    user = (db.users || []).find(item => email && normalizeEmail(item.email) === email && verifiedEmail);
+  }
+  if (!user) {
+    user = (db.users || []).find(item => phone && (String(item.phone || "").trim() === phone || String(item.phoneNormalized || "").trim() === phone) && verifiedPhone);
+  }
+  if (user && user.supabaseId && user.supabaseId !== providerId) {
+    const error = new Error("This contact is linked to a different sign-in. Use the sign-in method already connected to the account.");
+    error.status = 409;
+    throw error;
+  }
+  let created = false;
+  if (!user) {
+    if (intent !== "signup") {
+      const error = new Error("No RIZORA account is linked to that contact yet. Create an account first.");
+      error.status = 404;
+      throw error;
+    }
+    const username = normalizeUsername(body.username || metadata.username || metadata.user_name || "");
+    if (!/^[a-zA-Z0-9_.-]{3,30}$/.test(username)) {
+      const error = new Error("Choose a username with 3–30 letters, numbers, dots, underscores or hyphens.");
+      error.status = 400;
+      throw error;
+    }
+    if ((db.users || []).some(item => normalizeUsername(item.username) === username)) {
+      const error = new Error("That username is already taken. Choose another one.");
+      error.status = 409;
+      throw error;
+    }
+    if (email && (db.users || []).some(item => normalizeEmail(item.email) === email)) {
+      const error = new Error("That email already has a RIZORA account. Log in with a code instead.");
+      error.status = 409;
+      throw error;
+    }
+    if (phone && (db.users || []).some(item => String(item.phoneNormalized || item.phone || "").trim() === phone)) {
+      const error = new Error("That number already has a RIZORA account. Log in with a code instead.");
+      error.status = 409;
+      throw error;
+    }
+    const protectedAccount = isConfiguredSuperAdminUsername(username);
+    user = {
+      id: uid("user_"),
+      username,
+      displayName: cleanString(body.displayName || metadata.display_name || metadata.full_name || username, 80),
+      email: email || "",
+      emailVerified: verifiedEmail,
+      phone: phone || "",
+      phoneNormalized: phone || "",
+      phoneVerified: verifiedPhone,
+      authProvider: "supabase",
+      supabaseId: providerId,
+      role: protectedAccount ? "super_admin" : "user",
+      status: "active",
+      points: 0,
+      referralCode: randomReferralCode(username),
+      referredBy: null,
+      referralCount: 0,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: null
+    };
+    db.users.push(user);
+    applyReferral(db, user, cleanString(body.referralCode || metadata.referral_code || "", 100));
+    db.notifications ||= [];
+    db.notifications.unshift({
+      id: uid("notif_"),
+      userId: user.id,
+      title: "Welcome to RIZORA",
+      message: "Your creator account is ready. Explore your profile, music, messages and creator tools.",
+      type: "system",
+      read: false,
+      createdAt: new Date().toISOString()
+    });
+    created = true;
+  } else {
+    user.supabaseId = providerId;
+    user.authProvider = "supabase";
+    if (email && verifiedEmail) {
+      user.email = email;
+      user.emailVerified = true;
+    }
+    if (phone && verifiedPhone) {
+      user.phone = phone;
+      user.phoneNormalized = phone;
+      user.phoneVerified = true;
+    }
+    if (body.displayName && !user.displayName) user.displayName = cleanString(body.displayName, 80);
+  }
+  if (user.status && user.status !== "active") {
+    const error = new Error("This account is not active.");
+    error.status = 403;
+    throw error;
+  }
+  return { user, created, verifiedEmail, verifiedPhone };
 }
 function isConfiguredSuperAdminUsername(username) {
   const normalized = normalizeUsername(username);
@@ -923,7 +1048,7 @@ function queueRizoraVerificationEmail(db,user,action,reason,req){
   const base=getPublicBaseURL(req);
   const subject=isVerified?"Your RIZORA verification is approved":"RIZORA verification update";
   const text=["Hi "+name+",","",isVerified?"Your RIZORA creator account @"+username+" is now verified.":"Your RIZORA verification request for @"+username+" is now "+statusLabel+".",why?"Review note: "+why:"","Open RIZORA: "+base,"","RIZORA · CREATE. GROW. EARN."].filter(Boolean).join("\n");
-  const html='<div style="margin:0;background:#07050d;color:#f8f6ff;font-family:Arial,Helvetica,sans-serif;padding:32px 16px"><div style="max-width:620px;margin:0 auto;background:#100b1d;border:1px solid #33215a;border-radius:22px;padding:30px"><div style="font-size:12px;letter-spacing:4px;color:#bba8ff;font-weight:800">RIZORA</div><h1 style="margin:12px 0 8px;font-size:30px">'+(isVerified?"Verification approved":"Verification update")+'</h1><p style="color:#b8aec9;line-height:1.7">Hi '+safe(name)+', your account @'+safe(username)+' has a verification status update: <b>'+safe(statusLabel)+'</b>.</p>'+(why?'<div style="margin:18px 0;padding:14px;border-radius:14px;background:#090611;border:1px solid #2a1a49;color:#c8bfd8">Review note: '+safe(why)+'</div>':"")+'<a href="'+safe(base)+'" style="display:inline-block;padding:13px 19px;background:#7b4dff;color:#fff;text-decoration:none;border-radius:12px;font-weight:800">Open RIZORA</a></div></div>';
+  const html='<div style="margin:0;background:#090909;color:#f7f7f5;font-family:Arial,Helvetica,sans-serif;padding:32px 16px"><div style="max-width:620px;margin:0 auto;background:#141414;border:1px solid #393833;border-radius:22px;padding:30px"><div style="font-size:12px;letter-spacing:4px;color:#e2c982;font-weight:800">RIZORA</div><h1 style="margin:12px 0 8px;font-size:30px">'+(isVerified?"Verification approved":"Verification update")+'</h1><p style="color:#aaa9a4;line-height:1.7">Hi '+safe(name)+', your account @'+safe(username)+' has a verification status update: <b>'+safe(statusLabel)+'</b>.</p>'+(why?'<div style="margin:18px 0;padding:14px;border-radius:14px;background:#141414;border:1px solid #393833;color:#d0cfc9">Review note: '+safe(why)+'</div>':"")+'<a href="'+safe(base)+'" style="display:inline-block;padding:13px 19px;background:#c7a65a;color:#fff;text-decoration:none;border-radius:12px;font-weight:800">Open RIZORA</a></div></div>';
   event.payload = {
     subject: String(subject || "").slice(0,200),
     text: String(text || "").slice(0,3000),
@@ -1921,8 +2046,7 @@ const RIZORA_GENERATED_PLATFORMS = [
   { key: "instagram", name: "Instagram" },
   { key: "youtube", name: "YouTube" },
   { key: "x", name: "X" },
-  { key: "facebook", name: "Facebook" },
-  { key: "spotify", name: "Spotify" }
+  { key: "facebook", name: "Facebook" }
 ];
 
 function rizoraTaskSeenState(db, userId) {
@@ -4029,14 +4153,27 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     method === "GET" &&
     pathname === "/api/health"
   ) {
+    let databaseAvailable = Boolean(DATABASE_URL && postgresPool && dbPersistenceReady);
+    if (databaseAvailable && process.env.NODE_ENV === "production") {
+      try {
+        await postgresPool.query("SELECT 1");
+      } catch (error) {
+        databaseAvailable = false;
+        console.error("RIZORA health check: PostgreSQL is unavailable:", error && error.message ? error.message : error);
+      }
+    }
+
+    const productionPersistenceRequired = process.env.NODE_ENV === "production";
+    const ready = !productionPersistenceRequired || databaseAvailable;
     sendJSON(
       res,
-      200,
+      ready ? 200 : 503,
       {
-        ok: true,
+        ok: ready,
         service: "RIZORA",
         version: "8.1.0",
-        status: "online",
+        status: ready ? "online" : "degraded",
+        persistence: databaseAvailable ? "postgresql" : (productionPersistenceRequired ? "unavailable" : "local-json"),
         time:
           new Date().toISOString()
       }
@@ -4048,6 +4185,158 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
   // ----------------------------------------------------------
   // SIGNUP
   // ----------------------------------------------------------
+
+  if (method === "GET" && pathname === "/api/auth/provider-config") {
+    sendJSON(res, 200, { success: true, providers: integrationStatus() });
+    return;
+  }
+
+  if (method === "POST" && pathname === "/api/auth/otp/send") {
+    if (!checkAuthRateLimit(db, req, "otp_send")) {
+      sendError(res, 429, "Too many code requests. Wait a little and try again.");
+      return;
+    }
+    let body;
+    try { body = await readBody(req); } catch (error) { sendError(res, 400, error.message); return; }
+    const intent = body.intent === "signup" ? "signup" : body.intent === "password_reset" ? "password_reset" : "login";
+    const email = normalizeEmail(body.email || (body.channel === "email" ? body.identifier : ""));
+    const phone = String(body.phone || (body.channel === "sms" ? body.identifier : "") || "").trim();
+    if (!!email === !!phone) {
+      sendError(res, 400, "Enter either an email address or a phone number.");
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      sendError(res, 400, "Enter a valid email address.");
+      return;
+    }
+    if (phone && !/^\+[1-9]\d{7,14}$/.test(phone)) {
+      sendError(res, 400, "Enter a phone number with its country code, such as +2348012345678.");
+      return;
+    }
+    const localUser = (db.users || []).find(item =>
+      (email && normalizeEmail(item.email) === email) ||
+      (phone && String(item.phoneNormalized || item.phone || "").trim() === phone)
+    );
+    if (intent === "signup" && localUser && localUser.supabaseId) {
+      sendError(res, 409, "This contact is already registered. Log in with a code instead.");
+      return;
+    }
+    if (intent !== "signup" && !localUser) {
+      sendError(res, 404, "No RIZORA account matches that contact. Create an account first.");
+      return;
+    }
+    let username = "";
+    let metadata = {};
+    if (intent === "signup") {
+      username = normalizeUsername(body.username);
+      if (!/^[a-zA-Z0-9_.-]{3,30}$/.test(username)) {
+        sendError(res, 400, "Choose a username with 3–30 letters, numbers, dots, underscores or hyphens.");
+        return;
+      }
+      const sameName = (db.users || []).find(item => normalizeUsername(item.username) === username);
+      if (sameName && sameName !== localUser) {
+        sendError(res, 409, "That username is already taken. Choose another one.");
+        return;
+      }
+      metadata = {
+        username: localUser && localUser.username || username,
+        display_name: cleanString(body.displayName || localUser && localUser.displayName || username, 80),
+        referral_code: cleanString(body.referralCode || "", 100)
+      };
+    } else if (localUser) {
+      metadata = {
+        username: localUser.username,
+        display_name: localUser.displayName || localUser.username
+      };
+    }
+    try {
+      await verifyTurnstile(body.turnstileToken, getRequestIP(req));
+      await sendAuthOtp({
+        email: email || undefined,
+        phone: phone || undefined,
+        createUser: intent === "signup" || Boolean(localUser && !localUser.supabaseId),
+        metadata,
+        captchaToken: body.turnstileToken
+      });
+      sendJSON(res, 200, {
+        success: true,
+        message: email ? "A sign-in code has been sent to your email." : "A sign-in code has been sent by text.",
+        channel: email ? "email" : "sms"
+      });
+    } catch (error) {
+      sendError(res, error.status || 502, error.message || "The sign-in code could not be sent. Try again.");
+    }
+    return;
+  }
+
+  if (method === "POST" && pathname === "/api/auth/otp/verify") {
+    if (!checkAuthRateLimit(db, req, "otp_verify")) {
+      sendError(res, 429, "Too many code attempts. Request a new code and try again.");
+      return;
+    }
+    let body;
+    try { body = await readBody(req); } catch (error) { sendError(res, 400, error.message); return; }
+    const intent = body.intent === "signup" ? "signup" : body.intent === "password_reset" ? "password_reset" : "login";
+    const email = normalizeEmail(body.email || "");
+    const phone = String(body.phone || "").trim();
+    const code = String(body.code || body.token || "").replace(/\s+/g, "");
+    if (!!email === !!phone || !/^\d{6,8}$/.test(code)) {
+      sendError(res, 400, "Enter the 6–8 digit code sent to your email or phone.");
+      return;
+    }
+    if (intent === "signup" || intent === "password_reset") {
+      const password = String(body.password || "");
+      if (password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+        sendError(res, 400, "Password must be at least 8 characters and include uppercase, lowercase and a number.");
+        return;
+      }
+      if (password !== String(body.confirmPassword || "")) {
+        sendError(res, 400, "Passwords do not match.");
+        return;
+      }
+    }
+    try {
+      const verified = await verifyAuthOtp({
+        email: email || undefined,
+        phone: phone || undefined,
+        token: code,
+        type: phone ? "sms" : "email",
+        captchaToken: body.turnstileToken
+      });
+      const identity = syncSupabaseIdentity(db, verified.user, body, intent);
+      if ((intent === "signup" || intent === "password_reset") && body.password) {
+        await updateSupabasePassword(String(verified.access_token || ""), String(body.password));
+      }
+      const user = identity.user;
+      user.lastLoginAt = new Date().toISOString();
+      const token = createSession(db, user.id, req);
+      audit(db, identity.created ? "user_signup" : "user_login", user, { provider: "supabase", channel: phone ? "phone" : "email" });
+      if (identity.created) {
+        const welcome = queueRizoraWelcomeEmail(db, user, req);
+        db.notifications ||= [];
+        db.notifications.unshift({
+          id: uid("notif_"), userId: user.id, title: "Welcome to RIZORA",
+          message: "Your creator account is ready. Explore your profile, music, messages and creator tools.",
+          type: "system", read: false, createdAt: new Date().toISOString()
+        });
+        user.welcomeEmailQueued = Boolean(welcome && welcome.queued);
+      }
+      saveDB(db);
+      setSessionCookie(res, token);
+      setCSRFCookie(res);
+      sendJSON(res, identity.created ? 201 : 200, {
+        success: true,
+        token,
+        user: safeUser(user),
+        created: identity.created,
+        verifiedPhone: identity.verifiedPhone,
+        verifiedEmail: identity.verifiedEmail
+      });
+    } catch (error) {
+      sendError(res, error.status || 502, error.message || "That code could not be verified. Request another code and try again.");
+    }
+    return;
+  }
 
   // ----------------------------------------------------------
   // GOOGLE AUTH CONFIG
@@ -4213,6 +4502,33 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
         "Google sign-in credential has expired."
       );
 
+      return;
+    }
+
+    if (integrationStatus().auth) {
+      try {
+        await verifyTurnstile(body.turnstileToken,getRequestIP(req));
+        const providerSession=await signInWithIdToken("google",credential);
+        const providerUser=providerSession.user||{};
+        if(!providerUser.id){sendError(res,502,"Supabase did not return a Google account.");return;}
+        providerUser.email_confirmed_at=providerUser.email_confirmed_at||new Date().toISOString();
+        const identity=syncSupabaseIdentity(db,providerUser,{
+          username:uniqueGoogleUsername(db,googleName,googleEmail),
+          displayName:googleName,
+          referralCode:body.referralCode
+        },"signup");
+        const user=identity.user;
+        user.googleSub=googleSub;
+        user.lastLoginAt=new Date().toISOString();
+        const token=createSession(db,user.id,req);
+        audit(db,identity.created?"google_signup":"google_login",user,{provider:"supabase",googleSub:googleSub});
+        let emailDelivery={configured:rizoraEmailConfigured(),queued:false,status:"existing_account"};
+        if(identity.created){emailDelivery=queueRizoraWelcomeEmail(db,user,req);}
+        saveDB(db);setSessionCookie(res,token);setCSRFCookie(res);
+        sendJSON(res,identity.created?201:200,{success:true,token,user:safeUser(user),created:identity.created,emailDelivery:emailDelivery});
+      } catch(error) {
+        sendError(res,error.status||502,error.message||"Supabase Google sign-in is unavailable. Try an email or phone code.");
+      }
       return;
     }
 
@@ -4451,6 +4767,11 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     method === "POST" &&
     pathname === "/api/auth/signup"
   ) {
+
+    if (integrationStatus().auth) {
+      sendError(res, 410, "Create your RIZORA account with an email or phone verification code.");
+      return;
+    }
 
     if(
       !checkAuthRateLimit(
@@ -4974,7 +5295,8 @@ if(
           ) === identifier ||
           normalizeEmail(
             item.email
-          ) === identifier
+          ) === identifier ||
+          String(item.phoneNormalized || item.phone || "").trim() === identifier
       );
 
     if (!user) {
@@ -4998,11 +5320,63 @@ if(
       );
     }
 
-    let validPassword =
-      await verifyPassword(
-        password,
-        user.passwordHash
-      );
+    let validPassword = false;
+    const providerAuthEnabled = integrationStatus().auth;
+    if (providerAuthEnabled) {
+      try {
+        await verifyTurnstile(body.turnstileToken, getRequestIP(req));
+      } catch (error) {
+        sendError(res, error.status || 503, error.message || "Complete the security check and try again.");
+        return;
+      }
+      if (user.supabaseId) {
+        try {
+          const providerIdentity = user.phone && identifier === String(user.phoneNormalized || user.phone).trim()
+            ? { phone: user.phoneNormalized || user.phone }
+            : { email: user.email };
+          const providerSession = await signInWithPassword(providerIdentity, password);
+          const providerUser = providerSession.user || providerSession;
+          if (providerUser.id === user.supabaseId) validPassword = true;
+        } catch (error) {
+          if (!error.providerStatus || ![400, 401, 422].includes(error.providerStatus)) {
+            sendError(res, error.status || 502, "Supabase sign-in is temporarily unavailable. Try a verification code instead.");
+            return;
+          }
+        }
+      } else {
+        validPassword = await verifyPassword(password, user.passwordHash);
+        if (validPassword) {
+          if (user.email && user.emailVerified === false) {
+            return sendError(res, 403, "Verify your email before linking this account to Supabase.");
+          }
+          const identity = user.email ? { email: normalizeEmail(user.email) } : (user.phone ? { phone: String(user.phoneNormalized || user.phone).trim() } : null);
+          if (!identity) {
+            return sendError(res, 409, "Add and verify an email address or phone number before using this sign-in.");
+          }
+          try {
+            const linked = await createLegacySupabaseUser({
+              email: identity.email,
+              phone: identity.phone,
+              password,
+              metadata: { username: user.username, display_name: user.displayName || user.username }
+            });
+            const providerUser = linked.user || linked;
+            if (!providerUser.id) throw new Error("Supabase did not return a linked account.");
+            user.supabaseId = providerUser.id;
+            user.authProvider = "supabase";
+            user.emailVerified = identity.email ? true : user.emailVerified;
+            user.phoneVerified = identity.phone ? true : user.phoneVerified;
+          } catch (error) {
+            sendError(res, error.providerStatus === 422 ? 409 : (error.status || 502), error.providerStatus === 422
+              ? "This account already has a Supabase sign-in. Use a verification code to connect it."
+              : "This account could not be linked to Supabase. Try a verification code or contact support.");
+            return;
+          }
+        }
+      }
+    } else {
+      validPassword = await verifyPassword(password, user.passwordHash);
+    }
 
     if (
       !validPassword &&
@@ -5190,6 +5564,22 @@ if (
   const email =
     normalizeEmail(body.email || "");
 
+  if (integrationStatus().auth) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return sendError(res,400,"Enter the email address on your RIZORA account.");
+    }
+    if (!checkAuthRateLimit(db,req,"password_recovery")) {
+      return sendError(res,429,"Too many reset requests. Wait a little and try again.");
+    }
+    try {
+      await verifyTurnstile(body.turnstileToken,getRequestIP(req));
+      await requestPasswordRecovery(email,"",getPublicBaseURL(req)+"/login");
+    } catch(error) {
+      return sendError(res,error.status||502,error.message||"The reset email could not be sent. Try again shortly.");
+    }
+    return sendJSON(res,200,{success:true,message:"If that email matches a RIZORA account, a password reset link has been sent."});
+  }
+
   if (email) {
 
     const user =
@@ -5277,6 +5667,18 @@ if (
 
   const password =
     String(body.password || "");
+
+  if (integrationStatus().auth && body.accessToken) {
+    if (password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return sendError(res,400,"Password must contain uppercase, lowercase and a number.");
+    }
+    try {
+      await updateSupabasePassword(String(body.accessToken),password);
+      return sendJSON(res,200,{success:true,message:"Password reset successful."});
+    } catch(error) {
+      return sendError(res,error.status||400,error.message||"That reset link has expired. Request a new one.");
+    }
+  }
 
   if (!token || !password) {
     return sendError(
@@ -6582,7 +6984,6 @@ if (
     "instagram",
     "x",
     "youtube",
-    "spotify",
     "facebook"
   ];
 
@@ -6992,7 +7393,7 @@ if (
 
 
 /* ============================================================
-   RIZORA AI
+   NOIR ®
 ============================================================ */
 
 if (
@@ -7027,7 +7428,7 @@ if (
       return sendError(
         res,
         429,
-        "RIZORA AI is taking a short break. Try again in a few minutes."
+        "NOIR ® is taking a short break. Try again in a few minutes."
       );
     }
 
@@ -7055,7 +7456,7 @@ if (
       return sendError(
         res,
         400,
-        "Ask RIZORA AI something first."
+        "Ask NOIR ® something first."
       );
     }
 
@@ -7150,7 +7551,7 @@ if (
           provider:"groq",
           code:"GROQ_API_KEY_MISSING",
           error:
-            "RIZORA AI is not configured. Add GROQ_API_KEY to the RIZORA backend."
+            "NOIR ® is not configured. Add GROQ_API_KEY to the RIZORA backend."
         }
       );
     }
@@ -7162,7 +7563,7 @@ if (
       ).trim();
 
     const systemPrompt =
-      "You are RIZORA AI, the in-app creator copilot inside RIZORA. " +
+      "You are NOIR ®, the in-app creator copilot inside RIZORA. " +
       "You are answering a real creator in the current RIZORA session, not writing a generic coaching article. " +
       "Use the signed-in account, profile and recent conversation context supplied in the user message. " +
       "Recognize the signed-in creator from that context and use it when the user asks about their own account. " +
@@ -7176,8 +7577,8 @@ if (
       "When asked to make cover art or a visualizer, explain which RIZORA tool can do it and describe its real capabilities accurately; do not promise photorealistic image generation from the local visualizer tool. " +
       "Do not use generic motivational endings such as 'Good luck', 'You are already verified', or 'clean slate' unless that fact is present in the supplied account context. " +
       "Do not pad the answer with advice the user did not ask for. If relevant data is missing, say so plainly. " +
-      "Treat these as real RIZORA surfaces when they fit the request: Creator OS and Command Center, Flow, Explore, Live, Messages, Grow, RIZORA AI, Music Studio and Music AI, Creator Hub, Profile, Analytics, Boosts, Opportunities, Communities, Stories and Creator Suite. " +
-      "RIZORA provides an in-app music catalog and release drafts; Spotify, Apple Music, YouTube Music and TikTok/CapCut sound libraries require an authorized external distributor connection. Never claim an external release was delivered unless the backend confirms it. " +
+      "Treat these as real RIZORA surfaces when they fit the request: Creator OS and Command Center, Flow, Explore, Live, Messages, Grow, NOIR ®, Music Studio and Music AI, Creator Hub, Profile, Analytics, Boosts, Opportunities, Communities, Stories and Creator Suite. " +
+      "RIZORA provides its own music catalog and drafts. Audius search and playback are read-only; external release delivery is not connected. Never claim an external release was delivered unless the backend confirms it. " +
       "RoMi (@romi.noir), Ajiboye Hallelujah Oluwaronmi, is the artist, developer, creator and builder who created RIZORA. The official RIZORA account is @rizora. " +
       "When the signed-in role or username identifies RoMi or Israel as a privileged RIZORA account, respect that context without exposing credentials or private account details. " +
       "Do not invent investors, shareholders, funding rounds, press releases, companies, or unrelated people. If legal ownership percentages or shareholder records are not explicitly available, say they are not specified. " +
@@ -7273,7 +7674,7 @@ await rizoraGroqCompletion({
               provider:"groq",
               code:"GROQ_RATE_LIMIT",
               error:
-                "RIZORA AI is temporarily rate-limited. Try again shortly."
+                "NOIR ® is temporarily rate-limited. Try again shortly."
             }
           );
         }
@@ -7286,14 +7687,14 @@ await rizoraGroqCompletion({
             provider:"groq",
             code:"GROQ_PROVIDER_ERROR",
             error:
-              "RIZORA AI is temporarily unavailable."
+              "NOIR ® is temporarily unavailable."
           }
         );
       }
 
       const reply =
         data?.choices?.[0]?.message?.content ||
-        "RIZORA AI returned no text.";
+        "NOIR ® returned no text.";
 
       return sendJSON(
         res,
@@ -7321,7 +7722,7 @@ await rizoraGroqCompletion({
           provider:"groq",
           code:"GROQ_NETWORK_ERROR",
           error:
-            "RIZORA AI could not reach Groq."
+            "NOIR ® could not reach Groq."
         }
       );
     }
@@ -7332,9 +7733,9 @@ await rizoraGroqCompletion({
     if (!user) return sendError(res, 401, "Authentication required.");
     const kind = pathname.endsWith("/image") ? "image" : "video";
     const token = String(process.env.RIZORA_HF_TOKEN || process.env.HF_TOKEN || "").trim();
-    if (!token) return sendError(res, 503, "RIZORA AI media needs RIZORA_HF_TOKEN configured on the server with Inference Providers enabled.");
+    if (!token) return sendError(res, 503, "NOIR ® media needs RIZORA_HF_TOKEN configured on the server with Inference Providers enabled.");
     const rateKey = user.id + ":media:" + kind;
-    if (!checkRateLimit(aiRateLimits, rateKey, 60 * 60 * 1000, kind === "image" ? 6 : 2)) return sendError(res, 429, "RIZORA AI media is at its hourly limit. Try again later.");
+    if (!checkRateLimit(aiRateLimits, rateKey, 60 * 60 * 1000, kind === "image" ? 6 : 2)) return sendError(res, 429, "NOIR ® media is at its hourly limit. Try again later.");
     let body = {};
     try { body = await readLargeJSONBody(req, 32 * 1024); } catch (error) { return sendError(res, 400, error.message); }
     const prompt = String(body.prompt || "").trim().replace(/\s+/g, " ").slice(0, 1000);
@@ -7352,7 +7753,7 @@ await rizoraGroqCompletion({
         generated = await client.textToVideo({provider:"fal-ai",model:String(process.env.RIZORA_VIDEO_MODEL || "Wan-AI/Wan2.2-TI2V-5B").trim(),inputs:prompt,parameters:{num_frames:49,guidance_scale:4.5,num_inference_steps:20}}, {signal:mediaSignal});
         contentType = generated && generated.type && generated.type.startsWith("video/") ? generated.type : "video/mp4";
       }
-      if (!generated || typeof generated.arrayBuffer !== "function") return sendError(res, 502, "RIZORA AI received an unsupported media result.");
+      if (!generated || typeof generated.arrayBuffer !== "function") return sendError(res, 502, "NOIR ® received an unsupported media result.");
       const output = Buffer.from(await generated.arrayBuffer());
       const maxBytes = kind === "image" ? 16 * 1024 * 1024 : 80 * 1024 * 1024;
       if (!output.length || output.length > maxBytes) return sendError(res, 413, "The generated media exceeded RIZORA's file limit.");
@@ -7361,10 +7762,10 @@ await rizoraGroqCompletion({
       return res.end(output);
     } catch (error) {
       const rawMessage = String(error && error.message || "Unknown provider error").replace(/hf_[A-Za-z0-9]{20,}/g, "[REDACTED_TOKEN]").slice(0, 500);
-      console.error("RIZORA AI MEDIA GENERATION ERROR", {kind:kind,status:error && error.status || error && error.response && error.response.status || 0,code:error && error.code || null,name:error && error.name || "Error",message:rawMessage,model:kind === "image" ? String(process.env.RIZORA_IMAGE_MODEL || "black-forest-labs/FLUX.1-schnell").trim() : String(process.env.RIZORA_VIDEO_MODEL || "Wan-AI/Wan2.2-TI2V-5B").trim(),provider:kind === "image" ? "auto" : "fal-ai"});
+      console.error("NOIR ® MEDIA GENERATION ERROR", {kind:kind,status:error && error.status || error && error.response && error.response.status || 0,code:error && error.code || null,name:error && error.name || "Error",message:rawMessage,model:kind === "image" ? String(process.env.RIZORA_IMAGE_MODEL || "black-forest-labs/FLUX.1-schnell").trim() : String(process.env.RIZORA_VIDEO_MODEL || "Wan-AI/Wan2.2-TI2V-5B").trim(),provider:kind === "image" ? "auto" : "fal-ai"});
       const timedOut = error && (error.name === "AbortError" || error.name === "TimeoutError");
       const statusCode = timedOut ? 504 : error && error.status === 429 ? 429 : error && (error.status === 401 || error.status === 403) ? 503 : 502;
-      return sendError(res, statusCode, timedOut ? "RIZORA AI media generation timed out. Try a shorter prompt or retry." : statusCode === 429 ? "The AI media provider is busy. Try again shortly." : statusCode === 503 ? "The server's AI media provider key was rejected or lacks provider access." : "RIZORA AI could not generate that media. Try another prompt shortly.");
+      return sendError(res, statusCode, timedOut ? "NOIR ® media generation timed out. Try a shorter prompt or retry." : statusCode === 429 ? "The AI media provider is busy. Try again shortly." : statusCode === 503 ? "The server's AI media provider key was rejected or lacks provider access." : "NOIR ® could not generate that media. Try another prompt shortly.");
     }
   }
 
@@ -7398,8 +7799,8 @@ await rizoraGroqCompletion({
       res.writeHead(200, {"Content-Type":String(result.headers.get("content-type") || "audio/mpeg").split(";")[0],"Content-Length":output.length,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});
       return res.end(output);
     } catch (error) {
-      console.error("RIZORA AI VOICE ISOLATION ERROR", {status:error && error.status || 0});
-      return sendError(res, 502, "RIZORA AI could not reach voice isolation.");
+      console.error("NOIR ® VOICE ISOLATION ERROR", {status:error && error.status || 0});
+      return sendError(res, 502, "NOIR ® could not reach voice isolation.");
     }
   }
 
@@ -7407,7 +7808,7 @@ await rizoraGroqCompletion({
     const user = getCurrentUser(db, req);
     if (!user) return sendError(res, 401, "Authentication required.");
     const rateKey = user.id + ":transcribe";
-    if (!checkRateLimit(aiRateLimits, rateKey, 10 * 60 * 1000, 20)) return sendError(res, 429, "RIZORA AI voice is taking a short break. Try again in a few minutes.");
+    if (!checkRateLimit(aiRateLimits, rateKey, 10 * 60 * 1000, 20)) return sendError(res, 429, "NOIR ® voice is taking a short break. Try again in a few minutes.");
     let body = {};
     try { body = await readLargeJSONBody(req, 8 * 1024 * 1024); } catch (error) { return sendError(res, 400, error.message); }
     const dataUrl = String(body.audio || "").trim();
@@ -7420,7 +7821,7 @@ await rizoraGroqCompletion({
     const allowedAudio = new Set(["audio/webm","audio/ogg","audio/wav","audio/mp4","audio/mpeg"]);
     if (!allowedAudio.has(mimeType)) return sendError(res, 415, "This voice recording format is not supported.");
     const groqKey = String(process.env.GROQ_API_KEY || "").trim();
-    if (!groqKey) return sendError(res, 503, "RIZORA AI voice is not configured.");
+    if (!groqKey) return sendError(res, 503, "NOIR ® voice is not configured.");
     try {
       const form = new FormData();
       const ext = mimeType === "audio/webm" ? "webm" : mimeType === "audio/ogg" ? "ogg" : mimeType === "audio/mp4" ? "m4a" : mimeType === "audio/mpeg" ? "mp3" : "wav";
@@ -7431,11 +7832,11 @@ await rizoraGroqCompletion({
       form.append("prompt", "RIZORA creator platform, RoMi, @romi.noir, creator analytics, missions, boosts, social growth, AI, content and branding.");
       const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {method:"POST",headers:{Authorization:"Bearer " + groqKey},body:form,signal:AbortSignal.timeout(45000)});
       const data = await response.json().catch(function(){ return {}; });
-      if (!response.ok) return sendJSON(res, response.status === 429 ? 429 : 502, {success:false,provider:"groq",code:response.status === 429 ? "GROQ_RATE_LIMIT" : "GROQ_STT_ERROR",error:response.status === 429 ? "RIZORA AI voice is temporarily rate-limited." : "RIZORA AI could not transcribe that voice recording."});
+      if (!response.ok) return sendJSON(res, response.status === 429 ? 429 : 502, {success:false,provider:"groq",code:response.status === 429 ? "GROQ_RATE_LIMIT" : "GROQ_STT_ERROR",error:response.status === 429 ? "NOIR ® voice is temporarily rate-limited." : "NOIR ® could not transcribe that voice recording."});
       return sendJSON(res, 200, {success:true,provider:"groq",model:String(process.env.GROQ_STT_MODEL || "whisper-large-v3-turbo").trim(),text:String(data.text || "").trim()});
     } catch (error) {
       console.error("RIZORA GROQ STT NETWORK ERROR", error);
-      return sendJSON(res, 502, {success:false,provider:"groq",code:"GROQ_STT_NETWORK_ERROR",error:"RIZORA AI could not reach voice transcription."});
+      return sendJSON(res, 502, {success:false,provider:"groq",code:"GROQ_STT_NETWORK_ERROR",error:"NOIR ® could not reach voice transcription."});
     }
   }
   if (
@@ -7502,25 +7903,7 @@ if (
 
   const base =
     getPublicBaseURL(req);
-
-  const pages = [
-    "/",
-    "/about",
-    "/login",
-    "/signup"
-  ];
-
-  const xml =
-    '<?xml version="1.0" encoding="UTF-8"?>' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
-    pages.map(
-      p =>
-        "<url><loc>" +
-        base +
-        p +
-        "</loc></url>"
-    ).join("") +
-    "</urlset>";
+  const xml = buildCreatorSitemap(base, db.users);
 
   res.writeHead(
     200,
@@ -11948,6 +12331,50 @@ if (
 }
 
 
+// Server-render public creator profiles so crawlers receive profile content and metadata.
+if (method === "GET") {
+  const profilePath = pathname.match(/^\/creator\/([^/]+)\/?$/);
+  if (profilePath) {
+    let requestedHandle = "";
+    try {
+      requestedHandle = decodeURIComponent(profilePath[1]).replace(/^@/, "").trim();
+    } catch (_) {
+      sendError(res, 400, "Invalid creator handle.");
+      return;
+    }
+
+    if (creatorPublicSlug({ publicUsername: requestedHandle })) {
+      const existingStaticProfile = path.resolve(ROOT, "creator", requestedHandle, "index.html");
+      if (!fs.existsSync(existingStaticProfile)) {
+        const creator = db.users.find(user =>
+          (!user.status || String(user.status).toLowerCase() === "active") &&
+          (normalizeUsername(user.publicUsername) === normalizeUsername(requestedHandle) ||
+           normalizeUsername(user.username) === normalizeUsername(requestedHandle))
+        );
+
+        if (!creator) {
+          sendError(res, 404, "Creator not found.");
+          return;
+        }
+
+        const profile = (db.creatorProfiles && db.creatorProfiles[creator.id]) || {};
+        const html = renderCreatorProfilePage({
+          baseUrl: getPublicBaseURL(req),
+          creator,
+          profile
+        });
+        res.writeHead(200, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-cache, no-store, must-revalidate"
+        });
+        res.end(html);
+        return;
+      }
+    }
+  }
+}
+
+
 // STATIC FRONTEND
   // ----------------------------------------------------------
 
@@ -12229,7 +12656,7 @@ async function rizoraGroqCompletion(options) {
   ) {
 
     console.warn(
-      "RIZORA AI primary model unavailable. Falling back to openai/gpt-oss-20b."
+      "NOIR ® primary model unavailable. Falling back to openai/gpt-oss-20b."
     );
 
     try {

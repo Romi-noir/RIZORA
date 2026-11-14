@@ -6,6 +6,8 @@ www/
 .env
 .env.*
 server.js
+rizora-seo.js
+sitemap.xml
 server.backup*.js
 server.before-*.js
 database/

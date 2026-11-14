@@ -69,7 +69,7 @@ async function assistant(prefill){
   var body='<div class="rz-next-grid rz-next-grid-6">'+metricRows(a,c)+'</div>'+
     '<div class="rz-next-card"><div class="rz-next-card-head"><div><strong>Creator Assistant</strong><p>Personalized guidance built from your current RIZORA activity.</p></div></div>'+
     '<div class="rz-next-prompts">'+(prompts.map(function(p){return '<button class="rz-next-chip" data-next-prompt="'+esc(p)+'">'+esc(p)+'</button>';}).join(""))+'</div>'+
-    '<form id="rzNextAiForm"><textarea id="rzNextAiInput" class="rz-input rz-next-textarea" placeholder="Ask about content, growth, community or monetization...">'+esc(prefill||"")+'</textarea><button class="rz-btn primary" type="submit">Ask RIZORA AI</button></form><pre id="rzNextAiOut" class="rz-next-output">'+esc(fallbackBrief(a,c))+'</pre></div>';
+    '<form id="rzNextAiForm"><textarea id="rzNextAiInput" class="rz-input rz-next-textarea" placeholder="Ask about content, growth, community or monetization...">'+esc(prefill||"")+'</textarea><button class="rz-btn primary" type="submit">Ask NOIR ®</button></form><pre id="rzNextAiOut" class="rz-next-output">'+esc(fallbackBrief(a,c))+'</pre></div>';
   var m=modal("Creator Assistant","PERSONALIZED INTELLIGENCE",body);
   function ask(q){
     var input=document.getElementById("rzNextAiInput"),out=document.getElementById("rzNextAiOut");

@@ -60,12 +60,13 @@ async function main() {
   ];
   for (const modulePath of frontendModules) {
     const checked = require("child_process").spawnSync(process.execPath, ["--check", modulePath], { encoding: "utf8" });
-    assert(checked.status === 0, "Frontend module syntax check failed: " + modulePath + "\n" + (checked.stderr || checked.stdout || ""));
+    assert(checked.status === 0, "Frontend module syntax check failed: " + modulePath + "\n" + (checked.error ? checked.error.message : (checked.stderr || checked.stdout || "")));
   }
 
   assert(/(^|\n)database\/(?:\r?\n|$)/.test(vercelIgnore), "Vercel ignore must block the backend database directory");
   const backendFiles = [
     "server.js",
+    "rizora-seo.js",
     "rizora-v2-backend.js",
     "rizora-v2-enterprise.js",
     "rizora-v2-global.js",
@@ -221,6 +222,11 @@ async function main() {
     assert(signup.res.status === 201, "signup failed: " + JSON.stringify(signup.data));
     assert(signup.data.emailDelivery && typeof signup.data.emailDelivery.configured === "boolean", "signup email delivery status is missing");
 
+    const sitemapAfterSignup = await request("/sitemap.xml");
+    assert(sitemapAfterSignup.res.status === 200 && String(sitemapAfterSignup.data.raw || "").includes("/creator/" + username), "public sitemap does not include a signed-up creator");
+    const publicCreatorPage = await request("/creator/" + username);
+    assert(publicCreatorPage.res.status === 200 && String(publicCreatorPage.data.raw || "").includes("<title>RIZORA Smoke (@"), "server-rendered creator profile is missing its SEO title");
+
     const login = await request("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -321,14 +327,14 @@ async function main() {
       headers: authHeaders,
       body: JSON.stringify({ message: "who is romi" })
     });
-    assert(aiIdentity.res.status === 200 && aiIdentity.data.deterministic === true && /creator of RIZORA/i.test(aiIdentity.data.reply || ""), "RIZORA AI identity answer failed: " + aiIdentity.res.status + " " + JSON.stringify(aiIdentity.data));
+    assert(aiIdentity.res.status === 200 && aiIdentity.data.deterministic === true && /creator of RIZORA/i.test(aiIdentity.data.reply || ""), "NOIR ® identity answer failed: " + aiIdentity.res.status + " " + JSON.stringify(aiIdentity.data));
 
     const aiUserIdentity = await request("/api/ai/chat", {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({ message: "who am i" })
     });
-    assert(aiUserIdentity.res.status === 200 && aiUserIdentity.data.deterministic === true && new RegExp(username, "i").test(aiUserIdentity.data.reply || ""), "RIZORA AI signed-in identity answer failed: " + aiUserIdentity.res.status + " " + JSON.stringify(aiUserIdentity.data));
+    assert(aiUserIdentity.res.status === 200 && aiUserIdentity.data.deterministic === true && new RegExp(username, "i").test(aiUserIdentity.data.reply || ""), "NOIR ® signed-in identity answer failed: " + aiUserIdentity.res.status + " " + JSON.stringify(aiUserIdentity.data));
 
     const media = await request("/api/v2/media/config", { headers: authHeaders });
     assert(media.res.status === 200 && Number(media.data.maxFileBytes) > 0, "media config failed");

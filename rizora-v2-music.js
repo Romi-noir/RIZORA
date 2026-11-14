@@ -225,8 +225,8 @@ function sameDistributionRelease(candidate,release){
 
 function createDistributionPackage(data,user,db){
  const isRomi=normalizeDistributionIdentity(user.username)==="romi";
- const allowedPlatforms=new Set(["spotify","apple_music","youtube_music","tiktok","tiktok_music"]);
- const requestedPlatforms=Array.isArray(data.platforms)?data.platforms:["spotify","apple_music","youtube_music","tiktok_music"];
+ const allowedPlatforms=new Set(["audius","apple_music","youtube_music","tiktok","tiktok_music"]);
+ const requestedPlatforms=Array.isArray(data.platforms)?data.platforms:["audius","apple_music","youtube_music","tiktok_music"];
  const platforms=Array.from(new Set(["rizora",...requestedPlatforms.map(function(platform){return String(platform||"").trim().toLowerCase();}).filter(function(platform){return allowedPlatforms.has(platform);})]));
  const releaseTitle=musicText(data.title||data.releaseTitle,"Untitled Release",160)||"Untitled Release";
  const releaseArtist=musicText(data.artist,user.username||"Unknown artist",120)||"Unknown artist";
@@ -436,6 +436,7 @@ function beatConcept(body={},generateAI,userId){
 }
 
 const REGISTERED_MUSIC_PATCHES = new Set();
+const AUDIUS_SEARCH_LIMITS = new Map();
 
 async function handleRizoraMusic(ctx){
 
@@ -466,6 +467,35 @@ const method=req.method;
 
 if(!path.startsWith("/api/music/")){
  return false;
+}
+
+if(method==="GET"&&path==="/api/music/audius/search"){
+ const user=getCurrentUser(db,req);
+ const query=String(url.searchParams.get("q")||"").trim().slice(0,120);
+ if(query.length<2){sendError(res,400,"Enter at least two characters to search Audius.");return true;}
+ const forwarded=String(req.headers["x-forwarded-for"]||"").split(",")[0].trim().slice(0,80);
+ const address=forwarded||String(req.socket&&req.socket.remoteAddress||"unknown").slice(0,80);
+ const rateKey=String(user&&user.id||"guest")+"|"+address;
+ const now=Date.now(),previous=AUDIUS_SEARCH_LIMITS.get(rateKey)||{count:0,resetAt:now+60000};
+ if(now>=previous.resetAt){previous.count=0;previous.resetAt=now+60000;}
+ if(previous.count>=30){sendError(res,429,"Audius search is taking a short break. Try again in a minute.");return true;}
+ previous.count++;AUDIUS_SEARCH_LIMITS.set(rateKey,previous);
+ if(AUDIUS_SEARCH_LIMITS.size>2000){for(const [key,value] of AUDIUS_SEARCH_LIMITS){if(now>=value.resetAt)AUDIUS_SEARCH_LIMITS.delete(key);}}
+ const endpoint=new URL("https://api.audius.co/v1/tracks/search");
+ endpoint.searchParams.set("query",query);endpoint.searchParams.set("limit","20");endpoint.searchParams.set("app_name","RIZORA");
+ const apiKey=String(process.env.AUDIUS_API_KEY||"").trim(),headers=apiKey?{"x-api-key":apiKey}:{};
+ try{
+  const response=await fetch(endpoint,{headers:headers,signal:AbortSignal.timeout(12000)});
+  if(!response.ok){sendError(res,502,"Audius search is temporarily unavailable.");return true;}
+  const payload=await response.json(),items=Array.isArray(payload.data)?payload.data:[];
+  const tracks=items.slice(0,20).filter(item=>item&&item.id).map(item=>{
+   const artwork=item.artwork&&typeof item.artwork==="object"?(item.artwork["480x480"]||item.artwork["150x150"]||item.artwork["1000x1000"]):item.artwork;
+   const artist=item.user&&typeof item.user==="object"?(item.user.name||item.user.handle):item.artist_name;
+   const duration=Math.max(0,Math.floor(Number(item.duration)||0)),permalink=String(item.permalink||"");
+   return {id:"audius_"+String(item.id),audiusTrackId:String(item.id),title:musicText(item.title,"Untitled Audius track",160),artist:musicText(artist,"Audius artist",120),artwork:typeof artwork==="string"?artwork:"",audioUrl:"https://api.audius.co/v1/tracks/"+encodeURIComponent(String(item.id))+"/stream?app_name=RIZORA",storeUrl:/^https:\/\/audius\.co\//i.test(permalink)?permalink:"",duration:Math.floor(duration/60)+":"+String(duration%60).padStart(2,"0"),genre:musicText(item.genre,"",80),source:"audius"};
+  });
+  sendJSON(res,200,{success:true,provider:"Audius",tracks:tracks});return true;
+ }catch(_){sendError(res,502,"Audius search is temporarily unavailable.");return true;}
 }
 
 ensureMusic(db);
@@ -557,7 +587,7 @@ if(method==="POST" && path==="/api/music/generate-voice"){
  try{generated=await generateVoiceAudio({userId:user.id,voiceId,text});}
  catch(error){return writeError(error.status||503,error.message||"Voiceover generation failed. Try again shortly.");}
  try{
-  const media=storeGeneratedAudio(db,user.id,generated&&generated.buffer,"rizora-voiceover.mp3");
+  const media=await storeGeneratedAudio(db,user.id,generated&&generated.buffer,"rizora-voiceover.mp3");
   const output={id:uid("voice_output"),userId:user.id,mediaId:media.id,audioUrl:media.url,provider:"ElevenLabs",modelId:generated&&generated.modelId||"eleven_multilingual_v2",voiceId,text,status:"ready",createdAt:new Date().toISOString()};
   db.musicOutputs.push(output);
   saveDB(db);
@@ -596,7 +626,7 @@ if(method==="POST" && path==="/api/music/generate-audio"){
  }
 
  try{
-  const media=storeGeneratedAudio(db,user.id,generated&&generated.buffer,"rizora-generated-track.mp3");
+  const media=await storeGeneratedAudio(db,user.id,generated&&generated.buffer,"rizora-generated-track.mp3");
   const output={
    id:uid("music_output"),
    userId:user.id,

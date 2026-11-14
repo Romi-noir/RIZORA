@@ -65,10 +65,17 @@ async function handleRizoraMessaging(ctx) {
     if (to && !activeUser(db, to)) { sendError(res, 404, "Recipient not found."); return true; }
     if (groupId && !isConversationMember(db, groupId, user.id)) { sendError(res, 403, "You are not a member of this group."); return true; }
     const text = String(body.text || "").trim().slice(0, 4000);
+    const mediaId = body.mediaId ? String(body.mediaId).slice(0, 120) : "";
+    const media = mediaId ? (db.rzV2.media || []).find(item => item.id === mediaId && item.ownerId === user.id) : null;
+    if (mediaId && !media) { sendError(res, 404, "Message media not found."); return true; }
+    const mime = String(media && media.mimeType || "").toLowerCase();
+    const inferredType = mime.startsWith("audio/") ? "voice" : mime.startsWith("image/") ? "image" : mime.startsWith("video/") ? "file" : "file";
     const message = {
       id: uid("msg_"), from: user.id, to, groupId, text,
-      mediaId: body.mediaId ? String(body.mediaId).slice(0, 120) : null,
-      type: ["text", "voice", "image", "file"].includes(body.type) ? body.type : "text",
+      mediaId: mediaId || null,
+      mediaUrl: media ? media.url : "",
+      mimeType: media ? media.mimeType : "",
+      type: ["text", "voice", "image", "file"].includes(body.type) ? body.type : (media ? inferredType : "text"),
       stickerId: body.stickerId ? String(body.stickerId).slice(0, 120) : null,
       mentions: Array.isArray(body.mentions) ? body.mentions.slice(0, 50).map(String) : [],
       readBy: [user.id], reactions: {}, createdAt: new Date().toISOString()

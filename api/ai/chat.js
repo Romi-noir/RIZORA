@@ -50,13 +50,13 @@ module.exports = async function handler(req, res) {
 
     return res.end(text);
   } catch (error) {
-    console.error("RIZORA AI proxy error:", error);
+    console.error("NOIR ® proxy error:", error);
 
     res.statusCode = 502;
 
     return res.end(JSON.stringify({
       success: false,
-      error: "Unable to reach RIZORA AI."
+      error: "Unable to reach NOIR ®."
     }));
   }
 };

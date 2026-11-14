@@ -35,7 +35,7 @@ const requiredStyles=[
 ];
 for(const p of requiredScripts) assert(scripts.includes(p),"index.html does not load "+p);
 for(const p of requiredStyles) assert(styles.includes(p),"index.html does not load "+p);
-for(const p of [...scripts,...styles,"manifest.json","service-worker.js","rizora-cover.png","assets/rizora_verified_badge.svg","assets/rizora_verified_mark.svg"]){
+for(const p of [...scripts,...styles,"manifest.json","service-worker.js","rizora-cover.png","rizora-icon-32.png","rizora-icon-128.png","rizora-brand-system.css","assets/rizora-play-logo.jpg","assets/ads/rizora-ad-1.mp3","assets/ads/rizora-ad-2.mp3","assets/ads/rizora-ad-3-orekelewa.mp3","assets/ads/rizora-video-ad.mp4","assets/rizora_verified_badge.svg","assets/rizora_verified_mark.svg","assets/rizora_verified_early.svg","assets/rizora_verified_premium.svg","assets/rizora_verified_premium_plus.svg"]){
   assert(fs.existsSync(path.join(root,p)),"Missing frontend asset: "+p);
 }
 
@@ -57,8 +57,13 @@ const media=read("rizora-v2-media.js");
 const server=read("server.js");
 const renderConfig=read("render.yaml");
 const envExample=read(".env.example");
+const integrations=read("rizora-integrations.js");
+const mediaBackend=read("rizora-v2-media-backend.js");
 const musicUi=read("rizora-v2-music-ui.js");
 const studioPage=read("rizora-v2-studio-page.js");
+const brand=read("rizora-brand-system.css");
+const music=read("rizora-v2-music.js");
+const player=read("rizora-v2-player.js");
 
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
@@ -68,6 +73,15 @@ for (const key of ["GROQ_API_KEY","RIZORA_HF_TOKEN","ELEVENLABS_API_KEY"]) {
   assert(new RegExp("- key: " + key + "\\s+sync: false").test(renderConfig),key+" must be declared as a private Render environment variable.");
   assert(envExample.includes(key+"="),key+" is missing from .env.example.");
 }
+for (const key of ["SUPABASE_URL","SUPABASE_ANON_KEY","SUPABASE_SERVICE_ROLE_KEY","CLOUDINARY_CLOUD_NAME","CLOUDINARY_API_KEY","CLOUDINARY_API_SECRET","TURNSTILE_SITE_KEY","TURNSTILE_SECRET_KEY"]) {
+  assert(new RegExp("- key: " + key + "\\s+sync: false").test(renderConfig),key+" must be declared as a private Render environment variable.");
+  assert(envExample.includes(key+"="),key+" is missing from .env.example.");
+}
+assert(renderConfig.includes("SUPABASE_PRIVATE_MEDIA_BUCKET") && renderConfig.includes("value: rizora-private-media"),"Render must target the private RIZORA Supabase media bucket.");
+assert(integrations.includes("turnstile/v0/siteverify") && integrations.includes("function verifyTurnstile"),"Server-side Cloudflare Turnstile verification is missing.");
+assert(integrations.includes("function cloudinarySignature") && integrations.includes("overwrite: false"),"Signed Cloudinary uploads must prevent overwriting an existing asset.");
+assert(mediaBackend.includes("createPrivateUploadIntent") && mediaBackend.includes("storedBytes===Number(intent.size)"),"Private Supabase uploads must be signed and checked against stored size.");
+assert(!/- key:\s*RIZORA_MEDIA_ROOT\b/.test(renderConfig),"Production media must not rely on an unmounted Render filesystem.");
 assert(envExample.includes("RIZORA_IMAGE_MODEL=black-forest-labs/FLUX.1-schnell"),"Image model default is missing from .env.example.");
 assert(envExample.includes("RIZORA_VIDEO_MODEL=Wan-AI/Wan2.2-TI2V-5B"),"Video model default is missing from .env.example.");
 assert(core.includes("var timeoutMs=Number(opt.timeoutMs)") && core.includes("Math.min(timeoutMs,119000)"),"API timeout overrides must be bounded below Vercel rewrite timeout limits.");
@@ -115,13 +129,28 @@ assert(sw.includes("rizora-v2-ads-ui.js"),"Service worker does not cache RIZORA 
 assert(sw.includes("rizora_verified_badge.svg"),"Service worker does not cache verified badge.");
 assert(sw.includes("rizora_verified_mark.svg"),"Service worker does not cache verified mark.");
 assert(sw.includes("rizora-v2-experience.css"),"Service worker does not cache experience CSS.");
+assert(sw.includes("rizora-brand-system.css") && sw.includes("rizora-icon-32.png") && sw.includes("rizora-icon-128.png"),"Service worker does not cache current brand assets.");
+assert(sw.includes("rizora_verified_early.svg") && sw.includes("rizora_verified_premium.svg") && sw.includes("rizora_verified_premium_plus.svg"),"Service worker does not cache tier badges.");
+assert(brand.includes("--rz-gold") && brand.includes(".rz-music-hero") && brand.includes(".rz-ai-orb"),"Black, white and gold brand styling is missing from key app surfaces.");
+assert(music.includes('path==="/api/music/audius/search"') && music.includes("https://api.audius.co/v1/tracks/search"),"Read-only Audius search is not wired through the backend.");
+assert(player.includes("/api/music/audius/search") && !/spotify/i.test(source+music+player),"Music player must use Audius instead of Spotify.");
+assert(sw.includes("v52-audio-video-ads") && sw.includes("rizora-play-logo.jpg"),"Service worker cache version or RIZORA PLAY logo is stale.");
+for(const asset of ["rizora-ad-1.mp3","rizora-ad-2.mp3","rizora-ad-3-orekelewa.mp3"]){assert(player.includes("/assets/ads/"+asset),"Music player is missing audio ad asset "+asset+".");}
+assert(player.includes("startsSinceAd>=2") && player.includes("userGetsAdFree") && player.includes("playAd()"),"Non-subscriber audio ad scheduling is missing.");
+assert(player.includes("control.disabled=player.isAd") && core.includes("window.RIZORA_PLAYER.isAd"),"A listener can skip or close the player before a required audio ad finishes.");
+assert(read("rizora-v2-ads-ui.js").includes("rizora-video-ad.mp4"),"RIZORA video media ad is not wired into the feed.");
 
 const verifiedPath=/verifiedBadgeUrl/;
 assert(verifiedPath.test(server),"Backend public profile does not expose verified badge metadata.");
 const vercel=JSON.parse(read("vercel.json"));
 assert(Array.isArray(vercel.rewrites) && vercel.rewrites.some(rule=>rule && rule.source==="/login" && rule.destination==="/"),"Vercel rewrite/config is missing.");
+assert(vercel.rewrites.some(rule=>rule && rule.source==="/sitemap.xml" && rule.destination==="https://rizora-guse.onrender.com/sitemap.xml"),"Dynamic sitemap forwarding is missing.");
+assert(vercel.rewrites.some(rule=>rule && rule.source==="/creator/:path*" && rule.destination==="https://rizora-guse.onrender.com/creator/:path*"),"Public creator profile forwarding is missing.");
+const vercelIgnore=read(".vercelignore").split(/\r?\n/);
+assert(vercelIgnore.includes("sitemap.xml"),"Static sitemap must be excluded so the dynamic sitemap rewrite can run.");
+assert(vercelIgnore.includes("rizora-seo.js"),"Server-only SEO helper must not be deployed as a static frontend asset.");
 const render=read("render.yaml");
-assert(/databases:\s*[\s\S]*name:\s*rizora-production-db/.test(render),"Render Blueprint must declare the production database.");
-assert(/fromDatabase:\s*[\s\S]*name:\s*rizora-production-db/.test(render),"Render backend is not wired to the production database.");
-assert(/mountPath:\s*\/var\/data/.test(render) && /RIZORA_MEDIA_ROOT\s*\n\s*value:\s*\/var\/data\/rizora/.test(render),"Render media storage must use the persistent disk.");
+assert(envExample.includes("DATABASE_URL="),"DATABASE_URL is missing from .env.example.");
+assert(/- key:\s*DATABASE_URL\s+sync:\s*false/.test(render),"Render must receive the external PostgreSQL URL through a private environment variable.");
+assert(!/^databases:/m.test(render),"Do not provision a second Render database while production uses the external PostgreSQL URL.");
 console.log("RIZORA predeploy audit: PASS");

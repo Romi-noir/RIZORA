@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "node -e \"console.log('RIZORA static frontend: no compilation step required')\""
+    "build": "node -e \"console.log('RIZORA static frontend: no compilation step required')\"",
+    "test": "node scripts/rizora-integrations-test.js"
   },
   "dependencies": {
     "@huggingface/inference": "4.13.32",

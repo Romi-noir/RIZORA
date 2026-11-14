@@ -1,7 +1,3 @@
-databases:
-  - name: rizora-production-db
-    plan: free
-
 services:
   - type: web
     name: RIZORA
@@ -19,11 +15,33 @@ services:
         sync: false
       - key: RIZORA_PUBLIC_URL
         value: https://rizora.com.ng
-      # External PostgreSQL URL; set it in Render's Dashboard, never in source.
+      # External Neon PostgreSQL URL; set it in Render's Dashboard, never in source.
       - key: DATABASE_URL
         sync: false
-      - key: RIZORA_MEDIA_ROOT
-        value: /var/data/rizora
+      # Supabase is used for Auth and private media only; Neon remains the app database.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_PRIVATE_MEDIA_BUCKET
+        value: rizora-private-media
+      # Cloudinary stores public creator media and generated audio.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      # Cloudflare Turnstile protects auth requests; never place its secret in Vercel.
+      - key: TURNSTILE_SITE_KEY
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      # Optional key for higher read-only Audius search limits.
+      - key: AUDIUS_API_KEY
+        sync: false
       - key: RIZORA_HF_TOKEN
         sync: false
       - key: ELEVENLABS_API_KEY

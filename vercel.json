@@ -6,6 +6,14 @@
   },
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "https://rizora-guse.onrender.com/sitemap.xml"
+    },
+    {
+      "source": "/creator/:path*",
+      "destination": "https://rizora-guse.onrender.com/creator/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://rizora-guse.onrender.com/api/:path*"
     },

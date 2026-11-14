@@ -21,8 +21,22 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --ignore-scripts
+      - name: Test provider integrations
+        run: npm test
       - name: Test Vercel AI chat session proxy
         run: node scripts/rizora-ai-chat-proxy-test.js
+
+      - name: Test public creator profile SEO
+        run: node scripts/rizora-profile-seo-test.js
+
+      - name: Test Audius search integration
+        run: node scripts/rizora-audius-search-test.js
+
+      - name: Test player ad scheduling
+        run: node scripts/rizora-player-ad-test.js
+
+      - name: Test video media ad
+        run: node scripts/rizora-video-ad-test.js
 
       - name: Build static frontend
         run: npm run build
@@ -30,6 +44,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check server.js
+          node --check rizora-seo.js
           node --check rizora-v2-media-backend.js
           node --check rizora-v2-fans.js
           node --check rizora-v2-backend.js
@@ -52,6 +67,7 @@ jobs:
           node --check rizora-v2-business-ui.js
           node --check rizora-v2-ads-ui.js
           node --check rizora-v2.js
+          node --check rizora-v2-player.js
           node --check rizora-email.js
           node --check rizora-v2-downloads.js
           node --check rizora-v2-hub.js

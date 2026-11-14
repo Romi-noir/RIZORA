@@ -47,7 +47,7 @@
 .rz-ai-suggestions button{display:flex;align-items:center;gap:12px;min-height:40px;padding:9px 12px;border:1px solid rgba(183,151,255,.26);border-radius:12px;background:rgba(24,20,39,.8);color:#f6f2ff;font-size:11px;font-weight:750}
 .rz-ai-message{display:flex;align-items:flex-start;gap:10px;max-width:min(820px,92%);padding:13px;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:rgba(8,10,20,.76);backdrop-filter:blur(10px)}
 .rz-ai-message-user{justify-self:end;border-color:rgba(93,219,207,.25);background:rgba(17,38,47,.77)}
-.rz-ai-mark{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:10px;background:rgba(167,124,255,.18);color:#e1d4ff;font-size:12px;font-weight:900}
+.rz-ai-mark{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:10px;background:rgba(167,124,255,.18);color:#f7f7f5;font-size:12px;font-weight:900}
 .rz-ai-message-content{min-width:0;flex:1}
 .rz-ai-message-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
 .rz-ai-message-head strong{font-size:12px}

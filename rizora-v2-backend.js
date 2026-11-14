@@ -37,10 +37,30 @@ function profileStats(db,userId){
     likes:(rz.likes||[]).filter(function(row){return postIds.has(row.postId);}).length
   };
 }
+var earlyMemberCache=new WeakMap();
+function isEarlyMember(db,user){
+  var users=Array.isArray(db.users)?db.users:[],stamp=users.length+":"+(users[0]&&users[0].id||"")+":"+(users[users.length-1]&&users[users.length-1].id||"");
+  var cached=earlyMemberCache.get(db);
+  if(!cached||cached.stamp!==stamp){
+    var eligible=users.filter(function(item){return item&&item.id&&item.status!=="deleted"&&item.official!==true&&!/^(super_admin|system|platform)$/i.test(String(item.role||""));});
+    eligible.sort(function(a,b){var at=Date.parse(a.createdAt||"")||Number.MAX_SAFE_INTEGER,bt=Date.parse(b.createdAt||"")||Number.MAX_SAFE_INTEGER;return at-bt||String(a.id).localeCompare(String(b.id));});
+    cached={stamp:stamp,ids:new Set(eligible.slice(0,120).map(function(item){return item.id;}))};earlyMemberCache.set(db,cached);
+  }
+  return cached.ids.has(user.id);
+}
+function safeProfileLinks(value){
+  return (Array.isArray(value)?value:[]).slice(0,8).map(function(item){
+    var url=String(typeof item==="string"?item:(item&&(item.url||item.href)||"")).trim().slice(0,600),label=String(typeof item==="string"?"":(item&&(item.label||item.title)||"")).trim().slice(0,60);
+    try{var parsed=new URL(url);if(parsed.protocol!=="https:"&&parsed.protocol!=="http:")return null;if(parsed.username||parsed.password)return null;return {label:label||parsed.hostname.replace(/^www\./,""),url:parsed.href};}catch(_){return null;}
+  }).filter(Boolean);
+}
 function publicProfile(db,user){
   var p=profileFor(db,user);
-  var isVerified=user.verified===true||user.verificationStatus==="verified";
-  return Object.assign({id:user.id,username:user.username,publicUsername:user.publicUsername||user.username,displayName:user.displayName||user.username,bio:p.bio||"",avatarUrl:p.avatarUrl||user.avatarUrl||"",bannerUrl:p.bannerUrl||"",category:p.category||"",location:p.location||"",links:p.links||[],verified:isVerified,verifiedBadgeUrl:isVerified?"/assets/rizora_verified_badge.png":"",verificationStatus:user.verificationStatus||"not_submitted",official:user.official===true,points:Number(user.points||0)},profileStats(db,user.id));
+  var plan=String(user.plan||"").toLowerCase(),early=isEarlyMember(db,user),badgeType=String(user.verificationBadgeType||"");
+  if(!/^(early|premium|premium_plus)$/.test(badgeType))badgeType=plan==="premium_plus"||user.premiumPlus===true||user.role==="super_admin"?"premium_plus":plan==="premium"?"premium":(early?"early":"");
+  var badgePath={early:"/assets/rizora_verified_early.svg",premium:"/assets/rizora_verified_premium.svg",premium_plus:"/assets/rizora_verified_premium_plus.svg"}[badgeType]||"";
+  var isVerified=user.verified===true||user.verificationStatus==="verified"||early||!!badgeType;
+  return Object.assign({id:user.id,username:user.username,publicUsername:user.publicUsername||user.username,displayName:user.displayName||user.username,bio:p.bio||"",avatarUrl:p.avatarUrl||user.avatarUrl||"",bannerUrl:p.bannerUrl||"",category:p.category||"",location:p.location||"",links:safeProfileLinks(p.links),verified:isVerified,verificationBadgeType:badgeType,verifiedBadgeUrl:badgePath,verificationStatus:user.verificationStatus||"not_submitted",official:user.official===true,points:Number(user.points||0)},profileStats(db,user.id));
 }
 function mediaRecordForUrl(db,value,ownerId){
   var raw=String(value||""),id="";
@@ -120,13 +140,33 @@ async function handleRizoraV2(ctx){
     return true;
   }
 
+  if(method==="GET"&&path==="/api/v2/profile/posts"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    var ownPosts=(db.rzV2.posts||[]).filter(function(post){return post.userId===user.id&&post.visibility!=="private"&&post.deleted!==true;}).sort(function(a,b){return Date.parse(b.createdAt||"")-Date.parse(a.createdAt||"");}).map(function(post){return decorate(db,post);}).filter(Boolean);
+    ctx.sendJSON(res,200,{success:true,posts:ownPosts});return true;
+  }
+
+  var badgeRoute=path.match(/^\/api\/v2\/admin\/users\/([^/]+)\/badge$/);
+  if(method==="POST"&&badgeRoute){
+    if(!user||!ctx.isSuperAdmin(user)){ctx.sendError(res,403,"Super Admin access is required.");return true;}
+    var targetId=decodeURIComponent(badgeRoute[1]),target=db.users.find(function(item){return item.id===targetId;});
+    if(!target){ctx.sendError(res,404,"User not found.");return true;}
+    var badgeBody=await body(req),badge=String(badgeBody.type||"").trim().toLowerCase();
+    if(badge&&!/^(early|premium|premium_plus)$/.test(badge)){ctx.sendError(res,400,"Choose an available badge type.");return true;}
+    if(badge)target.verificationBadgeType=badge;
+    else delete target.verificationBadgeType;
+    notify(db,target.id,badge?"Profile badge assigned":"Profile badge reset",badge?"An administrator updated your profile badge.":"Your profile badge now follows your membership status.","activity");
+    ctx.audit(db,"admin_profile_badge_updated",user,{targetId:target.id,badgeType:badge||null});ctx.saveDB(db);
+    ctx.sendJSON(res,200,{success:true,profile:publicProfile(db,target)});return true;
+  }
+
   if((method==="GET"||method==="PATCH")&&path==="/api/v2/profile"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
     if(method==="GET"){ctx.sendJSON(res,200,{success:true,profile:publicProfile(db,user)});return true;}
     if(!active(user)){ctx.sendError(res,403,"Your account cannot edit creator content right now.");return true;}
     var b=await body(req),p=profileFor(db,user),m=moderate(db,user,ctx,[b.bio,b.category,b.location],"profile:"+user.id);
     if(!m.allowed){ctx.sendJSON(res,422,Object.assign({success:false,code:"CONTENT_POLICY_VIOLATION"},m));return true;}
-    p.bio=ctx.cleanString(b.bio,600);p.category=ctx.cleanString(b.category,80);p.location=ctx.cleanString(b.location,80);p.avatarUrl=ctx.cleanString(b.avatarUrl,1200);if(Object.prototype.hasOwnProperty.call(b,"bannerUrl"))p.bannerUrl=ctx.cleanString(b.bannerUrl,1200);p.links=Array.isArray(b.links)?b.links.slice(0,8):p.links;user.avatarUrl=p.avatarUrl;user.bannerUrl=p.bannerUrl||"";user.bio=p.bio;notify(db,user.id,"Profile updated","Your profile changes are saved.","activity");ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,profile:publicProfile(db,user)});return true;
+      p.bio=ctx.cleanString(b.bio,600);p.category=ctx.cleanString(b.category,80);p.location=ctx.cleanString(b.location,80);p.avatarUrl=ctx.cleanString(b.avatarUrl,1200);if(Object.prototype.hasOwnProperty.call(b,"bannerUrl"))p.bannerUrl=ctx.cleanString(b.bannerUrl,1200);if(Array.isArray(b.links))p.links=safeProfileLinks(b.links);user.avatarUrl=p.avatarUrl;user.bannerUrl=p.bannerUrl||"";user.bio=p.bio;notify(db,user.id,"Profile updated","Your profile changes are saved.","activity");ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,profile:publicProfile(db,user)});return true;
   }
 
   if(method==="GET"&&path==="/api/v2/feed"){

@@ -2,8 +2,6 @@
 (function(){
   const API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   const MAX=25*1024*1024;
-  const SIMPLE=600*1024;
-  const CHUNK=512*1024;
   const TYPES=new Set(["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm","audio/mpeg","audio/mp4","audio/wav","audio/ogg","audio/webm"]);
 
   function dataURL(blob){
@@ -34,40 +32,43 @@
     el.hidden=!msg;
   }
 
-  async function upload(file,statusEl){
+  function uploadProviderFile(url,method,body,headers,statusEl){
+    return new Promise(function(resolve,reject){
+      var xhr=new XMLHttpRequest();xhr.open(method,url,true);xhr.timeout=120000;
+      Object.keys(headers||{}).forEach(function(key){xhr.setRequestHeader(key,headers[key]);});
+      xhr.upload.onprogress=function(event){if(event.lengthComputable)setStatus(statusEl,"Uploading "+Math.min(99,Math.round(event.loaded/event.total*100))+"%…");};
+      xhr.onerror=function(){reject(new Error("The media provider could not be reached. Check your connection and try again."));};
+      xhr.ontimeout=function(){reject(new Error("Upload took too long. Try again on a stronger connection."));};
+      xhr.onload=function(){var result={};try{result=xhr.responseText?JSON.parse(xhr.responseText):{};}catch(_){}
+        if(xhr.status<200||xhr.status>=300){reject(new Error(result.message||result.error||"The media provider could not save this file."));return;}
+        resolve(result);
+      };
+      xhr.send(body);
+    });
+  }
+
+  async function upload(file,statusEl,options){
     if(!file)throw new Error("Choose a media file first.");
     if(!TYPES.has(file.type))throw new Error("That media type is not supported on RIZORA.");
     if(file.size<=0)throw new Error("The selected file is empty.");
     if(file.size>MAX)throw new Error("Media files must be 25 MB or smaller.");
-
-    if(file.size<=SIMPLE){
-      setStatus(statusEl,"Uploading...");
-      const result=await request("/api/v2/media/upload",{method:"POST",body:JSON.stringify({
-        filename:file.name,mimeType:file.type,data:await dataURL(file)
-      })});
-      setStatus(statusEl,"Upload complete.");
-      return result.media;
-    }
-
-    setStatus(statusEl,"Preparing secure upload...");
-    const session=await request("/api/v2/media/sessions",{method:"POST",body:JSON.stringify({
-      filename:file.name,mimeType:file.type,size:file.size
+    options=options||{};
+    if(!options.purpose&&window.state&&window.state.view==="messages")options.purpose="private";
+    setStatus(statusEl,"Preparing a secure upload…");
+    const session=await request("/api/v2/media/uploads/sign",{method:"POST",body:JSON.stringify({
+      filename:file.name,mimeType:file.type,size:file.size,purpose:options.purpose==="private"?"private":"public"
     })});
-
-    for(let index=0;index<session.totalChunks;index++){
-      const start=index*CHUNK;
-      const end=Math.min(file.size,start+CHUNK);
-      const chunk=file.slice(start,end);
-      setStatus(statusEl,"Uploading "+(index+1)+" / "+session.totalChunks+"...");
-      await request("/api/v2/media/sessions/"+encodeURIComponent(session.uploadId)+"/chunk",{
-        method:"POST",
-        body:JSON.stringify({index,data:await dataURL(chunk)})
-      });
-    }
-
-    setStatus(statusEl,"Finalizing media...");
-    const done=await request("/api/v2/media/sessions/"+encodeURIComponent(session.uploadId)+"/complete",{
-      method:"POST",body:"{}"
+    var providerResult;
+    if(session.provider==="cloudinary"){
+      var form=new FormData();form.append("file",file);form.append("api_key",session.upload.apiKey);form.append("timestamp",String(session.upload.timestamp));form.append("public_id",session.upload.publicId);form.append("overwrite","false");form.append("signature",session.upload.signature);
+      providerResult=await uploadProviderFile(session.upload.uploadUrl,"POST",form,{},statusEl);
+    }else if(session.provider==="supabase"){
+      await uploadProviderFile(session.upload.uploadUrl,"PUT",file,{"Content-Type":file.type},statusEl);
+      providerResult={bytes:file.size,mimeType:file.type};
+    }else throw new Error("RIZORA could not choose a secure media provider.");
+    setStatus(statusEl,"Confirming upload…");
+    const done=await request("/api/v2/media/uploads/complete",{
+      method:"POST",body:JSON.stringify({uploadId:session.uploadId,providerResponse:providerResult,bytes:file.size,mimeType:file.type})
     });
     setStatus(statusEl,"Upload complete.");
     return done.media;

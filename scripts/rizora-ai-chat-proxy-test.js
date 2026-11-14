@@ -82,7 +82,7 @@ async function main() {
   assert.equal(wrongMethod.response.statusCode, 405);
   assert.equal(wrongMethod.forwarded, null);
 
-  console.log("RIZORA AI chat proxy test: PASS");
+  console.log("NOIR ® chat proxy test: PASS");
 }
 
 main().catch(error => {

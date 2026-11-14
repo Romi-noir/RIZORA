@@ -125,17 +125,17 @@
       try{
         setState(form,"Processing voice...",false);
         if(kind==="ai"){
-          if(blob.size>MAX_AI_AUDIO_BYTES)throw new Error("That recording is too large for RIZORA AI. Keep voice notes under 90 seconds.");
+          if(blob.size>MAX_AI_AUDIO_BYTES)throw new Error("That recording is too large for NOIR ®. Keep voice notes under 90 seconds.");
           var audio=await dataURL(blob);
           var d=await api("/api/ai/transcribe",{method:"POST",timeoutMs:60000,body:JSON.stringify({audio:audio,mimeType:chosen})});
           var text=String(d.text||"").trim();
           if(!text)throw new Error("I could not hear clear speech in that recording.");
           var input=form.querySelector("#aiInput");
-          if(!input)throw new Error("RIZORA AI composer is unavailable. Reopen AI and try again.");
+          if(!input)throw new Error("NOIR ® composer is unavailable. Reopen AI and try again.");
           input.value=text;
           if(typeof form.requestSubmit==="function")form.requestSubmit();
           else form.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));
-          setState(form,"Voice sent to RIZORA AI.",false);
+          setState(form,"Voice sent to NOIR ®.",false);
           return;
         }
 
@@ -143,7 +143,7 @@
         if(!window.RIZORA_AUDIO_TO_WAV)throw new Error("WAV converter is still loading. Try again.");
         var wav=await window.RIZORA_AUDIO_TO_WAV(blob);
         var file=new File([wav],"rizora-voice-"+Date.now()+".wav",{type:"audio/wav"});
-        var media=await window.RIZORA_UPLOAD_FILE(file,null);
+        var media=await window.RIZORA_UPLOAD_FILE(file,null,{purpose:kind==="chat"?"private":"public"});
         if(!media||!media.id)throw new Error("Voice upload did not return a media ID.");
 
         if(kind==="chat"){
@@ -177,9 +177,9 @@
     button.className="rz-btn rz-voice-button";
     button.textContent=kind==="ai"?"Talk to AI":"Voice";
     button.setAttribute("data-rz-voice-button","");
-    button.setAttribute("aria-label",kind==="ai"?"Record a voice question for RIZORA AI":"Record a RIZORA voice message");
+    button.setAttribute("aria-label",kind==="ai"?"Record a voice question for NOIR ®":"Record a RIZORA voice message");
     button.setAttribute("aria-pressed","false");
-    button.title=kind==="ai"?"Record a voice question for RIZORA AI":"Record a voice message";
+    button.title=kind==="ai"?"Record a voice question for NOIR ®":"Record a voice message";
     form.appendChild(button);
     button.addEventListener("click",function(){start(form,button,kind);});
   }

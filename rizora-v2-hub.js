@@ -56,7 +56,7 @@ function open(){
   var body=
     '<div class="rz-hub-section"><h3>Create</h3><div class="rz-hub-grid">'+
       '<button class="rz-hub-card" data-hub-action="flow"><strong>Flow</strong><span>Publish posts, polls, collaborations and media.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="ai"><strong>RIZORA AI</strong><span>Ideas, strategy, hooks and creator intelligence.</span></button>'+
+      '<button class="rz-hub-card" data-hub-action="ai"><strong>NOIR ®</strong><span>Ideas, strategy, hooks and creator intelligence.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="series"><strong>Series & Episodes</strong><span>Turn posts into connected episodic formats.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="events"><strong>Events & Live</strong><span>Schedule premieres, live sessions and community events.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="media"><strong>Media Library</strong><span>Manage uploaded images, video and audio assets.</span></button>'+

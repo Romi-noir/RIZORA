@@ -1,19 +1,31 @@
 {
   "name": "RIZORA",
   "short_name": "RIZORA",
-  "description": "Creator growth, missions, analytics and AI.",
+  "description": "Create, grow and share your work with RIZORA and NOIR ®.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#07060d",
-  "theme_color": "#080611",
+  "background_color": "#090909",
+  "theme_color": "#090909",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/rizora-cover.png",
-      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "32x32",
+      "purpose": "any",
+      "src": "/rizora-icon-32.png"
+    },
+    {
+      "type": "image/png",
+      "sizes": "128x128",
+      "purpose": "any",
+      "src": "/rizora-icon-128.png"
+    },
+    {
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable",
+      "src": "/rizora-cover.png"
     }
   ],
   "id": "/",

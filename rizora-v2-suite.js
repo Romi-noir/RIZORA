@@ -28,7 +28,7 @@ async function premium(){
    card("PREMIUM","<div class='rz-empty'>Checking entitlement...</div>")+
    '</div>'+
    '<div class="rz-suite-grid rz-suite-grid-3">'+
-     '<div>'+card("ADVANCED AI","<h3>Creator intelligence</h3><p class='rz-muted'>Strategy, ideas, hooks and growth planning powered by RIZORA AI.</p><button class='rz-btn primary' data-suite-go='intelligence'>Open AI tools</button>")+'</div>'+
+     '<div>'+card("ADVANCED AI","<h3>Creator intelligence</h3><p class='rz-muted'>Strategy, ideas, hooks and growth planning powered by NOIR ®.</p><button class='rz-btn primary' data-suite-go='intelligence'>Open AI tools</button>")+'</div>'+
      '<div>'+card("ADVANCED ANALYTICS","<h3>Deeper creator insight</h3><p class='rz-muted'>Platform analytics combined with creator scoring and performance history.</p><button class='rz-btn primary' data-suite-go='analytics'>Open analytics</button>")+'</div>'+
      '<div>'+card("PRO CREATOR TOOLS","<h3>Portfolio + planning</h3><p class='rz-muted'>Portfolio identity, experiments and publishing plans remain available to creators.</p><button class='rz-btn primary' data-suite-go='portfolio'>Open tools</button>")+'</div>'+
    '</div>'+

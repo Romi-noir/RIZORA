@@ -2998,7 +2998,7 @@ function mountCreatorOSWorkspace(){
 
     <div class="dashboard-card">
       <div class="dashboard-icon">??</div>
-      <h3>RIZORA AI Studio</h3>
+      <h3>NOIR ® Studio</h3>
       <p>
         AI-powered creator assistance and content intelligence.
       </p>
