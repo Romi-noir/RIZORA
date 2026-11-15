@@ -31,11 +31,12 @@ const requiredStyles=[
   "rizora-v2.css","rizora-v2-enterprise.css","rizora-v2-suite.css","rizora-v2-next.css",
   "rizora-v2-growth.css","rizora-v2-modern.css","rizora-v2-upgrades.css","rizora-v2-global.css","rizora-v2-creator-os.css",
   "rizora-v2-media.css","rizora-v2-series.css","rizora-v2-events.css","rizora-v2-business.css",
-  "rizora-v2-comments.css","rizora-v2-labs.css","rizora-v2-downloads.css","rizora-v2-experience.css"
+  "rizora-v2-comments.css","rizora-v2-labs.css","rizora-v2-downloads.css","rizora-v2-experience.css",
+  "rizora-v2-monochrome.css"
 ];
 for(const p of requiredScripts) assert(scripts.includes(p),"index.html does not load "+p);
 for(const p of requiredStyles) assert(styles.includes(p),"index.html does not load "+p);
-for(const p of [...scripts,...styles,"manifest.json","service-worker.js","rizora-cover.png","rizora-icon-32.png","rizora-icon-128.png","rizora-brand-system.css","assets/rizora-play-logo.jpg","assets/ads/rizora-ad-1.mp3","assets/ads/rizora-ad-2.mp3","assets/ads/rizora-ad-3-orekelewa.mp3","assets/ads/rizora-video-ad.mp4","assets/rizora_verified_badge.svg","assets/rizora_verified_mark.svg","assets/rizora_verified_early.svg","assets/rizora_verified_premium.svg","assets/rizora_verified_premium_plus.svg"]){
+for(const p of [...scripts,...styles,"manifest.json","service-worker.js","rizora-cover.png","rizora-icon-32.png","rizora-icon-128.png","rizora-brand-system.css","assets/logo-neon.png","assets/rizora-wallpaper-grain.svg","assets/rizora-play-logo.jpg","assets/ads/rizora-ad-1.mp3","assets/ads/rizora-ad-2.mp3","assets/ads/rizora-ad-3-orekelewa.mp3","assets/ads/rizora-video-ad.mp4","assets/rizora_verified_badge.svg","assets/rizora_verified_mark.svg","assets/rizora_verified_early.svg","assets/rizora_verified_premium.svg","assets/rizora_verified_premium_plus.svg"]){
   assert(fs.existsSync(path.join(root,p)),"Missing frontend asset: "+p);
 }
 
@@ -62,6 +63,7 @@ const mediaBackend=read("rizora-v2-media-backend.js");
 const musicUi=read("rizora-v2-music-ui.js");
 const studioPage=read("rizora-v2-studio-page.js");
 const brand=read("rizora-brand-system.css");
+const monochrome=read("rizora-v2-monochrome.css");
 const music=read("rizora-v2-music.js");
 const player=read("rizora-v2-player.js");
 const businessUi=read("rizora-v2-business-ui.js");
@@ -90,7 +92,7 @@ assert(!/APPLE_CLIENT_ID|APPLE_REDIRECT_URI/.test(server+renderConfig+envExample
 assert(!/Creator Earnings/i.test(businessUi) && !/CREATE\.\s*GROW\.\s*EARN\./i.test(index+email),"The old EARN branding remains visible in the active app.");
 assert(core.includes('usernameOption.value="username"') && core.includes('contact.username||contact.phone||contact.email') && core.includes('channel:pending.channel'),"Login UI must offer username, email and phone with username OTP support.");
 assert(server.includes('const loginUsername = intent === "signup" ? "" : normalizeUsername(body.username || (body.channel === "username" ? body.identifier : ""))') && (server.match(/authContactForUser\(localUser\)/g)||[]).length>=2,"Username login codes must resolve the account contact for both send and verify.");
-assert(communityFixes.includes('||"dark"') && communityFixes.includes('data-rz-profile-theme="dark">Black</button>') && communityFixes.includes('data-rz-profile-theme="light">White</button>') && !communityFixes.includes('>Custom</button>'),"App theme must default to black and offer only black and white.");
+assert(communityFixes.includes('||"dark"') && communityFixes.includes('data-rz-profile-theme="dark"') && communityFixes.includes('data-rz-profile-theme="light"') && !communityFixes.includes('>Custom</button>'),"App theme must default to black and offer only black and white.");
 assert(index.includes('name="color-scheme" content="dark light"'),"Browser theme metadata must support both black and white modes.");
 assert(renderConfig.includes("SUPABASE_PRIVATE_MEDIA_BUCKET") && renderConfig.includes("value: rizora-private-media"),"Render must target the private RIZORA Supabase media bucket.");
 assert(integrations.includes("turnstile/v0/siteverify") && integrations.includes("function verifyTurnstile"),"Server-side Cloudflare Turnstile verification is missing.");
@@ -148,12 +150,16 @@ assert(sw.includes("rizora-v2-ads-ui.js"),"Service worker does not cache RIZORA 
 assert(sw.includes("rizora_verified_badge.svg"),"Service worker does not cache verified badge.");
 assert(sw.includes("rizora_verified_mark.svg"),"Service worker does not cache verified mark.");
 assert(sw.includes("rizora-v2-experience.css"),"Service worker does not cache experience CSS.");
-assert(sw.includes("rizora-brand-system.css") && sw.includes("rizora-icon-32.png") && sw.includes("rizora-icon-128.png"),"Service worker does not cache current brand assets.");
+assert(sw.includes("rizora-brand-system.css") && sw.includes("rizora-icon-32.png") && sw.includes("rizora-icon-128.png") && sw.includes("rizora-wallpaper-grain.svg") && sw.includes("rizora-v2-monochrome.css"),"Service worker does not cache current brand assets and monochrome theme styles.");
 assert(sw.includes("rizora_verified_early.svg") && sw.includes("rizora_verified_premium.svg") && sw.includes("rizora_verified_premium_plus.svg"),"Service worker does not cache tier badges.");
-assert(brand.includes("--rz-gold") && brand.includes(".rz-music-hero") && brand.includes(".rz-ai-orb"),"Black, white and gold brand styling is missing from key app surfaces.");
+assert(monochrome.includes("--rz-action-bg") && monochrome.includes("data-rizora-theme=\"light\"") && monochrome.includes(".rz-ai-workspace::before"),"Shared black-and-white styling for RIZORA and NOIR is missing.");
+assert(index.includes("rizora-v2-monochrome.css") && index.includes("rizora-play-logo.jpg"),"RIZORA monochrome styling or the supplied loading animation is missing.");
+assert(index.includes("data-rizora-wallpaper") && !index.includes("#c7a65a") && !index.includes("199,166,90"),"The page shell must honor saved black/white wallpapers without gold inline styling.");
+assert(!core.includes('removeAttribute("data-rizora-theme")') && core.includes("RIZORA PLAY") && core.includes("Feel the vibe. Own the sound."),"Public routing must preserve the selected theme and use RIZORA PLAY branding.");
+assert(communityFixes.includes("rizora_app_wallpaper") && communityFixes.includes("Soft texture"),"Global monochrome wallpaper controls are missing.");
 assert(music.includes('path==="/api/music/audius/search"') && music.includes("https://api.audius.co/v1/tracks/search"),"Read-only Audius search is not wired through the backend.");
 assert(player.includes("/api/music/audius/search") && !/spotify/i.test(source+music+player),"Music player must use Audius instead of Spotify.");
-assert(sw.includes("v54-login-theme") && sw.includes("rizora-play-logo.jpg"),"Service worker cache version or RIZORA PLAY logo is stale.");
+assert(sw.includes("v55-monochrome-wallpaper") && sw.includes("rizora-play-logo.jpg") && sw.includes("logo-neon.png"),"Service worker cache version or RIZORA logo assets are stale.");
 for(const asset of ["rizora-ad-1.mp3","rizora-ad-2.mp3","rizora-ad-3-orekelewa.mp3"]){assert(player.includes("/assets/ads/"+asset),"Music player is missing audio ad asset "+asset+".");}
 assert(player.includes("startsSinceAd>=2") && player.includes("userGetsAdFree") && player.includes("playAd()"),"Non-subscriber audio ad scheduling is missing.");
 assert(player.includes("control.disabled=player.isAd") && core.includes("window.RIZORA_PLAYER.isAd"),"A listener can skip or close the player before a required audio ad finishes.");

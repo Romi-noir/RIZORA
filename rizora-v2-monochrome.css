@@ -1,0 +1,465 @@
+/* RIZORA's shared black and white visual system. Keep supplied logo artwork intact. */
+:root,
+:root[data-rizora-theme="dark"] {
+  color-scheme: dark;
+  --bg: #090909;
+  --panel: #141414;
+  --panel-soft: #1b1b1b;
+  --line: #292929;
+  --text: #f5f5f5;
+  --muted: #a3a3a3;
+  --rz-theme-page: #090909;
+  --rz-theme-surface: #141414;
+  --rz-theme-panel: #1b1b1b;
+  --rz-theme-text: #f5f5f5;
+  --rz-theme-muted: #a3a3a3;
+  --rz-theme-accent: #f5f5f5;
+  --rz-action-bg: #f5f5f5;
+  --rz-action-text: #090909;
+  --rz-gold: #f5f5f5;
+  --gold: #f5f5f5;
+  --accent: #f5f5f5;
+  --purple: #f5f5f5;
+  --purple2: #cfcfcf;
+  --rz-studio-ink: #090909;
+  --rz-studio-card: #141414;
+  --rz-studio-border: #292929;
+  --rz-studio-text: #f5f5f5;
+  --rz-studio-muted: #a3a3a3;
+  --rz-studio-purple: #f5f5f5;
+  --rz-studio-pink: #f5f5f5;
+  --rz-green: #f5f5f5;
+  --blue: #f5f5f5;
+  --rz-blue: #f5f5f5;
+  --rzda-purple: #f5f5f5;
+  --rzda-teal: #a3a3a3;
+  --rzs-accent: #f5f5f5;
+  --good: #a3a3a3;
+  --warn: #a3a3a3;
+  --shadow: 0 14px 34px rgba(0, 0, 0, .22);
+  background: var(--bg);
+  color: var(--text);
+}
+
+:root[data-rizora-theme="light"] {
+  color-scheme: light;
+  --bg: #fff;
+  --panel: #f7f7f7;
+  --panel-soft: #efefef;
+  --line: #e5e5e5;
+  --text: #111;
+  --muted: #666;
+  --rz-theme-page: #fff;
+  --rz-theme-surface: #f7f7f7;
+  --rz-theme-panel: #efefef;
+  --rz-theme-text: #111;
+  --rz-theme-muted: #666;
+  --rz-theme-accent: #111;
+  --rz-action-bg: #111;
+  --rz-action-text: #fff;
+  --rz-gold: #111;
+  --gold: #111;
+  --accent: #111;
+  --purple: #111;
+  --purple2: #444;
+  --rz-studio-ink: #fff;
+  --rz-studio-card: #f7f7f7;
+  --rz-studio-border: #e5e5e5;
+  --rz-studio-text: #111;
+  --rz-studio-muted: #666;
+  --rz-studio-purple: #111;
+  --rz-studio-pink: #111;
+  --rz-green: #111;
+  --blue: #111;
+  --rz-blue: #111;
+  --rzda-purple: #111;
+  --rzda-teal: #666;
+  --rzs-accent: #111;
+  --good: #666;
+  --warn: #666;
+  --shadow: 0 12px 30px rgba(0, 0, 0, .06);
+  background: var(--bg);
+  color: var(--text);
+}
+
+html,
+body {
+  min-height: 100%;
+  background-color: var(--bg) !important;
+  color: var(--text);
+}
+
+body[data-rizora-wallpaper="soft"] {
+  background-image: url("/assets/rizora-wallpaper-grain.svg") !important;
+  background-repeat: repeat !important;
+  background-size: 180px 180px !important;
+}
+
+html[data-rizora-wallpaper="soft"] {
+  background-color: var(--bg);
+  background-image: url("/assets/rizora-wallpaper-grain.svg");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+html[data-rizora-theme] body :is(.rz-social-main, .rz-content, .rz-social-content) {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--text) !important;
+}
+
+html[data-rizora-theme] body :is(.rz-auth, .rz-auth-card, .rz-top, .rz-x-sidebar,
+.rz-sidebar, .rz-card, .rz-modal, .rz-search-card, .rz-account-card, .rz-right-growth,
+.rz-profile-card, .rz-command-center, .rz-feature-showcase, .rz-global-card,
+.rz-global-list, .rz-enterprise-card, .rz-suite-card, .rz-hub-card, .rz-hub-section,
+.rz-command-card, .rz-command-hero, .rz-profile-themes, .rz-public-stage,
+.rz-public-feature-section, .rz-public-trust, .rz-public-cta, .rz-ai-workspace,
+.rz-ai-empty, .rz-ai-message, .rz-ai-composer, .rz-studio-hero, .rz-studio-tool,
+.rz-studio-tool-music, .rz-studio-idea, .rz-studio-next, .rzs-hero, .rzs-prompt,
+.rzs-bottom, .rzs-feature-action-card, .rzs-local-player, .rzs-player,
+.rzs-feature-nav, .rzs-feature-nav button, .rz-music-hero, .rz-music-card,
+.rz-music-audio-studio, .rzp-shell, .rzp-library, .rzp-center, .rzp-queue,
+.rzp-dock, .rz-live-banner, .rz-notification-row, .rz-message-row) {
+  border-color: var(--line) !important;
+  background-color: var(--panel) !important;
+  background-image: none !important;
+  color: var(--text) !important;
+  box-shadow: var(--shadow);
+}
+
+html[data-rizora-theme="dark"] body :is(.rz-x-sidebar, .rz-sidebar) {
+  background-color: #000 !important;
+}
+
+html[data-rizora-theme] body :is(.rz-top, .rz-mobile-nav, .rz-tabs,
+.rz-profile-tabs, .rz-site-footer, .rz-public-footer, .rz-profile-cover,
+.rz-ai-header, .rz-ai-thread, .rz-ai-composer, .rzp-top, .rzp-playlist-hero,
+.rzp-track-row, .rzp-now, .rzp-queue-track, .rzp-dock, .rz-music-panel,
+.rz-music-actions .rz-btn:not(.primary), .rz-music-download,
+.rz-music-provider-links a, .rzp-library-item, .rzp-refresh, .rzp-heart,
+.rzp-queue-add, .rzp-transport button, .rzp-search, .rzp-track-main) {
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+}
+
+html[data-rizora-theme] body :is(a, button, input, textarea, select, option,
+.rz-kicker, .rz-tag, .rz-profile-link-list a, .rz-xnav-item, .rz-mobile-nav button,
+.rz-nav button, .rz-tabs button, .rz-profile-tabs button, .rz-ai-listen,
+.rz-ai-suggestions button span, .rz-ai-media-details > summary, .rzp-brand,
+.rzp-status, .rzp-search-caption, .rzp-track-copy, .rzp-track-length,
+.rzp-side-title, .rzp-empty, .rzp-queue-track, .rzp-now, .rzp-dock-track) {
+  color: var(--text) !important;
+}
+
+html[data-rizora-theme] body :is(.rz-muted, .rz-mini, .rz-ai-footnote,
+.rz-ai-header p, .rz-ai-empty > p, .rz-ai-message-text small,
+.rzp-track-copy small, .rzp-queue-track small, .rzp-dock-track small,
+.rzp-now-artist, .rzp-search-caption, .rz-public-status) {
+  color: var(--muted) !important;
+}
+
+html[data-rizora-theme] body :is(h1, h2, h3, h4, h5, p, span, strong, small,
+label, li, a, button, input, textarea, select, option, summary, em) {
+  color: var(--text) !important;
+}
+
+html[data-rizora-theme] body button {
+  border-color: var(--line) !important;
+  background-color: var(--panel) !important;
+  background-image: none !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
+html[data-rizora-theme] body :is(.rz-muted, .rz-mini, .rz-ai-footnote,
+.rz-ai-header p, .rz-ai-empty > p, .rz-ai-message-text small,
+.rzp-track-copy small, .rzp-queue-track small, .rzp-dock-track small,
+.rzp-now-artist, .rzp-search-caption, .rz-public-status) {
+  color: var(--muted) !important;
+}
+
+html[data-rizora-theme] body :is(.rz-input, .rz-textarea, input:not([type="range"]),
+textarea, select, .rzp-search input, .rz-music-form input:not([type="file"]),
+.rz-music-form textarea, .rz-music-form select, .rz-voiceover-form select,
+.rz-voiceover-form textarea, .rz-music-audio-controls select) {
+  border-color: var(--line) !important;
+  background-color: var(--panel) !important;
+  color: var(--text) !important;
+  box-shadow: none;
+}
+
+html[data-rizora-theme] body :is(.rz-input, .rz-textarea, input, textarea, select):focus {
+  border-color: var(--muted) !important;
+  outline-color: var(--muted) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--muted) 18%, transparent) !important;
+}
+
+html[data-rizora-theme] body :is(input, textarea)::placeholder {
+  color: var(--muted) !important;
+  opacity: .82;
+}
+
+html[data-rizora-theme] body :is(.rz-btn.primary, .rz-create-post, .rz-btn-primary,
+.rzs-generate, .rzs-btn-primary, .rz-public-actions .primary,
+.rz-profile-theme-buttons button.active, .rz-profile-wallpaper-buttons button.active,
+.rz-xnav-item.active, .rz-mobile-nav button.active, .rz-nav button.active,
+.rz-tabs button.active, .rz-profile-tabs button.active, .rzs-feature-nav button.active,
+.rzp-play, #rzpPlayPause) {
+  border-color: var(--rz-action-bg) !important;
+  background: var(--rz-action-bg) !important;
+  background-image: none !important;
+  color: var(--rz-action-text) !important;
+  box-shadow: none !important;
+}
+
+html[data-rizora-theme] body :is(.rz-btn:not(.primary), .rz-xnav-item:not(.active),
+.rz-mobile-nav button:not(.active), .rz-nav button:not(.active),
+.rz-tabs button:not(.active), .rz-profile-tabs button:not(.active),
+.rz-profile-theme-buttons button:not(.active), .rz-profile-wallpaper-buttons button:not(.active),
+.rzs-feature-nav button:not(.active), .rz-ai-suggestions button,
+.rz-music-actions .rz-btn:not(.primary), .rz-music-form input[type="file"]::file-selector-button,
+.rzp-refresh, .rzp-library-item, .rzp-heart, .rzp-queue-add, .rzp-transport button,
+.rzp-queue-track, .rzp-track-main, .rzp-download, .rzp-guest-download,
+.rzp-external-search button) {
+  border-color: var(--line) !important;
+  background: var(--panel) !important;
+  background-image: none !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
+html[data-rizora-theme] body :is(.rz-btn, button, a, .rzp-track-main,
+.rzp-queue-track, .rzp-library-item, .rz-ai-suggestions button) {
+  transition: color 260ms ease, background-color 260ms ease,
+    border-color 260ms ease, transform 260ms ease, opacity 260ms ease;
+}
+
+html[data-rizora-theme] body :is(.rz-avatar, .rz-command-icon, .rz-feature-showcase-icon,
+.rz-studio-tool-mark, .rzs-feature-symbol, .rz-ai-mark, .rz-ai-orb,
+.rz-ai-logo, .rzp-track-art, .rzp-now-art, .rzp-dock-art) {
+  border-color: var(--line) !important;
+  background-color: var(--panel-soft) !important;
+  background-image: none;
+  box-shadow: none !important;
+  color: var(--text) !important;
+}
+
+html[data-rizora-theme] body :is(.rz-ai-workspace, .rz-ai-header, .rz-ai-empty,
+.rz-ai-message, .rz-ai-message-user .rz-ai-message-content,
+.rz-ai-composer, .rz-ai-suggestions button, .rz-ai-mark, .rz-ai-orb) {
+  background-color: var(--panel) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  border-color: var(--line) !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+}
+
+.rz-ai-workspace::before { content: none !important; }
+.rz-ai-message-user .rz-ai-message-content { background-color: var(--panel-soft) !important; }
+.rz-ai-message-head, .rz-ai-message-user .rz-ai-message-head,
+.rz-ai-message-text { color: var(--text) !important; }
+.rz-ai-typing span { background: var(--muted) !important; }
+.rz-ai-message-text pre, .rz-ai-message-text code { border-color: var(--line); background: var(--panel-soft); color: var(--text); }
+.rz-ai-logo { border-radius: 14px; object-position: center; }
+
+/* RIZORA PLAY visual refresh only: audio, ad timing, queue and playlist logic stay intact. */
+.rzp-shell {
+  --rzp-bg: var(--bg);
+  --rzp-panel: var(--panel);
+  --rzp-line: var(--line);
+  --rzp-muted: var(--muted);
+  --rzp-accent: var(--text);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0;
+  min-width: 0;
+  min-height: 520px;
+  height: min(760px, calc(100dvh - 170px));
+  overflow: hidden;
+  border: 1px solid var(--line) !important;
+  border-radius: 18px;
+  background: var(--bg) !important;
+  background-image: none !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
+.rzp-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 340px);
+  align-items: center;
+  gap: 24px;
+  padding: 19px 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg) !important;
+}
+
+.rzp-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text) !important;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .04em;
+}
+
+.rzp-brand::before {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+  border-radius: 8px;
+  background: url("/assets/rizora-play-logo.jpg") center / cover no-repeat;
+}
+
+.rzp-top h3 { margin: 7px 0 0; font-size: 22px; font-weight: 620; letter-spacing: -.035em; }
+.rzp-search { max-width: none; min-height: 42px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--muted); }
+.rzp-search input { color: var(--text) !important; }
+.rzp-search-caption { margin: 0; padding: 9px 22px 0; color: var(--muted) !important; font-size: 12px; }
+
+.rzp-layout { grid-template-columns: 190px minmax(0, 1fr) 248px; min-height: 0; background: var(--bg); }
+.rzp-library, .rzp-queue { padding: 18px 14px; background: var(--bg) !important; }
+.rzp-library { border-right: 1px solid var(--line); }
+.rzp-queue { border-left: 1px solid var(--line); }
+.rzp-side-title { margin-bottom: 12px; }
+.rzp-side-title > strong, .rzp-side-title div strong { color: var(--text); font-size: 12px; font-weight: 650; }
+.rzp-side-title span, .rzp-center-heading > div > span, .rzp-now small { color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; }
+.rzp-library-item { min-height: 48px; margin: 4px 0; padding: 8px; border-radius: 10px; text-align: left; }
+.rzp-library-item.active { background: var(--panel-soft) !important; }
+.rzp-library-item > span:first-child { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-soft) !important; color: var(--text); font-size: 15px; }
+.rzp-library-item b { display: block; font-size: 12px; font-weight: 600; }
+.rzp-library-item small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+
+.rzp-center { display: flex; flex-direction: column; min-width: 0; padding: 20px; overflow: auto; background: var(--bg) !important; }
+.rzp-playlist-hero { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; gap: 17px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel) !important; }
+.rzp-playlist-art { width: 92px; height: 92px; border: 1px solid var(--line); border-radius: 12px; background: url("/assets/logo-neon.png") center / cover no-repeat !important; color: transparent !important; font-size: 0; }
+.rzp-playlist-hero > div:last-child > span { color: var(--muted); font-size: 10px; font-weight: 650; letter-spacing: .1em; }
+.rzp-playlist-hero h4 { margin: 7px 0 5px; color: var(--text); font-size: 18px; font-weight: 620; letter-spacing: -.025em; }
+.rzp-playlist-hero p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.rzp-center-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 23px 0 9px; }
+.rzp-center-heading h4 { margin: 4px 0 0; color: var(--text); font-size: 15px; font-weight: 640; }
+.rzp-refresh { min-height: 34px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); font-size: 11px; }
+.rzp-status { min-height: 18px; margin: 0 0 5px; color: var(--muted) !important; font-size: 11px; }
+.rzp-status.error { color: var(--text) !important; }
+.rzp-track-list { display: grid; gap: 6px; min-width: 0; }
+.rzp-track-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 7px; min-width: 0; padding: 6px; border: 1px solid transparent; border-radius: 10px; background: transparent !important; }
+.rzp-track-row:hover, .rzp-track-row.playing { border-color: var(--line) !important; background: var(--panel) !important; }
+.rzp-track-main { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 6px; border: 0 !important; border-radius: 8px; background: transparent !important; text-align: left; }
+.rzp-track-art, .rzp-now-art, .rzp-dock-art { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-soft) url("/assets/logo-neon.png") center / cover no-repeat !important; color: transparent !important; font-size: 0; }
+.rzp-track-art img, .rzp-now-art img, .rzp-dock-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.rzp-track-copy { display: block; min-width: 0; text-align: left; }
+.rzp-track-copy strong, .rzp-queue-track strong { display: block; overflow: hidden; color: var(--text); font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.rzp-track-copy small, .rzp-queue-track small { display: block; margin-top: 4px; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.rzp-track-length { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.rzp-download, .rzp-guest-download { min-height: 30px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: var(--text); font-size: 10px; text-decoration: none; white-space: nowrap; }
+.rzp-heart, .rzp-queue-add { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); }
+.rzp-heart.liked { color: var(--text) !important; }
+.rzp-empty { padding: 18px 12px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted) !important; font-size: 12px; line-height: 1.55; }
+
+.rzp-now { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel) !important; }
+.rzp-now-art { width: 42px; height: 42px; flex-basis: 42px; }
+.rzp-now > div:nth-child(2) { display: grid; gap: 4px; min-width: 0; }
+.rzp-now > div:nth-child(2) > strong { overflow: hidden; color: var(--text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.rzp-now > div:nth-child(2) > span { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.rzp-queue-list { display: grid; gap: 5px; margin-top: 10px; }
+.rzp-queue-track { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; padding: 7px; border: 1px solid transparent; border-radius: 9px; background: transparent !important; text-align: left; }
+.rzp-queue-track .rzp-track-art { width: 36px; height: 36px; flex-basis: 36px; }
+.rzp-queue-track i { color: var(--muted); font-size: 10px; font-style: normal; }
+
+.rzp-dock { position: relative; display: grid; grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.5fr) minmax(110px, .6fr); align-items: center; gap: 22px; padding: 11px 18px; border-top: 1px solid var(--line); background: var(--panel) !important; }
+.rzp-dock-track { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rzp-dock-track > div:last-child { min-width: 0; }
+.rzp-dock-track strong, .rzp-dock-track small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rzp-dock-track strong { color: var(--text); font-size: 11px; font-weight: 620; }
+.rzp-dock-track small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+.rzp-transport { min-width: 0; }
+.rzp-transport-buttons { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.rzp-transport-buttons button { display: grid; place-items: center; min-width: 32px; min-height: 32px; padding: 0; border: 1px solid transparent; border-radius: 8px; background: transparent !important; color: var(--text); font-size: 13px; }
+.rzp-transport-buttons .rzp-play { width: 38px; height: 38px; border: 1px solid var(--rz-action-bg) !important; border-radius: 50%; background: var(--rz-action-bg) !important; color: var(--rz-action-text) !important; font-size: 14px; }
+.rzp-progress-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) 34px; align-items: center; gap: 9px; margin-top: 5px; color: var(--muted); font-size: 9px; font-variant-numeric: tabular-nums; }
+.rzp-progress-row input, .rzp-volume input { width: 100%; accent-color: var(--text); }
+.rzp-progress-row input { height: 14px; }
+.rzp-volume { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.rzp-volume input { max-width: 120px; }
+.rzp-shell[data-rzp-ad-playing="1"] #rzpStatus { color: var(--muted) !important; }
+.rzp-shell :is(#rzpPlayPause, #rzpNext, #rzpPrevious):disabled { opacity: .42; cursor: not-allowed; }
+
+.rz-music-hero, #rzMusicOverlay .rz-music-hero,
+.rz-music-card, #rzMusicOverlay .rz-music-card,
+.rz-music-panel, #rzMusicOverlay .rz-music-panel,
+.rz-music-actions .rz-btn.primary, #rzMusicOverlay .rz-music-actions .rz-btn.primary,
+.rzs-generate, .rzs-btn-primary, .rzs-hero-mark, .rzs-library-art,
+.rz-studio-orb, .rz-studio-hero, .rz-studio-tool-mark, .rz-live-banner {
+  border-color: var(--line) !important;
+  background: var(--panel) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+}
+
+.rz-rizora-ad { border-color: var(--line) !important; background: var(--panel) !important; color: var(--text) !important; }
+.rz-verified-showcase, .rz-voice-button, .rz-voice-button[aria-pressed="true"],
+.rz-tag, .rz-badge, .rz-badge.ok {
+  border-color: var(--line) !important;
+  background: var(--panel-soft) !important;
+  background-image: none !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+.rz-avatar-wrap.rz-avatar-live { background: var(--text) !important; animation: none !important; box-shadow: none !important; }
+.rz-avatar-wrap.rz-avatar-live:after { background: var(--panel-soft) !important; color: var(--text) !important; box-shadow: none !important; }
+.rz-notification-count { border: 1px solid var(--line); background: var(--panel-soft) !important; color: var(--text) !important; }
+
+.rz-profile-themes { display: grid; gap: 16px; }
+.rz-profile-theme-group { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.rz-profile-theme-group > div:first-child { display: grid; gap: 4px; }
+.rz-profile-theme-buttons, .rz-profile-wallpaper-buttons { display: flex; flex-wrap: wrap; gap: 7px; }
+.rz-profile-theme-buttons button, .rz-profile-wallpaper-buttons button { min-height: 36px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); color: var(--text); font: inherit; font-size: 12px; }
+.rz-profile-theme-group button.active { background: var(--rz-action-bg) !important; color: var(--rz-action-text) !important; }
+
+.rz-boot { background: var(--bg) !important; color: var(--text) !important; }
+.rz-boot-card { display: grid; justify-items: center; gap: 12px; }
+.rz-boot-animation { display: block; width: 104px; height: 104px; border-radius: 20px; object-fit: cover; animation: rzLoadingMark 2.8s ease-in-out infinite; }
+.rz-boot-title { color: var(--text); font-size: 14px; font-weight: 650; letter-spacing: .12em; }
+.rz-boot-sub { color: var(--muted) !important; font-size: 12px; }
+@keyframes rzLoadingMark { 0%, 100% { transform: scale(.985); opacity: .88; } 50% { transform: scale(1); opacity: 1; } }
+
+@media (max-width: 900px) {
+  .rzp-shell { height: auto; min-height: 0; overflow: visible; border-radius: 15px; }
+  .rzp-top { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 15px; }
+  .rzp-search { width: 100%; max-width: none; }
+  .rzp-layout { grid-template-columns: minmax(0, 1fr); overflow: visible; }
+  .rzp-library { display: flex; align-items: center; gap: 6px; overflow: auto hidden; padding: 10px 12px; border: 0; border-bottom: 1px solid var(--line); }
+  .rzp-library-item { flex: 0 0 auto; width: auto; min-height: 40px; margin: 0; padding: 5px 8px; }
+  .rzp-library-item > span:first-child { width: 28px; height: 28px; }
+  .rzp-queue { display: block !important; max-height: 190px; overflow: auto; padding: 12px 15px; border: 0; border-top: 1px solid var(--line); }
+  .rzp-center { min-height: 260px; padding: 15px; overflow: visible; }
+  .rzp-dock { position: sticky; bottom: 0; z-index: 20; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 12px; padding: 10px 12px; }
+  .rzp-volume { display: none; }
+}
+
+@media (max-width: 560px) {
+  .rzp-playlist-hero { grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 12px; }
+  .rzp-playlist-art { width: 64px; height: 64px; border-radius: 9px; }
+  .rzp-playlist-hero h4 { font-size: 15px; }
+  .rzp-playlist-hero p { font-size: 11px; }
+  .rzp-track-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 3px; padding: 4px 2px; }
+  .rzp-track-row .rzp-track-main { grid-column: 1 / -1; }
+  .rzp-track-row .rzp-download, .rzp-track-row .rzp-guest-download { grid-column: 1; justify-self: start; margin-left: 5px; }
+  .rzp-track-row .rzp-heart { grid-column: 2; }
+  .rzp-track-row .rzp-queue-add { grid-column: 3; }
+  .rzp-track-length { display: none; }
+  .rzp-dock { grid-template-columns: minmax(0, 1fr); gap: 7px; padding: 9px 12px calc(9px + env(safe-area-inset-bottom)); }
+  .rzp-dock-track { display: none; }
+  .rzp-transport-buttons { gap: 7px; }
+  .rzp-progress-row { margin-top: 2px; }
+  .rzp-center { padding: 12px; }
+  .rzp-now { grid-template-columns: 38px minmax(0, 1fr) auto; padding: 8px; }
+  .rzp-now-art { width: 38px; height: 38px; flex-basis: 38px; }
+  .rz-profile-theme-group { align-items: flex-start; flex-direction: column; gap: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rz-boot-animation, html[data-rizora-theme] body :is(.rz-btn, button, a) { animation: none !important; transition: none !important; }
+}
