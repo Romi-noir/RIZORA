@@ -255,6 +255,23 @@ async function main() {
     const v2me = await request("/api/v2/me", { headers: bearerHeaders });
     assert(v2me.res.status === 200 && v2me.data.user, "v2/me bearer session failed");
 
+    const secondUsername = "smoke_chat_" + Date.now().toString(36);
+    const secondSignup = await request("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": "198.51.100." + (Math.floor(Math.random() * 200) + 1) },
+      body: JSON.stringify({ username: secondUsername, displayName: "RIZORA Chat Smoke", email: secondUsername + "@example.com", password: "SmokePass123", confirmPassword: "SmokePass123" })
+    });
+    assert(secondSignup.res.status === 201, "second chat smoke signup failed: " + JSON.stringify(secondSignup.data));
+    const secondAuthHeaders = { Cookie: cookieFrom(secondSignup.res), "Content-Type": "application/json" };
+    const firstChatMessage = await request("/api/v2/messages/" + encodeURIComponent(secondUsername), { method: "POST", headers: authHeaders, body: JSON.stringify({ text: "First side of the streak." }) });
+    assert(firstChatMessage.res.status === 201 && Number(firstChatMessage.data.streak.count) === 0, "a one-sided message incorrectly started a chat streak");
+    const repeatedChatMessage = await request("/api/v2/messages/" + encodeURIComponent(secondUsername), { method: "POST", headers: authHeaders, body: JSON.stringify({ text: "Another message from the same person." }) });
+    assert(repeatedChatMessage.res.status === 201 && Number(repeatedChatMessage.data.streak.count) === 0, "repeated one-sided messages incorrectly increased a chat streak");
+    const mutualChatMessage = await request("/api/v2/messages/" + encodeURIComponent(username), { method: "POST", headers: secondAuthHeaders, body: JSON.stringify({ text: "Now both people have replied." }) });
+    assert(mutualChatMessage.res.status === 201 && Number(mutualChatMessage.data.streak.count) === 1, "mutual daily messaging did not start a one-day streak");
+    const repeatedMutualMessage = await request("/api/v2/messages/" + encodeURIComponent(username), { method: "POST", headers: secondAuthHeaders, body: JSON.stringify({ text: "More messages today." }) });
+    assert(repeatedMutualMessage.res.status === 201 && Number(repeatedMutualMessage.data.streak.count) === 1, "repeated messages inflated the daily chat streak");
+
     const feed = await request("/api/v2/feed?tab=for-you", { headers: authHeaders });
     assert(feed.res.status === 200 && Array.isArray(feed.data.posts), "feed failed");
 
@@ -314,12 +331,13 @@ async function main() {
     assert(socialRewards.rz_official_instagram === 75, "official Instagram social reward is not 75");
     assert(socialRewards.rz_official_x === 75, "official X social reward is not 75");
     assert(socialRewards.rz_romi_tiktok === 75, "RoMi TikTok social reward is not 75");
+    const pointsBeforeSocialReview = await request("/api/v2/me", { headers: authHeaders });
     const socialComplete = await request("/api/social/tasks/complete", {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({ taskId: "rz_official_tiktok" })
     });
-    assert(socialComplete.res.status === 200 && Number(socialComplete.data.reward) === 100, "official social task completion failed");
+    assert(socialComplete.res.status === 400 && /screenshot/i.test(socialComplete.data.message || socialComplete.data.error || ""), "social mission without evidence returned " + socialComplete.res.status + ": " + JSON.stringify(socialComplete.data));
     assert(!socialComplete.data.user || !Object.prototype.hasOwnProperty.call(socialComplete.data.user, "passwordHash"), "social task response leaked passwordHash");
 
     const aiIdentity = await request("/api/ai/chat", {
@@ -352,6 +370,26 @@ async function main() {
     assert(mediaUpload.res.status === 201 && mediaUpload.data.media && mediaUpload.data.media.url, "media upload failed");
     const mediaFetch = await request(mediaUpload.data.media.url, { headers: { Cookie: cookie } });
     assert(mediaFetch.res.status === 200, "uploaded media could not be fetched");
+
+    const socialReviewSubmit = await request("/api/social/tasks/complete", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ taskId: "rz_official_tiktok", proofMediaId: mediaUpload.data.media.id })
+    });
+    assert(socialReviewSubmit.res.status === 202 && socialReviewSubmit.data.pendingReview === true && socialReviewSubmit.data.completion.status === "pending" && Number(socialReviewSubmit.data.reward) === 0, "social mission did not enter review before payout");
+    const pointsDuringSocialReview = await request("/api/v2/me", { headers: authHeaders });
+    assert(Number(pointsDuringSocialReview.data.user.points) === Number(pointsBeforeSocialReview.data.user.points), "social mission paid out before reviewer approval");
+    const tasksDuringSocialReview = await request("/api/social/tasks", { headers: authHeaders });
+    const pendingOfficialTask = (tasksDuringSocialReview.data.tasks || []).find(t => t.id === "rz_official_tiktok");
+    assert(pendingOfficialTask && pendingOfficialTask.completed === true && pendingOfficialTask.completionStatus === "pending", "pending mission state was not returned to the task list");
+    const unauthorizedReviewQueue = await request("/api/social/tasks/review-queue", { headers: authHeaders });
+    assert(unauthorizedReviewQueue.res.status === 403, "regular creator could access the task proof review queue");
+    const repeatedSocialReview = await request("/api/social/tasks/complete", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ taskId: "rz_official_tiktok", proofMediaId: mediaUpload.data.media.id })
+    });
+    assert(repeatedSocialReview.res.status === 409, "duplicate pending social proof was accepted");
 
     const voiceUpload = await request("/api/v2/media/upload", {
       method: "POST",

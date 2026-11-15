@@ -66,7 +66,7 @@ function open(){
       '<button class="rz-hub-card" data-hub-action="global"><strong>Creator Desk</strong><span>Search Insights, Broadcast Channels, custom feeds and creator assistant.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="labs"><strong>Creator Lab</strong><span>Custom feeds, A/B experiments and collaboration Deal Room.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="boosts"><strong>Boost Network</strong><span>Funded discovery and creator growth campaigns.</span></button>'+
-      '<button class="rz-hub-card" data-hub-action="business"><strong>Earn & Memberships</strong><span>Tips, products, memberships and creator earnings.</span></button>'+
+      '<button class="rz-hub-card" data-hub-action="business"><strong>Memberships & Creator Tools</strong><span>Tips, products and memberships for your community.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="analytics"><strong>Analytics</strong><span>Audience, content and growth performance.</span></button>'+
       '<button class="rz-hub-card" data-hub-action="opportunities"><strong>Opportunities</strong><span>Creator briefs, applications and collaboration opportunities.</span></button>'+
     '</div></div>'+

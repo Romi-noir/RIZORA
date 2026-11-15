@@ -1959,7 +1959,7 @@ function completeCommunityMission(
   loadCommunity();
 
   alert(
-    `+${amount} RIZORA points earned. Keep growing with real creators.`
+    `+${amount} RIZORA points added. Keep growing with real creators.`
   );
 }
 
@@ -1982,7 +1982,7 @@ function spendCommunityPoints(
     amount
   ) {
     alert(
-      `You need ${amount} points for this request. Earn more by helping other creators.`
+      `You need ${amount} points for this request. Get more by helping other creators.`
     );
 
     return;

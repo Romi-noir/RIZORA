@@ -149,6 +149,7 @@ async function readBody(req){
 function mediaIsAccessible(db, user, record){
   if(!user||!record)return false;
   if(record.ownerId===user.id)return true;
+  if(user.role==="super_admin"&&(db.socialCompletions||[]).some(function(item){return item.status==="pending"&&item.proofMediaId===record.id&&item.userId===record.ownerId;}))return true;
   const url=String(record.url||"");
   const mediaKey=function(value){
     try{

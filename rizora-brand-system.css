@@ -127,3 +127,23 @@ html, body { background: var(--bg); color: var(--text); }
   .rz-profile-link-input { grid-template-columns: 1fr; }
   .rz-site-footer { padding-bottom: max(90px, env(safe-area-inset-bottom)); }
 }
+
+/* Keep the product UI charcoal and brass; the supplied artwork keeps its own colors. */
+:root { --rz-studio-ink:#0b0b0a; --rz-studio-card:#151514; --rz-studio-border:rgba(255,255,255,.1); --rz-studio-text:#f7f7f5; --rz-studio-muted:#aaa9a4; --rz-studio-purple:#c7a65a; --rz-studio-pink:#c7a65a; }
+.rz-studio-hero { border-color:color-mix(in srgb,var(--rz-gold) 22%,transparent); background:radial-gradient(ellipse at 82% 0,rgba(199,166,90,.1),transparent 36%),linear-gradient(145deg,#191917,#0d0d0c 72%); }
+.rz-studio-orb { border-color:rgba(199,166,90,.28); background:radial-gradient(circle at 36% 30%,rgba(226,201,130,.24),transparent 15%),radial-gradient(circle at 50% 42%,#76613a 0,#332b1d 34%,#171612 70%); box-shadow:0 0 0 18px rgba(199,166,90,.025),0 0 54px rgba(199,166,90,.1),inset 0 0 28px rgba(255,255,255,.08); }
+.rz-studio-orb:before,.rz-studio-orb:after { border-color:rgba(199,166,90,.18); }
+.rz-studio-tool,.rz-studio-tool-music,.rz-studio-idea,.rz-studio-next { border-color:var(--line); background:linear-gradient(155deg,#191917,#10100f); }
+.rz-studio-tool-mark { border-color:rgba(199,166,90,.2); background:rgba(199,166,90,.08); color:#e2c982; }
+.rzs-reference-slide { border-color:rgba(255,255,255,.12); background:#111110; }
+.rzs-reference-slide small { color:#aaa9a4; }
+.rzs-toolbox { border-color:rgba(255,255,255,.12); background:linear-gradient(150deg,#191917,#0d0d0c); }
+.rzs-tool-card { background:rgba(255,255,255,.025); }
+.rzs-tool-card p,.rzs-tool-card-status,.rzs-tool-status,.rzs-empty,.rzs-reference-slide small { color:var(--muted); }
+.rzs-stem { border-color:rgba(199,166,90,.2); background:rgba(199,166,90,.06); color:var(--text); }
+.rzs-library-art { background:linear-gradient(135deg,#353126,#69552e); }
+.rzs-tool-card-status.gate,.rzs-tool-status.gate { color:#d9bf7c; }
+.rzs-mobile-tool-strip,.rzs-mobile-bottom { border-color:rgba(255,255,255,.12); background:rgba(15,15,14,.96); }
+.rzs-mobile-tool-strip button,.rzs-mobile-bottom button { color:var(--text); }
+.rzs-mobile-bottom button:active { background:rgba(199,166,90,.12); }
+.rz-upgrade-panel,.rz-up-public-card { background:#151514; }

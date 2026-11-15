@@ -8,6 +8,7 @@ function ensurePlatform(db) {
   db.rzV2.communities = db.rzV2.communities || [];
   db.rzV2.communityPosts = db.rzV2.communityPosts || [];
   db.rzV2.messages = db.rzV2.messages || [];
+  db.rzV2.chatStreaks = db.rzV2.chatStreaks || {};
   db.rzV2.opportunities = db.rzV2.opportunities || [];
   db.rzV2.opportunityApplications = db.rzV2.opportunityApplications || [];
   if (!db.rzV2.seededOpportunities) {
@@ -32,6 +33,27 @@ function currentProfile(db,user){
 function notifyPlatform(db,userId,title,message){
   db.notifications=db.notifications||[];
   db.notifications.push({id:"notif_"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),userId:userId,title:title,message:message,type:"platform",read:false,createdAt:new Date().toISOString()});
+}
+function chatStreakKey(a,b){return [String(a),String(b)].sort().join(":");}
+function utcDayDistance(from,to){
+  var a=Date.parse(String(from)+"T00:00:00Z"),b=Date.parse(String(to)+"T00:00:00Z");
+  return Number.isFinite(a)&&Number.isFinite(b)?Math.round((b-a)/86400000):Infinity;
+}
+function recordChatStreak(db,a,b){
+  var today=new Date().toISOString().slice(0,10),key=chatStreakKey(a,b),state=db.rzV2.chatStreaks[key]||{count:0};
+  if(state.activeDate!==today){state.activeDate=today;state.activeSenders=[];}
+  state.activeSenders=Array.isArray(state.activeSenders)?state.activeSenders:[];
+  if(!state.activeSenders.includes(a))state.activeSenders.push(a);
+  if(state.activeSenders.includes(a)&&state.activeSenders.includes(b)&&state.lastCompletedDate!==today){
+    state.count=utcDayDistance(state.lastCompletedDate,today)===1?Number(state.count||0)+1:1;
+    state.lastCompletedDate=today;
+  }
+  db.rzV2.chatStreaks[key]=state;
+  return chatStreakSnapshot(state,today);
+}
+function chatStreakSnapshot(state,today){
+  var last=state&&state.lastCompletedDate||"",distance=last?utcDayDistance(last,today):Infinity;
+  return {count:distance>=0&&distance<=1?Number(state.count||0):0,activeToday:last===today};
 }
 function cleanStories(db){
   var now=Date.now();
@@ -136,7 +158,8 @@ async function handleRizoraPlatform(ctx){
     });
     if(!otherUser){ctx.sendError(res,404,"Creator not found.");return true;}
     db.rzV2.messages.forEach(function(m){if(m.fromUserId===otherUser.id&&m.toUserId===user.id)m.read=true;});ctx.saveDB(db);
-    ctx.sendJSON(res,200,{success:true,user:currentProfile(db,otherUser),messages:db.rzV2.messages.filter(function(m){return (m.fromUserId===user.id&&m.toUserId===otherUser.id)||(m.fromUserId===otherUser.id&&m.toUserId===user.id);}).slice(-200)});return true;
+    var conversationKey=chatStreakKey(user.id,otherUser.id),streak=chatStreakSnapshot(db.rzV2.chatStreaks[conversationKey]||{},new Date().toISOString().slice(0,10));
+    ctx.sendJSON(res,200,{success:true,user:currentProfile(db,otherUser),messages:db.rzV2.messages.filter(function(m){return (m.fromUserId===user.id&&m.toUserId===otherUser.id)||(m.fromUserId===otherUser.id&&m.toUserId===user.id);}).slice(-200),streak:streak});return true;
   }
   if(thread&&method==="POST"){
     if(!user||!activePlatformUser(user)){ctx.sendError(res,403,"Your account cannot send messages right now.");return true;}
@@ -152,7 +175,8 @@ async function handleRizoraPlatform(ctx){
     if(mt&&explicitPlatformText(mt)){ctx.sendError(res,422,"Adult or sexually explicit content is not allowed.");return true;}
     var messageType=attachedMedia?(String(attachedMedia.mimeType||"").indexOf("audio/")===0?"voice":String(attachedMedia.mimeType||"").indexOf("image/")===0?"image":String(attachedMedia.mimeType||"").indexOf("video/")===0?"video":"file"):"text";
     db.rzV2.messages.push({id:"msg_"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),fromUserId:user.id,toUserId:recipient.id,text:mt,mediaUrl:attachedMedia?attachedMedia.url:"",mediaId:attachedMedia?attachedMedia.id:"",mimeType:attachedMedia?attachedMedia.mimeType:"",messageType:messageType,read:false,createdAt:new Date().toISOString()});
-    notifyPlatform(db,recipient.id,"New message","@"+user.username+" sent you a message.");ctx.saveDB(db);ctx.sendJSON(res,201,{success:true});return true;
+    var streak=recordChatStreak(db,user.id,recipient.id);
+    notifyPlatform(db,recipient.id,"New message","@"+user.username+" sent you a message.");ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,streak:streak});return true;
   }
 
   if(path==="/api/v2/opportunities"&&method==="GET"){

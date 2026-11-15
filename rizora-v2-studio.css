@@ -16,7 +16,7 @@
 .rz-xnav-item{transition:background .16s ease,color .16s ease}
 .rz-xnav-item.active{box-shadow:inset 2px 0 var(--rz-studio-purple)}
 .rz-right-rail .rz-card{background:rgba(18,16,27,.82);border-color:var(--rz-studio-border)}
-.rz-mobile-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+.rz-mobile-nav{grid-template-columns:repeat(6,minmax(0,1fr))!important}
 .rz-mobile-nav button{min-width:0;font-size:11px}
 .rz-mobile-nav button span{font-size:17px!important}
 .rz-creator-studio{display:grid;gap:18px;max-width:920px;margin:0 auto}
@@ -141,3 +141,55 @@
 }
 @media(prefers-reduced-motion:reduce){.rz-studio-tool,.rz-studio-hero{scroll-behavior:auto}}
 
+# Social login layout
+.rz-auth #socialAuthButtons{display:grid;gap:9px}
+.rz-auth #socialAuthButtons[hidden]{display:none}
+.rz-auth #authDivider[hidden]{display:none}
+.rz-auth #googleButton{display:grid;justify-items:center}
+
+/* Persistent notification access and quiet, readable streak context. */
+.rz-notification-trigger{position:relative;display:grid;place-items:center;width:42px;height:42px;padding:0;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.035);color:var(--text);transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.rz-notification-trigger:hover{background:rgba(199,166,90,.1);border-color:rgba(199,166,90,.32);transform:translateY(-1px)}
+.rz-notification-trigger:focus-visible,.rz-mobile-nav button:focus-visible{outline:2px solid #c7a65a;outline-offset:3px}
+.rz-notification-count{position:absolute;top:-5px;right:-6px;display:grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border:2px solid #090909;border-radius:99px;background:#c7a65a;color:#111;font-size:10px;font-weight:900;line-height:1}
+.rz-mobile-nav button[data-nav="notifications"]>span{position:relative;display:inline-grid;place-items:center}
+.rz-chat-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.rz-chat-title h3{margin:0 0 3px}
+.rz-chat-streak{display:inline-flex;align-items:center;gap:5px;flex:none;padding:7px 10px;border:1px solid rgba(199,166,90,.24);border-radius:999px;background:rgba(199,166,90,.08);color:#e5cf98;font-size:12px;font-weight:750}
+.rz-chat-start{display:flex;gap:10px;margin:16px 0}
+.rz-conversation-list{gap:8px}
+.rz-conversation-row{display:flex;align-items:center;gap:12px;width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025);color:var(--text);text-align:left;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.rz-conversation-row:hover{background:rgba(255,255,255,.055);border-color:rgba(199,166,90,.3);transform:translateY(-1px)}
+.rz-conversation-row:focus-visible,.rz-chat-composer button:focus-visible{outline:2px solid #c7a65a;outline-offset:3px}
+.rz-conversation-copy{display:grid;min-width:0;flex:1;gap:3px}
+.rz-conversation-copy strong,.rz-conversation-preview{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rz-conversation-preview{color:var(--muted);font-size:13px}
+.rz-conversation-meta{display:grid;justify-items:end;align-content:center;gap:7px;color:var(--muted);font-size:11px}
+.rz-conversation-unread{display:grid;min-width:19px;height:19px;padding:0 5px;place-items:center;border-radius:99px;background:#c7a65a;color:#111;font-size:10px}
+.rz-chat-thread{margin-top:14px;overflow:hidden}
+.rz-chat-title{justify-content:flex-start}
+.rz-chat-person{min-width:0;flex:1}
+.rz-chat-history{display:flex;max-height:min(62vh,620px);min-height:200px;flex-direction:column;gap:8px;overflow-y:auto;padding:12px 4px 16px;scroll-behavior:smooth}
+.rz-message-bubble{width:fit-content;max-width:min(82%,620px);padding:10px 13px 7px;border:1px solid var(--line);border-radius:18px;background:#181818;animation:rzMessageArrive .24s ease both;overflow-wrap:anywhere}
+.rz-message-own{align-self:flex-end;border-color:rgba(199,166,90,.24);border-bottom-right-radius:5px;background:rgba(199,166,90,.1)}
+.rz-message-theirs{align-self:flex-start;border-bottom-left-radius:5px}
+.rz-message-text{white-space:pre-wrap;line-height:1.45}
+.rz-message-meta{display:flex;justify-content:flex-end;gap:8px;margin-top:5px;color:var(--muted);font-size:10px;line-height:1.2}
+.rz-message-receipt{color:#d6bd7f}
+.rz-message-kind{display:block;margin-bottom:5px;color:#d6bd7f;font-size:11px;font-weight:750}
+.rz-message-bubble img,.rz-message-bubble video{display:block;max-width:100%;max-height:340px;border-radius:12px}
+.rz-message-bubble audio{max-width:min(70vw,360px)}
+.rz-chat-empty{align-self:center;margin:auto;color:var(--muted);font-size:13px;text-align:center}
+.rz-chat-composer{display:flex;align-items:flex-end;gap:9px;padding-top:12px;border-top:1px solid var(--line)}
+.rz-chat-composer textarea{min-height:44px;max-height:130px;resize:vertical}
+.rz-chat-composer button{flex:none}
+.rz-proof-upload{display:grid;gap:6px;padding:12px;border:1px dashed rgba(199,166,90,.35);border-radius:14px;color:var(--text);font-size:13px;font-weight:750}
+.rz-proof-upload input{width:100%;color:var(--muted);font-size:12px}
+.rz-proof-upload span,.rz-social-task-status{color:var(--muted);font-size:12px;font-weight:500}
+.rz-social-task-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.rz-social-task-status{line-height:1.45}
+.rz-mission-link{width:max-content}
+.rz-review-proof{display:block;width:min(100%,420px);max-height:360px;margin:12px 0;object-fit:contain;object-position:left center;border:1px solid var(--line);border-radius:14px;background:#10100f}
+@keyframes rzMessageArrive{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:560px){.rz-chat-start{align-items:stretch}.rz-chat-start .rz-input{min-width:0}.rz-message-bubble{max-width:90%}.rz-chat-history{min-height:160px}}
+@media(prefers-reduced-motion:reduce){.rz-notification-trigger,.rz-conversation-row,.rz-message-bubble{transition:none;animation:none;scroll-behavior:auto}}

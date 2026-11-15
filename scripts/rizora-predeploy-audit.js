@@ -64,12 +64,17 @@ const studioPage=read("rizora-v2-studio-page.js");
 const brand=read("rizora-brand-system.css");
 const music=read("rizora-v2-music.js");
 const player=read("rizora-v2-player.js");
+const businessUi=read("rizora-v2-business-ui.js");
 
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
 
 assert(!/remita/i.test(source),"Deferred Remita UI must not expose unfinished frontend routes.");
-for (const key of ["GROQ_API_KEY","RIZORA_HF_TOKEN","ELEVENLABS_API_KEY"]) {
+for (const key of ["GROQ_API_KEY","ELEVENLABS_API_KEY"]) {
+  assert(new RegExp("- key: " + key + "\\s+sync: false").test(renderConfig),key+" must be declared as a private Render environment variable.");
+  assert(envExample.includes(key+"="),key+" is missing from .env.example.");
+}
+for (const key of ["POLLINATIONS_API_KEY","NOVAI_API_KEY"]) {
   assert(new RegExp("- key: " + key + "\\s+sync: false").test(renderConfig),key+" must be declared as a private Render environment variable.");
   assert(envExample.includes(key+"="),key+" is missing from .env.example.");
 }
@@ -77,13 +82,19 @@ for (const key of ["SUPABASE_URL","SUPABASE_ANON_KEY","SUPABASE_SERVICE_ROLE_KEY
   assert(new RegExp("- key: " + key + "\\s+sync: false").test(renderConfig),key+" must be declared as a private Render environment variable.");
   assert(envExample.includes(key+"="),key+" is missing from .env.example.");
 }
+for (const key of ["GOOGLE_CLIENT_ID"]) {
+  assert(new RegExp("- key: " + key + "\\s+sync: false").test(renderConfig),key+" must be declared as a private Render environment setting.");
+  assert(envExample.includes(key+"="),key+" is missing from .env.example.");
+}
+assert(!/APPLE_CLIENT_ID|APPLE_REDIRECT_URI/.test(server+renderConfig+envExample) && !core.includes("AppleID") && !core.includes("appleButton") && !server.includes("/api/auth/apple"),"Apple sign-in remains available in the app or server.");
+assert(!/Creator Earnings/i.test(businessUi) && !/CREATE\.\s*GROW\.\s*EARN\./i.test(index+email),"The old EARN branding remains visible in the active app.");
 assert(renderConfig.includes("SUPABASE_PRIVATE_MEDIA_BUCKET") && renderConfig.includes("value: rizora-private-media"),"Render must target the private RIZORA Supabase media bucket.");
 assert(integrations.includes("turnstile/v0/siteverify") && integrations.includes("function verifyTurnstile"),"Server-side Cloudflare Turnstile verification is missing.");
 assert(integrations.includes("function cloudinarySignature") && integrations.includes("overwrite: false"),"Signed Cloudinary uploads must prevent overwriting an existing asset.");
 assert(mediaBackend.includes("createPrivateUploadIntent") && mediaBackend.includes("storedBytes===Number(intent.size)"),"Private Supabase uploads must be signed and checked against stored size.");
 assert(!/- key:\s*RIZORA_MEDIA_ROOT\b/.test(renderConfig),"Production media must not rely on an unmounted Render filesystem.");
-assert(envExample.includes("RIZORA_IMAGE_MODEL=black-forest-labs/FLUX.1-schnell"),"Image model default is missing from .env.example.");
-assert(envExample.includes("RIZORA_VIDEO_MODEL=Wan-AI/Wan2.2-TI2V-5B"),"Video model default is missing from .env.example.");
+assert(envExample.includes("POLLINATIONS_IMAGE_MODEL=black-forest-labs/flux.1-schnell"),"Pollinations image model default is missing from .env.example.");
+assert(envExample.includes("NOVAI_VIDEO_MODEL=cogvideox-flash"),"AIAPI-Pro video model default is missing from .env.example.");
 assert(core.includes("var timeoutMs=Number(opt.timeoutMs)") && core.includes("Math.min(timeoutMs,119000)"),"API timeout overrides must be bounded below Vercel rewrite timeout limits.");
 assert(musicUi.includes("timeoutMs:119000") && musicUi.includes("timeoutMs:100000"),"Music and voiceover generation timeouts are missing.");
 assert(server.includes("AbortSignal.timeout(20000)") && server.includes("AbortSignal.timeout(45000)"),"Groq chat and transcription provider timeouts are missing.");
@@ -91,10 +102,14 @@ assert((core.match(/timeoutMs:50000/g)||[]).length>=2,"AI chat client timeout is
 assert(voice.includes("timeoutMs:60000"),"AI voice transcription client timeout is missing.");
 assert(musicUi.includes("timeoutMs:50000"),"Music AI client timeout is missing.");
 assert(studioPage.includes("timeoutMs:119000"),"AI beat generation timeout is missing.");
-assert(communityFixes.includes('var timeoutMs=path==="/api/ai/video"?115000:100000;'),"AI image/video client deadlines are missing.");
-assert(studioPage.includes("var timeoutMs=100000"),"Studio cover-art generation deadline is missing.");
-assert(server.includes('const mediaTimeoutMs = kind === "video" ? 110000 : 90000;') && server.includes("const mediaSignal = AbortSignal.timeout(mediaTimeoutMs)"),"Hugging Face media provider deadlines are missing.");
-
+assert(communityFixes.includes("waitLimit=isVideo?8*60*1000:3*60*1000") && communityFixes.includes("queued.jobId"),"AIAPI-Pro async video polling is missing.");
+assert(communityFixes.includes("providerName=isVideo?\"AIAPI-Pro\":\"Pollinations\"") && communityFixes.includes("delayMs=isVideo?15000:2200"),"Media UI provider labels or AIAPI-Pro polling interval are missing.");
+assert(studioPage.includes("var timeoutMs=130000"),"Studio cover-art generation deadline is missing.");
+assert(server.includes("https://gen.pollinations.ai/image/") && server.includes('Authorization:"Bearer " + providerKey') && server.includes("POLLINATIONS_API_KEY"),"Pollinations image generation is missing or not using server-side bearer auth.");
+assert(server.includes('https://aiapi-pro.com/v1/video/generations') && server.includes('provider:"aiapi-pro"') && server.includes("aiMediaGenerations"),"AIAPI-Pro async video generation is missing.");
+assert(server.includes('imageConfigured:Boolean(String(process.env.POLLINATIONS_API_KEY||"").trim())') && server.includes('videoConfigured:Boolean(String(process.env.NOVAI_API_KEY||"").trim())') && server.includes('mediaProvider:"pollinations+aiapi-pro"'),"AI provider status does not report Pollinations and AIAPI-Pro configuration.");
+assert(server.includes('voiceIsolationConfigured:Boolean(String(process.env.ELEVENLABS_API_KEY||"").trim())') && server.includes('voiceAndMusicConfigured:Boolean(String(process.env.ELEVENLABS_API_KEY||"").trim())'),"ElevenLabs voice and music status is missing.");
+assert(!server.includes("InferenceClient") && !renderConfig.includes("RIZORA_HF_TOKEN") && !envExample.includes("RIZORA_HF_TOKEN"),"Hugging Face is still configured as an image/video provider.");
 assert(/id=[\'"]aiInput[\'"]/.test(core) && /id=[\'"]aiForm[\'"]/.test(core),"AI composer wiring is missing.");
 assert(/data-ai-speak=[\'"]/.test(core),"AI voice playback controls are missing.");
 assert(/data-chat-target=[\'"]/.test(core),"One-to-one chat voice target wiring is missing.");
@@ -134,7 +149,7 @@ assert(sw.includes("rizora_verified_early.svg") && sw.includes("rizora_verified_
 assert(brand.includes("--rz-gold") && brand.includes(".rz-music-hero") && brand.includes(".rz-ai-orb"),"Black, white and gold brand styling is missing from key app surfaces.");
 assert(music.includes('path==="/api/music/audius/search"') && music.includes("https://api.audius.co/v1/tracks/search"),"Read-only Audius search is not wired through the backend.");
 assert(player.includes("/api/music/audius/search") && !/spotify/i.test(source+music+player),"Music player must use Audius instead of Spotify.");
-assert(sw.includes("v52-audio-video-ads") && sw.includes("rizora-play-logo.jpg"),"Service worker cache version or RIZORA PLAY logo is stale.");
+assert(sw.includes("v53-no-apple-auth") && sw.includes("rizora-play-logo.jpg"),"Service worker cache version or RIZORA PLAY logo is stale.");
 for(const asset of ["rizora-ad-1.mp3","rizora-ad-2.mp3","rizora-ad-3-orekelewa.mp3"]){assert(player.includes("/assets/ads/"+asset),"Music player is missing audio ad asset "+asset+".");}
 assert(player.includes("startsSinceAd>=2") && player.includes("userGetsAdFree") && player.includes("playAd()"),"Non-subscriber audio ad scheduling is missing.");
 assert(player.includes("control.disabled=player.isAd") && core.includes("window.RIZORA_PLAYER.isAd"),"A listener can skip or close the player before a required audio ad finishes.");

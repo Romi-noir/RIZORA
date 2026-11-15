@@ -6,30 +6,35 @@
 
   function esc(value){return String(value==null?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
   function call(path,opt){return window.RIZORA_API_CALL?window.RIZORA_API_CALL(path,opt):fetch(API+path,Object.assign({credentials:"include",headers:{"Content-Type":"application/json","Accept":"application/json"}},opt||{})).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.message||d.error||"Request failed.");return d;});});}
-  async function mediaRequest(path,payload){
-    var headers={"Content-Type":"application/json","Accept":"image/*,video/*,application/json"};
-    if(window.RIZORA_AUTH_HEADERS)headers=window.RIZORA_AUTH_HEADERS(headers);
-    var timeoutMs=path==="/api/ai/video"?115000:100000;
-    var isVideo=path==="/api/ai/video";
-    var controller=typeof AbortController!=="undefined"?new AbortController():null;
-    var timer=controller?setTimeout(function(){controller.abort();},timeoutMs):null;
-    var options={method:"POST",credentials:"include",headers:headers,body:JSON.stringify(payload)};
-    if(controller)options.signal=controller.signal;
-    try{
-      var response=await fetch(API+path,options);
-      if(!response.ok){
-        var error={};try{error=await response.json();}catch(_){}
-        throw new Error(error.error||error.message||(response.status===503?"Media generation is not configured yet.":"Media generation failed."));
-      }
-      var blob=await response.blob();
-      if(!blob.size)throw new Error("The media provider returned an empty file.");
-      return blob;
-    }catch(error){
-      if(error&&error.name==="AbortError")throw new Error(isVideo?"AI video generation timed out. Try a shorter prompt or retry.":"AI image generation timed out. Try again.");
-      throw error;
-    }finally{
-      if(timer)clearTimeout(timer);
+  async function mediaRequest(path,payload,onProgress){
+    var isVideo=path==="/api/ai/video",providerName=isVideo?"AIAPI-Pro":"Pollinations",waitLimit=isVideo?8*60*1000:3*60*1000,deadline=Date.now()+waitLimit;
+    function authHeaders(accept){var headers={"Accept":accept};if(window.RIZORA_AUTH_HEADERS)headers=window.RIZORA_AUTH_HEADERS(headers);return headers;}
+    async function request(url,options){
+      var controller=typeof AbortController!=="undefined"?new AbortController():null,timer=controller?setTimeout(function(){controller.abort();},isVideo?25000:130000):null;
+      try{return await fetch(url,Object.assign({credentials:"include",headers:authHeaders("application/json")},options||{},controller?{signal:controller.signal}:{}));}
+      catch(error){if(error&&error.name==="AbortError")throw new Error(providerName+" is taking longer than expected. Try again in a moment.");throw error;}
+      finally{if(timer)clearTimeout(timer);}
     }
+    async function requestError(response){var data={};try{data=await response.json();}catch(_){}return new Error(data.error||data.message||(response.status===503?providerName+" is not configured for this workspace.":"Media generation failed."));}
+    function binary(response){return /^image\//i.test(response.headers.get("content-type")||"")||/^video\//i.test(response.headers.get("content-type")||"");}
+    async function completedBlob(response){var blob=await response.blob();if(!blob.size)throw new Error(providerName+" returned an empty media file.");return blob;}
+    var response=await request(API+path,{method:"POST",headers:authHeaders("application/json"),body:JSON.stringify(payload)});
+    if(!response.ok)throw await requestError(response);
+    if(binary(response))return completedBlob(response);
+    var queued=await response.json().catch(function(){return {};});
+    if(!queued.jobId)throw new Error("NOIR ® could not start the media job.");
+    var delayMs=isVideo?15000:2200,lastUpdate=Date.now();
+    while(Date.now()<deadline){
+      if(onProgress)onProgress(isVideo?"Your video is rendering with AIAPI-Pro…":"Your image is rendering with Pollinations…");
+      await new Promise(function(resolve){setTimeout(resolve,delayMs);});
+      response=await request(API+path+"/"+encodeURIComponent(queued.jobId),{method:"GET",headers:authHeaders("image/*,video/*,application/json")});
+      if(!response.ok)throw await requestError(response);
+      if(binary(response))return completedBlob(response);
+      var state=await response.json().catch(function(){return {};});
+      if(state.status==="failed")throw new Error(state.error||providerName+" could not complete this generation. Try another prompt.");
+      if(Date.now()-lastUpdate>30000){lastUpdate=Date.now();if(onProgress)onProgress(isVideo?"Still rendering your video. This can take a few minutes…":"Still rendering your image…");}
+    }
+    throw new Error(isVideo?"Video generation is taking longer than expected. Try again from your recent media jobs.":"Image generation is taking longer than expected. Try again shortly.");
   }
   function current(){return window.state&&window.state.user||window.RIZORA_CURRENT_USER||null;}
   function profileBadge(user){var type=String(user&&user.verificationBadgeType||"");var path={early:"/assets/rizora_verified_early.svg",premium:"/assets/rizora_verified_premium.svg",premium_plus:"/assets/rizora_verified_premium_plus.svg"}[type],label={early:"Early member",premium:"Premium",premium_plus:"Premium+"}[type];return path?'<img class="rz-verified" src="'+path+'" alt="'+label+' verified badge" title="'+label+' verified badge">':'';}
@@ -37,6 +42,7 @@
   function hash(text){var n=0;String(text||"").split("").forEach(function(ch){n=((n<<5)-n)+ch.charCodeAt(0);n|=0;});return Math.abs(n);}
   function revoke(name){if(mediaState[name]){try{URL.revokeObjectURL(mediaState[name]);}catch(_){ }mediaState[name]="";}}
   function download(blob,name){if(!blob)return;var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(function(){URL.revokeObjectURL(url);},1500);}
+  function imageFilename(blob){var type=String(blob&&blob.type||"").toLowerCase();return "rizora-ai-artwork."+(type==="image/jpeg"?"jpg":type==="image/webp"?"webp":"png");}
 
   function drawArtwork(prompt,frame){
     var canvas=document.createElement("canvas"),size=1024;canvas.width=size;canvas.height=size;
@@ -47,7 +53,7 @@
     ctx.fillStyle="#f8d48c";ctx.textAlign="center";ctx.font="800 76px system-ui, sans-serif";ctx.fillText("RIZORA",size/2,180);
     ctx.font="500 26px system-ui, sans-serif";ctx.fillStyle="#f4e7ca";ctx.fillText("AI CREATOR RELEASE",size/2,226);
     ctx.font="700 34px system-ui, sans-serif";ctx.fillStyle="#fff";var words=String(prompt||"Your next release").trim().slice(0,54);var lines=[];for(var j=0;j<words.length;j+=26)lines.push(words.slice(j,j+26));lines.slice(0,2).forEach(function(line,index){ctx.fillText(line.toUpperCase(),size/2,760+index*48);});
-    ctx.font="500 22px system-ui, sans-serif";ctx.fillStyle="#e8bcff";ctx.fillText("CREATE · GROW · EARN",size/2,920);
+    ctx.font="500 22px system-ui, sans-serif";ctx.fillStyle="#e8bcff";ctx.fillText("CREATE · GROW ONLY",size/2,920);
     if(frame){ctx.strokeStyle="rgba(255,211,111,.85)";ctx.lineWidth=5;ctx.beginPath();for(var x=0;x<=size;x+=8){var wave=Math.sin(x/30+frame)*22+Math.sin(x/9+frame*2)*8;var yy=550+wave; if(x===0)ctx.moveTo(x,yy);else ctx.lineTo(x,yy);}ctx.stroke();}
     return canvas;
   }
@@ -55,9 +61,9 @@
     var input=root.querySelector("#rzMediaPrompt"),status=root.querySelector("#rzMediaStatus"),preview=root.querySelector("#rzMediaPreview");
     var prompt=String(input&&input.value||"").trim();if(!prompt){if(status)status.textContent="Describe the release first.";return;}
     if(status)status.textContent="NOIR ® is creating your image…";
-    try{var blob=await mediaRequest("/api/ai/image",{prompt:prompt});revoke("imageUrl");mediaState.imageBlob=blob;mediaState.imageUrl=URL.createObjectURL(blob);if(preview){preview.innerHTML='<img src="'+mediaState.imageUrl+'" alt="AI generated RIZORA artwork"><div class="rz-media-actions"><button type="button" class="rz-btn" data-rz-download-image>Download image</button><button type="button" class="rz-btn" data-rz-post-image>Use in a post</button></div><div class="rz-media-send"><label>Send to <input type="text" maxlength="30" data-rz-send-handle placeholder="creator username"></label><button type="button" class="rz-btn" data-rz-send-image>Send image</button></div>';preview.querySelector("[data-rz-download-image]").onclick=function(){download(mediaState.imageBlob,"rizora-ai-artwork.png");};preview.querySelector("[data-rz-post-image]").onclick=async function(){try{if(!window.RIZORA_UPLOAD_FILE)throw new Error("Media upload is still loading. Try again.");var file=new File([mediaState.imageBlob],"rizora-ai-artwork.png",{type:mediaState.imageBlob.type||"image/png"}),media=await window.RIZORA_UPLOAD_FILE(file,status);if(window.RIZORA_GOTO)window.RIZORA_GOTO("flow");setTimeout(function(){var field=document.getElementById("postMedia");if(field)field.value=media.url?(/^https?:\/\//i.test(media.url)?media.url:API+media.url):"";var postStatus=document.getElementById("postMediaStatus");if(postStatus)postStatus.textContent="AI image attached to your post.";},300);}catch(error){if(status)status.textContent=error.message||"Image could not be attached to a post.";}};preview.querySelector("[data-rz-send-image]").onclick=async function(){var handle=String(preview.querySelector("[data-rz-send-handle]").value||"").trim().replace(/^@/,"");if(!handle){if(status)status.textContent="Enter the creator's username first.";return;}try{if(!window.RIZORA_UPLOAD_FILE)throw new Error("Media upload is still loading. Try again.");var file=new File([mediaState.imageBlob],"rizora-ai-artwork.png",{type:mediaState.imageBlob.type||"image/png"}),media=await window.RIZORA_UPLOAD_FILE(file,status);await call("/api/v2/messages/"+encodeURIComponent(handle),{method:"POST",body:JSON.stringify({mediaId:media.id,messageType:"image"})});if(status)status.textContent="AI image sent to @"+handle+".";}catch(error){if(status)status.textContent=error.message||"Image could not be sent.";}};}if(status)status.textContent="AI image ready. Download it, attach it to a post, or send it to a creator.";}catch(error){if(status)status.textContent=error.message||"AI image generation failed.";}
+    try{var blob=await mediaRequest("/api/ai/image",{prompt:prompt},function(message){if(status)status.textContent=message;});revoke("imageUrl");mediaState.imageBlob=blob;mediaState.imageUrl=URL.createObjectURL(blob);if(preview){preview.innerHTML='<img src="'+mediaState.imageUrl+'" alt="AI generated RIZORA artwork"><div class="rz-media-actions"><button type="button" class="rz-btn" data-rz-download-image>Download image</button><button type="button" class="rz-btn" data-rz-post-image>Use in a post</button></div><div class="rz-media-send"><label>Send to <input type="text" maxlength="30" data-rz-send-handle placeholder="creator username"></label><button type="button" class="rz-btn" data-rz-send-image>Send image</button></div>';preview.querySelector("[data-rz-download-image]").onclick=function(){download(mediaState.imageBlob,imageFilename(mediaState.imageBlob));};preview.querySelector("[data-rz-post-image]").onclick=async function(){try{if(!window.RIZORA_UPLOAD_FILE)throw new Error("Media upload is still loading. Try again.");var file=new File([mediaState.imageBlob],imageFilename(mediaState.imageBlob),{type:mediaState.imageBlob.type||"image/png"}),media=await window.RIZORA_UPLOAD_FILE(file,status);if(window.RIZORA_GOTO)window.RIZORA_GOTO("flow");setTimeout(function(){var field=document.getElementById("postMedia");if(field)field.value=media.url?(/^https?:\/\//i.test(media.url)?media.url:API+media.url):"";var postStatus=document.getElementById("postMediaStatus");if(postStatus)postStatus.textContent="AI image attached to your post.";},300);}catch(error){if(status)status.textContent=error.message||"Image could not be attached to a post.";}};preview.querySelector("[data-rz-send-image]").onclick=async function(){var handle=String(preview.querySelector("[data-rz-send-handle]").value||"").trim().replace(/^@/,"");if(!handle){if(status)status.textContent="Enter the creator's username first.";return;}try{if(!window.RIZORA_UPLOAD_FILE)throw new Error("Media upload is still loading. Try again.");var file=new File([mediaState.imageBlob],imageFilename(mediaState.imageBlob),{type:mediaState.imageBlob.type||"image/png"}),media=await window.RIZORA_UPLOAD_FILE(file,status);await call("/api/v2/messages/"+encodeURIComponent(handle),{method:"POST",body:JSON.stringify({mediaId:media.id,messageType:"image"})});if(status)status.textContent="AI image sent to @"+handle+".";}catch(error){if(status)status.textContent=error.message||"Image could not be sent.";}};}if(status)status.textContent="AI image ready. Download it, attach it to a post, or send it to a creator.";}catch(error){if(status)status.textContent=error.message||"AI image generation failed.";}
   }
-  async function generateAiVideo(root){var input=root.querySelector("#rzMediaPrompt"),status=root.querySelector("#rzMediaStatus"),preview=root.querySelector("#rzMediaPreview"),prompt=String(input&&input.value||"").trim();if(!prompt){if(status)status.textContent="Describe the video first.";return;}if(status)status.textContent="NOIR ® is creating your video. This can take a little while…";try{var blob=await mediaRequest("/api/ai/video",{prompt:prompt});revoke("videoUrl");mediaState.videoBlob=blob;mediaState.videoUrl=URL.createObjectURL(blob);if(preview){preview.innerHTML='<video controls playsinline src="'+mediaState.videoUrl+'"></video><div class="rz-media-actions"><button type="button" class="rz-btn" data-rz-download-video>Download AI video</button><button type="button" class="rz-btn" data-rz-post-video>Use in a post</button></div>';preview.querySelector("[data-rz-download-video]").onclick=function(){download(mediaState.videoBlob,"rizora-ai-video.mp4");};preview.querySelector("[data-rz-post-video]").onclick=async function(){try{if(!window.RIZORA_UPLOAD_FILE)throw new Error("Media upload is still loading. Try again.");var file=new File([mediaState.videoBlob],"rizora-ai-video.mp4",{type:mediaState.videoBlob.type||"video/mp4"}),media=await window.RIZORA_UPLOAD_FILE(file,status);if(window.RIZORA_GOTO)window.RIZORA_GOTO("flow");setTimeout(function(){var field=document.getElementById("postMedia");if(field)field.value=media.url?(/^https?:\/\//i.test(media.url)?media.url:API+media.url):"";var postStatus=document.getElementById("postMediaStatus");if(postStatus)postStatus.textContent="AI video attached to your post.";},300);}catch(error){if(status)status.textContent=error.message||"Video could not be attached.";}};}if(status)status.textContent="AI video ready. Download it or attach it to a post.";}catch(error){if(status)status.textContent=error.message||"AI video generation failed.";}}
+  async function generateAiVideo(root){var input=root.querySelector("#rzMediaPrompt"),status=root.querySelector("#rzMediaStatus"),preview=root.querySelector("#rzMediaPreview"),prompt=String(input&&input.value||"").trim();if(!prompt){if(status)status.textContent="Describe the video first.";return;}if(status)status.textContent="NOIR ® is creating your video with AIAPI-Pro…";try{var blob=await mediaRequest("/api/ai/video",{prompt:prompt},function(message){if(status)status.textContent=message;});revoke("videoUrl");mediaState.videoBlob=blob;mediaState.videoUrl=URL.createObjectURL(blob);if(preview){preview.innerHTML='<video controls playsinline src="'+mediaState.videoUrl+'"></video><div class="rz-media-actions"><button type="button" class="rz-btn" data-rz-download-video>Download AI video</button><button type="button" class="rz-btn" data-rz-post-video>Use in a post</button></div>';preview.querySelector("[data-rz-download-video]").onclick=function(){download(mediaState.videoBlob,"rizora-ai-video.mp4");};preview.querySelector("[data-rz-post-video]").onclick=async function(){try{if(!window.RIZORA_UPLOAD_FILE)throw new Error("Media upload is still loading. Try again.");var file=new File([mediaState.videoBlob],"rizora-ai-video.mp4",{type:mediaState.videoBlob.type||"video/mp4"}),media=await window.RIZORA_UPLOAD_FILE(file,status);if(window.RIZORA_GOTO)window.RIZORA_GOTO("flow");setTimeout(function(){var field=document.getElementById("postMedia");if(field)field.value=media.url?(/^https?:\/\//i.test(media.url)?media.url:API+media.url):"";var postStatus=document.getElementById("postMediaStatus");if(postStatus)postStatus.textContent="AI video attached to your post.";},300);}catch(error){if(status)status.textContent=error.message||"Video could not be attached.";}};}if(status)status.textContent="AI video ready. Download it or attach it to a post.";}catch(error){if(status)status.textContent=error.message||"AI video generation failed.";}}
   function generateVideo(root){
     var input=root.querySelector("#rzMediaPrompt"),status=root.querySelector("#rzMediaStatus"),preview=root.querySelector("#rzMediaPreview"),prompt=String(input&&input.value||"").trim();
     if(!prompt){if(status)status.textContent="Describe the release first.";return;}

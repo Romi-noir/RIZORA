@@ -111,7 +111,7 @@ async function sendRizoraWelcomeEmail(options){
     "Username: @"+username,
     referralCode ? "Referral code: "+referralCode : "",
     "",
-    "CREATE. GROW. EARN.",
+    "CREATE. GROW ONLY.",
     "",
     "Open RIZORA: "+publicUrl,
     "",
@@ -130,7 +130,7 @@ async function sendRizoraWelcomeEmail(options){
           (referralCode?'<div style="margin-top:10px;color:#aaa9a4">Referral code: <b style="color:#fff">'+safeReferral+'</b></div>':"")+
         '</div>'+
         '<a href="'+html(publicUrl)+'" style="display:inline-block;padding:13px 19px;background:#7b4dff;color:#fff;text-decoration:none;border-radius:12px;font-weight:800">Open RIZORA</a>'+
-        '<p style="margin-top:28px;color:#aaa9a4;font-size:12px">CREATE. GROW. EARN.</p>'+
+        '<p style="margin-top:28px;color:#aaa9a4;font-size:12px">CREATE. GROW ONLY.</p>'+
       '</div>'+
     '</div>';
 

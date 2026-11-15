@@ -27,6 +27,8 @@ services:
         sync: false
       - key: SUPABASE_PRIVATE_MEDIA_BUCKET
         value: rizora-private-media
+      - key: GOOGLE_CLIENT_ID
+        sync: false
       # Cloudinary stores public creator media and generated audio.
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
@@ -42,7 +44,16 @@ services:
       # Optional key for higher read-only Audius search limits.
       - key: AUDIUS_API_KEY
         sync: false
-      - key: RIZORA_HF_TOKEN
-        sync: false
+      # ElevenLabs powers voice, voice isolation, voiceover and music only.
       - key: ELEVENLABS_API_KEY
         sync: false
+      # Pollinations generates NOIR and PLAY images; keep the secret key server-side.
+      - key: POLLINATIONS_API_KEY
+        sync: false
+      # AIAPI-Pro / NovAI generates NOIR videos.
+      - key: NOVAI_API_KEY
+        sync: false
+      - key: POLLINATIONS_IMAGE_MODEL
+        value: black-forest-labs/flux.1-schnell
+      - key: NOVAI_VIDEO_MODEL
+        value: cogvideox-flash

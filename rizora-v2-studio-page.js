@@ -134,7 +134,7 @@
   async function apiBlob(path,payload){
     var headers={"Content-Type":"application/json","Accept":"image/*,video/*,application/json"};
     if(window.RIZORA_AUTH_HEADERS)headers=window.RIZORA_AUTH_HEADERS(headers);
-    var timeoutMs=100000,controller=typeof AbortController!=="undefined"?new AbortController():null;
+    var timeoutMs=130000,controller=typeof AbortController!=="undefined"?new AbortController():null;
     var timer=controller?setTimeout(function(){controller.abort();},timeoutMs):null;
     var options={method:"POST",credentials:"include",headers:headers,body:JSON.stringify(payload)};
     if(controller)options.signal=controller.signal;

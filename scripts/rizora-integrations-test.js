@@ -109,6 +109,19 @@ async function main() {
   assert.equal(authRequest.options.headers.apikey, "test-publishable-key");
   assert.deepEqual(JSON.parse(authRequest.options.body), { create_user: true, email: "creator@example.test", data: { username: "creator" } });
 
+  global.fetch = async (url, options) => {
+    authRequest = { url: String(url), options };
+    return jsonResponse({ access_token: "google-access-token", user: { id: "google-user" } });
+  };
+  const googleSession = await integrations.signInWithIdToken("google", "google-id-token");
+  assert.equal(googleSession.user.id, "google-user");
+  assert.equal(authRequest.url, process.env.SUPABASE_URL + "/auth/v1/token?grant_type=id_token");
+  assert.equal(authRequest.options.headers.apikey, "test-publishable-key");
+  assert.deepEqual(JSON.parse(authRequest.options.body), {
+    provider: "google",
+    id_token: "google-id-token"
+  });
+
   console.log("RIZORA provider integration tests: PASS");
 }
 

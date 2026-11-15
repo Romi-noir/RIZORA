@@ -37,10 +37,17 @@ function canAccessMessage(db, message, userId) {
 }
 function updateStreak(db, a, b) {
   const key = [a, b].sort().join(":");
-  const now = Date.now();
-  const state = db.rzV2.chatStreaks[key] || { count: 0, last: 0 };
-  state.count = now - state.last < 48 * 60 * 60 * 1000 ? state.count + 1 : 1;
-  state.last = now;
+  const today = new Date().toISOString().slice(0, 10);
+  const state = db.rzV2.chatStreaks[key] || { count: 0 };
+  if (state.activeDate !== today) { state.activeDate = today; state.activeSenders = []; }
+  state.activeSenders = Array.isArray(state.activeSenders) ? state.activeSenders : [];
+  if (!state.activeSenders.includes(a)) state.activeSenders.push(a);
+  if (state.activeSenders.includes(a) && state.activeSenders.includes(b) && state.lastCompletedDate !== today) {
+    const yesterday = new Date(Date.parse(today + "T00:00:00Z") - 86400000).toISOString().slice(0, 10);
+    state.count = state.lastCompletedDate === yesterday ? Number(state.count || 0) + 1 : 1;
+    state.lastCompletedDate = today;
+  }
+  state.last = Date.now();
   db.rzV2.chatStreaks[key] = state;
   return state;
 }

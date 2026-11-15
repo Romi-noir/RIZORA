@@ -7,7 +7,6 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { InferenceClient } = require("@huggingface/inference");
 require("dotenv").config();
 const { Pool } = require("pg");
 const { OAuth2Client } =
@@ -1047,7 +1046,7 @@ function queueRizoraVerificationEmail(db,user,action,reason,req){
   const safe=function(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");};
   const base=getPublicBaseURL(req);
   const subject=isVerified?"Your RIZORA verification is approved":"RIZORA verification update";
-  const text=["Hi "+name+",","",isVerified?"Your RIZORA creator account @"+username+" is now verified.":"Your RIZORA verification request for @"+username+" is now "+statusLabel+".",why?"Review note: "+why:"","Open RIZORA: "+base,"","RIZORA · CREATE. GROW. EARN."].filter(Boolean).join("\n");
+  const text=["Hi "+name+",","",isVerified?"Your RIZORA creator account @"+username+" is now verified.":"Your RIZORA verification request for @"+username+" is now "+statusLabel+".",why?"Review note: "+why:"","Open RIZORA: "+base,"","RIZORA · CREATE. GROW ONLY."].filter(Boolean).join("\n");
   const html='<div style="margin:0;background:#090909;color:#f7f7f5;font-family:Arial,Helvetica,sans-serif;padding:32px 16px"><div style="max-width:620px;margin:0 auto;background:#141414;border:1px solid #393833;border-radius:22px;padding:30px"><div style="font-size:12px;letter-spacing:4px;color:#e2c982;font-weight:800">RIZORA</div><h1 style="margin:12px 0 8px;font-size:30px">'+(isVerified?"Verification approved":"Verification update")+'</h1><p style="color:#aaa9a4;line-height:1.7">Hi '+safe(name)+', your account @'+safe(username)+' has a verification status update: <b>'+safe(statusLabel)+'</b>.</p>'+(why?'<div style="margin:18px 0;padding:14px;border-radius:14px;background:#141414;border:1px solid #393833;color:#d0cfc9">Review note: '+safe(why)+'</div>':"")+'<a href="'+safe(base)+'" style="display:inline-block;padding:13px 19px;background:#c7a65a;color:#fff;text-decoration:none;border-radius:12px;font-weight:800">Open RIZORA</a></div></div>';
   event.payload = {
     subject: String(subject || "").slice(0,200),
@@ -2387,6 +2386,21 @@ function applyReferral(
   newUser,
   referralCode
 ) {
+  db.referrals ||= [];
+
+  const existingReferral = db.referrals.find(
+    referral => referral.referredUserId === newUser.id
+  );
+
+  if (existingReferral) {
+    newUser.referredBy ||= existingReferral.referrerId;
+    return existingReferral;
+  }
+
+  if (newUser.referredBy) {
+    return null;
+  }
+
   const code =
     cleanString(
       referralCode,
@@ -2880,9 +2894,20 @@ function applySecurityHeaders(res){
     "camera=(), microphone=(self), geolocation=()"
   );
 
+  const connectSources = [
+    "'self'",
+    "https://rizora-guse.onrender.com",
+    "https://api.cloudinary.com",
+    "https://challenges.cloudflare.com"
+  ];
+  try {
+    const supabaseOrigin = new URL(process.env.SUPABASE_URL || "").origin;
+    if (supabaseOrigin !== "null") connectSources.push(supabaseOrigin);
+  } catch (_) {}
+
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; img-src 'self' data: https:; media-src 'self' https://rizora-guse.onrender.com; connect-src 'self' https://rizora-guse.onrender.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
+    "default-src 'self'; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src " + connectSources.join(" ") + "; frame-src 'self' https://accounts.google.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://challenges.cloudflare.com"
   );
 
   if(
@@ -7728,45 +7753,166 @@ await rizoraGroqCompletion({
     }
   }
 
-  if (method === "POST" && (pathname === "/api/ai/image" || pathname === "/api/ai/video")) {
+  const aiMediaRoute = pathname.match(/^\/api\/ai\/(image|video)(?:\/([^/]+))?$/);
+  if (aiMediaRoute) {
     const user = getCurrentUser(db, req);
     if (!user) return sendError(res, 401, "Authentication required.");
-    const kind = pathname.endsWith("/image") ? "image" : "video";
-    const token = String(process.env.RIZORA_HF_TOKEN || process.env.HF_TOKEN || "").trim();
-    if (!token) return sendError(res, 503, "NOIR ® media needs RIZORA_HF_TOKEN configured on the server with Inference Providers enabled.");
-    const rateKey = user.id + ":media:" + kind;
-    if (!checkRateLimit(aiRateLimits, rateKey, 60 * 60 * 1000, kind === "image" ? 6 : 2)) return sendError(res, 429, "NOIR ® media is at its hourly limit. Try again later.");
-    let body = {};
-    try { body = await readLargeJSONBody(req, 32 * 1024); } catch (error) { return sendError(res, 400, error.message); }
-    const prompt = String(body.prompt || "").trim().replace(/\s+/g, " ").slice(0, 1000);
-    if (prompt.length < 4) return sendError(res, 400, "Describe the image or video first.");
-    const mediaTimeoutMs = kind === "video" ? 110000 : 90000;
-    const mediaSignal = AbortSignal.timeout(mediaTimeoutMs);
-    try {
-      const client = new InferenceClient(token);
-      let generated;
-      let contentType;
+    const kind = aiMediaRoute[1];
+    const jobId = aiMediaRoute[2] ? decodeURIComponent(aiMediaRoute[2]) : "";
+    const providerKey = String(kind === "image" ? process.env.POLLINATIONS_API_KEY || "" : process.env.NOVAI_API_KEY || "").trim();
+    if (!providerKey) return sendError(res, 503, "NOIR ® " + kind + " generation is not configured on RIZORA.");
+    db.rzV2 = db.rzV2 || {};
+    db.rzV2.aiMediaGenerations = Array.isArray(db.rzV2.aiMediaGenerations) ? db.rzV2.aiMediaGenerations : [];
+
+    if (method === "POST" && !jobId) {
+      const rateKey = user.id + ":media:" + kind;
+      if (!checkRateLimit(aiRateLimits, rateKey, 60 * 60 * 1000, kind === "image" ? 6 : 2)) return sendError(res, 429, "NOIR ® media is at its hourly limit. Try again later.");
+      let body = {};
+      try { body = await readLargeJSONBody(req, 32 * 1024); } catch (error) { return sendError(res, 400, error.message); }
+      const prompt = String(body.prompt || "").trim().replace(/\s+/g, " ").slice(0, 1000);
+      if (prompt.length < 4) return sendError(res, 400, "Describe the image or video first.");
+      const modelId = String(kind === "image" ? process.env.POLLINATIONS_IMAGE_MODEL || "black-forest-labs/flux.1-schnell" : process.env.NOVAI_VIDEO_MODEL || "cogvideox-flash").trim();
+
       if (kind === "image") {
-        generated = await client.textToImage({provider:"auto",model:String(process.env.RIZORA_IMAGE_MODEL || "black-forest-labs/FLUX.1-schnell").trim(),inputs:prompt,parameters:{num_inference_steps:4,width:1024,height:1024}}, {outputType:"blob",signal:mediaSignal});
-        contentType = generated && generated.type && generated.type.startsWith("image/") ? generated.type : "image/png";
-      } else {
-        generated = await client.textToVideo({provider:"fal-ai",model:String(process.env.RIZORA_VIDEO_MODEL || "Wan-AI/Wan2.2-TI2V-5B").trim(),inputs:prompt,parameters:{num_frames:49,guidance_scale:4.5,num_inference_steps:20}}, {signal:mediaSignal});
-        contentType = generated && generated.type && generated.type.startsWith("video/") ? generated.type : "video/mp4";
+        const imageUrl = new URL("https://gen.pollinations.ai/image/" + encodeURIComponent(prompt));
+        imageUrl.searchParams.set("model", modelId);
+        imageUrl.searchParams.set("width", "1024");
+        imageUrl.searchParams.set("height", "1024");
+        imageUrl.searchParams.set("seed", String(crypto.randomInt(0, 2147483647)));
+        imageUrl.searchParams.set("nologo", "true");
+        imageUrl.searchParams.set("private", "true");
+        try {
+          const providerResponse = await fetch(imageUrl.href, {
+            headers:{Authorization:"Bearer " + providerKey,Accept:"image/jpeg,image/png,image/webp"},
+            signal:AbortSignal.timeout(120000)
+          });
+          if (!providerResponse.ok) {
+            console.error("NOIR ® POLLINATIONS IMAGE ERROR", {status:providerResponse.status,model:modelId});
+            if (providerResponse.status === 429) return sendError(res,429,"Pollinations is busy. Try again shortly.");
+            if (providerResponse.status === 402) return sendError(res,503,"The Pollinations image-generation balance is unavailable.");
+            if (providerResponse.status === 401 || providerResponse.status === 403) return sendError(res,503,"Pollinations is not authorized for image generation.");
+            if (providerResponse.status === 422) return sendError(res,422,"Pollinations could not use that image prompt. Try changing it.");
+            return sendError(res,502,"NOIR ® could not create that image.");
+          }
+          const contentType = String(providerResponse.headers.get("content-type") || "").split(";")[0].toLowerCase();
+          if (!/^image\/(png|jpe?g|webp)$/.test(contentType)) return sendError(res,502,"Pollinations returned an unsupported image format.");
+          const maxBytes = 16 * 1024 * 1024;
+          const advertisedBytes = Number(providerResponse.headers.get("content-length") || 0);
+          if (advertisedBytes > maxBytes) return sendError(res,413,"The generated image exceeded RIZORA's 16 MB limit.");
+          const chunks=[];let total=0;
+          if (providerResponse.body && typeof providerResponse.body.getReader === "function") {
+            const reader=providerResponse.body.getReader();
+            while(true){const part=await reader.read();if(part.done)break;total+=part.value.byteLength;if(total>maxBytes){await reader.cancel().catch(()=>{});return sendError(res,413,"The generated image exceeded RIZORA's 16 MB limit.");}chunks.push(Buffer.from(part.value));}
+          } else {
+            const part=Buffer.from(await providerResponse.arrayBuffer());total=part.length;if(total>maxBytes)return sendError(res,413,"The generated image exceeded RIZORA's 16 MB limit.");chunks.push(part);
+          }
+          if (!total) return sendError(res,502,"Pollinations returned an empty image.");
+          const output=Buffer.concat(chunks,total);
+          setRizoraCorsHeaders(req,res);
+          res.writeHead(200,{"Content-Type":contentType,"Content-Length":String(output.length),"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-RIZORA-Generated-By":"NOIR"});
+          return res.end(output);
+        } catch (error) {
+          const timedOut = error && (error.name === "AbortError" || error.name === "TimeoutError");
+          console.error("NOIR ® POLLINATIONS IMAGE NETWORK ERROR", {model:modelId,timedOut:!!timedOut});
+          return sendError(res,timedOut?504:502,timedOut?"Pollinations took too long to create the image. Try again.":"NOIR ® could not reach Pollinations.");
+        }
       }
-      if (!generated || typeof generated.arrayBuffer !== "function") return sendError(res, 502, "NOIR ® received an unsupported media result.");
-      const output = Buffer.from(await generated.arrayBuffer());
-      const maxBytes = kind === "image" ? 16 * 1024 * 1024 : 80 * 1024 * 1024;
-      if (!output.length || output.length > maxBytes) return sendError(res, 413, "The generated media exceeded RIZORA's file limit.");
-      setRizoraCorsHeaders(req, res);
-      res.writeHead(200, {"Content-Type":contentType,"Content-Length":output.length,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});
-      return res.end(output);
-    } catch (error) {
-      const rawMessage = String(error && error.message || "Unknown provider error").replace(/hf_[A-Za-z0-9]{20,}/g, "[REDACTED_TOKEN]").slice(0, 500);
-      console.error("NOIR ® MEDIA GENERATION ERROR", {kind:kind,status:error && error.status || error && error.response && error.response.status || 0,code:error && error.code || null,name:error && error.name || "Error",message:rawMessage,model:kind === "image" ? String(process.env.RIZORA_IMAGE_MODEL || "black-forest-labs/FLUX.1-schnell").trim() : String(process.env.RIZORA_VIDEO_MODEL || "Wan-AI/Wan2.2-TI2V-5B").trim(),provider:kind === "image" ? "auto" : "fal-ai"});
-      const timedOut = error && (error.name === "AbortError" || error.name === "TimeoutError");
-      const statusCode = timedOut ? 504 : error && error.status === 429 ? 429 : error && (error.status === 401 || error.status === 403) ? 503 : 502;
-      return sendError(res, statusCode, timedOut ? "NOIR ® media generation timed out. Try a shorter prompt or retry." : statusCode === 429 ? "The AI media provider is busy. Try again shortly." : statusCode === 503 ? "The server's AI media provider key was rejected or lacks provider access." : "NOIR ® could not generate that media. Try another prompt shortly.");
+
+      const providerBody = {model:modelId,prompt:prompt,resolution:"720p",duration:6,ratio:"9:16"};
+      try {
+        const providerResponse = await fetch("https://aiapi-pro.com/v1/video/generations", {
+          method:"POST",
+          headers:{Authorization:"Bearer " + providerKey,"Content-Type":"application/json",Accept:"application/json"},
+          body:JSON.stringify(providerBody),
+          signal:AbortSignal.timeout(20000)
+        });
+        const providerData = await providerResponse.json().catch(() => ({}));
+        if (!providerResponse.ok) {
+          console.error("NOIR ® AIAPI-PRO VIDEO SUBMIT ERROR", {status:providerResponse.status,model:modelId});
+          if (providerResponse.status === 429) return sendError(res,429,"AIAPI-Pro is busy. Try again shortly.");
+          if (providerResponse.status === 402 || providerResponse.status === 401 || providerResponse.status === 403) return sendError(res,503,"AIAPI-Pro is not authorized for video generation.");
+          if (providerResponse.status === 422 || providerResponse.status === 400) return sendError(res,422,"AIAPI-Pro could not use that video prompt. Try changing it.");
+          return sendError(res,502,"NOIR ® could not start that media generation.");
+        }
+        const providerGenerationId = String(providerData.task_id || providerData.id || "");
+        if (!/^[A-Za-z0-9_-]{1,160}$/.test(providerGenerationId)) return sendError(res,502,"AIAPI-Pro returned an invalid generation reference.");
+        const now = new Date().toISOString();
+        const job = {id:uid("aimedia_"),ownerId:user.id,kind:kind,provider:"aiapi-pro",providerGenerationId:providerGenerationId,modelId:modelId,status:String(providerData.status || "queued"),createdAt:now,expiresAt:new Date(Date.now()+24*60*60*1000).toISOString()};
+        db.rzV2.aiMediaGenerations = db.rzV2.aiMediaGenerations.filter(item => Date.parse(item.expiresAt || "") > Date.now()).concat(job).slice(-400);
+        saveDB(db);
+        setRizoraCorsHeaders(req,res);
+        return sendJSON(res,202,{success:true,jobId:job.id,status:job.status,provider:"aiapi-pro",kind:kind});
+      } catch (error) {
+        const timedOut = error && (error.name === "AbortError" || error.name === "TimeoutError");
+        console.error("NOIR ® AIAPI-PRO VIDEO NETWORK ERROR", {model:modelId,timedOut:!!timedOut});
+        return sendError(res,timedOut?504:502,timedOut?"AIAPI-Pro took too long to accept this request. Try again.":"NOIR ® could not reach AIAPI-Pro.");
+      }
     }
+
+    if (method === "GET" && jobId) {
+      if (!/^[A-Za-z0-9_-]{12,160}$/.test(jobId)) return sendError(res,404,"Media generation not found.");
+      if (kind !== "video") return sendError(res,405,"Image generation returns its file in the initial response.");
+      if (!checkRateLimit(aiRateLimits,user.id+":novai-media-poll",60*1000,4)) return sendError(res,429,"NOIR ® is checking this video too quickly. Wait a moment and try again.");
+      const job = db.rzV2.aiMediaGenerations.find(item => item.id === jobId && item.ownerId === user.id && item.kind === kind);
+      if (!job || Date.parse(job.expiresAt || "") <= Date.now()) return sendError(res,404,"Media generation not found or expired.");
+      const pollUrl = new URL("https://aiapi-pro.com/v1/video/generations/" + encodeURIComponent(job.providerGenerationId));
+      pollUrl.searchParams.set("model",job.modelId);
+      let providerResponse;
+      try {
+        providerResponse = await fetch(pollUrl.href, {
+          headers:{Authorization:"Bearer " + providerKey,Accept:"application/json"},
+          signal:AbortSignal.timeout(15000)
+        });
+      } catch (_) { return sendError(res,502,"NOIR ® could not check the AIAPI-Pro generation yet. Try again shortly."); }
+      const providerData = await providerResponse.json().catch(() => ({}));
+      if (!providerResponse.ok) {
+        console.error("NOIR ® AIAPI-PRO VIDEO STATUS ERROR", {status:providerResponse.status,model:job.modelId});
+        return sendError(res,providerResponse.status===429?429:502,providerResponse.status===429?"AIAPI-Pro is busy. Try checking again shortly.":"NOIR ® could not check the generation status.");
+      }
+      job.status = String(providerData.status || "queued").toLowerCase();
+      if (job.status === "failed" || job.status === "cancelled") {
+        job.failureReason = String(providerData.error || providerData.failure_reason || "generation_failed").slice(0,80);
+        job.failedAt = new Date().toISOString();
+        saveDB(db);
+        return sendJSON(res,422,{success:false,status:"failed",error:"AIAPI-Pro could not complete this video. Try another prompt.",failureReason:job.failureReason});
+      }
+      if (job.status !== "succeeded" && job.status !== "completed") {
+        if (job.status !== job.lastSavedStatus) { job.lastSavedStatus=job.status; saveDB(db); }
+        setRizoraCorsHeaders(req,res);
+        return sendJSON(res,202,{success:true,status:job.status,provider:"aiapi-pro",kind:kind});
+      }
+      const contentType = "video/mp4";
+      if (kind !== "video") return sendError(res,502,"AIAPI-Pro returned an unexpected media type.");
+      let contentUrl;
+      try { contentUrl = new URL(String(providerData.video_url || (Array.isArray(providerData.video_result) && providerData.video_result[0] && providerData.video_result[0].url) || "")); } catch (_) { return sendError(res,502,"AIAPI-Pro did not return a valid video file."); }
+      if (contentUrl.protocol !== "https:" || contentUrl.username || contentUrl.password || (contentUrl.port && contentUrl.port !== "443") || contentUrl.hostname.startsWith("[") || /^[0-9.]+$/.test(contentUrl.hostname) || /^(localhost|.*\.localhost|.*\.local|.*\.internal)$/i.test(contentUrl.hostname)) return sendError(res,502,"AIAPI-Pro returned an invalid media address.");
+      try {
+        const outputResponse = await fetch(contentUrl.href,{redirect:"error",signal:AbortSignal.timeout(30000)});
+        if (!outputResponse.ok) return sendError(res,502,"The generated media file could not be downloaded yet.");
+        const responseType = String(outputResponse.headers.get("content-type") || "").split(";")[0].toLowerCase();
+        if (responseType && responseType !== "video/mp4" && responseType !== "application/octet-stream") return sendError(res,502,"AIAPI-Pro returned an unsupported video format.");
+        const maxBytes = 25*1024*1024;
+        const advertisedBytes = Number(outputResponse.headers.get("content-length") || 0);
+        if (advertisedBytes > maxBytes) return sendError(res,413,"The generated media exceeded RIZORA's 25 MB upload limit.");
+        const chunks=[];let total=0;
+        if (outputResponse.body && typeof outputResponse.body.getReader === "function") {
+          const reader=outputResponse.body.getReader();
+          while(true){const part=await reader.read();if(part.done)break;total+=part.value.byteLength;if(total>maxBytes){await reader.cancel().catch(()=>{});return sendError(res,413,"The generated media exceeded RIZORA's 25 MB upload limit.");}chunks.push(Buffer.from(part.value));}
+        } else {
+          const part=Buffer.from(await outputResponse.arrayBuffer());total=part.length;if(total>maxBytes)return sendError(res,413,"The generated media exceeded RIZORA's 25 MB upload limit.");chunks.push(part);
+        }
+        if (!total) return sendError(res,502,"AIAPI-Pro returned an empty video file.");
+        const output=Buffer.concat(chunks,total);
+        job.completedAt=job.completedAt||new Date().toISOString();job.mimeType=contentType;saveDB(db);
+        setRizoraCorsHeaders(req,res);
+        res.writeHead(200,{"Content-Type":contentType,"Content-Length":String(output.length),"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-RIZORA-Generated-By":"NOIR"});
+        return res.end(output);
+      } catch (error) {
+        console.error("NOIR ® AIAPI-PRO VIDEO DOWNLOAD ERROR", {model:job.modelId,name:error&&error.name||"Error"});
+        return sendError(res,502,"NOIR ® could not retrieve the finished media yet. Try again.");
+      }
+    }
+    return sendError(res,405,"Use POST to start or GET to check a media generation.");
   }
 
   if (method === "POST" && pathname === "/api/ai/enhance") {
@@ -7856,9 +8002,15 @@ await rizoraGroqCompletion({
               process.env.GROQ_API_KEY || ""
             ).trim()
           ),
-        imageConfigured:Boolean(String(process.env.RIZORA_HF_TOKEN||process.env.HF_TOKEN||"").trim()),
-        videoConfigured:Boolean(String(process.env.RIZORA_HF_TOKEN||process.env.HF_TOKEN||"").trim()),
+        imageConfigured:Boolean(String(process.env.POLLINATIONS_API_KEY||"").trim()),
+        videoConfigured:Boolean(String(process.env.NOVAI_API_KEY||"").trim()),
+        mediaProvider:"pollinations+aiapi-pro",
+        imageProvider:"pollinations",
+        videoProvider:"aiapi-pro",
+        imageModel:String(process.env.POLLINATIONS_IMAGE_MODEL||"black-forest-labs/flux.1-schnell").trim(),
+        videoModel:String(process.env.NOVAI_VIDEO_MODEL||"cogvideox-flash").trim(),
         voiceIsolationConfigured:Boolean(String(process.env.ELEVENLABS_API_KEY||"").trim()),
+        voiceAndMusicConfigured:Boolean(String(process.env.ELEVENLABS_API_KEY||"").trim()),
         model:
           String(
             process.env.GROQ_MODEL ||
@@ -11213,6 +11365,88 @@ if (
    RIZORA SOCIAL ROUTES V2
    ============================================================ */
 
+if(method === "GET" && pathname === "/api/social/tasks/review-queue"){
+  const admin = getCurrentUser(db, req);
+  if(!isSuperAdmin(admin)){
+    sendError(res, 403, "Super admin access required.");
+    return;
+  }
+  ensureRizoraSocialDB(db);
+  const reviews = db.socialCompletions
+    .filter(item => item.status === "pending")
+    .sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .slice(0,100)
+    .map(item => {
+      const task = db.socialTasks.find(row => row.id === item.taskId) || null;
+      const creator = db.users.find(row => row.id === item.userId) || null;
+      const media = (db.rzV2 && db.rzV2.media || []).find(row => row.id === item.proofMediaId && row.ownerId === item.userId) || null;
+      return {
+        id:item.id,
+        taskId:item.taskId,
+        taskTitle:task && task.title || "Social mission",
+        reward:Number(item.reward || 0),
+        createdAt:item.createdAt,
+        user:creator ? safeUser(creator) : null,
+        proofMedia:media ? {id:media.id,url:media.url,mimeType:media.mimeType} : null
+      };
+    });
+  sendJSON(res,200,{success:true,reviews});
+  return;
+}
+
+if(method === "POST" && pathname === "/api/social/tasks/review"){
+  const admin = getCurrentUser(db, req);
+  if(!isSuperAdmin(admin)){
+    sendError(res, 403, "Super admin access required.");
+    return;
+  }
+  let body;
+  try{body=await readBody(req);}catch(error){sendError(res,400,error.message);return;}
+  ensureRizoraSocialDB(db);
+  const completion = db.socialCompletions.find(item => item.id === cleanString(body.completionId,120) && item.status === "pending");
+  if(!completion){sendError(res,404,"Pending mission review not found.");return;}
+  const decision = cleanString(body.decision,20).toLowerCase();
+  if(decision !== "approve" && decision !== "reject"){
+    sendError(res,400,"Choose approve or reject.");
+    return;
+  }
+  const task = db.socialTasks.find(item => item.id === completion.taskId);
+  const creator = db.users.find(item => item.id === completion.userId);
+  if(decision === "approve"){
+    if(!task || task.status !== "active" || !creator || creator.status === "blocked"){
+      sendError(res,409,"The campaign or creator is no longer eligible for a reward.");
+      return;
+    }
+    const reward = Math.max(5,Math.floor(rzSocialNumber(completion.reward,0)));
+    if(!task.sponsored && rzSocialNumber(task.fundedRemaining,0) < reward){
+      sendError(res,409,"The campaign no longer has enough funded rewards.");
+      return;
+    }
+    completion.status="approved";
+    completion.reviewedAt=new Date().toISOString();
+    completion.reviewedBy=admin.id;
+    creator.points=rzSocialNumber(creator.points,0)+reward;
+    task.completedCount=rzSocialNumber(task.completedCount,0)+1;
+    if(!task.sponsored){
+      task.fundedRemaining=Math.max(0,rzSocialNumber(task.fundedRemaining,0)-reward);
+      if(task.fundedRemaining<=0)task.status="completed";
+    }
+    if(typeof pushPointsLedger === "function"){
+      try{pushPointsLedger(db,creator.id,"credit",reward,"social_task",{taskId:task.id,completionId:completion.id});}catch(_){}
+    }
+    rzSocialNotify(db,creator.id,"Mission approved","Your proof for \""+(task.title||"social mission")+"\" was approved. "+reward+" points have been added.");
+  }else{
+    completion.status="rejected";
+    completion.reviewedAt=new Date().toISOString();
+    completion.reviewedBy=admin.id;
+    completion.reviewNote=cleanString(body.note,300);
+    if(creator)rzSocialNotify(db,creator.id,"Mission needs new proof",completion.reviewNote||"Your screenshot did not show enough evidence. You can submit a new screenshot and try again.");
+  }
+  saveDB(db);
+  sendJSON(res,200,{success:true,completion:{id:completion.id,status:completion.status,reward:decision === "approve" ? completion.reward : 0}});
+  return;
+}
+
 if(
   method === "GET" &&
   pathname === "/api/social/tasks"
@@ -11251,6 +11485,11 @@ if(
       .map(
         task => {
 
+          const latestCompletion =
+            db.socialCompletions
+              .filter(item => item.userId === user.id && item.taskId === task.id)
+              .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] || null;
+
           const cooldown =
             task.sponsored
               ? rzSocialCooldown(
@@ -11266,12 +11505,11 @@ if(
 
             completed:
               task.sponsored
-                ? cooldown > 0
-                : db.socialCompletions.some(
-                    item =>
-                      item.userId === user.id &&
-                      item.taskId === task.id
-                  ),
+                ? cooldown > 0 || Boolean(latestCompletion && latestCompletion.status === "pending")
+                : Boolean(latestCompletion && (!latestCompletion.status || latestCompletion.status === "approved" || latestCompletion.status === "pending")),
+
+            completionStatus:
+              latestCompletion && latestCompletion.status || "",
 
             cooldownMs:
               cooldown
@@ -11322,8 +11560,14 @@ if(
   const completed =
     db.socialCompletions.filter(
       item =>
-        item.userId === user.id
+        item.userId === user.id &&
+        item.status !== "pending" &&
+        item.status !== "rejected"
     );
+
+  const pendingReviews = db.socialCompletions.filter(
+    item => item.userId === user.id && item.status === "pending"
+  ).length;
 
   const campaigns =
     db.socialTasks.filter(
@@ -11359,6 +11603,8 @@ if(
 
       completed:
         completed.length,
+
+      pendingReviews,
 
       earned,
 
@@ -11721,6 +11967,16 @@ if(
 
   ensureRizoraSocialDB(db);
 
+  const proofMediaId = cleanString(body.proofMediaId, 120);
+  const proofMedia = (db.rzV2 && db.rzV2.media || []).find(
+    item => item.id === proofMediaId && item.ownerId === user.id && String(item.mimeType || "").toLowerCase().startsWith("image/")
+  );
+
+  if (!proofMedia) {
+    sendError(res, 400, "Upload a screenshot as proof before submitting this mission.");
+    return;
+  }
+
   const taskId =
     cleanString(
       body.taskId ||
@@ -11763,11 +12019,14 @@ if(
   }
 
   const previous =
-    db.socialCompletions.find(
-      item =>
-        item.userId === user.id &&
-        item.taskId === task.id
-    );
+    db.socialCompletions
+      .filter(item => item.userId === user.id && item.taskId === task.id)
+      .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] || null;
+
+  if (previous && previous.status === "pending") {
+    sendError(res, 409, "This mission is already waiting for review.");
+    return;
+  }
 
   if(
     task.sponsored
@@ -11794,7 +12053,7 @@ if(
 
   }else{
 
-    if(previous){
+    if(previous && (!previous.status || previous.status === "approved")){
 
       sendError(
         res,
@@ -11853,6 +12112,10 @@ if(
 
     reward,
 
+    proofMediaId,
+
+    status: "pending",
+
     createdAt:
       new Date().toISOString()
 
@@ -11862,86 +12125,17 @@ if(
     completion
   );
 
-  user.points =
-    rzSocialNumber(
-      user.points,
-      0
-    ) +
-    reward;
-
-  task.completedCount =
-    rzSocialNumber(
-      task.completedCount,
-      0
-    ) +
-    1;
-
-  if(!task.sponsored){
-
-    task.fundedRemaining =
-      Math.max(
-        0,
-        rzSocialNumber(
-          task.fundedRemaining,
-          0
-        ) -
-        reward
-      );
-
-    if(
-      task.fundedRemaining <= 0
-    ){
-
-      task.status =
-        "completed";
-
-    }
-
-    if(task.creatorId){
-
-      rzSocialNotify(
-        db,
-        task.creatorId,
-        "Campaign completed",
-        `${user.displayName || user.username || "A creator"} completed "${task.title}" and earned ${reward} points.`
-      );
-
-    }
-
-  }
-
-  if(
-    typeof pushPointsLedger ===
-    "function"
-  ){
-
-    try{
-
-      pushPointsLedger(
-        db,
-        user.id,
-        "credit",
-        reward,
-        "social_task",
-        {
-          taskId:
-            task.id
-        }
-      );
-
-    }catch(_){}
-
-  }
-
   saveDB(db);
 
   sendJSON(
     res,
-    200,
+    202,
     {
       success:true,
 
-      reward,
+      pendingReview: true,
+
+      reward: 0,
 
       points:
         rzSocialNumber(
@@ -12992,7 +13186,9 @@ function rzSocialCooldown(
       .filter(
         item =>
           item.userId === userId &&
-          item.taskId === taskId
+          item.taskId === taskId &&
+          item.status !== "pending" &&
+          item.status !== "rejected"
       )
       .sort(
         (a,b) =>
