@@ -88,6 +88,7 @@ async function main() {
   const serviceWorkerAssets = Array.from(serviceWorkerSource.matchAll(/["']\/(?:[^"'?]+\.(?:js|css|png|json|html))["']/g)).map(m => m[1] || m[0].slice(1,-1));
   const premiumUiSource = require("fs").readFileSync("rizora-v2-enterprise-ui.js", "utf8");
   const coreUiSource = require("fs").readFileSync("rizora-v2.js", "utf8");
+  const themeUiSource = require("fs").readFileSync("rizora-v2-community-fixes.js", "utf8");
 
   assert(!indexSource.includes("/rizora-v2-growth.js"), "frontend must not load the backend-only rizora-v2-growth.js module");
   assert(suiteSource.includes("function modal("), "Creator Suite modal constructor is missing");
@@ -134,6 +135,8 @@ async function main() {
   assert(premiumUiSource.includes('plan:"premium_plus"'), "Premium+ checkout plan is missing");
   assert(coreUiSource.includes("rzPremiumVerificationHint"), "Premium suggestion block is missing");
   assert(coreUiSource.includes("rzDismissPremiumSuggestion"), "Premium suggestion dismiss control is missing");
+  assert(coreUiSource.includes('usernameOption.value="username"') && coreUiSource.includes('contact.username||contact.phone||contact.email'), "Login form must accept username, email, or phone.");
+  assert(themeUiSource.includes('||"dark"') && themeUiSource.includes('data-rz-profile-theme="dark">Black</button>') && themeUiSource.includes('data-rz-profile-theme="light">White</button>') && !themeUiSource.includes('>Custom</button>'), "App appearance must default to black and offer only black and white.");
   const assetRefs = [
     ...Array.from(indexSource.matchAll(/src=["']\/([^"'?]+\.js)(?:\?[^"']*)?["']/g)).map(m => m[1]),
     ...Array.from(indexSource.matchAll(/href=["']\/([^"'?]+\.css)(?:\?[^"']*)?["']/g)).map(m => m[1])

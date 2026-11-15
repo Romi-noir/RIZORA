@@ -7,6 +7,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { authContactForUser } = require("./rizora-auth-identity");
 require("dotenv").config();
 const { Pool } = require("pg");
 const { OAuth2Client } =
@@ -4224,10 +4225,26 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     let body;
     try { body = await readBody(req); } catch (error) { sendError(res, 400, error.message); return; }
     const intent = body.intent === "signup" ? "signup" : body.intent === "password_reset" ? "password_reset" : "login";
-    const email = normalizeEmail(body.email || (body.channel === "email" ? body.identifier : ""));
-    const phone = String(body.phone || (body.channel === "sms" ? body.identifier : "") || "").trim();
+    let email = normalizeEmail(body.email || (body.channel === "email" ? body.identifier : ""));
+    let phone = String(body.phone || (body.channel === "sms" ? body.identifier : "") || "").trim();
+    const loginUsername = intent === "signup" ? "" : normalizeUsername(body.username || (body.channel === "username" ? body.identifier : ""));
+    let localUser = null;
+    if (loginUsername) {
+      localUser = (db.users || []).find(item => normalizeUsername(item.username) === loginUsername);
+      if (!localUser) {
+        sendError(res, 404, "No RIZORA account matches that username. Create an account first.");
+        return;
+      }
+      const contact = authContactForUser(localUser);
+      if (!contact) {
+        sendError(res, 409, "Add an email address or phone number to your account before requesting a sign-in code.");
+        return;
+      }
+      email = contact.email;
+      phone = contact.phone;
+    }
     if (!!email === !!phone) {
-      sendError(res, 400, "Enter either an email address or a phone number.");
+      sendError(res, 400, "Enter a username, email address, or phone number.");
       return;
     }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -4238,7 +4255,7 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
       sendError(res, 400, "Enter a phone number with its country code, such as +2348012345678.");
       return;
     }
-    const localUser = (db.users || []).find(item =>
+    localUser ||= (db.users || []).find(item =>
       (email && normalizeEmail(item.email) === email) ||
       (phone && String(item.phoneNormalized || item.phone || "").trim() === phone)
     );
@@ -4285,7 +4302,9 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
       });
       sendJSON(res, 200, {
         success: true,
-        message: email ? "A sign-in code has been sent to your email." : "A sign-in code has been sent by text.",
+        message: loginUsername
+          ? "A sign-in code has been sent to the contact saved on your account."
+          : email ? "A sign-in code has been sent to your email." : "A sign-in code has been sent by text.",
         channel: email ? "email" : "sms"
       });
     } catch (error) {
@@ -4302,8 +4321,23 @@ if (await handleRizoraV2({ req, res, db, saveDB, getCurrentUser, isSuperAdmin, s
     let body;
     try { body = await readBody(req); } catch (error) { sendError(res, 400, error.message); return; }
     const intent = body.intent === "signup" ? "signup" : body.intent === "password_reset" ? "password_reset" : "login";
-    const email = normalizeEmail(body.email || "");
-    const phone = String(body.phone || "").trim();
+    let email = normalizeEmail(body.email || "");
+    let phone = String(body.phone || "").trim();
+    const loginUsername = intent === "signup" ? "" : normalizeUsername(body.username || (body.channel === "username" ? body.identifier : ""));
+    if (loginUsername) {
+      const localUser = (db.users || []).find(item => normalizeUsername(item.username) === loginUsername);
+      if (!localUser) {
+        sendError(res, 404, "No RIZORA account matches that username.");
+        return;
+      }
+      const contact = authContactForUser(localUser);
+      if (!contact) {
+        sendError(res, 409, "This account does not have a sign-in contact available.");
+        return;
+      }
+      email = contact.email;
+      phone = contact.phone;
+    }
     const code = String(body.code || body.token || "").replace(/\s+/g, "");
     if (!!email === !!phone || !/^\d{6,8}$/.test(code)) {
       sendError(res, 400, "Enter the 6–8 digit code sent to your email or phone.");
@@ -5298,7 +5332,7 @@ if(
       sendError(
         res,
         400,
-        "Username/email and password are required."
+        "Username, email or phone number and password are required."
       );
 
       return;
@@ -5356,9 +5390,17 @@ if(
       }
       if (user.supabaseId) {
         try {
-          const providerIdentity = user.phone && identifier === String(user.phoneNormalized || user.phone).trim()
-            ? { phone: user.phoneNormalized || user.phone }
-            : { email: user.email };
+          const storedPhone = String(user.phoneNormalized || user.phone || "").trim();
+          const storedEmail = normalizeEmail(user.email);
+          const providerIdentity = identifier === storedPhone
+            ? { phone: storedPhone }
+            : identifier === storedEmail
+              ? { email: storedEmail }
+              : authContactForUser(user);
+          if (!providerIdentity) {
+            sendError(res, 409, "Add an email address or phone number before using password sign-in.");
+            return;
+          }
           const providerSession = await signInWithPassword(providerIdentity, password);
           const providerUser = providerSession.user || providerSession;
           if (providerUser.id === user.supabaseId) validPassword = true;

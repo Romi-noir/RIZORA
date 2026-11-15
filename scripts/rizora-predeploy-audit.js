@@ -88,6 +88,10 @@ for (const key of ["GOOGLE_CLIENT_ID"]) {
 }
 assert(!/APPLE_CLIENT_ID|APPLE_REDIRECT_URI/.test(server+renderConfig+envExample) && !core.includes("AppleID") && !core.includes("appleButton") && !server.includes("/api/auth/apple"),"Apple sign-in remains available in the app or server.");
 assert(!/Creator Earnings/i.test(businessUi) && !/CREATE\.\s*GROW\.\s*EARN\./i.test(index+email),"The old EARN branding remains visible in the active app.");
+assert(core.includes('usernameOption.value="username"') && core.includes('contact.username||contact.phone||contact.email') && core.includes('channel:pending.channel'),"Login UI must offer username, email and phone with username OTP support.");
+assert(server.includes('const loginUsername = intent === "signup" ? "" : normalizeUsername(body.username || (body.channel === "username" ? body.identifier : ""))') && (server.match(/authContactForUser\(localUser\)/g)||[]).length>=2,"Username login codes must resolve the account contact for both send and verify.");
+assert(communityFixes.includes('||"dark"') && communityFixes.includes('data-rz-profile-theme="dark">Black</button>') && communityFixes.includes('data-rz-profile-theme="light">White</button>') && !communityFixes.includes('>Custom</button>'),"App theme must default to black and offer only black and white.");
+assert(index.includes('name="color-scheme" content="dark light"'),"Browser theme metadata must support both black and white modes.");
 assert(renderConfig.includes("SUPABASE_PRIVATE_MEDIA_BUCKET") && renderConfig.includes("value: rizora-private-media"),"Render must target the private RIZORA Supabase media bucket.");
 assert(integrations.includes("turnstile/v0/siteverify") && integrations.includes("function verifyTurnstile"),"Server-side Cloudflare Turnstile verification is missing.");
 assert(integrations.includes("function cloudinarySignature") && integrations.includes("overwrite: false"),"Signed Cloudinary uploads must prevent overwriting an existing asset.");
@@ -149,7 +153,7 @@ assert(sw.includes("rizora_verified_early.svg") && sw.includes("rizora_verified_
 assert(brand.includes("--rz-gold") && brand.includes(".rz-music-hero") && brand.includes(".rz-ai-orb"),"Black, white and gold brand styling is missing from key app surfaces.");
 assert(music.includes('path==="/api/music/audius/search"') && music.includes("https://api.audius.co/v1/tracks/search"),"Read-only Audius search is not wired through the backend.");
 assert(player.includes("/api/music/audius/search") && !/spotify/i.test(source+music+player),"Music player must use Audius instead of Spotify.");
-assert(sw.includes("v53-no-apple-auth") && sw.includes("rizora-play-logo.jpg"),"Service worker cache version or RIZORA PLAY logo is stale.");
+assert(sw.includes("v54-login-theme") && sw.includes("rizora-play-logo.jpg"),"Service worker cache version or RIZORA PLAY logo is stale.");
 for(const asset of ["rizora-ad-1.mp3","rizora-ad-2.mp3","rizora-ad-3-orekelewa.mp3"]){assert(player.includes("/assets/ads/"+asset),"Music player is missing audio ad asset "+asset+".");}
 assert(player.includes("startsSinceAd>=2") && player.includes("userGetsAdFree") && player.includes("playAd()"),"Non-subscriber audio ad scheduling is missing.");
 assert(player.includes("control.disabled=player.isAd") && core.includes("window.RIZORA_PLAYER.isAd"),"A listener can skip or close the player before a required audio ad finishes.");

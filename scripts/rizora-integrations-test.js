@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const integrations = require("../rizora-integrations");
+const { authContactForUser } = require("../rizora-auth-identity");
 
 const ENV_KEYS = [
   "NODE_ENV",
@@ -39,6 +40,15 @@ function jsonResponse(body, status = 200) {
 }
 
 async function main() {
+  assert.deepEqual(authContactForUser({ email: "creator@example.test", emailVerified: true, phone: "+2348012345678", phoneVerified: true }), {
+    email: "creator@example.test",
+    phone: ""
+  });
+  assert.deepEqual(authContactForUser({ email: "creator@example.test", emailVerified: false, phone: "+2348012345678", phoneVerified: true }), {
+    email: "",
+    phone: "+2348012345678"
+  });
+  assert.equal(authContactForUser({ username: "creator" }), null);
   setEnv();
   const status = integrations.integrationStatus();
   assert.equal(status.auth, true);
