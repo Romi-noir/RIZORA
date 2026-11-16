@@ -537,6 +537,13 @@ body:has(.rz-auth) {
   .rz-auth-card { padding: 18px !important; }
   .rz-auth > .rz-site-footer { padding-bottom: max(18px, env(safe-area-inset-bottom)) !important; }
 }
+/* Keep the entire auth page in the document flow so the legal footer can scroll. */
+body:has(.rz-auth), body.rz-auth-page {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
 .rz-auth { background: var(--bg) !important; }
 .rz-auth-card { background: var(--panel) !important; }
 .rz-auth > .rz-site-footer { background: var(--bg) !important; }
