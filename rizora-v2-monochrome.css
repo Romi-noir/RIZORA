@@ -463,3 +463,84 @@ html[data-rizora-theme] body :is(.rz-ai-workspace, .rz-ai-header, .rz-ai-empty,
 @media (prefers-reduced-motion: reduce) {
   .rz-boot-animation, html[data-rizora-theme] body :is(.rz-btn, button, a) { animation: none !important; transition: none !important; }
 }
+/* Auth pages scroll as one document so signup, recovery and legal links never collide. */
+body:has(.rz-auth) {
+  height: auto !important;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+.rz-auth {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  overflow: visible !important;
+  padding: 20px 14px 0 !important;
+}
+.rz-auth-card {
+  flex: 0 0 auto;
+  max-height: none !important;
+  overflow: visible !important;
+  width: min(460px, 100%);
+  border-radius: 12px !important;
+}
+.rz-auth > .rz-site-footer {
+  position: static !important;
+  inset: auto !important;
+  flex: 0 0 auto;
+  width: min(460px, 100%);
+  margin: 0 auto;
+  padding: 8px 12px max(18px, env(safe-area-inset-bottom)) !important;
+  border-top: 1px solid var(--line);
+}
+.rz-auth-switch, .rz-auth-links, .rz-auth-legal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.rz-auth-links { justify-content: space-between; }
+.rz-auth-legal { justify-content: flex-start; margin: 8px 0; }
+.rz-auth-link {
+  display: inline;
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--text) !important;
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.rz-auth-link:hover, .rz-auth-link:focus-visible { opacity: .76; outline-color: var(--muted); }
+.rz-auth-link.is-disabled { opacity: .48; cursor: default; text-decoration: none; }
+.rz-forgot-box { display: grid; gap: 8px; }
+.rz-forgot-box h2 { margin: 2px 0; font-size: 22px; }
+.rz-forgot-box > .rz-auth-link { justify-self: start; margin-top: 5px; }
+@media (max-height: 720px) {
+  .rz-auth { justify-content: flex-start; padding-top: 12px !important; }
+}
+@media (max-width: 560px) {
+  .rz-auth { padding-inline: 10px !important; }
+  .rz-auth-card { padding: 18px !important; }
+  .rz-auth > .rz-site-footer { padding-bottom: max(18px, env(safe-area-inset-bottom)) !important; }
+}
+.rz-auth { background: var(--bg) !important; }
+.rz-auth-card { background: var(--panel) !important; }
+.rz-auth > .rz-site-footer { background: var(--bg) !important; }
+.rz-auth .rz-brand { flex-direction: column; justify-content: center; gap: 8px; text-align: center; }
+.rz-auth .rz-brand img { width: 96px; height: 96px; border-radius: 20px; }
+.rz-auth [hidden] { display: none !important; }
+.rz-appearance-settings { grid-column: 1 / -1; }
