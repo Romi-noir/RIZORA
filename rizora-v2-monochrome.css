@@ -544,6 +544,21 @@ body:has(.rz-auth), body.rz-auth-page {
   overflow-x: hidden !important;
   overflow-y: auto !important;
 }
+@media (max-width: 980px) {
+  .rz-mobile-nav {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    justify-content: stretch !important;
+    gap: 0 !important;
+    overflow: visible !important;
+    white-space: normal !important;
+  }
+  .rz-mobile-nav button {
+    flex: initial !important;
+    min-width: 0 !important;
+    width: 100%;
+  }
+}
 .rz-auth { background: var(--bg) !important; }
 .rz-auth-card { background: var(--panel) !important; }
 .rz-auth > .rz-site-footer { background: var(--bg) !important; }

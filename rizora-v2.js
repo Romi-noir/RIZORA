@@ -266,7 +266,6 @@ function shell(){
     {id:"discover",label:"Discover",icon:"discover"},
     {id:"create",label:"Create",icon:"flow"},
     {id:"messages",label:"Inbox",icon:"messages"},
-    {id:"notifications",label:"Alerts",icon:"notifications"},
     {id:"profile",label:"Profile",icon:"profile"}
   ];
   var unreadCount=Number(state.unreadNotificationCount||0);
