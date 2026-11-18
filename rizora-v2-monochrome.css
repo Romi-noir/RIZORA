@@ -901,6 +901,20 @@ body:has(#seoLanding) #seoLanding { background: #090909 !important; color: #f5f5
 .rz-chat-attachment-menu > button:hover, .rz-chat-attachment-menu > button:focus-visible { outline: 2px solid var(--line); background: var(--bg); }
 .rz-chat-upload-status { order: 3; flex: 1 0 100%; min-width: 0; overflow-wrap: anywhere; }
 .rz-chat-document { display: inline-flex; align-items: center; min-height: 44px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-soft); color: var(--text); text-decoration: none; }
+.rz-ai-workspace .rz-ai-composer { display: grid !important; grid-template-columns: 44px minmax(0, 1fr); align-items: end; gap: 9px; }
+.rz-ai-composer > .rz-ai-attach-wrap { position: relative; grid-column: 1; grid-row: 1; align-self: end; }
+.rz-ai-attach { display: inline-grid !important; place-items: center; width: 44px; min-width: 44px; height: 44px; padding: 0 !important; border: 1px solid var(--line) !important; border-radius: 50% !important; background: var(--panel-soft) !important; color: var(--text) !important; font-size: 26px !important; font-weight: 400 !important; line-height: 1; }
+.rz-ai-attach-menu { position: absolute; z-index: 120; left: 0; bottom: calc(100% + 9px); display: grid; gap: 5px; width: min(270px, calc(100vw - 34px)); padding: 8px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); color: var(--text); box-shadow: 0 12px 36px rgb(0 0 0 / 28%); }
+.rz-ai-attach-menu[hidden] { display: none !important; }
+.rz-ai-attach-menu > button { display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 8px 10px; border: 0; border-radius: 7px; background: var(--panel-soft); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.rz-ai-attach-menu > button:hover:not(:disabled), .rz-ai-attach-menu > button:focus-visible { outline: 2px solid var(--line); background: var(--bg); }
+.rz-ai-attach-menu > button:disabled { color: var(--muted); cursor: not-allowed; }
+.rz-ai-attach-menu svg { width: 15px; height: 15px; flex: 0 0 15px; }
+.rz-ai-composer > #aiInput { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; }
+.rz-ai-composer > .rz-ai-composer-footer, .rz-ai-composer > .rz-ai-attachment-status { grid-column: 1 / -1; }
+.rz-ai-attachment-status:empty { display: none; }
+.rz-ai-attachment-status { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.rz-ai-attachment-remove { border: 0; background: transparent; color: var(--text); text-decoration: underline; cursor: pointer; font: inherit; }
 @media (max-width: 900px) {
   .rz-command-grid { grid-template-columns: minmax(0, 1fr) !important; }
   .rz-command-grid > .rz-command-card.wide { grid-column: 1 !important; }

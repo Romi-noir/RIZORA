@@ -108,7 +108,8 @@ async function main() {
   }
   assert(indexSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not linked");
   assert(indexSource.includes("/rizora-v2-creator-os.css"), "RIZORA Creator OS stylesheet is not linked");
-  assert(indexSource.includes("/rizora-v2-monochrome.css?v=20261118-launch-fixes") && indexSource.includes("/rizora-v2.js?v=20261118-launch-fixes"), "RIZORA social and black and white theme assets are not cache-busted");
+  assert(indexSource.includes("/rizora-v2-monochrome.css?v=20261118-noir-attachments") && indexSource.includes("/rizora-v2.js?v=20261118-noir-attachments"), "RIZORA social and black and white theme assets are not cache-busted");
+  assert(coreUiSource.includes("wireNoirAttachments") && coreUiSource.includes('data-ai-attach="document"') && coreUiSource.includes('/api/ai/transcribe') && coreUiSource.includes("Image analysis · unavailable"), "NOIR attachment picker must support text documents and audio and explain the image limitation");
   assert(coreUiSource.includes("Browse posts in Discover") && coreUiSource.includes("state.view=\"discover\";state.query=\"\";state.search=null;state.discoverCategory=\"for-you\""), "Create must route published posts to Discover");
   assert(coreUiSource.includes('var openDiscover=$("openDiscoverFeed");if(openDiscover)openDiscover.onclick=') && coreUiSource.includes('state.feedTab="for-you";state.feedOffset=0;state.feed=[]'), "The Create-to-Discover link must open a fresh For You feed");
   assert(monochromeUiSource.includes(".rz-auth > .rz-site-footer") && monochromeUiSource.includes("position: static !important") && monochromeUiSource.includes("justify-content: flex-start !important") && monochromeUiSource.includes(".rz-discover-explore-grid"), "Auth footer flow or Discover media grid styles are missing");

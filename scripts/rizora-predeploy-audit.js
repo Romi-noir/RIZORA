@@ -171,7 +171,7 @@ assert(!core.includes('removeAttribute("data-rizora-theme")') && core.includes("
 assert(communityFixes.includes("rizora_app_wallpaper") && communityFixes.includes("Soft texture"),"Global monochrome wallpaper controls are missing.");
 assert(music.includes('path==="/api/music/audius/search"') && music.includes("https://api.audius.co/v1/tracks/search"),"Read-only Audius search is not wired through the backend.");
 assert(player.includes("/api/music/audius/search") && !/spotify/i.test(source+music+player),"Music player must use Audius instead of Spotify.");
-assert(sw.includes("v73-launch-fixes") && sw.includes("rizora-play-logo.jpg") && sw.includes("logo-neon.png"),"Service worker cache version or RIZORA logo assets are stale.");
+assert(sw.includes("v74-noir-attachments") && sw.includes("rizora-play-logo.jpg") && sw.includes("logo-neon.png"),"Service worker cache version or RIZORA logo assets are stale.");
 for(const asset of ["rizora-ad-1.mp3","rizora-ad-2.mp3","rizora-ad-3-orekelewa.mp3"]){assert(player.includes("/assets/ads/"+asset),"Music player is missing audio ad asset "+asset+".");}
 assert(player.includes("startsSinceAd>=2") && player.includes("userGetsAdFree") && player.includes("playAd()"),"Non-subscriber audio ad scheduling is missing.");
 assert(player.includes("control.disabled=player.isAd") && core.includes("window.RIZORA_PLAYER.isAd"),"A listener can skip or close the player before a required audio ad finishes.");
