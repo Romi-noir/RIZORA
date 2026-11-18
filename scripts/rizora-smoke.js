@@ -357,22 +357,20 @@ async function main() {
 
     assert(tasks.res.status === 200 && Array.isArray(tasks.data.tasks), "tasks failed");
     assert(!(tasks.data.tasks || []).some(t => t.type === "social_follow"), "legacy social missions are still duplicated in the general task feed");
-    const exploreTask = (tasks.data.tasks || []).find(t => t.id === "rizora_explore");
-    assert(exploreTask && Number(exploreTask.points || exploreTask.reward || 0) === 50, "Explore task reward is not 50 points");
-    const taskStart = await request("/api/tasks/start", {
+    assert(!(tasks.data.tasks || []).some(t => t.type === "generated" || t.type === "community" || t.id === "rizora_explore"), "unverified timer-only tasks are still claimable");
+    assert(Number(tasks.data.generatedCount || 0) === 0, "legacy generated tasks are still being issued");
+    const disabledExploreStart = await request("/api/tasks/start", {
       method: "POST",
       headers: authHeaders,
-      body: JSON.stringify({ taskId: exploreTask.id })
+      body: JSON.stringify({ taskId: "rizora_explore" })
     });
-    assert(taskStart.res.status === 200 && taskStart.data.success === true, "task start route is not working");
-    await sleep(21000);
-    const taskComplete = await request("/api/tasks/complete", {
+    assert(disabledExploreStart.res.status === 409, "timer-only Explore task can still be started");
+    const disabledExploreClaim = await request("/api/tasks/complete", {
       method: "POST",
       headers: authHeaders,
-      body: JSON.stringify({ taskId: exploreTask.id })
+      body: JSON.stringify({ taskId: "rizora_explore" })
     });
-    assert(taskComplete.res.status === 200 && Number(taskComplete.data.reward) === 50, "task completion/reward flow failed: " + JSON.stringify(taskComplete.data));
-    assert(Number(taskComplete.data.cooldownMinutes || 0) === 7, "task cooldown is not 7 minutes");
+    assert(disabledExploreClaim.res.status === 409, "timer-only Explore reward can still be claimed");
 
     const socialTasks = await request("/api/social/tasks", { headers: authHeaders });
     assert(socialTasks.res.status === 200 && Array.isArray(socialTasks.data.tasks), "social tasks endpoint failed");

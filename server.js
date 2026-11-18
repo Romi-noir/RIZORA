@@ -2195,7 +2195,7 @@ const DEFAULT_TASKS = [
   {
     id: "rizora_share",
     title: "Share RIZORA",
-    description: "Share RIZORA with another creator.",
+    description: "Share your referral link. Points unlock after a new creator signs up through it.",
     points: 50,
     type: "social_share",
     url: "/",
@@ -6209,9 +6209,6 @@ if (
   db.taskCompletions ||= [];
     db.taskAttempts ||= [];
   db.taskSeen ||= {};
-  db.rizoraGeneratedHistory ||= {};
-  db.rizoraGeneratedHistory[user.id] ||= [];
-
   const cooldown = getCooldown(db, user.id);
 
   const completedIds = new Set(
@@ -6221,13 +6218,11 @@ if (
   );
 
   /*
-   * Official + community tasks.
+   * Only show tasks with a concrete completion check.
    */
   const normalTasks = db.tasks
     .filter(task => task.active !== false)
-    .filter(task => task.type !== "generated")
-    .filter(task => !(task.type === "community" && task.creatorId === user.id))
-    .filter(task => task.type !== "social_follow")
+    .filter(task => ["rizora_create", "rizora_profile", "rizora_share", "rizora_invite"].includes(task.id))
     .filter(task => !completedIds.has(task.id))
     .map(task => ({
       ...task,
@@ -6235,28 +6230,8 @@ if (
       locked: cooldown.active
     }));
 
-  /*
-   * Existing generated tasks belonging to this user.
-   */
-  let generatedTasks = db.tasks
-    .filter(task =>
-      task.active !== false &&
-      task.type === "generated" &&
-      task.createdForUserId === user.id &&
-      !completedIds.has(task.id)
-    )
-    .map(task => ({
-      ...task,
-      completed: false,
-      locked: cooldown.active
-    }));
-
-  /*
-   * GUARANTEED FRESH GENERATION
-   *
-   * If this user has no generated task waiting, create four.
-   * History prevents reuse of the same action/platform pair.
-   */
+  // Kept for API compatibility; unverified generated rewards are retired.
+  const generatedTasks = [];
   // ----------------------------------------------------------
   // TASKS — START
   // ----------------------------------------------------------
@@ -6336,6 +6311,11 @@ if (
         "Task not found."
       );
 
+      return;
+    }
+
+    if (task.type !== "social_follow" && !["rizora_create", "rizora_profile", "rizora_share", "rizora_invite"].includes(task.id)) {
+      sendError(res, 409, "This task is paused until its completion can be verified.");
       return;
     }
 
@@ -6458,92 +6438,6 @@ if (
     sendJSON(res, 200, { success: true });
     return;
   }
-  if (!cooldown.active && generatedTasks.length === 0) {
-
-    const actionPool = [
-      ["Create a new piece of creator content", "TikTok"],
-      ["Create a new piece of creator content", "Instagram"],
-      ["Create a new piece of creator content", "YouTube"],
-      ["Improve one part of your creator profile", "TikTok"],
-      ["Improve one part of your creator profile", "Instagram"],
-      ["Improve one part of your creator profile", "YouTube"],
-      ["Engage meaningfully with another creator", "TikTok"],
-      ["Engage meaningfully with another creator", "Instagram"],
-      ["Engage meaningfully with another creator", "X"],
-      ["Review one of your recent posts", "TikTok"],
-      ["Review one of your recent posts", "Instagram"],
-      ["Review one of your recent posts", "YouTube"],
-      ["Create a stronger hook for your next post", "TikTok"],
-      ["Create a stronger hook for your next post", "Instagram"],
-      ["Create a stronger hook for your next post", "YouTube"],
-      ["Improve a caption for your next post", "TikTok"],
-      ["Improve a caption for your next post", "Instagram"],
-      ["Plan your next three creator posts", "TikTok"],
-      ["Plan your next three creator posts", "Instagram"],
-      ["Plan your next three creator posts", "YouTube"]
-    ];
-
-    const history = db.rizoraGeneratedHistory[user.id];
-
-    const available = actionPool.filter(item => {
-      const key = `${item[0]}::${item[1]}`;
-      return !history.includes(key);
-    });
-
-    for (let i = available.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [available[i], available[j]] = [available[j], available[i]];
-    }
-
-    const selected = available.slice(0, 4);
-
-    for (const item of selected) {
-      const action = item[0];
-      const platform = item[1];
-      const historyKey = `${action}::${platform}`;
-
-      history.push(historyKey);
-
-      const generated = {
-        id:
-          "generated_" +
-          Date.now() +
-          "_" +
-          Math.random().toString(36).slice(2, 10),
-
-        type: "generated",
-        generated: true,
-        createdForUserId: user.id,
-        creatorId: null,
-        creatorUsername: "RIZORA",
-
-        title: `${action} on ${platform}`,
-
-        description:
-          `${action} on ${platform}. ` +
-          "Keep it authentic, useful and focused on creator growth.",
-
-        platform: platform.toLowerCase(),
-        points: 10,
-        reward: 10,
-        active: true,
-
-        sourceKey: historyKey,
-        generatedAt: Date.now()
-      };
-
-      db.tasks.push(generated);
-
-      generatedTasks.push({
-        ...generated,
-        completed: false,
-        locked: false
-      });
-    }
-
-    saveDB(db);
-  }
-
   return sendJSON(res, 200, {
     success: true,
 
@@ -6557,9 +6451,9 @@ if (
     generatedCount: generatedTasks.length,
 
     message:
-      generatedTasks.length
+      normalTasks.length
         ? null
-        : "No new tasks right now. Check back after the next rotation."
+        : "No verified tasks are available right now. Try screenshot-reviewed Social Tasks."
   });
 }
 if (
@@ -6612,6 +6506,11 @@ if (
       404,
       "Task not found."
     );
+    return;
+  }
+
+  if (task.type !== "social_follow" && !["rizora_create", "rizora_profile", "rizora_share", "rizora_invite"].includes(task.id)) {
+    sendError(res, 409, "This task is paused until its completion can be verified.");
     return;
   }
 
@@ -6675,7 +6574,7 @@ if (
     sendError(res, 409, "A new creator must sign up with your referral link before claiming this reward.");
     return;
   }
-  if (task.id === "rizora_share" && !(db.taskShareIntents || []).some(item => item.userId === user.id)) {
+  if (task.id === "rizora_share" && (!(db.taskShareIntents || []).some(item => item.userId === user.id) || !(db.referrals || []).some(referral => referral.referrerId === user.id && referral.status === "completed"))) {
     sendError(res, 409, "Share RIZORA from the task card before claiming this reward.");
     return;
   }
@@ -6845,6 +6744,13 @@ if (
     );
     return;
   }
+
+  sendError(
+    res,
+    409,
+    "Community task rewards are paused until submissions can be verified. Use screenshot-reviewed Social Tasks for creator missions."
+  );
+  return;
 
   let body = {};
 
