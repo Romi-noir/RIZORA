@@ -67,6 +67,8 @@ const monochrome=read("rizora-v2-monochrome.css");
 const music=read("rizora-v2-music.js");
 const player=read("rizora-v2-player.js");
 const businessUi=read("rizora-v2-business-ui.js");
+const v2backend=read("rizora-v2-backend.js");
+const growthBackend=read("rizora-v2-growth.js");
 
 const email=read("rizora-email.js");
 const sw=read("service-worker.js");
@@ -94,8 +96,13 @@ assert(core.includes('usernameOption.value="username"') && core.includes('contac
 assert(server.includes('const loginUsername = intent === "signup" ? "" : normalizeUsername(body.username || (body.channel === "username" ? body.identifier : ""))') && (server.match(/authContactForUser\(localUser\)/g)||[]).length>=2,"Username login codes must resolve the account contact for both send and verify.");
 assert(communityFixes.includes('||"dark"') && communityFixes.includes('data-rz-profile-theme="dark"') && communityFixes.includes('data-rz-profile-theme="light"') && !communityFixes.includes('>Custom</button>'),"App theme must default to black and offer only black and white.");
 assert(core.includes('if(state.view==="create")c.innerHTML=postComposerView()') && core.includes('if(state.view==="discover")c.innerHTML=discoverView()') && !core.includes('if(state.view==="flow")c.innerHTML='),"The post composer must live in Create and post feeds must live in Discover.");
+assert(core.includes('var openDiscover=$("openDiscoverFeed");if(openDiscover)openDiscover.onclick=') && core.includes('state.feedTab="for-you";state.feedOffset=0;state.feed=[]'),"The Create-to-Discover link must open a fresh For You feed.");
+assert(core.includes("data-edit-post") && core.includes('method:"PATCH"') && v2backend.includes('if(method==="PATCH"&&editPostRoute)') && v2backend.includes("You can only edit your own posts."),"Authors need a working, owner-checked post edit flow.");
+assert(core.includes("postMediaEditor") && core.includes("wirePostMediaEditor") && core.includes("data-media-adjust") && core.includes("data-media-crop") && core.includes("data-media-speed") && core.includes("data-media-trim") && core.includes("data-rz-editor-overlay") && core.includes("mediaStyle:JSON.parse") && v2backend.includes("normalizePostMediaStyle(pb.mediaStyle)") && v2backend.includes("mediaStyle:normalizePostMediaStyle(post.mediaStyle)") && v2backend.includes('range("brightness",50,150,100)') && v2backend.includes('range("shadows",-100,100,0)') && v2backend.includes("trimStart:Math.round") && v2backend.includes("overlayText:String(style.overlayText||\"\").slice(0,160)"),"Create/Edit filters, effects, adjustments, text overlay and video trim settings must persist.");
+assert(growthBackend.includes("mediaStyle:normalizePostMediaStyle(data.mediaStyle)") && growthBackend.includes("normalizePostMediaStyle(sb.mediaStyle)") && growthBackend.includes("mediaStyle:normalizePostMediaStyle(post.mediaStyle)") && growthBackend.includes("mediaStyle:pollBody.mediaStyle") && growthBackend.includes("trimEnd:Math.round"),"Polls and scheduled posts must preserve validated post media edits.");
+assert(core.includes('openDiscoverHashtag(button.getAttribute("data-hashtag"))') && v2backend.includes("editTarget.hashtags=nextTags"),"Post hashtags must remain tappable and update on edits.");
 assert(core.includes('id="forgotPasswordBox"') && core.includes('Check your email for a secure password reset link') && core.includes('class="rz-auth-link" href="#login">Back to Login</a>'),"Auth must use the dedicated text-link password reset flow.");
-assert(monochrome.includes('Auth pages scroll as one document') && monochrome.includes('overflow-y: auto !important') && monochrome.includes('.rz-auth > .rz-site-footer'),"Auth footer and signup content must scroll without covering each other.");
+assert(monochrome.includes('Auth pages scroll as one document') && monochrome.includes('overflow-y: auto !important') && monochrome.includes('.rz-auth > .rz-site-footer') && monochrome.includes('justify-content: flex-start !important'),"Auth footer and signup content must scroll without covering each other.");
 assert(source.includes('data-rz-settings-theme="dark"') && source.includes('data-rz-settings-theme="light"') && source.includes('data-rz-settings-wallpaper="plain"') && source.includes('data-rz-settings-wallpaper="soft"'),"Settings must expose black and white themes plus the plain and soft wallpaper choices.");
 assert(index.includes('name="color-scheme" content="dark light"'),"Browser theme metadata must support both black and white modes.");
 assert(renderConfig.includes("SUPABASE_PRIVATE_MEDIA_BUCKET") && renderConfig.includes("value: rizora-private-media"),"Render must target the private RIZORA Supabase media bucket.");
@@ -157,13 +164,14 @@ assert(sw.includes("rizora-v2-experience.css"),"Service worker does not cache ex
 assert(sw.includes("rizora-brand-system.css") && sw.includes("rizora-icon-32.png") && sw.includes("rizora-icon-128.png") && sw.includes("rizora-wallpaper-grain.svg") && sw.includes("rizora-v2-monochrome.css"),"Service worker does not cache current brand assets and monochrome theme styles.");
 assert(sw.includes("rizora_verified_early.svg") && sw.includes("rizora_verified_premium.svg") && sw.includes("rizora_verified_premium_plus.svg"),"Service worker does not cache tier badges.");
 assert(monochrome.includes("--rz-action-bg") && monochrome.includes("data-rizora-theme=\"light\"") && monochrome.includes(".rz-ai-workspace::before"),"Shared black-and-white styling for RIZORA and NOIR is missing.");
-assert(index.includes("rizora-v2-monochrome.css") && index.includes("rizora-play-logo.jpg"),"RIZORA monochrome styling or the supplied loading animation is missing.");
+assert(monochrome.includes("--rz-purple: var(--text)") && monochrome.includes(".rz-ai-media-lab") && monochrome.includes(".rzs-feature-promo") && monochrome.includes(".rz-public-copy h1 em"),"Public, NOIR and Studio surfaces must follow the black and white theme.");
+assert(index.includes("rizora-v2-monochrome.css") && index.includes("rz-boot-ring") && index.includes("src=\"/rizora-cover.png\""),"RIZORA monochrome styling or the main-logo loading animation is missing.");
 assert(index.includes("data-rizora-wallpaper") && !index.includes("#c7a65a") && !index.includes("199,166,90"),"The page shell must honor saved black/white wallpapers without gold inline styling.");
 assert(!core.includes('removeAttribute("data-rizora-theme")') && core.includes("RIZORA PLAY") && core.includes("Feel the vibe. Own the sound."),"Public routing must preserve the selected theme and use RIZORA PLAY branding.");
 assert(communityFixes.includes("rizora_app_wallpaper") && communityFixes.includes("Soft texture"),"Global monochrome wallpaper controls are missing.");
 assert(music.includes('path==="/api/music/audius/search"') && music.includes("https://api.audius.co/v1/tracks/search"),"Read-only Audius search is not wired through the backend.");
 assert(player.includes("/api/music/audius/search") && !/spotify/i.test(source+music+player),"Music player must use Audius instead of Spotify.");
-assert(sw.includes("v56-auth-feed") && sw.includes("rizora-play-logo.jpg") && sw.includes("logo-neon.png"),"Service worker cache version or RIZORA logo assets are stale.");
+assert(sw.includes("v73-launch-fixes") && sw.includes("rizora-play-logo.jpg") && sw.includes("logo-neon.png"),"Service worker cache version or RIZORA logo assets are stale.");
 for(const asset of ["rizora-ad-1.mp3","rizora-ad-2.mp3","rizora-ad-3-orekelewa.mp3"]){assert(player.includes("/assets/ads/"+asset),"Music player is missing audio ad asset "+asset+".");}
 assert(player.includes("startsSinceAd>=2") && player.includes("userGetsAdFree") && player.includes("playAd()"),"Non-subscriber audio ad scheduling is missing.");
 assert(player.includes("control.disabled=player.isAd") && core.includes("window.RIZORA_PLAYER.isAd"),"A listener can skip or close the player before a required audio ad finishes.");

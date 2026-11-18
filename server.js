@@ -6444,6 +6444,20 @@ if (
 
     return;
   }
+
+  if (method === "POST" && pathname === "/api/tasks/share") {
+    const user = getCurrentUser(db, req);
+    if (!user) { sendError(res, 401, "Authentication required."); return; }
+    let body = {};
+    try { body = await readBody(req); } catch (error) { sendError(res, 400, error.message); return; }
+    if (String(body.taskId || "") !== "rizora_share") { sendError(res, 400, "This share action is not valid."); return; }
+    db.taskShareIntents ||= [];
+    db.taskShareIntents = db.taskShareIntents.filter(item => item.userId !== user.id);
+    db.taskShareIntents.push({ userId: user.id, createdAt: new Date().toISOString() });
+    saveDB(db);
+    sendJSON(res, 200, { success: true });
+    return;
+  }
   if (!cooldown.active && generatedTasks.length === 0) {
 
     const actionPool = [
@@ -6643,6 +6657,26 @@ if (
       409,
       "Task already completed."
     );
+    return;
+  }
+
+  if (task.id === "rizora_create" && !(db.rzV2 && db.rzV2.posts || []).some(post => post.userId === user.id && post.deleted !== true && post.visibility !== "private")) {
+    sendError(res, 409, "Publish your first post on Discover before claiming this reward.");
+    return;
+  }
+  if (task.id === "rizora_profile") {
+    const profile = db.creatorProfiles && db.creatorProfiles[user.id] || {};
+    if (String(profile.bio || "").trim().length < 20 || !String(profile.category || "").trim()) {
+      sendError(res, 409, "Add a bio of at least 20 characters and choose a creator category before claiming this reward.");
+      return;
+    }
+  }
+  if (task.id === "rizora_invite" && !(db.referrals || []).some(referral => referral.referrerId === user.id && referral.status === "completed")) {
+    sendError(res, 409, "A new creator must sign up with your referral link before claiming this reward.");
+    return;
+  }
+  if (task.id === "rizora_share" && !(db.taskShareIntents || []).some(item => item.userId === user.id)) {
+    sendError(res, 409, "Share RIZORA from the task card before claiming this reward.");
     return;
   }
 

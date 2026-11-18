@@ -2,7 +2,7 @@
 (function(){
   const API=String(window.RIZORA_API_BASE||location.origin).replace(/\/+$/,"");
   const MAX=25*1024*1024;
-  const TYPES=new Set(["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm","audio/mpeg","audio/mp4","audio/wav","audio/ogg","audio/webm"]);
+  const TYPES=new Set(["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm","audio/mpeg","audio/mp4","audio/wav","audio/ogg","audio/webm","application/pdf"]);
 
   function dataURL(blob){
     return new Promise(function(resolve,reject){
@@ -115,7 +115,7 @@
       if(!file.files||!file.files[0])return;
       try{
         const media=await upload(file.files[0],status);
-        if(url)url.value=API+media.url;
+        if(url){url.value=API+media.url;url.dispatchEvent(new Event("change",{bubbles:true}));}
       }catch(e){
         setStatus(status,e.message);
         if(url)url.value="";

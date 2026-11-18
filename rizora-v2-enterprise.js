@@ -2,6 +2,17 @@
 
 const crypto = require("crypto");
 
+function premiumAmountKobo(value, fallbackKobo) {
+  const raw = String(value == null ? "" : value).trim();
+  if (!raw) return fallbackKobo;
+  const normalized = raw.replace(/^NGN/i, "").replace(/[₦,\s]/g, "");
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallbackKobo;
+  // Accept both Paystack kobo values (400000) and human-entered naira values (4000).
+  const amount = parsed >= 100000 ? parsed : parsed * 100;
+  return Number.isFinite(amount) && amount > 0 ? Math.round(amount) : fallbackKobo;
+}
+
 function hashPasswordSyncEnterprise(password) {
   const salt = crypto.randomBytes(16).toString("hex");
   const derived = crypto.pbkdf2Sync(String(password), salt, 120000, 64, "sha512");
@@ -368,7 +379,7 @@ async function handleRizoraEnterprise(ctx) {
     const premiumCode=String(process.env.PAYSTACK_PREMIUM_PLAN_CODE||"").trim();
     const premiumPlusCode=String(process.env.PAYSTACK_PREMIUM_PLUS_PLAN_CODE||"").trim();
     const configured=!!premiumCode;
-    const priceNaira=(env,fallback)=>{const amount=Number(env||fallback*100);return Number.isFinite(amount)&&amount>0?amount/100:fallback;};
+    const priceNaira=(env,fallback)=>premiumAmountKobo(env,fallback*100)/100;
     const isPremium=!!active;
     const currentPlan=isPremium?(active.plan||"premium"):"free";
     const plans={
@@ -419,7 +430,7 @@ async function handleRizoraEnterprise(ctx) {
     const planCode=String((requestedPlan==="premium_plus"?process.env.PAYSTACK_PREMIUM_PLUS_PLAN_CODE:process.env.PAYSTACK_PREMIUM_PLAN_CODE)||"").trim();
     const defaultAmountKobo=requestedPlan==="premium_plus"?1400000:400000;
     const amountEnv=requestedPlan==="premium_plus"?process.env.RIZORA_PREMIUM_PLUS_INITIAL_AMOUNT:process.env.RIZORA_PREMIUM_INITIAL_AMOUNT;
-    const amountKobo=Number(amountEnv||defaultAmountKobo);
+    const amountKobo=premiumAmountKobo(amountEnv,defaultAmountKobo);
     const amountNaira=amountKobo/100;
     if(!planCode){ctx.sendError(res,503,requestedPlan==="premium_plus"?"RIZORA Premium+ billing is not configured yet.":"RIZORA Premium billing is not configured yet.");return true;}
     if(!Number.isFinite(amountKobo)||amountKobo<=0){ctx.sendError(res,503,"Premium pricing is not configured correctly.");return true;}

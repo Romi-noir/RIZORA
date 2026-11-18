@@ -31,7 +31,8 @@ const MIME_EXT = {
   "audio/mp4": "m4a",
   "audio/wav": "wav",
   "audio/ogg": "ogg",
-  "audio/webm": "webm"
+  "audio/webm": "webm",
+  "application/pdf": "pdf"
 };
 
 function ensureState(db){

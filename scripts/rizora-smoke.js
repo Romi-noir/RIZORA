@@ -88,7 +88,8 @@ async function main() {
   const serviceWorkerAssets = Array.from(serviceWorkerSource.matchAll(/["']\/(?:[^"'?]+\.(?:js|css|png|json|html))["']/g)).map(m => m[1] || m[0].slice(1,-1));
   const premiumUiSource = require("fs").readFileSync("rizora-v2-enterprise-ui.js", "utf8");
   const coreUiSource = require("fs").readFileSync("rizora-v2.js", "utf8");
-  const themeUiSource = require("fs").readFileSync("rizora-v2-community-fixes.js", "utf8");
+  const themeUiSource = require("fs").readFileSync("rizora-v2-modern-ui.js", "utf8");
+  const monochromeUiSource = require("fs").readFileSync("rizora-v2-monochrome.css", "utf8");
 
   assert(!indexSource.includes("/rizora-v2-growth.js"), "frontend must not load the backend-only rizora-v2-growth.js module");
   assert(suiteSource.includes("function modal("), "Creator Suite modal constructor is missing");
@@ -107,6 +108,13 @@ async function main() {
   }
   assert(indexSource.includes("/rizora-v2-experience.css"), "RIZORA experience stylesheet is not linked");
   assert(indexSource.includes("/rizora-v2-creator-os.css"), "RIZORA Creator OS stylesheet is not linked");
+  assert(indexSource.includes("/rizora-v2-monochrome.css?v=20261118-launch-fixes") && indexSource.includes("/rizora-v2.js?v=20261118-launch-fixes"), "RIZORA social and black and white theme assets are not cache-busted");
+  assert(coreUiSource.includes("Browse posts in Discover") && coreUiSource.includes("state.view=\"discover\";state.query=\"\";state.search=null;state.discoverCategory=\"for-you\""), "Create must route published posts to Discover");
+  assert(coreUiSource.includes('var openDiscover=$("openDiscoverFeed");if(openDiscover)openDiscover.onclick=') && coreUiSource.includes('state.feedTab="for-you";state.feedOffset=0;state.feed=[]'), "The Create-to-Discover link must open a fresh For You feed");
+  assert(monochromeUiSource.includes(".rz-auth > .rz-site-footer") && monochromeUiSource.includes("position: static !important") && monochromeUiSource.includes("justify-content: flex-start !important") && monochromeUiSource.includes(".rz-discover-explore-grid"), "Auth footer flow or Discover media grid styles are missing");
+  assert(monochromeUiSource.includes("--rz-purple: var(--text)") && monochromeUiSource.includes(".rz-ai-media-lab") && monochromeUiSource.includes(".rzs-feature-promo") && monochromeUiSource.includes(".rz-public-copy h1 em"), "Public, NOIR and Studio surfaces must follow the black and white theme");
+  assert(coreUiSource.includes("postMediaEditor") && coreUiSource.includes("wirePostMediaEditor") && coreUiSource.includes("mediaStyle:JSON.parse") && coreUiSource.includes("data-media-adjust") && coreUiSource.includes("data-media-crop") && coreUiSource.includes("data-media-speed") && coreUiSource.includes("data-media-trim") && coreUiSource.includes("data-rz-editor-overlay") && monochromeUiSource.includes(".rz-media-style-tool[aria-pressed=\"true\"]"), "Create/Edit must preview and persist media filters, effects, trim, text and adjustments");
+  assert(coreUiSource.includes("rz-auth-footer-copy") && coreUiSource.includes("rz-auth-footer-links") && monochromeUiSource.includes("grid-template-columns: minmax(0, 1fr)"), "Auth copyright and legal links must stay in a separate footer row below the form");
   assert(indexSource.includes("/rizora-v2-voice.js"), "RIZORA voice module is not linked");
   const voiceSource = require("fs").readFileSync("rizora-v2-voice.js", "utf8");
   const commentsSource = require("fs").readFileSync("rizora-v2-comments.js", "utf8");
@@ -136,7 +144,7 @@ async function main() {
   assert(coreUiSource.includes("rzPremiumVerificationHint"), "Premium suggestion block is missing");
   assert(coreUiSource.includes("rzDismissPremiumSuggestion"), "Premium suggestion dismiss control is missing");
   assert(coreUiSource.includes('usernameOption.value="username"') && coreUiSource.includes('contact.username||contact.phone||contact.email'), "Login form must accept username, email, or phone.");
-  assert(themeUiSource.includes('||"dark"') && themeUiSource.includes('data-rz-profile-theme="dark">Black</button>') && themeUiSource.includes('data-rz-profile-theme="light">White</button>') && !themeUiSource.includes('>Custom</button>'), "App appearance must default to black and offer only black and white.");
+  assert(indexSource.includes('||"dark"') && themeUiSource.includes('data-rz-settings-theme="dark"') && themeUiSource.includes('data-rz-settings-theme="light"') && !themeUiSource.includes('>Custom</button>'), "App appearance must default to black and offer only black and white.");
   const assetRefs = [
     ...Array.from(indexSource.matchAll(/src=["']\/([^"'?]+\.js)(?:\?[^"']*)?["']/g)).map(m => m[1]),
     ...Array.from(indexSource.matchAll(/href=["']\/([^"'?]+\.css)(?:\?[^"']*)?["']/g)).map(m => m[1])
@@ -266,6 +274,23 @@ async function main() {
     });
     assert(secondSignup.res.status === 201, "second chat smoke signup failed: " + JSON.stringify(secondSignup.data));
     const secondAuthHeaders = { Cookie: cookieFrom(secondSignup.res), "Content-Type": "application/json" };
+    const createdPost = await request("/api/v2/posts", { method: "POST", headers: authHeaders, body: JSON.stringify({ text: "Before edit #smokebefore", mediaStyle: { filter: "golden-hour", effect: "grain", strength: 72, crop: "story", rotation: 90, flipX: true, speed: 1.5, brightness: 120, contrast: 110, saturation: 130, warmth: 20, sharpness: 55, highlights: -15, shadows: 30, overlayText: "Night ride", overlayColor: "black", overlayAnimation: "typewriter", overlayX: 22, overlayY: 78, trimStart: 1.2, trimEnd: 5.8 } }) });
+    assert(createdPost.res.status === 201 && createdPost.data.post && createdPost.data.post.id, "post creation for edit smoke test failed: " + JSON.stringify(createdPost.data));
+    assert(createdPost.data.post.mediaStyle.filter === "golden-hour" && createdPost.data.post.mediaStyle.effect === "grain" && createdPost.data.post.mediaStyle.strength === 72 && createdPost.data.post.mediaStyle.crop === "story" && createdPost.data.post.mediaStyle.rotation === 90 && createdPost.data.post.mediaStyle.flipX === true && createdPost.data.post.mediaStyle.speed === 1.5 && createdPost.data.post.mediaStyle.brightness === 120 && createdPost.data.post.mediaStyle.sharpness === 55 && createdPost.data.post.mediaStyle.highlights === -15 && createdPost.data.post.mediaStyle.shadows === 30 && createdPost.data.post.mediaStyle.overlayText === "Night ride" && createdPost.data.post.mediaStyle.overlayColor === "black" && createdPost.data.post.mediaStyle.overlayAnimation === "typewriter" && createdPost.data.post.mediaStyle.overlayX === 22 && createdPost.data.post.mediaStyle.trimStart === 1.2 && createdPost.data.post.mediaStyle.trimEnd === 5.8, "post edit style settings were not persisted on create");
+    const editedPost = await request("/api/v2/posts/" + encodeURIComponent(createdPost.data.post.id), { method: "PATCH", headers: authHeaders, body: JSON.stringify({ text: "After edit #smokeafter", mediaUrl: "", mediaStyle: { filter: "noir", effect: "slow-zoom", strength: 45, crop: "square", rotation: 180, flipX: false, speed: 2, brightness: 90, contrast: 125, saturation: 80, warmth: -30, sharpness: 25, highlights: 40, shadows: -20, overlayText: "Updated type", overlayColor: "white", overlayAnimation: "fade", overlayX: 58, overlayY: 34, trimStart: 2.5, trimEnd: 9.4 } }) });
+    assert(editedPost.res.status === 200 && editedPost.data.post.text === "After edit #smokeafter" && editedPost.data.post.hashtags.includes("smokeafter"), "owner post edit did not save caption and hashtags: " + JSON.stringify(editedPost.data));
+    assert(editedPost.data.post.mediaStyle.filter === "noir" && editedPost.data.post.mediaStyle.effect === "slow-zoom" && editedPost.data.post.mediaStyle.strength === 45 && editedPost.data.post.mediaStyle.crop === "square" && editedPost.data.post.mediaStyle.rotation === 180 && editedPost.data.post.mediaStyle.speed === 2 && editedPost.data.post.mediaStyle.brightness === 90 && editedPost.data.post.mediaStyle.warmth === -30 && editedPost.data.post.mediaStyle.highlights === 40 && editedPost.data.post.mediaStyle.shadows === -20 && editedPost.data.post.mediaStyle.overlayText === "Updated type" && editedPost.data.post.mediaStyle.overlayAnimation === "fade" && editedPost.data.post.mediaStyle.overlayX === 58 && editedPost.data.post.mediaStyle.trimStart === 2.5 && editedPost.data.post.mediaStyle.trimEnd === 9.4, "post media adjustments were not persisted on edit");
+    const strangerEdit = await request("/api/v2/posts/" + encodeURIComponent(createdPost.data.post.id), { method: "PATCH", headers: secondAuthHeaders, body: JSON.stringify({ text: "Unauthorized change" }) });
+    assert(strangerEdit.res.status === 403, "post editing was not restricted to the author.");
+    const editedHashtag = await request("/api/v2/hashtags/smokeafter", { headers: authHeaders });
+    assert(editedHashtag.res.status === 200 && (editedHashtag.data.posts || []).some(postItem => postItem.id === createdPost.data.post.id), "edited post was not discoverable under its new hashtag.");
+    const styledPoll = await request("/api/v2/polls", { method: "POST", headers: authHeaders, body: JSON.stringify({ question: "Which edit feels right?", options: [{ label: "Clean" }, { label: "Soft" }], text: "Filter choice #stylepoll", mediaStyle: { filter: "cool", effect: "mirror", crop: "portrait", rotation: 270, brightness: 115 } }) });
+    assert(styledPoll.res.status === 201 && styledPoll.data.post.mediaStyle.filter === "cool" && styledPoll.data.post.mediaStyle.effect === "mirror" && styledPoll.data.post.mediaStyle.crop === "portrait" && styledPoll.data.post.mediaStyle.rotation === 270 && styledPoll.data.post.mediaStyle.brightness === 115, "poll media edits did not persist");
+    const futurePostTime = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const styledSchedule = await request("/api/v2/schedules", { method: "POST", headers: authHeaders, body: JSON.stringify({ text: "Scheduled edit #styleschedule", scheduledFor: futurePostTime, mediaStyle: { filter: "vivid", effect: "slow-zoom", crop: "landscape", speed: 2, brightness: 130 } }) });
+    assert(styledSchedule.res.status === 201 && styledSchedule.data.schedule.content.mediaStyle.filter === "vivid" && styledSchedule.data.schedule.content.mediaStyle.crop === "landscape" && styledSchedule.data.schedule.content.mediaStyle.speed === 2, "scheduled media edits did not persist");
+    const styledSchedulePublish = await request("/api/v2/schedules/" + encodeURIComponent(styledSchedule.data.schedule.id) + "/publish", { method: "POST", headers: authHeaders, body: "{}" });
+    assert(styledSchedulePublish.res.status === 201 && styledSchedulePublish.data.post.mediaStyle.filter === "vivid" && styledSchedulePublish.data.post.mediaStyle.effect === "slow-zoom" && styledSchedulePublish.data.post.mediaStyle.crop === "landscape" && styledSchedulePublish.data.post.mediaStyle.speed === 2, "scheduled post lost its media edits when published");
     const firstChatMessage = await request("/api/v2/messages/" + encodeURIComponent(secondUsername), { method: "POST", headers: authHeaders, body: JSON.stringify({ text: "First side of the streak." }) });
     assert(firstChatMessage.res.status === 201 && Number(firstChatMessage.data.streak.count) === 0, "a one-sided message incorrectly started a chat streak");
     const repeatedChatMessage = await request("/api/v2/messages/" + encodeURIComponent(secondUsername), { method: "POST", headers: authHeaders, body: JSON.stringify({ text: "Another message from the same person." }) });
@@ -277,6 +302,29 @@ async function main() {
 
     const feed = await request("/api/v2/feed?tab=for-you", { headers: authHeaders });
     assert(feed.res.status === 200 && Array.isArray(feed.data.posts), "feed failed");
+
+    const discover = await request("/api/v2/discover", { headers: authHeaders });
+    assert(discover.res.status === 200 && Array.isArray(discover.data.posts) && Array.isArray(discover.data.creators) && Array.isArray(discover.data.trendingHashtags), "Discover recommendations failed");
+    const discoverPost = await request("/api/v2/posts", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ text: "Discover pagination smoke #discoverSmoke" })
+    });
+    assert(discoverPost.res.status === 201 && discoverPost.data.post && discoverPost.data.post.id, "Discover test post could not be published");
+    const discoverPage = await request("/api/v2/feed?tab=for-you&category=all&offset=0&limit=1", { headers: authHeaders });
+    assert(discoverPage.res.status === 200 && discoverPage.data.posts.length === 1 && discoverPage.data.nextOffset === 1 && discoverPage.data.total >= 1, "Discover feed pagination failed");
+    const photosPage = await request("/api/v2/feed?tab=for-you&category=photos&limit=20", { headers: authHeaders });
+    assert(photosPage.res.status === 200 && !photosPage.data.posts.some(post => post.id === discoverPost.data.post.id), "Discover photo filter included a text-only post");
+    const discoverSearch = await request("/api/v2/search?q=discoverSmoke", { headers: authHeaders });
+    assert(discoverSearch.res.status === 200 && discoverSearch.data.posts.some(post => post.id === discoverPost.data.post.id) && discoverSearch.data.hashtags.some(tag => tag.tag === "discoversmoke"), "Discover live search did not find its post and hashtag");
+    const hashtagPage = await request("/api/v2/hashtags/discoversmoke", { headers: authHeaders });
+    assert(hashtagPage.res.status === 200 && hashtagPage.data.posts.some(post => post.id === discoverPost.data.post.id), "Discover hashtag page did not include its post");
+    const hashtagFollow = await request("/api/v2/hashtags/discoversmoke/follow", { method: "POST", headers: authHeaders, body: "{}" });
+    assert(hashtagFollow.res.status === 200 && hashtagFollow.data.following === true, "Following a Discover hashtag failed");
+    const followedHashtagPage = await request("/api/v2/hashtags/discoversmoke", { headers: authHeaders });
+    assert(followedHashtagPage.res.status === 200 && followedHashtagPage.data.viewerFollowing === true, "Discover hashtag follow state was not saved");
+    const unfollowHashtag = await request("/api/v2/hashtags/discoversmoke/follow", { method: "POST", headers: authHeaders, body: "{}" });
+    assert(unfollowHashtag.res.status === 200 && unfollowHashtag.data.following === false, "Unfollowing a Discover hashtag failed");
 
     const referralState = await request("/api/referrals/me", { headers: authHeaders });
     assert(referralState.res.status === 200 && referralState.data && referralState.data.referralCode, "referral endpoint failed");

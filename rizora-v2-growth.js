@@ -1,5 +1,7 @@
 ﻿"use strict";
 
+const { mediaTypeFromUrl, normalizePeopleTags, decoratePeopleTags, notifyNewPeopleTags } = require("./rizora-v2-tagging");
+
 function ensureGrowth(db) {
   db.rzV2 = db.rzV2 || {};
   db.rzV2.drafts = db.rzV2.drafts || [];
@@ -83,6 +85,7 @@ function mediaRecordForUrl(db,value,ownerId){
   return ((db.rzV2&&db.rzV2.media)||[]).find(function(item){return (id?item.id===id:item.url===raw)&&(!ownerId||item.ownerId===ownerId);})||null;
 }
 function mediaMessageType(media){var mime=String(media&&media.mimeType||"").toLowerCase();return mime.indexOf("image/")===0?"image":mime.indexOf("video/")===0?"video":mime.indexOf("audio/")===0?"audio":media?"file":"text";}
+function normalizePostMediaStyle(value){var style=value&&typeof value==="object"?value:{},filters=["original","noir","lagos","vintage","warm","cool","bw","cinematic","soft","golden-hour","vivid"],effects=["none","blur","glow","vhs","grain","slow-zoom","shake","mirror","fisheye","sparkle"],crops=["original","square","portrait","story","landscape"],animations=["none","fade","pop","typewriter"],filter=String(style.filter||"original"),effect=String(style.effect||"none"),crop=String(style.crop||"original"),overlayColor=String(style.overlayColor||"white"),overlayAnimation=String(style.overlayAnimation||"none"),strength=Number(style.strength),rotation=Number(style.rotation),speed=Number(style.speed),trimStart=Number(style.trimStart),trimEnd=Number(style.trimEnd),overlayX=Number(style.overlayX),overlayY=Number(style.overlayY),range=function(key,min,max,fallback){var n=Number(style[key]);return Number.isFinite(n)?Math.max(min,Math.min(max,Math.round(n))):fallback;};if(filters.indexOf(filter)<0)filter="original";if(effects.indexOf(effect)<0)effect="none";if(crops.indexOf(crop)<0)crop="original";if(["white","black"].indexOf(overlayColor)<0)overlayColor="white";if(animations.indexOf(overlayAnimation)<0)overlayAnimation="none";if(!Number.isFinite(strength))strength=100;if([0,90,180,270].indexOf(rotation)<0)rotation=0;if([.5,1,1.5,2].indexOf(speed)<0)speed=1;if(!Number.isFinite(trimStart))trimStart=0;if(!Number.isFinite(trimEnd))trimEnd=0;if(!Number.isFinite(overlayX))overlayX=50;if(!Number.isFinite(overlayY))overlayY=82;return {filter:filter,effect:effect,strength:Math.max(0,Math.min(100,Math.round(strength))),crop:crop,rotation:rotation,flipX:style.flipX===true,speed:speed,brightness:range("brightness",50,150,100),contrast:range("contrast",50,150,100),saturation:range("saturation",0,200,100),warmth:range("warmth",-100,100,0),sharpness:range("sharpness",0,100,0),highlights:range("highlights",-100,100,0),shadows:range("shadows",-100,100,0),overlayText:String(style.overlayText||"").slice(0,160),overlayColor:overlayColor,overlayAnimation:overlayAnimation,overlayX:Math.max(0,Math.min(100,overlayX)),overlayY:Math.max(0,Math.min(100,overlayY)),trimStart:Math.round(Math.max(0,Math.min(3600,trimStart))*10)/10,trimEnd:Math.round(Math.max(0,Math.min(3600,trimEnd))*10)/10};}
 
 function makePost(db, ctx, user, data) {
   var text = clean(ctx, data.text || data.caption, 4000);
@@ -99,7 +102,9 @@ function makePost(db, ctx, user, data) {
     mediaUrl: mediaUrl,
     mediaId: attachedMedia && attachedMedia.id || "",
     mimeType: attachedMedia && attachedMedia.mimeType || "",
-    messageType: mediaMessageType(attachedMedia),
+    messageType: mediaTypeFromUrl(mediaUrl,mediaMessageType(attachedMedia)),
+    mediaStyle:normalizePostMediaStyle(data.mediaStyle),
+    peopleTags:(mediaTypeFromUrl(mediaUrl,mediaMessageType(attachedMedia))==="image"||mediaTypeFromUrl(mediaUrl,mediaMessageType(attachedMedia))==="video")?normalizePeopleTags(db,user.id,data.peopleTags):[],
     aiAssisted: data.aiAssisted === true,
     hashtags: hashtags,
     mentions: [],
@@ -108,6 +113,7 @@ function makePost(db, ctx, user, data) {
     createdAt: new Date().toISOString()
   };
   db.rzV2.posts.push(post);
+  notifyNewPeopleTags(db,user,post,[]);
   db.rzV2.hashtags = db.rzV2.hashtags || {};
   hashtags.forEach(function(tag) { db.rzV2.hashtags[tag] = Number(db.rzV2.hashtags[tag] || 0) + 1; });
   return post;
@@ -138,9 +144,9 @@ function decoratePost(db, post) {
     })
   } : null;
   return {
-    id:post.id,userId:post.userId,text:post.text,mediaUrl:post.mediaUrl,mediaId:post.mediaId||attached&&attached.id||"",mimeType:post.mimeType||attached&&attached.mimeType||"",messageType:post.messageType||mediaMessageType(attached),aiAssisted:post.aiAssisted===true,
+    id:post.id,userId:post.userId,text:post.text,mediaUrl:post.mediaUrl,mediaId:post.mediaId||attached&&attached.id||"",mimeType:post.mimeType||attached&&attached.mimeType||"",messageType:post.messageType||mediaMessageType(attached),mediaStyle:normalizePostMediaStyle(post.mediaStyle),aiAssisted:post.aiAssisted===true,
     hashtags:post.hashtags||[],mentions:post.mentions||[],createdAt:post.createdAt,
-    author:publicUser(db,author),collaborators:collaborators,poll:poll,metrics:postMetrics(db,post)
+    author:publicUser(db,author),collaborators:collaborators,poll:poll,peopleTags:decoratePeopleTags(db,post.userId,post.peopleTags),metrics:postMetrics(db,post)
   };
 }
 
@@ -224,7 +230,7 @@ async function handleRizoraGrowth(ctx) {
     if(!Number.isFinite(when.getTime())){ctx.sendError(res,400,"Choose a valid publish time.");return true;}
     if(when.getTime()<=Date.now()+30000){ctx.sendError(res,400,"Choose a future publish time.");return true;}
     if(when.getTime()>Date.now()+90*24*60*60*1000){ctx.sendError(res,400,"Schedules can be up to 90 days ahead.");return true;}
-    var content={text:clean(ctx,sb.text||sb.caption,4000),mediaUrl:clean(ctx,sb.mediaUrl,1200)};
+    var content={text:clean(ctx,sb.text||sb.caption,4000),mediaUrl:clean(ctx,sb.mediaUrl,1200),mediaStyle:normalizePostMediaStyle(sb.mediaStyle),peopleTags:Array.isArray(sb.peopleTags)?sb.peopleTags.slice(0,10):[]};
     if(!content.text&&!content.mediaUrl){ctx.sendError(res,400,"Add text or media before scheduling.");return true;}
     if(blocked([content.text,content.mediaUrl])){ctx.sendError(res,422,"That scheduled content is not allowed.");return true;}
     var schedule={id:ctx.uid("schedule_"),userId:user.id,scheduledFor:new Date(when).toISOString(),status:"scheduled",content:content,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
@@ -247,7 +253,7 @@ async function handleRizoraGrowth(ctx) {
     var options=optionsInput.map(function(label,index){return{id:"option_"+(index+1),label:clean(ctx,label,120)};}).filter(function(option){return option.label;}).slice(0,4);
     if(!question||options.length<2){ctx.sendError(res,400,"A poll needs a question and at least two options.");return true;}
     if(blocked([question].concat(options.map(function(o){return o.label;})))){ctx.sendError(res,422,"That poll content is not allowed.");return true;}
-    var pollPost=makePost(db,ctx,user,{text:clean(ctx,pollBody.text||"",4000),mediaUrl:clean(ctx,pollBody.mediaUrl||"",1200),poll:{question:question,options:options,expiresAt:pollBody.expiresAt?new Date(pollBody.expiresAt).toISOString():null}});
+    var pollPost=makePost(db,ctx,user,{text:clean(ctx,pollBody.text||"",4000),mediaUrl:clean(ctx,pollBody.mediaUrl||"",1200),mediaStyle:pollBody.mediaStyle,peopleTags:pollBody.peopleTags,poll:{question:question,options:options,expiresAt:pollBody.expiresAt?new Date(pollBody.expiresAt).toISOString():null}});
     ctx.saveDB(db);ctx.sendJSON(res,201,{success:true,post:decoratePost(db,pollPost)});return true;
   }
   var pollVote=path.match(/^\/api\/v2\/polls\/([^/]+)\/vote$/);
@@ -265,7 +271,8 @@ async function handleRizoraGrowth(ctx) {
 
   if(path==="/api/v2/discover"&&method==="GET"){
     if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
-    var allPosts=(db.rzV2.posts||[]).slice(),now=Date.now();
+    var blockedUsers=new Set((db.rzV2.blocks||[]).filter(function(block){return block.userId===user.id||block.targetUserId===user.id;}).map(function(block){return block.userId===user.id?block.targetUserId:block.userId;}));
+    var allPosts=(db.rzV2.posts||[]).filter(function(post){return post.deleted!==true&&(post.visibility!=="private"||post.userId===user.id)&&!blockedUsers.has(post.userId);}),now=Date.now();
     function postScore(post){var m=postMetrics(db,post),ageHours=Math.max(.5,(now-new Date(post.createdAt).getTime())/3600000);return (m.likes+m.comments*2+m.saves*2+m.reposts*3+m.pollVotes)/Math.pow(ageHours+2,.65);}
     var trendingPosts=allPosts.sort(function(a,b){return postScore(b)-postScore(a);}).slice(0,12).map(function(p){return decoratePost(db,p);}).filter(Boolean);
     var hashtagCounts={};
@@ -273,7 +280,7 @@ async function handleRizoraGrowth(ctx) {
     var trendingHashtags=Object.keys(hashtagCounts).sort(function(a,b){return hashtagCounts[b]-hashtagCounts[a];}).slice(0,15).map(function(tag){return{tag:tag,posts:hashtagCounts[tag]};});
     var creatorMap={};
     (db.users||[]).forEach(function(target){
-      if(target.id===user.id||target.status!=="active")return;
+      if(target.id===user.id||target.status!=="active"||blockedUsers.has(target.id))return;
       var followers=(db.rzV2.follows||[]).filter(function(f){return f.followingId===target.id;}).length;
       var targetPosts=allPosts.filter(function(p){return p.userId===target.id;}).length;
       if(!followers&&!targetPosts&&target.official!==true)return;

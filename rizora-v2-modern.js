@@ -46,7 +46,7 @@ function currentToken(req) {
 function prefs(db,userId) {
   db.rzV2.preferences[userId] ||= {
     notifications: {
-      all: true, likes: true, comments: true, follows: true, mentions: true, activity: true,
+      all: true, likes: true, comments: true, follows: true, mentions: true, tags: true, activity: true,
       messages: true, collaboration: true, support: true, verification: true, moderation: true
     },
     discoverable: true,
@@ -55,12 +55,13 @@ function prefs(db,userId) {
   };
   const p=db.rzV2.preferences[userId];
   p.notifications ||= {};
-  for (const k of ["all","likes","comments","follows","mentions","activity","messages","collaboration","support","verification","moderation"]) {
+  for (const k of ["all","likes","comments","follows","mentions","tags","activity","messages","collaboration","support","verification","moderation"]) {
     if(typeof p.notifications[k]!=="boolean") p.notifications[k]=true;
   }
   if(typeof p.discoverable!=="boolean") p.discoverable=true;
   if(typeof p.showActivityStatus!=="boolean") p.showActivityStatus=true;
   if(typeof p.personalizedFeed!=="boolean") p.personalizedFeed=true;
+  if(!["everyone","followers","none"].includes(p.tagPolicy)) p.tagPolicy="everyone";
   return p;
 }
 
@@ -247,6 +248,7 @@ async function handleRizoraModern(ctx) {
       for(const k of Object.keys(next.notifications)) if(typeof b.notifications[k]==="boolean") next.notifications[k]=b.notifications[k];
     }
     for(const k of ["discoverable","showActivityStatus","personalizedFeed"]) if(typeof b[k]==="boolean") next[k]=b[k];
+    if(["everyone","followers","none"].includes(String(b.tagPolicy||""))) next.tagPolicy=String(b.tagPolicy);
     db.rzV2.preferences[user.id]=next;ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,preferences:next});return true;
   }
 

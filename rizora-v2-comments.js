@@ -1,5 +1,5 @@
 ﻿"use strict";
-function ensureCommentControls(db){db.rzV2=db.rzV2||{};db.rzV2.commentControls=db.rzV2.commentControls||{};}
+function ensureCommentControls(db){db.rzV2=db.rzV2||{};db.rzV2.commentControls=db.rzV2.commentControls||{};db.rzV2.commentLikes=Array.isArray(db.rzV2.commentLikes)?db.rzV2.commentLikes:[];}
 function readBody(req){let raw="";return (async function(){for await(const chunk of req){raw+=chunk.toString();if(raw.length>500000)throw new Error("Request body too large.");}return raw?JSON.parse(raw):{};})();}
 function controlsFor(db,userId){ensureCommentControls(db);if(!db.rzV2.commentControls[userId])db.rzV2.commentControls[userId]={blockedWords:[],guidelines:"",autoHideLinks:false};const c=db.rzV2.commentControls[userId];if(!Array.isArray(c.blockedWords))c.blockedWords=[];if(typeof c.guidelines!=="string")c.guidelines="";if(typeof c.autoHideLinks!=="boolean")c.autoHideLinks=false;return c;}
 function normalizeWords(value,ctx){const raw=Array.isArray(value)?value:String(value||"").split(",");const seen=new Set();return raw.map(function(word){return ctx.cleanString(String(word||"").toLowerCase(),40).trim();}).filter(function(word){if(!word||seen.has(word))return false;seen.add(word);return true;}).slice(0,40);}
@@ -10,6 +10,41 @@ function commentRow(db,comment,post){const author=(db.users||[]).find(function(u
 async function handleRizoraComments(ctx){
   const db=ctx.db,req=ctx.req,res=ctx.res,user=ctx.getCurrentUser(db,req),url=new URL(req.url,"http://rizora.local"),path=url.pathname,method=String(req.method||"GET").toUpperCase();
   ensureCommentControls(db);
+  const postCommentAction=path.match(/^\/api\/v2\/posts\/([^/]+)\/comments\/([^/]+)\/action$/);
+  if(postCommentAction&&method==="POST"){
+    if(!user){ctx.sendError(res,401,"Authentication required.");return true;}
+    let body;try{body=await readBody(req);}catch(e){ctx.sendError(res,400,e.message);return true;}
+    const postId=decodeURIComponent(postCommentAction[1]),commentId=decodeURIComponent(postCommentAction[2]);
+    const post=(db.rzV2.posts||[]).find(function(row){return row.id===postId&&!row.deleted;});
+    const comment=(db.rzV2.comments||[]).find(function(row){return row.id===commentId&&row.postId===postId;});
+    if(!post||!comment){ctx.sendError(res,404,"Comment not found.");return true;}
+    const action=ctx.cleanString(body.action,20).toLowerCase();
+    if(action==="like"){
+      const existing=db.rzV2.commentLikes.find(function(row){return row.userId===user.id&&row.commentId===comment.id;});
+      if(existing)db.rzV2.commentLikes=db.rzV2.commentLikes.filter(function(row){return row!==existing;});
+      else{
+        db.rzV2.commentLikes.push({id:ctx.uid("comment_like_"),userId:user.id,commentId:comment.id,postId:post.id,createdAt:new Date().toISOString()});
+        if(comment.userId!==user.id){const actor=String(user.publicUsername||user.username||"creator");const target=(db.users||[]).find(function(row){return row.id===comment.userId;});if(target){db.notifications=db.notifications||[];db.notifications.push({id:ctx.uid("n_"),userId:target.id,title:"Your comment was liked",message:"@"+actor+" liked your comment.",type:"comment_like",read:false,createdAt:new Date().toISOString()});}}
+      }
+      ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,liked:!existing,likes:db.rzV2.commentLikes.filter(function(row){return row.commentId===comment.id;}).length});return true;
+    }
+    if(action==="pin"||action==="unpin"){
+      if(post.userId!==user.id){ctx.sendError(res,403,"Only the post owner can pin a comment.");return true;}
+      if(comment.parentId){ctx.sendError(res,400,"Only a top-level comment can be pinned.");return true;}
+      post.pinnedCommentId=action==="pin"?comment.id:"";
+      ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,pinned:action==="pin"});return true;
+    }
+    if(action==="delete"){
+      if(comment.userId!==user.id&&post.userId!==user.id){ctx.sendError(res,403,"You can only delete your own comment.");return true;}
+      const removed=new Set([comment.id]);let changed=true;
+      while(changed){changed=false;(db.rzV2.comments||[]).forEach(function(row){if(row.parentId&&removed.has(row.parentId)&&!removed.has(row.id)){removed.add(row.id);changed=true;}});}
+      db.rzV2.comments=(db.rzV2.comments||[]).filter(function(row){return !removed.has(row.id);});
+      db.rzV2.commentLikes=db.rzV2.commentLikes.filter(function(row){return !removed.has(row.commentId);});
+      if(removed.has(post.pinnedCommentId))post.pinnedCommentId="";
+      ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,deleted:removed.size});return true;
+    }
+    ctx.sendError(res,400,"Unsupported comment action.");return true;
+  }
   if(path==="/api/v2/comment-controls"&&method==="GET"){if(!user){ctx.sendError(res,401,"Authentication required.");return true;}ctx.sendJSON(res,200,{success:true,controls:controlsFor(db,user.id)});return true;}
   if(path==="/api/v2/comment-controls"&&method==="PATCH"){if(!user){ctx.sendError(res,401,"Authentication required.");return true;}let body;try{body=await readBody(req);}catch(e){ctx.sendError(res,400,e.message);return true;}const current=controlsFor(db,user.id);if(body.blockedWords!==undefined)current.blockedWords=normalizeWords(body.blockedWords,ctx);if(body.guidelines!==undefined)current.guidelines=ctx.cleanString(body.guidelines,600);if(body.autoHideLinks!==undefined)current.autoHideLinks=Boolean(body.autoHideLinks);current.updatedAt=new Date().toISOString();ctx.saveDB(db);ctx.sendJSON(res,200,{success:true,controls:current});return true;}
   if(path==="/api/v2/comment-moderation"&&method==="GET"){
